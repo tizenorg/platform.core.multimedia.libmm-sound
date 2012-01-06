@@ -1,0 +1,48 @@
+Source: libmm-sound
+Section: libs
+Priority: optional
+Maintainer: Seungbae Shin <seungbae.shin@samsung.com>, JongHyuk Choi <jhchoi.choi@samsung.com>
+Uploaders: YoungHwan Ahn <younghwan_.an@samsung.com>, YoungHun Kim <yh8004.kim@samsung.com>
+Build-Depends: debhelper (>= 5), autotools-dev, libmm-common-dev, libavsystem-dev, libmm-log-dev, libmm-session-dev, libaudiosessionmgr-dev, libglib2.0-dev, libslp-setting-dev, libmm-common-internal-dev, libheynoti-dev
+Standards-Version: 3.7.2
+Homepage: N/A
+
+Package: libmm-sound-dev
+XB-Public-Package: no
+Section: libdevel
+Architecture: any
+Depends: libmm-sound-0 (= ${Source-Version}), libmm-sound-sdk-dev
+Standards-Version: 3.7.2
+Description: MMSound development package
+Version: 3.7.2
+
+Package: libmm-sound-sdk-dev
+XB-Generate-Docs: yes
+Section: libdevel
+Architecture: any
+Depends: libmm-sound-0 (= ${Source-Version}), libmm-common-dev, libavsystem-sdk-dev, libmm-log-sdk-dev, libmm-session-sdk-dev, libaudiosessionmgr-sdk-dev, libglib2.0-dev, libslp-setting-dev
+Standards-Version: 3.7.2
+Description: MMSound development package
+Version: 3.7.2
+
+Package: libmm-sound-0
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libavsystem-0, libmm-common, libmm-log, libmm-session-0, libaudiosessionmgr-0, libglib2.0-0, libslp-setting-0, libheynoti-0
+Standards-Version: 3.7.2
+Description: MMSound Package contains client lib and sound_server binary
+Version: 3.7.2
+
+Package: libmm-sound-0-dbg
+Section: debug
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmm-sound-0 (= ${Source-Version})
+Description: MMSound debug package (unstripped)
+Version: 3.7.2
+
+Package: libmm-sound-tool
+Section: utils
+Architecture: armel
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmm-sound-0 (= ${Source-Version})
+Description: MMSound utility package - contians mm_sound_testsuite, sound_check
+Version: 3.7.2

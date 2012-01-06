@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ -n "`env|grep SBOX`" ]; then
+	echo "postinst: sbox installation"
+else
+	PID=`/bin/pidof sound_server`
+	if [ -n "$PID" ]; then
+		echo "preinst: kill current sound server"
+		/usr/bin/killall -9 sound_server
+	fi
+fi
