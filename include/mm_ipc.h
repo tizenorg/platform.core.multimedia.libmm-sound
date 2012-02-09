@@ -44,7 +44,7 @@ typedef struct
 	/* Send data */
 	int keytone;
 	int repeat;
-	int dtmf;
+	int tone;
 	double volume;
 	int memptr;
 	int memsize;

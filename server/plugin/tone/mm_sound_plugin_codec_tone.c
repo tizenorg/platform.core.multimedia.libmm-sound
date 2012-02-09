@@ -50,15 +50,8 @@
 #define M_PI_2  1.57079632679489661923
 #endif
 
-#define M_PI_M2 ( M_PI + M_PI )
 #define SAMPLERATE 44100
-#define BEEP_SIZE (SAMPLERATE*2*1/10)
-/* End Beep */
 
-#define NUMBER_OF_DTMF 12
-#define DTMF_PATH "/opt/system/dtmf_all.raw"
-#define MAX_MEMORY_SIZE 1048576	/* Max memory size 1024*1024 (1MB) */
-#define MAX_DTMF_FILE_SIZE (64*1024)  // 64KB
 #define SAMPLE_SIZE 16
 #define CHANNELS 1
 #define MAX_DURATION 100
@@ -87,11 +80,9 @@ typedef struct {
 
 typedef struct {
      /* AMR Buffer */
-	char			*dtmf_buffer;
 	int				size; /* sizeof hole amr data */
 
      /* Audio Infomations */
-	int				transper_size; /* avsysaudioopen return */
 	avsys_handle_t	     audio_handle;
 
      /* control Informations */
@@ -103,7 +94,6 @@ typedef struct {
 	double			volume;
 	int				time;
 	int				pid;
-	char				buf_data[1];
 
 } tone_info_t;
 
@@ -730,15 +720,13 @@ typedef struct st_tone
 static tone_control_t g_control;
 static int (*g_thread_pool_func)(void*, void (*)(void*)) = NULL;
 
-static int _MMSoundDTMFInit(void);
-static int _MMSoundDTMFFini(void);
-static void _runing(void *param);
-static void _running_beep(void *param);
+static int _MMSoundToneInit(void);
+static int _MMSoundToneFini(void);
 static void _running_tone(void *param);
 
 
 
-int* MMSoundPlugCodecDtmfGetSupportTypes(void)
+int* MMSoundPlugCodecToneGetSupportTypes(void)
 {
     debug_enter("\n");
     static int suported[2] = {MM_SOUND_SUPPORTED_CODEC_DTMF, 0};
@@ -746,7 +734,7 @@ int* MMSoundPlugCodecDtmfGetSupportTypes(void)
     return suported;
 }
 
-int MMSoundPlugCodecDtmfParse(MMSourceType *source, mmsound_codec_info_t *info)
+int MMSoundPlugCodecToneParse(MMSourceType *source, mmsound_codec_info_t *info)
 {
 	debug_enter("\n");
 	// do nothing
@@ -754,7 +742,7 @@ int MMSoundPlugCodecDtmfParse(MMSourceType *source, mmsound_codec_info_t *info)
 	return MM_ERROR_NONE;
 }
 
-int MMSoundPlugCodecDtmfCreate(mmsound_codec_param_t *param, mmsound_codec_info_t *info, MMHandleType *handle)
+int MMSoundPlugCodecToneCreate(mmsound_codec_param_t *param, mmsound_codec_info_t *info, MMHandleType *handle)
 {
 	avsys_audio_param_t audio_param;
 	tone_info_t *toneInfo;
@@ -763,14 +751,13 @@ int MMSoundPlugCodecDtmfCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 
 	debug_enter("\n");
 
-	toneInfo = (tone_info_t *)malloc(sizeof(tone_info_t) + sizeof(char)*MAX_MEMORY_SIZE);
-	if (toneInfo == NULL)
-	{
+	toneInfo = (tone_info_t *)malloc(sizeof(tone_info_t));
+	if (toneInfo == NULL) {
 		debug_error("memory allocation error\n");
 		return MM_ERROR_OUT_OF_MEMORY;
 	}
 
-	memset(toneInfo, 0, sizeof(tone_info_t)+ sizeof(char) * MAX_MEMORY_SIZE);
+	memset(toneInfo, 0, sizeof(tone_info_t));
 
 	toneInfo->state = STATE_READY;
 
@@ -794,13 +781,13 @@ int MMSoundPlugCodecDtmfCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	debug_log("Create audio_handle is %d\n", toneInfo->audio_handle);
 
 
-	debug_msg("dtmf : %d\n", param->dtmf);
+	debug_msg("tone : %d\n", param->tone);
 	debug_msg("repeat : %d\n", param->repeat_count);
 	debug_msg("volume table : %d\n", param->volume_table);
 	debug_msg("callback : %p\n", param->stop_cb);
 	debug_msg("pid : %d\n", param->pid);
 
-	toneInfo->number = param->dtmf;
+	toneInfo->number = param->tone;
 	toneInfo->time = param->repeat_count;
 	toneInfo->stop_cb = param->stop_cb;
 	toneInfo->cb_param = param->param;
@@ -808,8 +795,7 @@ int MMSoundPlugCodecDtmfCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	toneInfo->volume = param->volume;
 
 	result = g_thread_pool_func(toneInfo, _running_tone);
-	if (result != 0)
-	{
+	if (result != 0) {
 		debug_error("pthread_create() fail in pcm thread\n");
 		result = MM_ERROR_SOUND_INTERNAL;
 		goto Error;
@@ -821,8 +807,7 @@ int MMSoundPlugCodecDtmfCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	return MM_ERROR_NONE;
 
 Error:
-	if(toneInfo)
-	{
+	if(toneInfo) {
 		if(toneInfo->audio_handle)
 			avsys_audio_close(toneInfo->audio_handle);
 
@@ -833,12 +818,11 @@ Error:
 
 }
 
-int MMSoundPlugCodecDtmfDestroy(MMHandleType handle)
+int MMSoundPlugCodecToneDestroy(MMHandleType handle)
 {
 	tone_info_t *toneInfo = (tone_info_t*) handle;
 	int err = MM_ERROR_NONE;
-	if (!toneInfo)
-	{
+	if (!toneInfo) {
 		debug_critical("Confirm the hadle (is NULL)\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
@@ -853,7 +837,7 @@ int MMSoundPlugCodecDtmfDestroy(MMHandleType handle)
 }
 
 static
-int MMSoundPlugCodecDtmfPlay(MMHandleType handle)
+int MMSoundPlugCodecTonePlay(MMHandleType handle)
 {
 	tone_info_t *toneInfo = (tone_info_t *) handle;
 
@@ -889,8 +873,7 @@ _create_tone (double *sample, TONE _TONE, double volume, int *toneSize)
 	/* Create a buffer for the tone */
 	if((_TONE.playingTime >  MAX_DURATION) || (_TONE.playingTime == -1) ) {
 		*toneSize = ((MAX_DURATION / 1000.) * SAMPLERATE * SAMPLE_SIZE * CHANNELS) / 8;
-	}
-	else	 {
+	} else	 {
 		*toneSize = ((_TONE.playingTime / 1000.) * SAMPLERATE * SAMPLE_SIZE * CHANNELS) / 8;
 	}
 	*toneSize = ((*toneSize+1)>>1)<<1;
@@ -899,13 +882,10 @@ _create_tone (double *sample, TONE _TONE, double volume, int *toneSize)
 	debug_log("_TONE.playing_time: %d toneSize: %d\n", _TONE.playingTime, *toneSize);
 	char* buffer = g_malloc (*toneSize);
 
-	if(buffer == NULL)
-	{
+	if(buffer == NULL) {
 		debug_error("Buffer is not allocated\n");
 		return NULL;
-	}
-	else
-	{
+	} else {
 		pbuf = (short*)buffer;
 
 		if(_TONE.low_frequency > 0) {
@@ -918,8 +898,7 @@ _create_tone (double *sample, TONE _TONE, double volume, int *toneSize)
 			quota++;
 		}
 
-		for (i = 0; i < sample_size; i++)
-		{
+		for (i = 0; i < sample_size; i++) {
 			/*
 			 * We add the fundamental frequencies together.
 			 */
@@ -928,17 +907,14 @@ _create_tone (double *sample, TONE _TONE, double volume, int *toneSize)
 			f2 = sin (2 * M_PI * middle_frequency	* ((*sample) / SAMPLERATE));
 			f3 = sin (2 * M_PI * high_frequency	* ((*sample) / SAMPLERATE));
 
-			if(f1 + f2 + f3 != 0)
-			{
+			if(f1 + f2 + f3 != 0) {
 				amplitude = (f1 + f2 + f3) / quota;
 				/* Adjust the volume */
 				amplitude *= volume;
 
 				/* Make the [-1:1] interval into a [-32767:32767] interval */
 				amplitude *= 32767;
-			}
-			else
-			{
+			} else {
 				amplitude = 0;
 			}
 
@@ -978,8 +954,7 @@ _mm_get_waveCnt_PlayingTime(int toneTime, TONE _TONE, int *waveCnt, int *waveRes
 	if( _TONE.playingTime == -1) {
 		*waveCnt = abs(toneTime) /MAX_DURATION;
 		*waveRestPlayTime =  abs(toneTime) % MAX_DURATION;
-	}
-	else {
+	} else {
 		*waveCnt = _TONE.playingTime /MAX_DURATION;
 		*waveRestPlayTime =  _TONE.playingTime % MAX_DURATION;
 	}
@@ -1048,8 +1023,7 @@ static void _running_tone(void *param)
 			usleep(10);
 		debug_msg("Recv start signal\n");
 		toneInfo->state = STATE_PLAY;
-	}
-	else {
+	} else {
 		return;
 	}
 
@@ -1072,8 +1046,7 @@ static void _running_tone(void *param)
 		for(CurWaveIndex = 0; CurWaveIndex < numWave+1; CurWaveIndex++) {
 			if(CurWaveIndex == numWave ) { /* play the last tone set*/
 				playingTime = waveRestPlayTime;
-			}
-			else {
+			} else {
 				playingTime = MAX_DURATION;
 			}
 			duration = playingTime;
@@ -1131,7 +1104,7 @@ exit :
 }
 
 static
-int MMSoundPlugCodecDtmfStop(MMHandleType handle)
+int MMSoundPlugCodecToneStop(MMHandleType handle)
 {
 	tone_info_t *toneInfo = (tone_info_t*) handle;
 
@@ -1144,7 +1117,7 @@ int MMSoundPlugCodecDtmfStop(MMHandleType handle)
 }
 
 static
-int MMSoundPlugCodecDtmfSetThreadPool(int (*func)(void*, void (*)(void*)))
+int MMSoundPlugCodecToneSetThreadPool(int (*func)(void*, void (*)(void*)))
 {
     debug_enter("(func : 0x%x)\n", func);
     g_thread_pool_func = func;
@@ -1152,14 +1125,14 @@ int MMSoundPlugCodecDtmfSetThreadPool(int (*func)(void*, void (*)(void*)))
     return MM_ERROR_NONE;
 }
 
-static int _MMSoundDTMFInit(void)
+static int _MMSoundToneInit(void)
 {
 	memset(&g_control, 0, sizeof(tone_control_t));
 	pthread_mutex_init(&g_control.syncker, NULL);
 	return MM_ERROR_NONE;
 }
 
-static int _MMSoundDTMFFini(void)
+static int _MMSoundToneFini(void)
 {
 	pthread_mutex_destroy(&g_control.syncker);
 	return MM_ERROR_NONE;
@@ -1178,13 +1151,13 @@ int MMSoundPlugCodecGetInterface(mmsound_codec_interface_t *intf)
 {
     debug_enter("\n");
 
-    intf->GetSupportTypes   = MMSoundPlugCodecDtmfGetSupportTypes;
-    intf->Parse             = MMSoundPlugCodecDtmfParse;
-    intf->Create            = MMSoundPlugCodecDtmfCreate;
-    intf->Destroy           = MMSoundPlugCodecDtmfDestroy;
-    intf->Play              = MMSoundPlugCodecDtmfPlay;
-    intf->Stop              = MMSoundPlugCodecDtmfStop;
-    intf->SetThreadPool     = MMSoundPlugCodecDtmfSetThreadPool;
+    intf->GetSupportTypes   = MMSoundPlugCodecToneGetSupportTypes;
+    intf->Parse             = MMSoundPlugCodecToneParse;
+    intf->Create            = MMSoundPlugCodecToneCreate;
+    intf->Destroy           = MMSoundPlugCodecToneDestroy;
+    intf->Play              = MMSoundPlugCodecTonePlay;
+    intf->Stop              = MMSoundPlugCodecToneStop;
+    intf->SetThreadPool     = MMSoundPlugCodecToneSetThreadPool;
 
     debug_leave("\n");
 

@@ -37,21 +37,14 @@ int sound_system_bootup_recovery()
 			VCONF_KEY_VOLUME_TYPE_ANDROID,VCONF_KEY_VOLUME_TYPE_JAVA, VCONF_KEY_VOLUME_TYPE_MEDIA};
 	int vol[AVSYS_AUDIO_VOLUME_TYPE_MAX] = {5,7,6,13,7,7,0,11,11}, i=0;
 
-	for(i=0; i<AVSYS_AUDIO_VOLUME_TYPE_MAX; i++)
-	{
-		if(vconf_get_int(keystr[i], (int*)&vol[i]))
-		{
-			if(vconf_set_int(keystr[i], vol[i]))
-			{
+	for(i=0; i<AVSYS_AUDIO_VOLUME_TYPE_MAX; i++) {
+		if(vconf_get_int(keystr[i], (int*)&vol[i])) {
+			if(vconf_set_int(keystr[i], vol[i])) {
 				debug_error("Error on volume vconf key %s\n", keystr[i]);
-			}
-			else
-			{
+			} else {
 				debug_error("Set %s to default value %d\n", keystr[i], vol[i]);
 			}
-		}
-		else
-		{
+		} else {
 			debug_msg("Volume value of %s is %d\n", keystr[i], vol[i]);
 		}
 	}

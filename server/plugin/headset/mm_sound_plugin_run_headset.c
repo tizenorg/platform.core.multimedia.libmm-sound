@@ -60,8 +60,7 @@ bool _asm_register_for_headset (int * handle)
 		return false;
 	}
 
-	if(!ASM_register_sound(-1, handle, ASM_EVENT_EARJACK_UNPLUG, ASM_STATE_NONE, NULL, NULL, ASM_RESOURCE_NONE, &asm_error))
-	{
+	if(!ASM_register_sound(-1, handle, ASM_EVENT_EARJACK_UNPLUG, ASM_STATE_NONE, NULL, NULL, ASM_RESOURCE_NONE, &asm_error)) {
 		debug_warning("earjack event register failed with 0x%x\n", asm_error);
 		return false;
 	}
@@ -104,8 +103,7 @@ int _update_route_policy_from_vconf()
 		if(err < 0) {
 			debug_error("Set route polpa_threaded_mainloop *mainloopicy to vconf failed in headset plugin\n");
 		}
-	}
-	else {
+	} else {
 		avsys_audio_route_policy_t av_route;
 		err = avsys_audio_get_route_policy((avsys_audio_route_policy_t*)&av_route);
 		if(AVSYS_FAIL(err)) {

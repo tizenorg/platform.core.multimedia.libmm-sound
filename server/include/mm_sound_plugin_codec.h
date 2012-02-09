@@ -47,7 +47,7 @@ typedef struct {
 	int (*stop_cb)(int);
 	int pid;
 	int param;
-	int dtmf;
+	int tone;
 	int repeat_count;
 	double volume;
 	int priority;

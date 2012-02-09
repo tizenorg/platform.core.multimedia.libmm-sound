@@ -314,105 +314,7 @@ static void* callbackfunc(void *param)
 	return NULL;
 }
 
-int MMSoundClientPlayDTMF(int number, int vol_type, int time, int *handle)
-{
-	mm_ipc_msg_t msgrcv = {0,};
-	mm_ipc_msg_t msgsnd = {0,};
-
-	int ret = MM_ERROR_NONE;
-	int instance = -1; 	/* instance is unique to communicate with server : client message queue filter type */
-
-	debug_enter("\n");
-
-	if (g_mutex_initted == -1)
-	{
-		pthread_mutex_init(&g_thread_mutex, NULL);
-		debug_msg("[Client] mutex initialized. \n");
-		g_mutex_initted = 1;		
-
-		/* Get msg queue id */
-		ret = __MMSoundGetMsg();
-		if(ret != MM_ERROR_NONE)
-		{
-			debug_critical("[Client] Fail to get message queue id\n");
-			return ret;
-		}
-	}
-
-	/* read mm-session type */
-	int sessionType = MM_SESSION_TYPE_SHARE;
-	if(MM_ERROR_NONE != _mm_session_util_read_type(-1, &sessionType))
-	{
-		debug_warning("[Client] Read MMSession Type failed. use default \"share\" type\n");
-		sessionType = MM_SESSION_TYPE_SHARE;
-
-		if(MM_ERROR_NONE != mm_session_init(sessionType))
-		{
-			debug_critical("[Client] MMSessionInit() failed\n");
-			return MM_ERROR_POLICY_INTERNAL;
-		}
-	}
-
-	instance = getpid();
-	debug_msg("[Client] pid for client ::: [%d]\n", instance);
-
-	pthread_mutex_lock(&g_thread_mutex);
-
-	/* Send msg */
-	debug_msg("[Client] Input number : %d\n", number);
-	/* Send req memory */
-	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_DTMF;
-	msgsnd.sound_msg.msgid = instance;
-	msgsnd.sound_msg.session_type = sessionType;//asm_session_type;
-	msgsnd.sound_msg.volume = 0;//This does not effect anymore
-	msgsnd.sound_msg.volume_table = vol_type;
-	msgsnd.sound_msg.dtmf = number;
-	msgsnd.sound_msg.handle = -1;
-	msgsnd.sound_msg.repeat = time;
-
-	ret = __MMIpcSndMsg(&msgsnd);
-	if (ret != MM_ERROR_NONE)
-	{
-		debug_error("[Client] Fail to send msg\n");
-		goto cleanup;
-	}
-	
-	/* Receive */
-	ret = __MMIpcRecvMsg(instance, &msgrcv);
-	if (ret != MM_ERROR_NONE)
-	{
-		debug_error("[Client] Fail to recieve msg\n");
-		goto cleanup;
-	}
-
-	switch (msgrcv.sound_msg.msgtype)
-	{
-	case MM_SOUND_MSG_RES_DTMF:
-		*handle = msgrcv.sound_msg.handle;
-		if(*handle == -1)
-			debug_error("[Client] The handle is not get\n");
-
-		debug_msg("[Client] Success to play sound sound handle : [%d]\n", *handle);
-		break;
-	case MM_SOUND_MSG_RES_ERROR:
-		debug_error("[Client] Error occurred \n");
-		ret = msgrcv.sound_msg.code;
-		goto cleanup;
-		break;
-	default:
-		debug_critical("[Client] Unexpected state with communication \n");
-		ret = msgrcv.sound_msg.code;
-		goto cleanup;
-		break;
-	}
-cleanup:
-	pthread_mutex_unlock(&g_thread_mutex);
-
-	debug_leave("\n");
-	return ret;
-}
-
-int MMSoundClientPlayTONE(int number, int vol_type, double volume, int time, int *handle)
+int MMSoundClientPlayTone(int number, int vol_type, double volume, int time, int *handle)
 {
 	mm_ipc_msg_t msgrcv = {0,};
 	mm_ipc_msg_t msgsnd = {0,};
@@ -464,7 +366,7 @@ int MMSoundClientPlayTONE(int number, int vol_type, double volume, int time, int
 	msgsnd.sound_msg.session_type = sessionType;//asm_session_type;
 	msgsnd.sound_msg.volume = volume;//This does not effect anymore
 	msgsnd.sound_msg.volume_table = vol_type;
-	msgsnd.sound_msg.dtmf = number;
+	msgsnd.sound_msg.tone = number;
 	msgsnd.sound_msg.handle = -1;
 	msgsnd.sound_msg.repeat = time;
 
@@ -511,7 +413,7 @@ cleanup:
 }
 
 
-int MMSoundClientPlaySound(MMSoundParamType *param, int dtmf, int keytone, int *handle)
+int MMSoundClientPlaySound(MMSoundParamType *param, int tone, int keytone, int *handle)
 {
 	mm_ipc_msg_t msgrcv = {0,};
 	mm_ipc_msg_t msgsnd = {0,};
@@ -641,7 +543,7 @@ int MMSoundClientPlaySound(MMSoundParamType *param, int dtmf, int keytone, int *
 		
 		msgsnd.sound_msg.memsize = param->mem_size;
 		msgsnd.sound_msg.volume = param->volume;
-		msgsnd.sound_msg.dtmf = dtmf;
+		msgsnd.sound_msg.tone = tone;
 		msgsnd.sound_msg.handle = -1;
 		msgsnd.sound_msg.repeat = param->loop;
 		msgsnd.sound_msg.volume_table = param->volume_table;
@@ -675,7 +577,7 @@ int MMSoundClientPlaySound(MMSoundParamType *param, int dtmf, int keytone, int *
 		msgsnd.sound_msg.callback = (void*)(param->callback);
 		msgsnd.sound_msg.cbdata = (void*)(param->data);
 		msgsnd.sound_msg.volume = param->volume;
-		msgsnd.sound_msg.dtmf = dtmf;
+		msgsnd.sound_msg.tone = tone;
 		msgsnd.sound_msg.handle = -1;
 		msgsnd.sound_msg.repeat = param->loop;
 		msgsnd.sound_msg.volume_table = param->volume_table;

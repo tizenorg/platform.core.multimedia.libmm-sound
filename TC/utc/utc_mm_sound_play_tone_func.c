@@ -78,10 +78,10 @@ cleanup ()
 void utc_mm_sound_play_tone_func_01()
 {
 	int ret = MM_ERROR_NONE;
-	MMSoundDtmf_t num = MM_SOUND_DTMF_3;
+	MMSoundTone_t tone_num = MM_SOUND_TONE_DTMF_0;
 	sound_time_msec_t msec = 1000;
-
-	ret = mm_sound_play_tone(num, VOLUME_TYPE_SYSTEM, msec);
+	int handle;
+	ret = mm_sound_play_tone(tone_num, VOLUME_TYPE_SYSTEM, 1.0, msec, &handle);
 
 	dts_check_eq(API_NAME, ret, MM_ERROR_NONE);
 
@@ -92,10 +92,11 @@ void utc_mm_sound_play_tone_func_01()
 void utc_mm_sound_play_tone_func_02()
 {
 	int ret = 0;
-	MMSoundDtmf_t num = 20; //this is invalid parameter
+	MMSoundTone_t tone_num = MM_SOUND_TONE_NUM; //this is invalid parameter
 	sound_time_msec_t msec = 1000;
+	int handle;
 
-	ret = mm_sound_play_tone(num, VOLUME_TYPE_SYSTEM, msec);
+	ret = mm_sound_play_tone(tone_num, VOLUME_TYPE_SYSTEM, 1.0, msec, &handle);
 
 	dts_check_ne(API_NAME, ret, MM_ERROR_NONE);
 

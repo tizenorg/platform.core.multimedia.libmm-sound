@@ -59,17 +59,15 @@ int MMSoundPluginScan(const char *plugindir, const int type, MMSoundPluginType *
     MMSoundPluginType plugin[100];
     int plugin_index = 0;
 
-    debug_enter("\n");
+    debug_fenter ();
 
     debug_msg(" Plugin dir :: %s \n", plugindir);
     err = _MMSoundPluginGetList(plugindir, &list);
     if (err != MM_ERROR_NONE)
         return err;
 
-    while((item = list[index++]) != NULL)
-    {
-        if(MMSoundPluginOpen(item, &plugin[plugin_index]) != MM_ERROR_NONE)
-        {
+    while((item = list[index++]) != NULL) {
+        if(MMSoundPluginOpen(item, &plugin[plugin_index]) != MM_ERROR_NONE) {
             debug_warning("%s is not sound plugin\n", item);
             continue;
         }
@@ -82,8 +80,7 @@ int MMSoundPluginScan(const char *plugindir, const int type, MMSoundPluginType *
     _MMSoundPluginDestroyList(list);
 
     *pluginlist = (MMSoundPluginType*) malloc(sizeof(MMSoundPluginType) * (plugin_index+1));
-    if ((*pluginlist) == NULL)
-    {
+    if ((*pluginlist) == NULL) {
         debug_critical("Memory allocation fail\n");
         /* Occur segmentation fault */
         *pluginlist = (void*)1;
@@ -94,7 +91,7 @@ int MMSoundPluginScan(const char *plugindir, const int type, MMSoundPluginType *
     (*pluginlist)[plugin_index].type = MM_SOUND_PLUGIN_TYPE_NONE;
     (*pluginlist)[plugin_index].module = NULL;
 
-    debug_leave("\n");
+    debug_fleave ();
 
     return MM_ERROR_NONE;
 }
@@ -103,16 +100,15 @@ int MMSoundPluginRelease(MMSoundPluginType *pluginlist)
 {
     int loop = 0;
 
-    debug_enter("\n");
+    debug_fenter ();
 
-    while (pluginlist[loop].type != MM_SOUND_PLUGIN_TYPE_NONE)
-    {
+    while (pluginlist[loop].type != MM_SOUND_PLUGIN_TYPE_NONE) {
         MMSoundPluginClose(&pluginlist[loop++]);
     }
 
     free (pluginlist);
 
-    debug_leave("\n");
+    debug_fleave ();
 
     return MM_ERROR_NONE;
 }
@@ -123,7 +119,7 @@ int MMSoundPluginOpen(char *file, MMSoundPluginType *plugin)
     int (*func)(void) = NULL;
     int t = -1;
 
-    debug_enter("\n");
+    debug_fenter ();
 
     pdll = dlopen(file, RTLD_NOW|RTLD_GLOBAL);
 
@@ -156,21 +152,21 @@ int MMSoundPluginOpen(char *file, MMSoundPluginType *plugin)
             return MM_ERROR_SOUND_INVALID_FILE;
     }
 
-    debug_leave("\n");
+    debug_fleave ();
 
     return MM_ERROR_NONE;
 }
 
 int MMSoundPluginClose(MMSoundPluginType *plugin)
 {
-    debug_enter("\n");
+	debug_fenter ();
 
     if(plugin->module)
         dlclose(plugin->module);
     plugin->type = MM_SOUND_PLUGIN_TYPE_NONE;
     plugin->module = NULL;
 
-    debug_leave("\n");
+    debug_fleave ();
     return MM_ERROR_NONE;
 }
 
@@ -178,7 +174,7 @@ int MMSoundPluginGetSymbol(MMSoundPluginType *plugin, const char *symbol, void *
 {
     void *fn = NULL;
 
-    debug_enter("\n");
+    debug_fenter ();
 
     if (plugin->module == NULL)
         return MM_ERROR_SOUND_INVALID_FILE;
@@ -187,8 +183,7 @@ int MMSoundPluginGetSymbol(MMSoundPluginType *plugin, const char *symbol, void *
         return MM_ERROR_SOUND_INVALID_FILE;
     *func = fn;
 
-    debug_leave("\n");
-
+    debug_fleave ();
     return MM_ERROR_NONE;
 }
 #define MAX_PATH_SIZE 256
@@ -210,17 +205,14 @@ static int _MMSoundPluginGetList(const char *plugdir ,char ***list)
 		return MM_ERROR_INVALID_ARGUMENT;
 
 	temp = (char **)malloc(sizeof(char *) * (items + 1));
-	if(!temp) 
-	{
+	if(!temp) {
 		ret = MM_ERROR_OUT_OF_MEMORY;
 		goto free_entry;
 	}
 	memset(temp, 0, sizeof(char*) * (items + 1));
 	memset(curdir, '\0', sizeof(curdir));
-	if(NULL == getcwd(curdir, sizeof(curdir)-1))
-	{
-		if (temp)
-		{
+	if(NULL == getcwd(curdir, sizeof(curdir)-1)) {
+		if (temp) {
 			free (temp);
 			temp = NULL;
 		}
@@ -229,13 +221,10 @@ static int _MMSoundPluginGetList(const char *plugdir ,char ***list)
 	}
 	chdir(plugdir);
 
-	for(item_idx = items; item_idx--; )
-	{
-		if(stat(entry[item_idx]->d_name, &finfo) < 0)
-		{
+	for(item_idx = items; item_idx--; ) {
+		if(stat(entry[item_idx]->d_name, &finfo) < 0) {
 			debug_error("Stat error\n");
-			if (temp)
-			{
+			if (temp) {
 				free(temp);
 				temp = NULL;
 			}
@@ -245,15 +234,13 @@ static int _MMSoundPluginGetList(const char *plugdir ,char ***list)
 
 		debug_msg("item %d is %s\n", item_idx, entry[item_idx]->d_name);
 		
-		if (S_ISREG(finfo.st_mode))
-		{
+		if (S_ISREG(finfo.st_mode)) {
 			temp[tn++] = __strcatdup(plugdir, entry[item_idx]->d_name);
 		}
 	}
 	*list =  temp;
 free_entry:
-	for(item_idx = 0; item_idx < items; item_idx++)
-	{	
+	for(item_idx = 0; item_idx < items; item_idx++) {
 		free(entry[item_idx]);
 	}
 	free(entry);
@@ -263,8 +250,7 @@ free_entry:
 static int _MMSoundPluginDestroyList(char **list)
 {
 	int tn = 0;
-	while(list[tn])
-	{
+	while(list[tn]) {
 		free(list[tn++]);
 	}
 	free (list);
@@ -284,4 +270,3 @@ static char* __strcatdup(const char *str1, const char *str2)
     strncat(dest, str2, len-1);
     return dest;
 }
-

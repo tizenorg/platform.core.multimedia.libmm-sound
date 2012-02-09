@@ -34,29 +34,26 @@ static MMSoundPluginType *g_run_plugins = NULL;
 
 int MMSoundMgrRunInit(const char *targetdir)
 {
-    debug_enter("\n");
+    debug_fenter();
 
-    if (g_run_plugins)
-    {
+    if (g_run_plugins) {
         debug_error("Please Check Init twice\n");
         return MM_ERROR_SOUND_INTERNAL;
     }
     MMSoundPluginScan(targetdir, MM_SOUND_PLUGIN_TYPE_RUN, &g_run_plugins);
 
-    debug_leave("\n");
-
+    debug_fleave();
     return MM_ERROR_NONE;
 }
 
 int MMSoundMgrRunFini(void)
 {
-    debug_enter("\n");
+	debug_fenter();
 
     MMSoundPluginRelease(g_run_plugins);
     g_run_plugins = NULL;
 
-    debug_leave("\n");
-
+    debug_fleave();
     return MM_ERROR_NONE;
 }
 
@@ -64,16 +61,14 @@ int MMSoundMgrRunRunAll(void)
 {
     int loop = 0;
 
-    debug_enter("\n");
+    debug_fenter();
 
-    while (g_run_plugins[loop].type != MM_SOUND_PLUGIN_TYPE_NONE)
-    {
+    while (g_run_plugins[loop].type != MM_SOUND_PLUGIN_TYPE_NONE) {
         MMSoundThreadPoolRun((void*)loop, _MMsoundMgrRunRunInternal);
         loop++;
     }
 
-    debug_leave("\n");
-
+    debug_fleave();
     return MM_ERROR_NONE;
 }
 
@@ -83,10 +78,9 @@ int MMSoundMgrRunStopAll(void)
 	void *func = NULL;
 	int loop = 0;
 
-	debug_enter("\n");
+	debug_fenter();
 
-	while (g_run_plugins[loop].type != MM_SOUND_PLUGIN_TYPE_NONE)
-	{
+	while (g_run_plugins[loop].type != MM_SOUND_PLUGIN_TYPE_NONE) {
 		debug_msg("loop : %d\n", loop);	
 		MMSoundPluginGetSymbol(&g_run_plugins[loop], RUN_GET_INTERFACE_FUNC_NAME, &func);
 		MMSoundPlugRunCastGetInterface(func)(&intface);
@@ -94,8 +88,7 @@ int MMSoundMgrRunStopAll(void)
 		loop++;
 	}
 
-    debug_leave("\n");
-
+	debug_fleave();
     return MM_ERROR_NONE;
 }
 
@@ -108,13 +101,11 @@ static void _MMsoundMgrRunRunInternal(void *param)
 	debug_enter("plugin number %d\n", (int)param);
 
 	err = MMSoundPluginGetSymbol(&g_run_plugins[(int)param], RUN_GET_INTERFACE_FUNC_NAME, &func);
-	if (err  != MM_ERROR_NONE)
-	{
+	if (err  != MM_ERROR_NONE) {
 		debug_error("Get Symbol RUN_GET_INTERFACE_FUNC_NAME is fail : %x\n", err);
 	}
 	err = MMSoundPlugRunCastGetInterface(func)(&intface);
-	if (err != MM_ERROR_NONE)
-	{
+	if (err != MM_ERROR_NONE) {
 		debug_error("Get interface fail : %x\n", err);
 		/* If error occur, clean interface */
 		//memset(&g_run_plugins[(int)param], 0, sizeof(mmsound_run_interface_t));
@@ -124,6 +115,7 @@ static void _MMsoundMgrRunRunInternal(void *param)
 	intface.run();
 	debug_msg("Trace\n");
 	debug_msg("Trace\n");
-	debug_leave("\n");
+
+	debug_fleave();
 }
 

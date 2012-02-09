@@ -26,7 +26,7 @@
 #include <mm_source.h>
 
 typedef struct {
-	int dtmf;
+	int tone;
 	int repeat_count;
 	double volume;
 	int session_type;

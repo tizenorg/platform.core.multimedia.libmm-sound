@@ -26,7 +26,7 @@ TS13 = utc_mm_sound_pcm_play_write_func
 TS14 = utc_mm_sound_pcm_play_close_func
 TS15 = utc_mm_sound_play_sound_func
 TS16 = utc_mm_sound_stop_sound_func
-TS17 = utc_mm_sound_play_dtmf_func
+TS17 = utc_mm_sound_play_tone_func
 TS18 = utc_mm_sound_play_keysound_func
 
 

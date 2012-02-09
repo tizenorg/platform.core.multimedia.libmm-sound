@@ -114,8 +114,8 @@ void utc_mm_sound_stop_sound_func_01();
 void utc_mm_sound_stop_sound_func_02();
 
 
-void utc_mm_sound_play_dtmf_func_01();
-void utc_mm_sound_play_dtmf_func_02();
+void utc_mm_sound_play_tone_func_01();
+void utc_mm_sound_play_tone_func_02();
 
 
 void utc_mm_sound_play_keysound_func_01();

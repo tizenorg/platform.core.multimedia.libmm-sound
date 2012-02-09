@@ -1,1 +1,1 @@
-SUBDIRS = headset wav keytone dtmf
+SUBDIRS = headset wav keytone tone

@@ -112,7 +112,7 @@ server/plugin/Makefile
 server/plugin/wav/Makefile
 server/plugin/keytone/Makefile
 server/plugin/headset/Makefile
-server/plugin/dtmf/Makefile
+server/plugin/tone/Makefile
 pkgconfig/Makefile
 pkgconfig/mm-sound.pc
 pkgconfig/mm-keysound.pc

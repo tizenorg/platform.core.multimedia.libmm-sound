@@ -50,7 +50,7 @@
 #define MAX_FILE_LENGTH 256
 #define MAX_MEMORY_SIZE 1048576	/* Max memory size 1024*1024 (1MB) */
 #define _MIN_SYSTEM_SAMPLERATE	8000
-#define _MAX_SYSTEM_SAMPLERATE	44100
+#define _MAX_SYSTEM_SAMPLERATE	48000
 #define MIN_TONE_PLAY_TIME 300
 
 typedef struct {
@@ -70,11 +70,9 @@ int _validate_volume(volume_type_t type, int value)
 
 	switch (type)
 	{
-
 	case VOLUME_TYPE_ALARM:
 	case VOLUME_TYPE_CALL:
-		if (value >= AVSYS_AUDIO_VOLUME_MAX_BASIC)
-		{
+		if (value >= AVSYS_AUDIO_VOLUME_MAX_BASIC) {
 			return -1;
 		}
 		break;
@@ -83,14 +81,12 @@ int _validate_volume(volume_type_t type, int value)
 	case VOLUME_TYPE_EXT_JAVA:
 	case VOLUME_TYPE_NOTIFICATION:
 	case VOLUME_TYPE_RINGTONE:
-		if (value >= AVSYS_AUDIO_VOLUME_MAX_MULTIMEDIA)
-		{
+		if (value >= AVSYS_AUDIO_VOLUME_MAX_MULTIMEDIA) {
 			return -1;
 		}
 		break;
 	case VOLUME_TYPE_EXT_ANDROID:
-		if (value >= AVSYS_AUDIO_VOLUME_MAX_SINGLE)
-		{
+		if (value >= AVSYS_AUDIO_VOLUME_MAX_SINGLE) {
 			return -1;
 		}
 		break;
@@ -123,12 +119,13 @@ int mm_sound_volume_add_callback(volume_type_t type, volume_callback_fn func, vo
 	char *keystr[] = {VCONF_KEY_VOLUME_TYPE_SYSTEM, VCONF_KEY_VOLUME_TYPE_NOTIFICATION, VCONF_KEY_VOLUME_TYPE_ALARM,
 			VCONF_KEY_VOLUME_TYPE_RINGTONE, VCONF_KEY_VOLUME_TYPE_MEDIA, VCONF_KEY_VOLUME_TYPE_CALL,
 			VCONF_KEY_VOLUME_TYPE_ANDROID,VCONF_KEY_VOLUME_TYPE_JAVA};
+
 	debug_fenter();
 
+	/* Check input param */
 	if(type < VOLUME_TYPE_SYSTEM || type >=VOLUME_TYPE_MAX) {
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-
 	if(!func) {
 		debug_warning("callback function is null\n");
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -180,23 +177,25 @@ EXPORT_API
 int mm_sound_volume_get_step(volume_type_t type, int *step)
 {
 	int err;
+
 	debug_fenter();
-	if(step == NULL)
-	{
+
+	/* Check input param */
+	if(step == NULL) {
 		debug_error("second parameter is null\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	if(type < VOLUME_TYPE_SYSTEM || type >= VOLUME_TYPE_MAX)
-	{
+	if(type < VOLUME_TYPE_SYSTEM || type >= VOLUME_TYPE_MAX) {
 		debug_error("Invalid type value %d\n", (int)type);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	err = avsys_audio_get_volume_max_ex((int)type, step);
 
-	if (AVSYS_FAIL(err))
-	{
+	err = avsys_audio_get_volume_max_ex((int)type, step);
+	if (AVSYS_FAIL(err)) {
 		err = MM_ERROR_INVALID_ARGUMENT;
 	}
+
+	debug_fleave();
 	return MM_ERROR_NONE;
 }
 
@@ -209,23 +208,26 @@ int mm_sound_volume_set_value(volume_type_t type, const unsigned int value)
 			VCONF_KEY_VOLUME_TYPE_ANDROID,VCONF_KEY_VOLUME_TYPE_JAVA};
 
 	debug_fenter();
+
+	/* Check input param */
 	if(0 > _validate_volume(type, (int)value)) {
 		debug_error("invalid volume type %d, value %u\n", type, value);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if(vconf_set_int(keystr[type], value)){
+	/* Set volume value to VCONF */
+	if(vconf_set_int(keystr[type], value)) {
 		debug_error("Can not set %s as %d\n", keystr[type], value);
 		ret = MM_ERROR_SOUND_INTERNAL;
-	}
-	else {
-		//update shared memory value
+	} else {
+		/* update shared memory value */
 		ret = avsys_audio_set_volume_by_type(type, value);
 		if(AVSYS_FAIL(ret)) {
 			debug_error("Can not set volume to shared memory 0x%x\n", ret);
 		}
 	}
 
+	debug_fleave();
 	return ret;
 }
 
@@ -238,19 +240,22 @@ int mm_sound_volume_get_value(volume_type_t type, unsigned int *value)
 			VCONF_KEY_VOLUME_TYPE_ANDROID,VCONF_KEY_VOLUME_TYPE_JAVA};
 
 	debug_fenter();
+
+	/* Check input param */
 	if(value == NULL)
 		return MM_ERROR_INVALID_ARGUMENT;
-
 	if(type < 0 || type >= VOLUME_TYPE_MAX) {
 		debug_error("invalid volume type value %d\n", type);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	/* Get volume value from VCONF */
 	if(vconf_get_int(keystr[type], (int*)value)) {
 		debug_error("Can not get value of %s\n", keystr[type]);
 		ret = MM_ERROR_SOUND_INTERNAL;
 	}
 
+	debug_fleave();
 	return ret;
 }
 
@@ -260,17 +265,19 @@ int mm_sound_volume_primary_type_set(volume_type_t type)
 	pid_t mypid;
 	int ret = MM_ERROR_NONE;
 
+	/* Check input param */
 	if(type < VOLUME_TYPE_SYSTEM || type >= VOLUME_TYPE_MAX)
 		return MM_ERROR_INVALID_ARGUMENT;
 
 	debug_fenter();
+
 	mypid = getpid();
-	if(AVSYS_FAIL(avsys_audio_set_primary_volume((int)mypid, type)))
-	{
+	if(AVSYS_FAIL(avsys_audio_set_primary_volume((int)mypid, type))) {
 		debug_error("Can not set primary volume [%d, %d]\n", mypid, type);
 		ret = MM_ERROR_SOUND_INTERNAL;
 	}
 
+	debug_fleave();
 	return ret;
 }
 
@@ -281,13 +288,14 @@ int mm_sound_volume_primary_type_clear()
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
+
 	mypid = getpid();
-	if(AVSYS_FAIL(avsys_audio_clear_primary_volume((int)mypid)))
-	{
+	if(AVSYS_FAIL(avsys_audio_clear_primary_volume((int)mypid))) {
 		debug_error("Can not clear primary volume [%d]\n", mypid);
 		ret = MM_ERROR_SOUND_INTERNAL;
 	}
 
+	debug_fleave();
 	return ret;
 }
 
@@ -298,6 +306,8 @@ int mm_sound_volume_get_current_playing_type(volume_type_t *type)
 	int voltype = AVSYS_AUDIO_VOLUME_TYPE_SYSTEM;
 
 	debug_fenter();
+
+	/* Check input param */
 	if(type == NULL) {
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -306,14 +316,11 @@ int mm_sound_volume_get_current_playing_type(volume_type_t *type)
 	if(result == AVSYS_STATE_SUCCESS) {
 		*type = voltype;
 		return MM_ERROR_NONE;
-	}
-	else if(result ==AVSYS_STATE_ERR_ALLOCATION ) {
+	} else if(result ==AVSYS_STATE_ERR_ALLOCATION ) {
 		return MM_ERROR_SOUND_VOLUME_NO_INSTANCE;
-	}
-	else if(result == AVSYS_STATE_ERR_INVALID_MODE) {
+	} else if(result == AVSYS_STATE_ERR_INVALID_MODE) {
 		return MM_ERROR_SOUND_VOLUME_CAPTURE_ONLY;
-	}
-	else {
+	} else {
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 }
@@ -327,6 +334,10 @@ typedef struct {
 	int					asm_handle;
 	ASM_sound_events_t	asm_event;
 	int					asm_valid_flag;
+
+	MMMessageCallback	msg_cb;
+	void *msg_cb_param;
+
 } mm_sound_pcm_t;
 
 int _get_asm_event_type(ASM_sound_events_t *type)
@@ -337,20 +348,18 @@ int _get_asm_event_type(ASM_sound_events_t *type)
 	if(type == NULL)
 		return MM_ERROR_SOUND_INVALID_POINTER;
 
-	// read session type
-	if(_mm_session_util_read_type(-1, &sessionType) < 0)
-	{
-		debug_error("Read Session Type failed. Set default \"Share\" type\n");
+	/* read session type */
+	if(_mm_session_util_read_type(-1, &sessionType) < 0) {
+		debug_log("Read Session Type failed. Set default \"Share\" type\n");
 		sessionType = MM_SESSION_TYPE_SHARE;
-		if(mm_session_init(sessionType) < 0)
-		{
+		if(mm_session_init(sessionType) < 0) {
 			debug_error("mm_session_init() failed\n");
 			return MM_ERROR_SOUND_INTERNAL;
 		}
 	}
 
-	// convert MM_SESSION_TYPE to ASM_EVENT_TYPE
-	switch(sessionType)
+	/* convert MM_SESSION_TYPE to ASM_EVENT_TYPE */
+	switch (sessionType)
 	{
 	case MM_SESSION_TYPE_SHARE:
 		asm_event = ASM_EVENT_SHARE_MMSOUND;
@@ -379,16 +388,31 @@ int _get_asm_event_type(ASM_sound_events_t *type)
 	return MM_ERROR_NONE;
 }
 
-ASM_cb_result_t
-sound_pcm_asm_callback(int handle, ASM_event_sources_t event_src, ASM_sound_commands_t command, unsigned int sound_status, void* cb_data)
+void __sound_pcm_send_message (mm_sound_pcm_t *pcmHandle, int message, int code)
+{
+	int ret = 0;
+	if (pcmHandle->msg_cb) {
+		MMMessageParamType msg;
+		msg.union_type = MM_MSG_UNION_CODE;
+		msg.code = code;
+
+		debug_log ("calling msg callback(%p) with message(%d), code(%d), msg callback param(%p)\n",
+				pcmHandle->msg_cb, message, msg.code, pcmHandle->msg_cb_param);
+		ret = pcmHandle->msg_cb(message, &msg, pcmHandle->msg_cb_param);
+		debug_log ("msg callback returned (%d)\n", ret);
+	} else {
+		debug_log ("No pcm msg callback\n");
+	}
+}
+
+ASM_cb_result_t sound_pcm_asm_callback(int handle, ASM_event_sources_t event_src, ASM_sound_commands_t command, unsigned int sound_status, void *cb_data)
 {
 	mm_sound_pcm_t *pcmHandle = NULL;
-
 	ASM_cb_result_t	cb_res = ASM_CB_RES_IGNORE;
 
-	pcmHandle = (mm_sound_pcm_t*)cb_data;
-	if(pcmHandle == NULL)
-	{
+	/* Check input param */
+	pcmHandle = (mm_sound_pcm_t *)cb_data;
+	if(pcmHandle == NULL) {
 		debug_error("sound_pcm_asm_callback cb_data is null\n");
 		return cb_res;
 	}
@@ -408,6 +432,9 @@ sound_pcm_asm_callback(int handle, ASM_event_sources_t event_src, ASM_sound_comm
 		break;
 	}
 
+	/* execute user callback if callback available */
+	__sound_pcm_send_message (pcmHandle, MM_MESSAGE_SOUND_PCM_INTERRUPTED, event_src);
+
 	return cb_res;
 }
 
@@ -420,15 +447,13 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 	int result = AVSYS_STATE_SUCCESS;
 	int errorcode = 0;
 
+	debug_fenter();
 	memset(&param, 0, sizeof(avsys_audio_param_t));
 
-	if(rate < _MIN_SYSTEM_SAMPLERATE || rate > _MAX_SYSTEM_SAMPLERATE)
-	{
+	if (rate < _MIN_SYSTEM_SAMPLERATE || rate > _MAX_SYSTEM_SAMPLERATE) {
 		debug_error("unsupported sample rate %u", rate);
 		return MM_ERROR_SOUND_DEVICE_INVALID_SAMPLERATE;
-	}
-	else
-	{
+	} else {
 		param.samplerate = rate;
 	}
 
@@ -438,7 +463,7 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 		param.channels = 1;
 		break;
 	case MMSOUND_PCM_STEREO:
-		debug_error("Capture does not support stereo for now\n");
+		param.channels = 2;
 		break;
 
 	default:
@@ -463,12 +488,13 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 	if(pcmHandle == NULL)
 		return MM_ERROR_OUT_OF_MEMORY;
 
-	//get session type
+	/* Register ASM */
+	/* get session type */
 	if(MM_ERROR_NONE != _get_asm_event_type(&pcmHandle->asm_event)) {
 		free(pcmHandle);
 		return MM_ERROR_POLICY_INTERNAL;
 	}
-	//register asm as playing
+	/* register asm as playing */
 	if(pcmHandle->asm_event != ASM_EVENT_CALL && pcmHandle->asm_event != ASM_EVENT_VIDEOCALL) {
 		if(!ASM_register_sound(-1, &pcmHandle->asm_handle, pcmHandle->asm_event,
 				ASM_STATE_PLAYING, sound_pcm_asm_callback, (void*)pcmHandle, ASM_RESOURCE_NONE, &errorcode))
@@ -478,23 +504,23 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 			return MM_ERROR_POLICY_BLOCKED;
 		}
 	}
-	//set asm valid flag
 	pcmHandle->asm_valid_flag = 1;
 
+	/* Open */
 	param.mode = AVSYS_AUDIO_MODE_INPUT;
 	param.vol_type = AVSYS_AUDIO_VOLUME_TYPE_SYSTEM; //dose not effect at capture mode
 	param.priority = AVSYS_AUDIO_PRIORITY_0;		//This does not affect anymore.
-
 	result = avsys_audio_open(&param, &pcmHandle->audio_handle, &size);
-	if(AVSYS_FAIL(result))
-	{
+	if(AVSYS_FAIL(result)) {
 		debug_error("Device Open Error 0x%x\n", result);
 		free(pcmHandle);
 		return MM_ERROR_SOUND_DEVICE_NOT_OPENED;
 	}
 
+	/* Set handle to return */
 	*handle = (MMSoundPcmHandle_t)pcmHandle;
 
+	debug_fleave();
 	return size;
 }
 
@@ -503,24 +529,26 @@ int mm_sound_pcm_capture_read(MMSoundPcmHandle_t handle, void *buffer, const uns
 {
 	mm_sound_pcm_t *pcmHandle = NULL;
 
+	/* Check input param */
 	pcmHandle = (mm_sound_pcm_t*)handle;
 	if(pcmHandle == NULL)
 		return MM_ERROR_INVALID_ARGUMENT;
-
-	if(buffer == NULL)
-	{
+	if(buffer == NULL) {
 		debug_error("Invalid buffer pointer\n");
 		return MM_ERROR_SOUND_INVALID_POINTER;
 	}
+	if(length == 0 )
+		return 0;
 
-	if(!pcmHandle->asm_valid_flag)
-	{
+	/* Check ASM */
+	if(!pcmHandle->asm_valid_flag) {
 		return MM_ERROR_POLICY_INTERRUPTED;
 	}
 
 	if(length == 0 )
 		return 0;
 
+	/* Read */
 	return avsys_audio_read(pcmHandle->audio_handle, buffer, length);
 }
 
@@ -531,28 +559,49 @@ int mm_sound_pcm_capture_close(MMSoundPcmHandle_t handle)
 	mm_sound_pcm_t *pcmHandle = NULL;
 	int errorcode = 0;
 
+	debug_fenter();
+
+	/* Check input param */
 	pcmHandle = (mm_sound_pcm_t*)handle;
-	if(pcmHandle==NULL)
+	if(pcmHandle == NULL)
 		return MM_ERROR_INVALID_ARGUMENT;
 
+	/* Close */
 	result = avsys_audio_close(pcmHandle->audio_handle);
-	if(AVSYS_FAIL(result))
-	{
+	if(AVSYS_FAIL(result)) {
 		debug_error("handle close failed 0x%X", result);
 		result = MM_ERROR_SOUND_INTERNAL;
 	}
 
-     if(pcmHandle->asm_event != ASM_EVENT_CALL && pcmHandle->asm_event != ASM_EVENT_VIDEOCALL)
-    {
-    	if(!ASM_unregister_sound(pcmHandle->asm_handle, pcmHandle->asm_event, &errorcode))
-    	{
+	/* Unregister ASM */
+	if(pcmHandle->asm_event != ASM_EVENT_CALL && pcmHandle->asm_event != ASM_EVENT_VIDEOCALL) {
+		if(!ASM_unregister_sound(pcmHandle->asm_handle, pcmHandle->asm_event, &errorcode)) {
     		debug_error("ASM_unregister failed in %s with 0x%x\n", __func__, errorcode);
     	}
     	pcmHandle->asm_valid_flag = 0;
     }
-    free(pcmHandle);    pcmHandle= NULL;
 
+	/* Free handle */
+	free(pcmHandle);    pcmHandle= NULL;
+
+	debug_fleave();
 	return result;
+}
+
+EXPORT_API
+int mm_sound_pcm_set_message_callback (MMSoundPcmHandle_t handle, MMMessageCallback callback, void *user_param)
+{
+	mm_sound_pcm_t *pcmHandle =  (mm_sound_pcm_t*)handle;
+
+	if(pcmHandle == NULL || callback == NULL)
+		return MM_ERROR_INVALID_ARGUMENT;
+
+	pcmHandle->msg_cb = callback;
+	pcmHandle->msg_cb_param = user_param;
+
+	debug_log ("set pcm message callback (%p,%p)\n", callback, user_param);
+
+	return MM_ERROR_NONE;
 }
 
 
@@ -569,24 +618,19 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 	debug_fenter();
 	memset(&param, 0, sizeof(avsys_audio_param_t));
 
+	/* Check input param */
 	if(vol_type < 0) {
 		debug_error("Volume type should not be negative value\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-
-
 	if(vol_type >= VOLUME_TYPE_MAX) {
 		debug_error("Volume type should be under VOLUME_TYPE_MAX\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-
-	if(rate < _MIN_SYSTEM_SAMPLERATE || rate > _MAX_SYSTEM_SAMPLERATE)
-	{
+	if(rate < _MIN_SYSTEM_SAMPLERATE || rate > _MAX_SYSTEM_SAMPLERATE) {
 		debug_error("unsupported sample rate %u", rate);
 		return MM_ERROR_SOUND_DEVICE_INVALID_SAMPLERATE;
-	}
-	else
-	{
+	} else {
 		param.samplerate = rate;
 	}
 
@@ -620,19 +664,18 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 	if(pcmHandle == NULL)
 		return MM_ERROR_OUT_OF_MEMORY;
 
+	/* Register ASM */
 	debug_log ("session start : input asm_event = %d-------------\n", asm_event);
 	//get session type
 	if (asm_event == ASM_EVENT_NONE) {
-
 		if(MM_ERROR_NONE != _get_asm_event_type(&pcmHandle->asm_event)) {
 			free(pcmHandle);
 			return MM_ERROR_POLICY_INTERNAL;
 		}
 		//register asm as playing
-		 if(pcmHandle->asm_event != ASM_EVENT_CALL && pcmHandle->asm_event != ASM_EVENT_VIDEOCALL) {
+		if(pcmHandle->asm_event != ASM_EVENT_CALL && pcmHandle->asm_event != ASM_EVENT_VIDEOCALL) {
 			if(!ASM_register_sound(-1, &pcmHandle->asm_handle, pcmHandle->asm_event,
-					ASM_STATE_PLAYING, sound_pcm_asm_callback, (void*)pcmHandle, ASM_RESOURCE_NONE, &errorcode))
-			{
+					ASM_STATE_PLAYING, sound_pcm_asm_callback, (void*)pcmHandle, ASM_RESOURCE_NONE, &errorcode)) {
 				debug_error("ASM_register_sound() failed 0x%x\n", errorcode);
 				free(pcmHandle);
 				return MM_ERROR_POLICY_BLOCKED;
@@ -640,14 +683,12 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 		}
 	} else {
 		if(!ASM_register_sound(-1, &pcmHandle->asm_handle, asm_event,
-				ASM_STATE_PLAYING, NULL, (void*)pcmHandle, ASM_RESOURCE_NONE, &errorcode))
-		{
+				ASM_STATE_PLAYING, NULL, (void*)pcmHandle, ASM_RESOURCE_NONE, &errorcode)) {
 			debug_error("ASM_register_sound() failed 0x%x\n", errorcode);
 			free(pcmHandle);
 			return MM_ERROR_POLICY_BLOCKED;
 		}
 	}
-	//set asm valid flag
 	pcmHandle->asm_valid_flag = 1;
 
 	param.mode = AVSYS_AUDIO_MODE_OUTPUT;
@@ -656,19 +697,19 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 
 //	avsys_audio_ampon();
 
+	/* Open */
 	debug_log ("avsys open -------------\n");
 	result = avsys_audio_open(&param, &pcmHandle->audio_handle, &size);
-	if(AVSYS_FAIL(result))
-	{
+	if(AVSYS_FAIL(result)) {
 		debug_error("Device Open Error 0x%x\n", result);
 		free(pcmHandle);
 		return MM_ERROR_SOUND_DEVICE_NOT_OPENED;
 	}
 
+	/* Set handle to return */
 	*handle = (MMSoundPcmHandle_t)pcmHandle;
 
 	debug_fleave();
-
 	return size;
 }
 
@@ -683,22 +724,22 @@ int mm_sound_pcm_play_write(MMSoundPcmHandle_t handle, void* ptr, unsigned int l
 {
 	mm_sound_pcm_t *pcmHandle = NULL;
 
+	/* Check input param */
 	pcmHandle = (mm_sound_pcm_t*)handle;
 	if(pcmHandle == NULL)
 		return MM_ERROR_INVALID_ARGUMENT;
-
-	if(ptr == NULL)
-	{
+	if(ptr == NULL) {
 		debug_error("Invalid buffer pointer\n");
 		return MM_ERROR_SOUND_INVALID_POINTER;
 	}
-
-	if(!pcmHandle->asm_valid_flag)
-		return MM_ERROR_POLICY_INTERRUPTED;
-
 	if(length_byte == 0 )
 		return 0;
 
+	/* Check ASM */
+	if(!pcmHandle->asm_valid_flag)
+		return MM_ERROR_POLICY_INTERRUPTED;
+
+	/* Write */
 	return avsys_audio_write(pcmHandle->audio_handle, ptr, length_byte);
 }
 
@@ -709,31 +750,34 @@ int mm_sound_pcm_play_close(MMSoundPcmHandle_t handle)
 	mm_sound_pcm_t *pcmHandle = NULL;
 	int errorcode = 0;
 
+	/* Check input param */
 	pcmHandle = (mm_sound_pcm_t*)handle;
 	if(pcmHandle == NULL)
 		return MM_ERROR_INVALID_ARGUMENT;
 
-	if(AVSYS_FAIL(avsys_audio_drain(pcmHandle->audio_handle)))
-	{
+	/* Drain */
+	if(AVSYS_FAIL(avsys_audio_drain(pcmHandle->audio_handle))) {
 		debug_error("drain failed\n");
 	}
 
+	/* Close */
 	result = avsys_audio_close(pcmHandle->audio_handle);
-	if(AVSYS_FAIL(result))
-	{
+	if(AVSYS_FAIL(result)) {
 		debug_error("handle close failed 0x%X", result);
 		result = MM_ERROR_SOUND_INTERNAL;
 	}
 
-     if(pcmHandle->asm_event != ASM_EVENT_CALL && pcmHandle->asm_event != ASM_EVENT_VIDEOCALL)
-    {
-    	if(!ASM_unregister_sound(pcmHandle->asm_handle, pcmHandle->asm_event, &errorcode))
-    	{
+	/* Unregister ASM */
+	if(pcmHandle->asm_event != ASM_EVENT_CALL && pcmHandle->asm_event != ASM_EVENT_VIDEOCALL) {
+		if(!ASM_unregister_sound(pcmHandle->asm_handle, pcmHandle->asm_event, &errorcode)) {
     		debug_error("ASM_unregister failed in %s with 0x%x\n",__func__, errorcode);
     	}
     	pcmHandle->asm_valid_flag = 0;
     }
+
+	/* Free handle */
     free(pcmHandle);    pcmHandle= NULL;
+
 	return result;
 }
 
@@ -750,17 +794,17 @@ int mm_sound_play_loud_solo_sound(const char *filename, const volume_type_t volu
 
 	debug_fenter();
 
-	if(filename == NULL)
-	{
+	/* Check input param */
+	if(filename == NULL) {
 		debug_error("filename is NULL\n");
 		return MM_ERROR_SOUND_FILE_NOT_FOUND;
 	}
-
 	if(volume_type < 0 || volume_type >= VOLUME_TYPE_MAX) {
 		debug_error("Volume type should not be negative value\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	/* Play sound */
 	param.filename = filename;
 	param.volume = 0; //volume value dose not effect anymore
 	param.callback = callback;
@@ -771,20 +815,19 @@ int mm_sound_play_loud_solo_sound(const char *filename, const volume_type_t volu
 	param.bluetooth = MMSOUNDPARAM_SPEAKER_ONLY;
 
 	err = MMSoundClientPlaySound(&param, 0, 0, &lhandle);
-
 	if (err < 0) {
 		debug_error("Failed to play sound\n");
 		return err;
 	}
 
-	debug_fleave();
+	/* Set handle to return */
 	if (handle) {
 		*handle = lhandle;
-	}
-	else {
+	} else {
 		debug_critical("The sound handle cannot be get [%d]\n", lhandle);
 	}
 
+	debug_fleave();
 	return MM_ERROR_NONE;
 }
 
@@ -798,19 +841,19 @@ int mm_sound_play_solo_sound(const char *filename, const volume_type_t volume_ty
 
 	debug_fenter();
 
-	if(filename == NULL)
-	{
+	/* Check input param */
+	if(filename == NULL) {
 		debug_error("filename is NULL\n");
 		return MM_ERROR_SOUND_FILE_NOT_FOUND;
 	}
-
 	if(volume_type < 0 || volume_type >= VOLUME_TYPE_MAX) {
 		debug_error("Volume type should not be negative value\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	/* Play sound */
 	param.filename = filename;
-	param.volume = 0; //volume value dose not effect anymore
+	param.volume = 0; /* volume value dose not effect anymore */
 	param.callback = callback;
 	param.data = data;
 	param.loop = 1;
@@ -824,12 +867,13 @@ int mm_sound_play_solo_sound(const char *filename, const volume_type_t volume_ty
 		return err;
 	}
 
+	/* Set handle to return */
 	if (handle) {
 		*handle = lhandle;
-	}
-	else {
+	} else {
 		debug_critical("The sound handle cannot be get [%d]\n", lhandle);
 	}
+
 	debug_fleave();
 	return MM_ERROR_NONE;
 }
@@ -845,24 +889,23 @@ int mm_sound_play_sound(const char *filename, const volume_type_t volume_type, m
 
 	debug_fenter();
 
-	if(filename == NULL)
-	{
+	/* Check input param */
+	if(filename == NULL) {
 		debug_error("filename is NULL\n");
 		return MM_ERROR_SOUND_FILE_NOT_FOUND;
 	}
-
 	if(volume_type < 0) {
 		debug_error("Volume type should not be negative value\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-
 	if(volume_type >= VOLUME_TYPE_MAX) {
 		debug_error("Volume type should be under VOLUME_TYPE_MAX\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	/* Play sound */
 	param.filename = filename;
-	param.volume = 0; //volume value dose not effect anymore
+	param.volume = 0; /* volume value dose not effect anymore */
 	param.callback = callback;
 	param.data = data;
 	param.loop = 1;
@@ -871,18 +914,18 @@ int mm_sound_play_sound(const char *filename, const volume_type_t volume_type, m
 	param.bluetooth = AVSYS_AUDIO_HANDLE_ROUTE_FOLLOWING_POLICY;
 
 	err = MMSoundClientPlaySound(&param, 0, 0, &lhandle);
-
 	if (err < 0) {
 		debug_error("Failed to play sound\n");
 		return err;
 	}
 
+	/* Set handle to return */
 	if (handle) {
 		*handle = lhandle;
-	}
-	else {
+	} else {
 		debug_critical("The sound handle cannot be get [%d]\n", lhandle);
 	}
+
 	debug_fleave();
 	return MM_ERROR_NONE;
 }
@@ -896,24 +939,26 @@ int mm_sound_play_sound_ex(MMSoundParamType *param, int *handle)
 
 	debug_fenter();
 
+	/* Check input param */
 	if (param == NULL) {
 		debug_error("param is null\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	/* Play sound */
 	err = MMSoundClientPlaySound(param, 0, 0, &lhandle);
-
 	if (err < 0) {
 		debug_error("Failed to play sound\n");
 		return err;
 	}
 
+	/* Set handle to return */
 	if (handle) {
 		*handle = lhandle;
-	}
-	else {
+	} else {
 		debug_critical("The sound hadle cannot be get [%d]\n", lhandle);
 	}
+
 	debug_fleave();
 	return MM_ERROR_NONE;
 }
@@ -926,16 +971,14 @@ int mm_sound_stop_sound(int handle)
 
 	debug_fenter();
 
+	/* Stop sound */
 	err = MMSoundClientStopSound(handle);
-
-	if (err < 0)
-	{
+	if (err < 0) {
 		debug_error("Fail to stop sound\n");
 		return err;
 	}
 
 	debug_fleave();
-
 	return MM_ERROR_NONE;
 }
 
@@ -944,39 +987,11 @@ int mm_sound_stop_sound(int handle)
 ///////////////////////////////////
 ////     MMSOUND DTMF APIs
 ///////////////////////////////////
-#define NUMBER_OF_DTMF 12
-
 EXPORT_API 
 int mm_sound_play_dtmf(MMSoundDtmf_t num, const volume_type_t vol_type, const sound_time_msec_t time)
 {
-	int *handle = NULL;
-	int lhandle = -1;
-	int err = MM_ERROR_NONE;
-	sound_time_msec_t ltime = 0;
-	debug_fenter();
-	if(num < MM_SOUND_DTMF_0 || num > MM_SOUND_DTMF_SHARP) {
-		debug_error("number is invalid %d\n", num);
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-	if(time < 110 || time > 5000)
-	{
-		debug_error("time is invalid, time set to 200\n");
-		ltime = 153;
-	}
-	else {
-		ltime = time;
-	}
-
-	err = MMSoundClientPlayDTMF(num, vol_type, ltime, &lhandle);
-
-	if (err < 0) {
-		debug_error("Failed to play sound\n");
-		return err;
-	}
-
-	debug_fleave();
-
-	return MM_ERROR_NONE;
+	debug_critical("[%s] this API is deprecated...please use mm_sound_play_tone instead\n", __func__);
+	return MM_ERROR_NOT_IMPLEMENTED;
 }
 
 ///////////////////////////////////
@@ -985,29 +1000,8 @@ int mm_sound_play_dtmf(MMSoundDtmf_t num, const volume_type_t vol_type, const so
 EXPORT_API
 int mm_sound_play_beep (const volume_type_t vol_type, const int duration, int *handle)
 {
-	int lhandle = -1;
-	int err = MM_ERROR_NONE;
-	debug_fenter();
-
-	if(duration < -1) {
-		debug_error("number is invalid %d\n", duration);
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	/* call play dtmf with num -1 (this means beep) */
-	err = MMSoundClientPlayDTMF (-1, vol_type, duration, handle);
-
-	if (err < 0) {
-		debug_error("Failed to play sound\n");
-		return err;
-	}
-
-	if (handle)
-		*handle = lhandle;
-	else
-		debug_critical("The sound handle cannot be get [%d]\n", lhandle);
-	debug_fleave();
-	return MM_ERROR_NONE;
+	debug_critical("[%s] this API is deprecated...please use mm_sound_play_tone instead\n", __func__);
+	return MM_ERROR_NOT_IMPLEMENTED;
 }
 
 ///////////////////////////////////
@@ -1018,43 +1012,41 @@ int mm_sound_play_tone (MMSoundTone_t num, const volume_type_t vol_type, const d
 {
 	int lhandle = -1;
 	int err = MM_ERROR_NONE;
+
 	debug_fenter();
 
+	/* Check input param */
 	if(duration < -1) {
 		debug_error("number is invalid %d\n", duration);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-
-	if(num < MM_SOUND_TONE_DTMF_0 || num >= MM_SOUND_TONE_NUM)
-	{
+	if(num < MM_SOUND_TONE_DTMF_0 || num >= MM_SOUND_TONE_NUM) {
 		debug_error("TONE Value is invalid %d\n", num);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-
-	if(vol_type < VOLUME_TYPE_SYSTEM || vol_type >= VOLUME_TYPE_MAX)
-	{
+	if(vol_type < VOLUME_TYPE_SYSTEM || vol_type >= VOLUME_TYPE_MAX) {
 		debug_error("Volume Type is invalid %d\n", vol_type);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-
-	if(volume < 0.0 || volume > 1.0)
-	{
+	if(volume < 0.0 || volume > 1.0) {
 		debug_error("Volume Value is invalid %d\n", vol_type);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	debug_msg("Call MMSoundClientPlayDTMF\n");
-	err = MMSoundClientPlayTONE (num, vol_type, volume, duration, &lhandle);
-
+	/* Play tone */
+	debug_msg("Call MMSoundClientPlayTone\n");
+	err = MMSoundClientPlayTone (num, vol_type, volume, duration, &lhandle);
 	if (err < 0) {
 		debug_error("Failed to play sound\n");
 		return err;
 	}
 
+	/* Set handle to return */
 	if (handle)
 		*handle = lhandle;
 	else
 		debug_critical("The sound handle cannot be get [%d]\n", lhandle);
+
 	debug_fleave();
 	return MM_ERROR_NONE;
 }
@@ -1062,10 +1054,6 @@ int mm_sound_play_tone (MMSoundTone_t num, const volume_type_t vol_type, const d
 ///////////////////////////////////
 ////     MMSOUND ROUTING APIs
 ///////////////////////////////////
-#define UID_ROOT		0
-#define UID_INHOUSE		5000
-#define CHECK_PRIVILEGE(x)	((x==UID_ROOT || x==UID_INHOUSE)?1:0)
-
 EXPORT_API
 int mm_sound_set_path(int gain, int output, int input, int option)
 {
@@ -1076,14 +1064,12 @@ int mm_sound_set_path(int gain, int output, int input, int option)
 	debug_msg("gain: 0x%02X, output: %d, input: %d, option: 0x%x\n", gain, output, input, option);
 
 	err = avsys_audio_set_path_ex( gain, output, input, option);
-
 	if (err < 0) {
 		debug_error("avsys_audio_set_path() failed\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 
 	debug_fleave();
-
 	return MM_ERROR_NONE;
 }
 
@@ -1101,8 +1087,8 @@ int mm_sound_get_path(int *gain, int *output, int *input, int *option)
 	}
 
 	debug_msg("gain: 0x%02X, output: %d, input: %d, option: 0x%x\n", *gain, *output, *input, *option);
-	debug_fleave();
 
+	debug_fleave();
 	return MM_ERROR_NONE;
 }
 
@@ -1207,7 +1193,7 @@ int mm_sound_route_set_system_policy (system_audio_route_t route)
 		if (ret < 0) {
 			debug_error("MMSoundClientsetAudioRoute() Failed for sink [%d]\n", pa_sink);
 			if(pa_sink == USE_PA_SINK_ALSA) {
-				//PA_A2DP_SINK can be return error;
+				/* PA_A2DP_SINK can be return error; */
 				if(MM_ERROR_NONE != __mm_sound_unlock()) {
 					debug_error("Unlock failed\n");
 					return MM_ERROR_SOUND_INTERNAL;
@@ -1312,7 +1298,7 @@ int mm_sound_route_get_system_policy (system_audio_route_t *route)
 			av_route = -1;
 		}
 		if(av_route != *route) {
-			//match vconf & shared mem info
+			/* match vconf & shared mem info */
 			ret = avsys_audio_set_route_policy(*route);
 			if(AVSYS_FAIL(ret)) {
 				debug_error("avsys_audio_set_route_policy failed 0x%x\n", ret);
@@ -1329,7 +1315,7 @@ int mm_sound_route_get_system_policy (system_audio_route_t *route)
 
 
 EXPORT_API
-int mm_sound_route_get_a2dp_status (int* connected, char** bt_name)
+int mm_sound_route_get_a2dp_status (int *connected, char **bt_name)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -1348,7 +1334,6 @@ int mm_sound_route_get_a2dp_status (int* connected, char** bt_name)
 	}
 		
 	debug_fleave();
-	
 	return ret;
 }
 
@@ -1394,15 +1379,15 @@ typedef struct {
 route_change_cb_param g_route_param;
 
 
-void route_change_vconf_cb(keynode_t* node, void* data)
+void route_change_vconf_cb(keynode_t *node, void *data)
 {
 	int ret = MM_ERROR_NONE;
 	int lv_route = 0;
-	route_change_cb_param* param = (route_change_cb_param*) data;
+	route_change_cb_param *param = (route_change_cb_param *) data;
 
 	debug_msg("%s changed callback called\n", vconf_keynode_get_name(node));
 	ret = vconf_get_int(ROUTE_VCONF_KEY, &lv_route);
-	if(ret<0) {
+	if(ret < 0) {
 		debug_error("Can not get route info from vconf..(in cb func)\n");
 		return;
 	}
@@ -1414,14 +1399,14 @@ void route_change_vconf_cb(keynode_t* node, void* data)
 }
 
 EXPORT_API
-int mm_sound_route_add_change_callback(audio_route_policy_changed_callback_fn func, void* user_data)
+int mm_sound_route_add_change_callback(audio_route_policy_changed_callback_fn func, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 
 	g_route_param.func = func;
 	g_route_param.data = user_data;
 
-	ret = vconf_notify_key_changed(ROUTE_VCONF_KEY, route_change_vconf_cb, (void*)&g_route_param);
+	ret = vconf_notify_key_changed(ROUTE_VCONF_KEY, route_change_vconf_cb, (void *)&g_route_param);
 	if(ret < 0) {
 		debug_error("Can not add callback - vconf error\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
@@ -1445,7 +1430,7 @@ int mm_sound_route_remove_change_callback()
 	return ret;
 }
 
-#endif // PULSE_CLIENT
+#endif /* PULSE_CLIENT */
 
 EXPORT_API
 int mm_sound_system_get_capture_status(system_audio_capture_status_t *status)

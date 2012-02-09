@@ -73,7 +73,7 @@ typedef struct
 	int transper_size;
 	avsys_handle_t audio_handle;
 	int period;
-	int dtmf;
+	int tone;
 	int keytone;
 	int repeat_count;
 	int (*stop_cb)(int);
@@ -158,8 +158,7 @@ int MMSoundPlugCodecWaveParse(MMSourceType *source, mmsound_codec_info_t *info)
 	if(priff->chunksize != datalen -8)
 		priff->chunksize = (datalen-8);
 	
-	if (priff->chunkid != RIFF_CHUNK_ID ||priff->chunksize != datalen -8 ||priff->rifftype != RIFF_CHUNK_TYPE)
-	{
+	if (priff->chunkid != RIFF_CHUNK_ID ||priff->chunksize != datalen -8 ||priff->rifftype != RIFF_CHUNK_TYPE) {
 		debug_msg("[CODEC WAV] This contents is not RIFF file\n");
 		debug_msg("[CODEC WAV] cunkid : %ld, chunksize : %ld, rifftype : 0x%lx\n", priff->chunkid, priff->chunksize, priff->rifftype);
 		//debug_msg("[CODEC WAV] cunkid : %ld, chunksize : %d, rifftype : 0x%lx\n", RIFF_CHUNK_ID, datalen-8, RIFF_CHUNK_TYPE);
@@ -172,17 +171,13 @@ int MMSoundPlugCodecWaveParse(MMSourceType *source, mmsound_codec_info_t *info)
 	tSize = sizeof(struct __riff_chunk);
 	pdata = (struct __data_chunk*)(data+tSize);
 		
-	while (pdata->chunkid != FMT_CHUNK_ID && tSize < datalen)
-	{
+	while (pdata->chunkid != FMT_CHUNK_ID && tSize < datalen) {
 		tSize += (pdata->chunkSize+8);
 
-		if (tSize >= datalen)
-		{
+		if (tSize >= datalen) {
 			debug_warning("[CODEC WAV] Parsing finished : unable to find the Wave Format chunk\n");
 			return MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
-		}
-		else
-		{
+		} else {
 			pdata = (struct __data_chunk*)(data+tSize);
 		}
 	}
@@ -191,8 +186,7 @@ int MMSoundPlugCodecWaveParse(MMSourceType *source, mmsound_codec_info_t *info)
 	if (pwav->chunkid != FMT_CHUNK_ID ||
 	    pwav->compression != WAVE_CODE_PCM ||	/* Only supported PCM */
 	    pwav->avgbytepersec != pwav->samplerate * pwav->blockkalign ||
-	    pwav->blockkalign != (pwav->bitspersample >> 3)*pwav->channels)
-	{
+	    pwav->blockkalign != (pwav->bitspersample >> 3)*pwav->channels) {
 		debug_msg("[CODEC WAV] This contents is not supported wave file\n");
 		debug_msg("[CODEC WAV] chunkid : 0x%lx, comp : 0x%x, av byte/sec : %lu, blockalign : %d\n", pwav->chunkid, pwav->compression, pwav->avgbytepersec, pwav->blockkalign);
 		return MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
@@ -203,16 +197,12 @@ int MMSoundPlugCodecWaveParse(MMSourceType *source, mmsound_codec_info_t *info)
 	tSize += (pwav->chunksize+8);
 	pdata = (struct __data_chunk *)(data+tSize);
 
-	while (pdata->chunkid != DATA_CHUNK_ID && tSize < datalen)
-	{
+	while (pdata->chunkid != DATA_CHUNK_ID && tSize < datalen) {
 		tSize += (pdata->chunkSize+8);
-		if (tSize >= datalen)
-		{
+		if (tSize >= datalen) {
 			debug_warning("[CODEC WAV] Parsing finished : unable to find the data chunk\n");
 			return MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
-		}
-		else
-		{
+		} else {
 			pdata = (struct __data_chunk*)(data+tSize);
 		}	
 	}
@@ -262,16 +252,14 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 
 	source = param->source;
 
-	if (g_thread_pool_func == NULL)
-	{
+	if (g_thread_pool_func == NULL) {
 		debug_error("[CODEC WAV] Need thread pool!\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 
 	p = (wave_info_t *) malloc(sizeof(wave_info_t));
 
-	if (p == NULL)
-	{
+	if (p == NULL) {
 		debug_error("[CODEC WAV] memory allocation failed\n");
 		return MM_ERROR_OUT_OF_MEMORY;
 	}
@@ -284,7 +272,7 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	p->size = info->size;
 	p->transper_size = info->samplerate / 1000 * SAMPLE_COUNT * (info->format >> 3) * info->channels;
 
-	p->dtmf = param->dtmf;
+	p->tone = param->tone;
 	p->repeat_count = param ->repeat_count;
 	p->stop_cb = param->stop_cb;
 	p->cb_param = param->param;
@@ -334,8 +322,7 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 
 
 
-	if (p->audio_handle == (avsys_handle_t)-1)
-	{
+	if (p->audio_handle == (avsys_handle_t)-1) {
 		debug_critical("[CODEC WAV] audio_handle is not created !! \n");
 		if (p)
 			free(p);
@@ -361,8 +348,7 @@ int MMSoundPlugCodecWavePlay(MMHandleType handle)
 
 	debug_enter("(handle %x)\n", handle);
 
-	if (p->size <= 0)
-	{
+	if (p->size <= 0) {
 		debug_error("[CODEC WAV] end of file\n");
 		return MM_ERROR_END_OF_FILE;
 	}
@@ -390,8 +376,7 @@ static void _runing(void *param)
 	debug_enter("[CODEC WAV] (Slot ID %d)\n", p->cb_param);
 
 
-	if(AVSYS_FAIL(avsys_audio_get_route_policy(&route_policy)))
-	{
+	if(AVSYS_FAIL(avsys_audio_get_route_policy(&route_policy))) {
 		debug_error("[CODEC WAV] Can not get system audio route policy\n");
 	}
 
@@ -443,21 +428,16 @@ static void _runing(void *param)
 		debug_warning ("[CODEC WAV] state is already STATE_STOP\n");
 	}
 
-	while (((p->repeat_count == -1)?(1):(p->repeat_count--)) && p->state == STATE_PLAY)
-	{
-		while (p->state == STATE_PLAY && p->size > 0)
-		{
-			if (p->size >= p->transper_size)
-			{
+	while (((p->repeat_count == -1)?(1):(p->repeat_count--)) && p->state == STATE_PLAY) {
+		while (p->state == STATE_PLAY && p->size > 0) {
+			if (p->size >= p->transper_size) {
 				nread = p->transper_size;
 				memcpy(p->buffer, p->ptr_current, nread);
 				avsys_audio_write(p->audio_handle, p->buffer, nread);
 				p->ptr_current += nread;
 				p->size -= nread;
 				debug_msg("[CODEC WAV] Playing, nRead_data : %d Size : %d \n", nread, p->size);
-			}
-			else
-			{
+			} else {
 				/* Write remain size */
 				nread = p->size;
 				memcpy(p->buffer, p->ptr_current, nread);
@@ -476,13 +456,10 @@ static void _runing(void *param)
 	debug_msg("[CODEC WAV] End playing\n");
 	p->state = STATE_STOP;
 
-	if (p->audio_handle == -1)
-	{
+	if (p->audio_handle == -1) {
 		usleep(200000);
 		debug_warning("[CODEC WAV] audio already unrealize !!\n");
-	}
-	else
-	{
+	} else {
 		//usleep(75000);
 
 		if(AVSYS_FAIL(avsys_audio_drain(p->audio_handle)))

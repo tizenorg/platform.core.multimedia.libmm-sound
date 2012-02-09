@@ -73,8 +73,7 @@ GMainLoop *g_mainloop;
 GThreadFunc event_loop_thread(gpointer data)
 {
 	g_mainloop = g_main_loop_new(NULL, TRUE);
-	if(g_mainloop == NULL)
-	{
+	if(g_mainloop == NULL) {
 		debug_error("g_main_loop_new() failed\n");
 	}
 	g_main_loop_run(g_mainloop);
@@ -84,10 +83,10 @@ GThreadFunc event_loop_thread(gpointer data)
 void hibernation_leave_cb()
 {
 	MMSoundMgrPulseHandleRegisterMonoAudio();
+
 	if(sound_system_bootup_recovery()) {
 		debug_error("Audio reset failed\n");
-	}
-	else {
+	} else {
 		debug_msg("Audio reset success\n");
 	}
 }
@@ -112,8 +111,7 @@ int main(int argc, char **argv)
 		return 1;
 
 	/* Daemon process create */
-	if (!serveropt.testmode && serveropt.startserver)
-	{
+	if (!serveropt.testmode && serveropt.startserver) {
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
 		daemon(0,0); //chdir to ("/"), and close stdio
 #endif
@@ -126,21 +124,20 @@ int main(int argc, char **argv)
 
 	if(sound_system_bootup_recovery()) {
 		debug_error("Audio reset failed\n");
-	}
-	else {
+	} else {
 		debug_msg("Audio reset success\n");
 	}
 
 	heynotifd = heynoti_init();
 	if(heynoti_subscribe(heynotifd, "HIBERNATION_LEAVE", hibernation_leave_cb, NULL)) {
 		debug_error("heynoti_subscribe failed...\n");
-	}else {
+	} else {
 		debug_msg("heynoti_subscribe() success\n");
 	}
 
 	if(heynoti_attach_handler(heynotifd)) {
 		debug_error("heynoti_attach_handler() failed\n");
-	}else {
+	} else {
 		debug_msg("heynoti_attach_handler() success\n");
 	}
 
@@ -172,15 +169,13 @@ int main(int argc, char **argv)
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
 
-	if(NULL == g_thread_create(event_loop_thread, NULL, FALSE, NULL))
-	{
+	if(NULL == g_thread_create(event_loop_thread, NULL, FALSE, NULL)) {
 		fprintf(stderr,"event loop thread create failed\n");
 		return 3;
 	}
 
 
-	if (serveropt.startserver || serveropt.printlist)
-	{
+	if (serveropt.startserver || serveropt.printlist) {
 		MMSoundThreadPoolInit();
 		MMSoundMgrRunInit(serveropt.plugdir);
 		MMSoundMgrCodecInit(serveropt.plugdir);
@@ -190,22 +185,20 @@ int main(int argc, char **argv)
 		MMSoundMgrPulseInit();
 	}
 
-	if (serveropt.startserver)
-	{
+	if (serveropt.startserver) {
 		/* Start Run types */
 		MMSoundMgrRunRunAll();
 
 		/* set hibernation check */
-		if(vconf_set_int(HIBERNATION_CHECK_KEY, HIBERNATION_READY))
-		{
+		if(vconf_set_int(HIBERNATION_CHECK_KEY, HIBERNATION_READY)) {
 			debug_error("[SoundServer] Hibernation check vconf_set_int fail\n");
 		}
+
 		/* Start Ipc mgr */
 		MMSoundMgrIpcReady();
 	}
 
-	if (serveropt.startserver || serveropt.printlist)
-	{
+	if (serveropt.startserver || serveropt.printlist) {
 		MMSoundMgrRunStopAll();
 		if (!serveropt.testmode)
 			MMSoundMgrIpcFini();
@@ -216,7 +209,7 @@ int main(int argc, char **argv)
 
 		MMSoundMgrPulseFini();
 
-		if(heynoti_unsubscribe(heynotifd, "HIBERNATION_LEAVE", NULL)){
+		if(heynoti_unsubscribe(heynotifd, "HIBERNATION_LEAVE", NULL)) {
 			debug_error("heynoti_unsubscribe failed..\n");
 		}
 		heynoti_close(heynotifd);
@@ -285,8 +278,7 @@ static void _exit_handler(int sig)
 	ret = MMSoundMgrRunStopAll();
 	if (ret != MM_ERROR_NONE) {
 		debug_error("Fail to stop run-plugin\n");
-	}
-	else {
+	} else {
 		debug_log("All run-type plugin stopped\n");
 	}
 

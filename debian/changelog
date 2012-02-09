@@ -1,7 +1,7 @@
-libmm-sound (0.5.3-0) unstable; urgency=low
+libmm-sound (0.5.9-0) unstable; urgency=low
 
   * Initial release
   * Git: pkgs/l/libmm-sound
-  * Tag: libmm-sound_0.5.3-0
+  * Tag: libmm-sound_0.5.9-0
 
- -- Seungbae Shin <seungbae.shin@samsung.com>  Wed, 07 Dec 2011 12:06:40 +0900
+ -- Seungbae Shin <seungbae.shin@samsung.com>  Wed, 08 Feb 2012 15:27:29 +0900

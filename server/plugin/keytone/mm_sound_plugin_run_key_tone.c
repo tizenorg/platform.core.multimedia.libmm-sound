@@ -133,10 +133,8 @@ int MMSoundPlugRunKeytoneControlRun(void)
 
 	/* INIT IPC */
 	pre_mask = umask(0);
-	if (mknod(KEYTONE_PATH,S_IFIFO|0660,0)<0)
-	{
-		if (errno!=EEXIST)
-		{
+	if (mknod(KEYTONE_PATH,S_IFIFO|0660,0)<0) {
+		if (errno!=EEXIST) {
 			debug_warning("Already Exist device %s\n", KEYTONE_PATH);
 		}
 	}
@@ -144,9 +142,7 @@ int MMSoundPlugRunKeytoneControlRun(void)
 
 	fd = open(KEYTONE_PATH, O_RDWR);
 	debug_msg("after open file descriptor %d\n", fd);
-	if (fd == -1)
-	{
-
+	if (fd == -1) {
 		debug_warning("Check ipc node %s\n", KEYTONE_PATH);
 		return MM_ERROR_SOUND_INTERNAL;
 	}
@@ -158,8 +154,7 @@ int MMSoundPlugRunKeytoneControlRun(void)
 
 	/* Init Audio Handle & internal buffer */
 	ret = _MMSoundKeytoneInit();	/* Create two thread and open device */
-	if (ret != MM_ERROR_NONE)
-	{
+	if (ret != MM_ERROR_NONE) {
 		debug_critical("Cannot create keytone\n");
 
 	}
@@ -172,13 +167,11 @@ int MMSoundPlugRunKeytoneControlRun(void)
 	int flag= MMSOUND_FALSE;
 	g_CreatedFlag = MMSOUND_FALSE;
 
-	while(stop_flag)
-	{
+	while(stop_flag) {
 		memset(&data, 0, sizeof(ipc_type));
 		debug_msg("The Keytone plugin is running\n");
 		ret = read(fd, (void *)&data, size);
-		if(ret == -1)
-		{
+		if(ret == -1) {
 			debug_error("Fail to read file\n");
 			continue;
 		}
@@ -187,15 +180,13 @@ int MMSoundPlugRunKeytoneControlRun(void)
 		g_keytone.vol_type = data.vol_type;
 		debug_log("The volume type is [%d]\n", g_keytone.vol_type);
 
-		if (g_keytone.state == RENDER_STARTED)
-		{
+		if (g_keytone.state == RENDER_STARTED) {
 			g_keytone.state = RENDER_STOP;
 			pthread_cond_wait(&g_keytone.sw_cond, &g_keytone.sw_lock);
 		}
 		
 		ret = mm_source_open_file(data.filename, &source, MM_SOURCE_NOT_DRM_CONTENTS);
-		if (ret != MM_ERROR_NONE)
-		{
+		if (ret != MM_ERROR_NONE) {
 			debug_critical("Cannot open files\n");
 			pthread_mutex_unlock(&g_keytone.sw_lock);
 			continue;
@@ -203,8 +194,7 @@ int MMSoundPlugRunKeytoneControlRun(void)
 
 
 		ret = __MMSoundKeytoneParse(&source, &info);
-		if(ret != MM_ERROR_NONE)
-		{
+		if(ret != MM_ERROR_NONE) {
 			debug_critical("Fail to parse file\n");
 			mm_source_close(&source);
 			source.ptr = NULL;
@@ -212,10 +202,8 @@ int MMSoundPlugRunKeytoneControlRun(void)
 			continue;
 		}
 
-		if(g_CreatedFlag== MMSOUND_FALSE)
-		{
-			if(MM_ERROR_NONE != CreateAudioHandle(info))
-			{
+		if(g_CreatedFlag== MMSOUND_FALSE) {
+			if(MM_ERROR_NONE != CreateAudioHandle(info)) {
 				debug_critical("Audio handle creation failed. cannot play keytone\n");
 				mm_source_close(&source);
 				source.ptr = NULL;
@@ -228,15 +216,13 @@ int MMSoundPlugRunKeytoneControlRun(void)
 		buf_param.info = &info;
 		buf_param.source = &source;
 		g_keytone.src = &buf_param;
-		if(once== MMSOUND_TRUE)
-		{
+		if(once== MMSOUND_TRUE) {
 			g_thread_pool_func(NULL,  (void*)_MMSoundKeytoneRender);
 			once= MMSOUND_FALSE;
 		}
 
 		if(g_keytone.state == RENDER_STOPED_N_WAIT ||
-				 g_keytone.state == RENDER_COND_TIMED_WAIT)
-		{
+				 g_keytone.state == RENDER_COND_TIMED_WAIT) {
 			pthread_cond_signal(&g_keytone.sw_cond);
 		}
 
@@ -299,13 +285,11 @@ static int _MMSoundKeytoneInit(void)
 	/* Set audio FIXED param */
 
 	g_keytone.state = RENDER_READY;
-	if(pthread_mutex_init(&(g_keytone.sw_lock), NULL))
-	{
+	if(pthread_mutex_init(&(g_keytone.sw_lock), NULL)) {
 		debug_error("pthread_mutex_init() failed [%s][%d]\n", __func__, __LINE__);
 		return MM_ERROR_SOUND_INTERNAL;
 	}
-	if(pthread_cond_init(&g_keytone.sw_cond,NULL))
-	{
+	if(pthread_cond_init(&g_keytone.sw_cond,NULL)) {
 		debug_error("pthread_cond_init() failed [%s][%d]\n", __func__, __LINE__);
 		return MM_ERROR_SOUND_INTERNAL;
 	}
@@ -318,15 +302,13 @@ static int _MMSoundKeytoneFini(void)
 {
 	g_keytone.handle = (avsys_handle_t)-1;
 
-	if (pthread_mutex_destroy(&(g_keytone.sw_lock)))
-	{
+	if (pthread_mutex_destroy(&(g_keytone.sw_lock))) {
 		debug_error("Fail to destroy mutex\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 	debug_msg("destroy\n");
 
-	if (pthread_cond_destroy(&g_keytone.sw_cond))
-	{
+	if (pthread_cond_destroy(&g_keytone.sw_cond)) {
 		debug_error("Fail to destroy cond\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
@@ -350,8 +332,7 @@ int CreateAudioHandle(mmsound_codec_info_t info)
 
 
 	err = avsys_audio_open(&audio_param, &g_keytone.handle, &g_keytone.period);
-	if (AVSYS_FAIL(err))
-	{
+	if (AVSYS_FAIL(err)) {
 		debug_error("Fail to audio open 0x%08X\n", err);
 		return MM_ERROR_SOUND_INTERNAL;
 	}
@@ -381,17 +362,14 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 
 
 //	unsigned int timeout_msec = _MMSoundKeytoneTimeOut();
-	while(stop_flag)
-	{
+	while(stop_flag) {
 		pthread_mutex_lock(&g_keytone.sw_lock);
-		if(g_keytone.state == RENDER_STOPED)
-		{
+		if(g_keytone.state == RENDER_STOPED) {
 			g_keytone.state = RENDER_STOPED_N_WAIT;
 			pthread_cond_wait(&g_keytone.sw_cond, &g_keytone.sw_lock);
 		}
 
-		if(g_keytone.state == RENDER_START)
-		{
+		if(g_keytone.state == RENDER_START) {
 			//IsAmpON = MMSOUND_TRUE;
 
 			param = (buf_param_t *)g_keytone.src;
@@ -401,8 +379,7 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 			buf = source.ptr+info.doffset;
 
 			size = info.size;
-			if(buf==NULL)
-			{
+			if(buf==NULL) {
 				size=0;
 				debug_critical("Ooops.... Not Expected!!!!!!!!\n");
 			}
@@ -415,18 +392,15 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 
 
 
-		while(size && stop_flag)
-		{
+		while(size && stop_flag) {
 			pthread_mutex_lock(&g_keytone.sw_lock);
-			if (g_keytone.state == RENDER_STOP)
-			{
+			if (g_keytone.state == RENDER_STOP) {
 				pthread_mutex_unlock(&g_keytone.sw_lock);
 				break;
 			}
 			pthread_mutex_unlock(&g_keytone.sw_lock);				
 
-			if(size<g_keytone.period)
-			{
+			if(size<g_keytone.period) {
 #if defined(_DEBUG_VERBOS_)
 				debug_msg("[Keysound] Last Buffer :: size=%d,period=%d\n", size, g_keytone.period);
 #endif
@@ -439,9 +413,7 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 				avsys_audio_write(g_keytone.handle, (void *)Outbuf, g_keytone.period);				
 				
 				size = 0;
-			}
-			else
-			{
+			} else {
 #if defined(_DEBUG_VERBOS_)
 				debug_msg("[Keysound] size=%d,period=%d\n",size, g_keytone.period);
 #endif
@@ -458,25 +430,20 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 		source.ptr = NULL;
 
 		pthread_mutex_lock(&g_keytone.sw_lock);
-		if(g_keytone.state == RENDER_STOP )
-		{
+		if(g_keytone.state == RENDER_STOP ) {
 			g_keytone.state = RENDER_STOPED;
 			pthread_cond_signal(&g_keytone.sw_cond);
-		}
-		else
-		{
+		} else {
 			g_keytone.state = RENDER_COND_TIMED_WAIT;
 			gettimeofday(&tv, NULL);
 			timeout.tv_sec = tv.tv_sec + TIMEOUT_SEC;
 			timeout.tv_nsec = tv.tv_usec;
 			stat = pthread_cond_timedwait(&g_keytone.sw_cond, &g_keytone.sw_lock, &timeout);
-			if(stat == ETIMEDOUT && g_keytone.state != RENDER_START)
-			{
+			if(stat == ETIMEDOUT && g_keytone.state != RENDER_START) {
 				//if(IsAmpON == MMSOUND_TRUE)
 				{
 					debug_msg("close\n");
-					if(AVSYS_FAIL(avsys_audio_close(g_keytone.handle)))
-					{
+					if(AVSYS_FAIL(avsys_audio_close(g_keytone.handle)))	{
 						debug_critical("avsys_audio_close() failed !!!!!!!!\n");
 					}
 
@@ -548,8 +515,7 @@ static int __MMSoundKeytoneParse(MMSourceType *source, mmsound_codec_info_t *inf
 	if(priff->chunksize != datalen -8)
 		priff->chunksize = (datalen-8);
 
-	if (priff->chunkid != RIFF_CHUNK_ID ||priff->chunksize != datalen -8 ||priff->rifftype != RIFF_CHUNK_TYPE)
-	{
+	if (priff->chunkid != RIFF_CHUNK_ID ||priff->chunksize != datalen -8 ||priff->rifftype != RIFF_CHUNK_TYPE) {
 		debug_msg("This contents is not RIFF file\n");
 #if defined(_DEBUG_VERBOS_)
 		debug_msg("cunkid : %ld, chunksize : %ld, rifftype : 0x%lx\n", priff->chunkid, priff->chunksize, priff->rifftype);
@@ -564,17 +530,13 @@ static int __MMSoundKeytoneParse(MMSourceType *source, mmsound_codec_info_t *inf
 	tSize = sizeof(struct __riff_chunk);
 	pdata = (struct __data_chunk*)(data+tSize);
 
-	while (pdata->chunkid != FMT_CHUNK_ID && tSize < datalen)
-	{
+	while (pdata->chunkid != FMT_CHUNK_ID && tSize < datalen) {
 		tSize += (pdata->chunkSize+8);
 
-		if (tSize >= datalen)
-		{
+		if (tSize >= datalen) {
 			debug_warning("Wave Parsing is Finished : unable to find the Wave Format chunk\n");
 			return MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
-		}
-		else
-		{
+		} else {
 			pdata = (struct __data_chunk*)(data+tSize);
 		}
 	}
@@ -583,8 +545,7 @@ static int __MMSoundKeytoneParse(MMSourceType *source, mmsound_codec_info_t *inf
 	if (pwav->chunkid != FMT_CHUNK_ID ||
 		   pwav->compression != WAVE_CODE_PCM ||	/* Only supported PCM */
 		   pwav->avgbytepersec != pwav->samplerate * pwav->blockkalign ||
-		   pwav->blockkalign != (pwav->bitspersample >> 3)*pwav->channels)
-	{
+		   pwav->blockkalign != (pwav->bitspersample >> 3)*pwav->channels) {
 		debug_msg("This contents is not supported wave file\n");
 #if defined(_DEBUG_VERBOS_)
 		debug_msg("chunkid : 0x%lx, comp : 0x%x, av byte/sec : %lu, blockalign : %d\n", pwav->chunkid, pwav->compression, pwav->avgbytepersec, pwav->blockkalign);
@@ -597,16 +558,12 @@ static int __MMSoundKeytoneParse(MMSourceType *source, mmsound_codec_info_t *inf
 	tSize += (pwav->chunksize+8);
 	pdata = (struct __data_chunk *)(data+tSize);
 
-	while (pdata->chunkid != DATA_CHUNK_ID && tSize < datalen)
-	{
+	while (pdata->chunkid != DATA_CHUNK_ID && tSize < datalen) {
 		tSize += (pdata->chunkSize+8);
-		if (tSize >= datalen)
-		{
+		if (tSize >= datalen) {
 			debug_warning("Wave Parsing is Finished : unable to find the data chunk\n");
 			return MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
-		}
-		else
-		{
+		} else {
 			pdata = (struct __data_chunk*)(data+tSize);
 		}
 	}

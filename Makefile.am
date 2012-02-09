@@ -60,9 +60,6 @@ libmmfsound_la_LIBADD += $(MMLOGSVR_LIBS)
 endif
 
 
-#For dtmf
-installdtmfdir = /opt/system/
-installdtmf_DATA = $(srcdir)/server/plugin/dtmf/dtmf_all.raw
 
 
 

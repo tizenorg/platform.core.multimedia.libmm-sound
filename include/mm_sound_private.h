@@ -218,15 +218,15 @@ int handle = 0;
 ret = mm_sound_play_beep (VOLUME_TYPE_SYSTEM, 1000, &handle); //play 1000 ms = 1 sec.
 if(ret < 0)
 {
-	printf("play dtmf failed\n");
+	printf("play tone failed\n");
 }
 else
 {
-	printf("play dtmf success\n");
+	printf("play tone success\n");
 }
  * @endcode
  */
-int mm_sound_play_beep (const volume_type_t vol_type, const int duration, int *handle);
+DEPRECATED_API int mm_sound_play_beep (const volume_type_t vol_type, const int duration, int *handle);
 
 int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int rate, MMSoundPcmChannel_t channel, MMSoundPcmFormat_t format, const volume_type_t vol_type, int asm_event);
 

@@ -28,9 +28,8 @@
 
 int MMSoundClientInit(void);
 int MMSoundClientCallbackFini(void);
-int MMSoundClientPlayDTMF(int number, int volume, int time, int *handle);
-int MMSoundClientPlayTONE(int number, int vol_type, double volume, int time, int *handle);
-int MMSoundClientPlaySound(MMSoundParamType *param, int dtmf, int keytone, int *handle);
+int MMSoundClientPlayTone(int number, int vol_type, double volume, int time, int *handle);
+int MMSoundClientPlaySound(MMSoundParamType *param, int tone, int keytone, int *handle);
 int MMSoundClientStopSound(int handle);
 int MMSoundClientIsBtA2dpOn (int* connected, char** bt_name);
 int MMSoundClientSetAudioRoute(int route);

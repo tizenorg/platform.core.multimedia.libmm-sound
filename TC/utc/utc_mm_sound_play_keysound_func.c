@@ -54,7 +54,7 @@
 //-------------------------------------------------------------------------------------------------
 
 #define API_NAME "mm_sound_play_keysound"
-#define VALID_TEST_FILE "/usr/share/keysound/02_Warning.wav"
+#define VALID_TEST_FILE "/usr/share/keysound/poweron.wav"
 #define INVALID_TEST_FILE "/usr/share/keysound/SVI/Touch123.wav"
 
 struct tet_testlist tet_testlist[] = {

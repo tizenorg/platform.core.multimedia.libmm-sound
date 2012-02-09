@@ -52,12 +52,14 @@ int mm_sound_play_keysound(const char *filename, const volume_type_t vol_type)
 	int size = 0;
 	ipc_t data = {{0,},};
 
+	debug_fenter();
+
 	if(!filename)
 		return MM_ERROR_SOUND_INVALID_FILE;
 
+	/* Check whether file exists */
 	fd = open(filename, O_RDONLY);
-	if(fd == -1)
-	{
+	if(fd == -1) {
 		debug_error("file open failed with %s\n", strerror(errno));
 		switch(errno)
 		{
@@ -70,27 +72,28 @@ int mm_sound_play_keysound(const char *filename, const volume_type_t vol_type)
 			return MM_ERROR_SOUND_INTERNAL;
 		}
 	}
-	close(fd); fd = -1;
+	close(fd);
+	fd = -1;
 
+	/* Open PIPE */
 	fd = open(KEYTONE_PATH, O_WRONLY | O_NONBLOCK);
-	if (fd == -1)
-	{
+	if (fd == -1) {
 		debug_error("Fail to open pipe\n");
 		return MM_ERROR_SOUND_FILE_NOT_FOUND;
 	}
 	data.vol_type = vol_type;
-
 	strncpy(data.filename, filename, FILE_FULL_PATH);
 	debug_msg("The file name [%s]\n", data.filename);
 	size = sizeof(ipc_t);
+
+	/* Write to PIPE */
 	err = write(fd, &data, size);
-	if(err<0)
-	{
+	if(err < 0) {
 		debug_error("Fail to write data: %s\n", strerror(err));
 		close(fd);
 		return MM_ERROR_SOUND_INTERNAL;
-
 	}
+	/* Close PIPE */
 	close(fd);
 
 	debug_fleave();

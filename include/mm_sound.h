@@ -33,6 +33,7 @@
 
 #include <mm_types.h>
 #include <mm_error.h>
+#include <mm_message.h>
 
 #ifdef __cplusplus
 	extern "C" {
@@ -1124,6 +1125,40 @@ int main(int argc, char* argv[])
  */
 int mm_sound_pcm_capture_close(MMSoundPcmHandle_t handle);
 
+/**
+ * This function sets callback function for receiving messages from pcm API.
+ *
+ * @param	handle		[in]	Handle of pcm.
+ * @param	callback	[in]	Message callback function.
+ * @param	user_param	[in]	User parameter which is passed to callback function.
+ *
+ * @return	This function returns MM_ERROR_NONE on success, or negative value with error code.
+ * @see		MMMessageCallback
+ * @remark	None
+ * @par Example
+ * @code
+int msg_callback(int message, MMMessageParamType *param, void *user_param)
+{
+	switch (message)
+	{
+		case MM_MESSAGE_SOUND_PCM_CAPTURE_RESTRICTED:
+			//do something
+			break;
+
+		case MM_MESSAGE_SOUND_PCM_INTERRUPTED:
+			//do something
+			break;
+
+		default:
+			break;
+	}
+	return TRUE;
+}
+
+mm_sound_pcm_set_message_callback(pcmHandle, msg_callback, (void *)pcmHandle);
+ * @endcode
+ */
+int mm_sound_pcm_set_message_callback (MMSoundPcmHandle_t handle, MMMessageCallback callback, void *user_param);
 
 /**
  * Terminate callback function type.

@@ -90,8 +90,7 @@ int MMSoundMgrIpcInit(void)
 	g_sndid = msgget(ftok(KEY_BASE_PATH, SND_MSG), IPC_CREAT |0666);
 	g_cbid = msgget(ftok(KEY_BASE_PATH, CB_MSG), IPC_CREAT |0666);
 
-	if ((g_rcvid == -1 || g_sndid == -1 || g_cbid == -1) != MM_ERROR_NONE)
-	{
+	if ((g_rcvid == -1 || g_sndid == -1 || g_cbid == -1) != MM_ERROR_NONE) {
 		if(errno == EACCES)
 			printf("Require ROOT permission.\n");
 		else if(errno == EEXIST)
@@ -133,11 +132,9 @@ int MMSoundMgrIpcReady(void)
 	debug_msg("Created server msg queue id : [%d]\n", g_cbid);	
 
 	/* Ready to recive message */
-	while(1)
-	{
+	while(1) {
 		ret = _MMIpcRecvMsg(0, &msg);		
-		if (ret != MM_ERROR_NONE)
-		{
+		if (ret != MM_ERROR_NONE) {
 			debug_critical("Fail recieve message. \n");
 			exit(1);
 		}
@@ -147,7 +144,7 @@ int MMSoundMgrIpcReady(void)
 		debug_msg("handle : %d\n", msg.sound_msg.handle);
 		debug_msg("volume : %d\n", msg.sound_msg.volume);
 		debug_msg("keytone : %d\n", msg.sound_msg.keytone);
-		debug_msg("dtmf : %d\n", msg.sound_msg.dtmf);
+		debug_msg("tone : %d\n", msg.sound_msg.tone);
 		debug_msg("callback : %p\n", msg.sound_msg.callback);
 		debug_msg("volume_table : %d\n", msg.sound_msg.volume_table);
 		debug_msg("priority : %d\n", msg.sound_msg.priority);
@@ -346,8 +343,7 @@ static int _MMSoundMgrIpcPlayFile(int *codechandle, mm_ipc_msg_t *msg)
 	source = (MMSourceType*)malloc(sizeof(MMSourceType));
 
 	ret = mm_source_open_file(msg->sound_msg.filename, source, MM_SOURCE_CHECK_DRM_CONTENTS);
-	if(ret != MM_ERROR_NONE)
-	{
+	if(ret != MM_ERROR_NONE) {
 		debug_error("Fail to open file\n");
 		if (source)
 			free(source);
@@ -355,7 +351,7 @@ static int _MMSoundMgrIpcPlayFile(int *codechandle, mm_ipc_msg_t *msg)
 	}
 
 	/* Set sound player parameter */
-	param.dtmf = msg->sound_msg.dtmf;
+	param.tone = msg->sound_msg.tone;
 	param.repeat_count = msg->sound_msg.repeat;
 	param.param = (void*)msg->sound_msg.msgid; //this is pid of client
 	param.volume = msg->sound_msg.volume;
@@ -369,7 +365,7 @@ static int _MMSoundMgrIpcPlayFile(int *codechandle, mm_ipc_msg_t *msg)
 	param.source = source;
 	param.handle_route = msg->sound_msg.handle_route;
 
-	debug_msg("DTMF %d\n", param.dtmf);
+	debug_msg("DTMF %d\n", param.tone);
 	debug_msg("Loop %d\n", param.repeat_count);
 	debug_msg("Volume %d\n",param.volume);
 	debug_msg("Priority %d\n",param.priority);
@@ -411,8 +407,7 @@ static int _MMSoundMgrIpcPlayFile(int *codechandle, mm_ipc_msg_t *msg)
 
 
 	ret = MMSoundMgrCodecPlay(codechandle, &param);
-	if ( ret != MM_ERROR_NONE)
-	{
+	if ( ret != MM_ERROR_NONE) {
 		debug_error("Will be closed a sources, codechandle : 0x%08X\n", *codechandle);
 
 		return ret;		
@@ -430,8 +425,7 @@ static int _MMSoundMgrIpcStop(mm_ipc_msg_t *msg)
 
 	ret = MMSoundMgrCodecStop(msg->sound_msg.handle);
 
-	if (ret != MM_ERROR_NONE)
-	{
+	if (ret != MM_ERROR_NONE) {
 		debug_error("Fail to stop sound\n");
 		return ret;
 	}
@@ -480,22 +474,19 @@ static int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg)
 
 	debug_msg("Shm file name : %s\n", msg->sound_msg.filename);
 
-	if(msg->sound_msg.sharedkey != 1)
-	{
+	if(msg->sound_msg.sharedkey != 1) {
 		debug_error("NOT memory interface\n");
 		return MM_ERROR_SOUND_INVALID_PATH;
 	}
 
 	shm_fd = shm_open(msg->sound_msg.filename, O_RDONLY, 0666);
-	if(shm_fd < 0)
-	{
+	if(shm_fd < 0) {
 		debug_error("Fail to open\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 
 	mmap_buf = mmap (0, MEMTYPE_SUPPORT_MAX, PROT_READ , MAP_SHARED, shm_fd, 0);
-	if (mmap_buf == MAP_FAILED)
-	{
+	if (mmap_buf == MAP_FAILED) {
 		perror("Fail to mmap\n");
 		debug_error("MMAP failed \n");
 		return MM_ERROR_SOUND_INTERNAL;
@@ -508,8 +499,7 @@ static int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg)
 		return MM_ERROR_OUT_OF_MEMORY;
 	}
 
-	if (mm_source_open_full_memory(mmap_buf, msg->sound_msg.memsize, 0, source) != MM_ERROR_NONE)
-	{
+	if (mm_source_open_full_memory(mmap_buf, msg->sound_msg.memsize, 0, source) != MM_ERROR_NONE) {
 		debug_error("Fail to set source\n");
 		free(source);
 		return MM_ERROR_SOUND_INTERNAL;
@@ -517,7 +507,7 @@ static int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg)
 #endif	
 
 	/* Set sound player parameter */
-	param.dtmf = msg->sound_msg.dtmf;
+	param.tone = msg->sound_msg.tone;
 	param.repeat_count = msg->sound_msg.repeat;
 	param.param = (void*)msg->sound_msg.msgid;
 	param.volume = msg->sound_msg.volume;
@@ -529,7 +519,7 @@ static int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg)
 	param.priority = msg->sound_msg.priority;
 	param.source = source;
 
-	debug_msg("DTMF %d\n", param.dtmf);
+	debug_msg("DTMF %d\n", param.tone);
 	debug_msg("Loop %d\n", param.repeat_count);
 	debug_msg("Volume %d\n",param.volume);
 	debug_msg("Priority %d\n",param.priority);
@@ -541,8 +531,7 @@ static int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg)
 	debug_msg("keytone %d\n", param.keytone);
 
 	ret = MMSoundMgrCodecPlay(codechandle, &param);
-	if ( ret != MM_ERROR_NONE)
-	{
+	if ( ret != MM_ERROR_NONE) {
 		debug_error("Will be closed a sources, codec handle : [0x%d]\n", *codechandle);
 		mm_source_close(source);
 		if (source)
@@ -564,7 +553,7 @@ static int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg)
 	debug_enter("\n");
 
 	/* Set sound player parameter */
-	param.dtmf = msg->sound_msg.dtmf;
+	param.tone = msg->sound_msg.tone;
 	param.repeat_count = msg->sound_msg.repeat;
 	param.param = (void*)msg->sound_msg.msgid;
 	param.volume = msg->sound_msg.volume;
@@ -575,7 +564,7 @@ static int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg)
 	param.msgdata = msg->sound_msg.cbdata;
 	param.session_type = ASM_EVENT_SHARE_MMSOUND;
 
-	debug_msg("DTMF %d\n", param.dtmf);
+	debug_msg("DTMF %d\n", param.tone);
 	debug_msg("Loop %d\n", param.repeat_count);
 	debug_msg("Volume %d\n",param.volume);
 	debug_msg("VolumeTable %d\n",param.volume_table);
@@ -584,8 +573,7 @@ static int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg)
 	debug_msg("param %d\n", (int)param.param);
 
 	ret = MMSoundMgrCodecPlayDtmf(codechandle, &param);
-	if ( ret != MM_ERROR_NONE)
-	{
+	if ( ret != MM_ERROR_NONE) {
 		debug_error("Will be closed a sources, codec handle : [0x%d]\n", *codechandle);
 		return ret;		
 	}
@@ -613,28 +601,17 @@ static int _MMIpcRecvMsg(int msgtype, mm_ipc_msg_t *msg)
 	/* rcv message */
 	if(msgrcv(g_rcvid, msg, DSIZE, 0, 0) == -1)
 	{
-		if(errno == E2BIG)
-		{
+		if(errno == E2BIG) {
 			debug_warning("Not acces.\n");
-		}
-		else if(errno == EACCES)
-		{
+		} else if(errno == EACCES) {
 			debug_warning("Access denied\n");
-		}
-		else if(errno == ENOMSG)
-		{
+		} else if(errno == ENOMSG) {
 			debug_warning("Blocked process [msgflag & IPC_NOWAIT != 0]\n");
-		}
-		else if(errno == EIDRM)
-		{
+		} else if(errno == EIDRM) {
 			debug_warning("Removed msgid from system\n");
-		}
-		else if(errno == EINTR)
-		{
+		} else if(errno == EINTR) {
 			debug_warning("Iterrrupted by singnal\n");
-		}
-		else if(errno == EINVAL)
-		{
+		} else if(errno == EINVAL) {
 			debug_warning("Invalid msgid \n");
 		}
 
@@ -653,32 +630,19 @@ int _MMIpcSndMsg(mm_ipc_msg_t *msg)
 	error = msgsnd(g_sndid, msg,DSIZE, 0);
 	if ( error == -1)
 	{
-		if(errno == EACCES)
-		{
+		if(errno == EACCES) {
 			debug_warning("Not acces.\n");
-		}
-		else if(errno == EAGAIN)
-		{
+		} else if(errno == EAGAIN) {
 			debug_warning("Blocked process [msgflag & IPC_NOWAIT != 0]\n");
-		}
-		else if(errno == EIDRM)
-		{
+		} else if(errno == EIDRM) {
 			debug_warning("Removed msgid from system\n");
-		}
-		else if(errno == EINTR)
-		{
+		} else if(errno == EINTR) {
 			debug_warning("Iterrrupted by singnal\n");
-		}
-		else if(errno == EINVAL)
-		{
+		} else if(errno == EINVAL) {
 			debug_warning("Invalid msgid or msgtype < 1 or out of data size \n");
-		}
-		else if(errno == EFAULT)
-		{
+		} else if(errno == EFAULT) {
 			debug_warning("The address pointed to by msgp isn't accessible \n");
-		}
-		else if(errno == ENOMEM)
-		{
+		} else if(errno == ENOMEM) {
 			debug_warning("The system does not have enough memory to make a copy of the message pointed to by msgp\n");
 		}
 		debug_critical("Fail to send message msg queue : [%d] \n", g_sndid);
@@ -695,24 +659,15 @@ static int _MMIpcCBSndMsg(mm_ipc_msg_t *msg)
 	debug_msg("Send CB message type (for client) : [%ld]\n",msg->msg_type);
 	if (msgsnd(g_cbid, msg,DSIZE, 0)== -1)
 	{
-		if(errno == EACCES)
-		{
+		if(errno == EACCES) {
 			debug_warning("Not acces.\n");
-		}
-		else if(errno == EAGAIN)
-		{
+		} else if(errno == EAGAIN) {
 			debug_warning("Blocked process [msgflag & IPC_NOWAIT != 0]\n");
-		}
-		else if(errno == EIDRM)
-		{
+		} else if(errno == EIDRM) {
 			debug_warning("Removed msgid from system\n");
-		}
-		else if(errno == EINTR)
-		{
+		} else if(errno == EINTR) {
 			debug_warning("Iterrrupted by singnal\n");
-		}
-		else if(errno == EINVAL)
-		{
+		} else if(errno == EINVAL) {
 			debug_warning("Invalid msgid or msgtype < 1 or out of data size \n");
 		}
 		debug_critical("Fail to callback send message msg queue : [%d] \n", g_cbid);

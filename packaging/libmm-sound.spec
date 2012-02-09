@@ -106,27 +106,26 @@ fi
 %defattr(-,root,root,-)
 %{_bindir}/sound_server
 %{_libdir}/libmmfsound.so.*
-%{_libdir}/libsoundplugindtmf.so.*
+%{_libdir}/libsoundplugintone.so.*
 %{_libdir}/libmmfsoundcommon.so.*
 %{_libdir}/libsoundpluginwave.so.*
 %{_libdir}/libsoundpluginkeytone.so.*
 %{_libdir}/libmmfkeysound.so.*
 %{_libdir}/libsoundpluginheadset.so.*
-%{_libdir}/soundplugins/libsoundpluginkdtmf.so
+%{_libdir}/soundplugins/libsoundpluginktone.so
 %{_libdir}/soundplugins/libsoundpluginheadset.so
 %{_libdir}/soundplugins/libsoundpluginwave.so
 %{_libdir}/soundplugins/libsoundpluginkeytone.so
 %{_sysconfdir}/rc.d/init.d/soundserver
 %{_sysconfdir}/rc.d/rc3.d/S40soundserver
 %{_sysconfdir}/rc.d/rc4.d/S40soundserver
-/opt/system/dtmf_all.raw
 
 %files devel
 %defattr(-,root,root,-)
 %{_libdir}/libmmfkeysound.so
 %{_libdir}/libmmfsound.so
 %{_libdir}/libsoundpluginheadset.so
-%{_libdir}/libsoundplugindtmf.so
+%{_libdir}/libsoundplugintone.so
 %{_libdir}/libmmfsoundcommon.so
 %{_libdir}/libsoundpluginwave.so
 %{_libdir}/libsoundpluginkeytone.so

@@ -17,7 +17,7 @@ all
 	/utc/utc_mm_sound_pcm_play_close_func
 	/utc/utc_mm_sound_play_sound_func
 	/utc/utc_mm_sound_stop_sound_func
-	/utc/utc_mm_sound_play_dtmf_func
+	/utc/utc_mm_sound_play_tone_func
 	/utc/utc_mm_sound_play_keysound_func
 	"Completed Full Test Suite"
 # EOF

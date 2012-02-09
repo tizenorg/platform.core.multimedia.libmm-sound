@@ -3,4 +3,3 @@
 @PREFIX@/lib/soundplugins/*.so*
 @PREFIX@/bin/sound_server
 /etc/rc.d/*
-/opt/system/*

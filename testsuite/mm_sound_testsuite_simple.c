@@ -43,7 +43,6 @@
 #include <mm_session_private.h>
 #include <audio-session-manager-types.h>
 
-#define TOUCH_FILE "/usr/share/keysound/AUI/Touch.wav"
 #define POWERON_FILE	"/usr/share/keysound/poweron.wav"
 
 
@@ -210,7 +209,7 @@ static void interpret (char *cmd)
 		case CURRENT_STATUS_MAINMENU:
 			if(strncmp(cmd, "k", 1) == 0)
 			{
-				ret = mm_sound_play_keysound(TOUCH_FILE, 8);
+				ret = mm_sound_play_keysound(POWERON_FILE, 8);
 				if(ret < 0)
 					debug_log("keysound play failed with 0x%x\n", ret);
 			}
@@ -444,7 +443,7 @@ static void interpret (char *cmd)
 						tonetime = MIN_TONE_PLAY_TIME;
 					}
 
-					debug_log("volume type: %d\t volume is %f\t dtmftime: %d \n", volume_type, volume, tonetime);
+					debug_log("volume type: %d\t volume is %f\t tonetime: %d \n", volume_type, volume, tonetime);
 					ret = mm_sound_play_tone(tone, volume_type, volume, tonetime, &handle);
 					if(ret<0)
 						debug_log ("[magpie] Play DTMF sound cannot be played ! %d\n", handle);
