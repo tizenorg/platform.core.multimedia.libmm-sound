@@ -197,37 +197,6 @@ int mm_sound_set_path(int gain, int output, int input, int option);
  */
 int mm_sound_get_path(int *gain, int *output, int *input, int *option);
 
-/**
- * This function is to play beep sound.
- *
- * @param 	vol_type	[in] volume type
- * 			duration	[in] duration of beep sound in ms. -1 indicates infinite duration. minimum duration is 100ms and actual playable duration is multiple of 100ms.
- *			handle	[out] Handle
- *
- * @return	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- *
- * @remark	use mm_sound_stop_sound to stop beep before given duration
- * @see	volume_type_t
- * @pre		None.
- * @post	Beep sound will be started to play.
- * @par Example
- * @code
-int ret = 0;
-int handle = 0;
-ret = mm_sound_play_beep (VOLUME_TYPE_SYSTEM, 1000, &handle); //play 1000 ms = 1 sec.
-if(ret < 0)
-{
-	printf("play tone failed\n");
-}
-else
-{
-	printf("play tone success\n");
-}
- * @endcode
- */
-DEPRECATED_API int mm_sound_play_beep (const volume_type_t vol_type, const int duration, int *handle);
-
 int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int rate, MMSoundPcmChannel_t channel, MMSoundPcmFormat_t format, const volume_type_t vol_type, int asm_event);
 
 /**

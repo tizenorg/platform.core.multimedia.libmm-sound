@@ -39,7 +39,6 @@
 	extern "C" {
 #endif
 
-#define DEPRECATED_API __attribute__ ((deprecated))
 /**
 	@addtogroup SOUND
 	@{
@@ -1339,23 +1338,8 @@ int mm_sound_stop_sound(int handle);
 
 
 /**
- * Enumerations for DTMF
+ * Enumerations for TONE
  */
-
-typedef enum  {
-	MM_SOUND_DTMF_0,				/**< Predefined DTMF 0 */
-	MM_SOUND_DTMF_1, 				/**< Predefined DTMF 1 */
-	MM_SOUND_DTMF_2,				/**< Predefined DTMF 2 */
-	MM_SOUND_DTMF_3,				/**< Predefined DTMF 3 */
-	MM_SOUND_DTMF_4,				/**< Predefined DTMF 4 */
-	MM_SOUND_DTMF_5,				/**< Predefined DTMF 5 */
-	MM_SOUND_DTMF_6,				/**< Predefined DTMF 6 */
-	MM_SOUND_DTMF_7,				/**< Predefined DTMF 7 */
-	MM_SOUND_DTMF_8,				/**< Predefined DTMF 8 */
-	MM_SOUND_DTMF_9,				/**< Predefined DTMF 9 */
-	MM_SOUND_DTMF_ASTERISK,		/**< Predefined DTMF Asterisk (*) */
-	MM_SOUND_DTMF_SHARP,			/**< Predefined DTMF Sharp (#) */
-}MMSoundDtmf_t;
 
 typedef enum  {
 	MM_SOUND_TONE_DTMF_0 = 0,			/**< Predefined DTMF 0 */
@@ -1471,46 +1455,15 @@ typedef enum  {
 }MMSoundTone_t;
 
 typedef unsigned long sound_time_msec_t;		/**< millisecond unit */
-/**
- * This function is to play dtmf sound.
- *
- * @param	num		[in] DTMF number (0~9, *, #)
- * 			volume	[in] volume type
- * 			time	[in] how long sound (110~ 5000 ms)
- *			handle	[in] Handle of mm_sound_play_sound
- *
- * @return	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- *
- * @remark	It doesn't provide stop
- * @see	volume_type_t MMSoundDtmf_t
- * @pre		None.
- * @post	DTMF sound will be generated.
- * @par Example
- * @code
-int ret = 0;
-
-ret = mm_sound_play_dtmf(MM_SOUND_DTMF_9, VOLUME_TYPE_SYSTEM, 1000); //play 1 second
-if(ret < 0)
-{
-	printf("play dtmf failed\n");
-}
-else
-{
-	printf("play dtmf success\n");
-}
- * @endcode
- */
-DEPRECATED_API int mm_sound_play_dtmf(MMSoundDtmf_t num, const volume_type_t vol_type, const sound_time_msec_t time);
 
 /**
  * This function is to play tone sound.
  *
- * @param	num			[in] DTMF number (0~7, *, #)
+ * @param	num			[in] predefined tone type (MMSoundTone_t)
  * 			volume type	[in] volume type
  *			volume		[in] volume ratio (0.0 ~1.0)
- * 			time			[in] how long sound (110~ 5000 ms)
- *			handle		[in] Handle of mm_sound_play_sound
+ * 			duration		[in] millisecond (-1 for infinite)
+ *			handle		[in] Handle of mm_sound_play_tone
  *
  * @return	This function returns MM_ERROR_NONE on success, or negative value
  *			with error code.
@@ -1518,12 +1471,12 @@ DEPRECATED_API int mm_sound_play_dtmf(MMSoundDtmf_t num, const volume_type_t vol
  * @remark	It doesn't provide stop
  * @see	volume_type_t MMSoundTone_t
  * @pre		None.
- * @post	DTMF sound will be generated.
+ * @post	TONE sound will be played.
  * @par Example
  * @code
 int ret = 0;
 
-ret = mm_sound_play_tone(TONE_DTMF_9, VOLUME_TYPE_SYSTEM, 1000); //play 1 second
+ret = mm_sound_play_tone(MM_SOUND_TONE_DTMF_9, VOLUME_TYPE_SYSTEM, 1.0, 1000, &handle); //play 1 second with volume ratio 1.0
 if(ret < 0)
 {
 	printf("play tone failed\n");

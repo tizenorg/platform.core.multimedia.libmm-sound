@@ -982,28 +982,6 @@ int mm_sound_stop_sound(int handle)
 	return MM_ERROR_NONE;
 }
 
-
-
-///////////////////////////////////
-////     MMSOUND DTMF APIs
-///////////////////////////////////
-EXPORT_API 
-int mm_sound_play_dtmf(MMSoundDtmf_t num, const volume_type_t vol_type, const sound_time_msec_t time)
-{
-	debug_critical("[%s] this API is deprecated...please use mm_sound_play_tone instead\n", __func__);
-	return MM_ERROR_NOT_IMPLEMENTED;
-}
-
-///////////////////////////////////
-////     MMSOUND BEEP APIs
-///////////////////////////////////
-EXPORT_API
-int mm_sound_play_beep (const volume_type_t vol_type, const int duration, int *handle)
-{
-	debug_critical("[%s] this API is deprecated...please use mm_sound_play_tone instead\n", __func__);
-	return MM_ERROR_NOT_IMPLEMENTED;
-}
-
 ///////////////////////////////////
 ////     MMSOUND TONE APIs
 ///////////////////////////////////
