@@ -1,15 +1,15 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.4.1
+Version:    0.5.11
 Release:    1
-Group:      TO_BE/FILLED_IN
-License:    LGPL
+Group:      Libraries/Sound
+License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Requires(pre): /bin/pidof
 Requires(post): /sbin/ldconfig
 Requires(post): /usr/bin/vconftool
 Requires(postun): /sbin/ldconfig
-BuildRequires: vconf-keys-devel
+BuildRequires: vconf-keys-devel, libmm-common-internal-devel
 BuildRequires: pkgconfig(mm-common)
 BuildRequires: pkgconfig(avsystem)
 BuildRequires: pkgconfig(mm-log)
@@ -41,12 +41,12 @@ Requires:   %{name}-devel = %{version}-%{release}
 %description sdk-devel
 MMSound development package for sound system
 
-%package tool
+%package tools
 Summary: MMSound utility package - contians mm_sound_testsuite, sound_check
 Group:      TO_BE/FILLED_IN
 Requires:   %{name} = %{version}-%{release}
 
-%description tool
+%description tools
 MMSound utility package - contians mm_sound_testsuite, sound_check for sound system
 
 
@@ -56,28 +56,14 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 
 
 %build
-./autogen.sh
 CFLAGS="%{optflags} -fvisibility=hidden -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\""; export CFLAGS
-%configure --prefix=/usr --enable-sdk --enable-pulse
+./autogen.sh
+%configure  --enable-pulse
 
 make %{?jobs:-j%jobs}
 
 %install
-rm -rf %{buildroot}
 %make_install
-
-
-mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc3.d
-mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc4.d
-ln -s %{_sysconfdir}/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S40soundserver
-ln -s %{_sysconfdir}/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4.d/S40soundserver
-
-%pre
-#PID=`/bin/pidof sound_server`
-#if [ -n "$PID" ]; then
-#    echo "preinst: kill current sound server"
-#    /usr/bin/killall -9 sound_server
-#fi
 
 
 %post
@@ -92,18 +78,15 @@ ln -s %{_sysconfdir}/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4.d/S4
 /usr/bin/vconftool set -t int db/volume/java 11 -g 29
 /usr/bin/vconftool set -t int memory/Sound/RoutePolicy 0 -i -g 29
 
-if [ -n "`env|grep SBOX`" ]; then
-    echo "postinst: sbox installation skip lauching daemon"
-else
-        echo "postinst: run sound server again"
-        /usr/bin/sound_server -S&
-fi
+mkdir -p %{_sysconfdir}/rc.d/rc3.d
+mkdir -p %{_sysconfdir}/rc.d/rc4.d
+ln -s %{_sysconfdir}/init.d/soundserver %{_sysconfdir}/rc.d/rc3.d/S40soundserver
+ln -s %{_sysconfdir}/init.d/soundserver %{_sysconfdir}/rc.d/rc4.d/S40soundserver
 
 %postun -p /sbin/ldconfig
 
 
 %files
-%defattr(-,root,root,-)
 %{_bindir}/sound_server
 %{_libdir}/libmmfsound.so.*
 %{_libdir}/libsoundplugintone.so.*
@@ -117,11 +100,6 @@ fi
 %{_libdir}/soundplugins/libsoundpluginwave.so
 %{_libdir}/soundplugins/libsoundpluginkeytone.so
 %{_sysconfdir}/rc.d/init.d/soundserver
-%{_sysconfdir}/rc.d/rc3.d/S40soundserver
-%{_sysconfdir}/rc.d/rc4.d/S40soundserver
-
-%files devel
-%defattr(-,root,root,-)
 %{_libdir}/libmmfkeysound.so
 %{_libdir}/libmmfsound.so
 %{_libdir}/libsoundpluginheadset.so
@@ -129,15 +107,15 @@ fi
 %{_libdir}/libmmfsoundcommon.so
 %{_libdir}/libsoundpluginwave.so
 %{_libdir}/libsoundpluginkeytone.so
+
+%files devel
 %{_includedir}/mmf/mm_sound_private.h
 
 
 %files sdk-devel
-%defattr(-,root,root,-)
 %{_includedir}/mmf/mm_sound.h
 %{_libdir}/pkgconfig/mm-keysound.pc
 %{_libdir}/pkgconfig/mm-sound.pc
 
-%files tool
-%defattr(-,root,root,-)
+%files tools
 %{_bindir}/mm_sound_testsuite
