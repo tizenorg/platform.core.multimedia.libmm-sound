@@ -9,7 +9,6 @@ Requires(pre): /bin/pidof
 Requires(post): /sbin/ldconfig
 Requires(post): /usr/bin/vconftool
 Requires(postun): /sbin/ldconfig
-BuildRequires: vconf-keys-devel, libmm-common-internal-devel
 BuildRequires: pkgconfig(mm-common)
 BuildRequires: pkgconfig(avsystem)
 BuildRequires: pkgconfig(mm-log)
