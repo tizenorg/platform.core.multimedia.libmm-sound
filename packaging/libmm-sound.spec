@@ -5,6 +5,7 @@ Release:    1
 Group:      Libraries/Sound
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
+Source1001: packaging/libmm-sound.manifest 
 Requires(pre): /bin/pidof
 Requires(post): /sbin/ldconfig
 Requires(post): /usr/bin/vconftool
@@ -55,6 +56,7 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 
 
 %build
+cp %{SOURCE1001} .
 CFLAGS="%{optflags} -fvisibility=hidden -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\""; export CFLAGS
 ./autogen.sh
 %configure  --enable-pulse
@@ -86,6 +88,7 @@ ln -s %{_sysconfdir}/init.d/soundserver %{_sysconfdir}/rc.d/rc4.d/S40soundserver
 
 
 %files
+%manifest libmm-sound.manifest
 %{_bindir}/sound_server
 %{_libdir}/libmmfsound.so.*
 %{_libdir}/libsoundplugintone.so.*
@@ -108,13 +111,16 @@ ln -s %{_sysconfdir}/init.d/soundserver %{_sysconfdir}/rc.d/rc4.d/S40soundserver
 %{_libdir}/libsoundpluginkeytone.so
 
 %files devel
+%manifest libmm-sound.manifest
 %{_includedir}/mmf/mm_sound_private.h
 
 
 %files sdk-devel
+%manifest libmm-sound.manifest
 %{_includedir}/mmf/mm_sound.h
 %{_libdir}/pkgconfig/mm-keysound.pc
 %{_libdir}/pkgconfig/mm-sound.pc
 
 %files tools
+%manifest libmm-sound.manifest
 %{_bindir}/mm_sound_testsuite
