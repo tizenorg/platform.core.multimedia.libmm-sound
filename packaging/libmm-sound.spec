@@ -5,6 +5,7 @@ Release:    1
 Group:      Libraries/Sound
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
+Source1:    sound-server.service
 Source1001: packaging/libmm-sound.manifest 
 Requires(pre): /bin/pidof
 Requires(post): /sbin/ldconfig
@@ -61,10 +62,19 @@ CFLAGS="%{optflags} -fvisibility=hidden -DEXPORT_API=\"__attribute__((visibility
 ./autogen.sh
 %configure  --enable-pulse
 
-make %{?jobs:-j%jobs}
+make %{?_smp_mflags}
 
 %install
 %make_install
+install -d %{buildroot}%{_libdir}/systemd/user/tizen-middleware.target.wants
+install -m0644 %{SOURCE1} %{buildroot}%{_libdir}/systemd/user/
+ln -sf ../sound-server.service %{buildroot}%{_libdir}/systemd/user/tizen-middleware.target.wants/sound-server.service
+
+# FIXME: remove after systemd is in
+mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc3.d
+mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc4.d
+ln -s ../init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S40soundserver
+ln -s ../init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4.d/S40soundserver
 
 
 %post
@@ -79,16 +89,14 @@ make %{?jobs:-j%jobs}
 /usr/bin/vconftool set -t int db/volume/java 11 -g 29
 /usr/bin/vconftool set -t int memory/Sound/RoutePolicy 0 -i -g 29
 
-mkdir -p %{_sysconfdir}/rc.d/rc3.d
-mkdir -p %{_sysconfdir}/rc.d/rc4.d
-ln -s %{_sysconfdir}/init.d/soundserver %{_sysconfdir}/rc.d/rc3.d/S40soundserver
-ln -s %{_sysconfdir}/init.d/soundserver %{_sysconfdir}/rc.d/rc4.d/S40soundserver
-
 %postun -p /sbin/ldconfig
 
 
 %files
 %manifest libmm-sound.manifest
+%attr(0755,root,root) %{_sysconfdir}/rc.d/init.d/soundserver
+%{_sysconfdir}/rc.d/rc3.d/S40soundserver
+%{_sysconfdir}/rc.d/rc4.d/S40soundserver
 %{_bindir}/sound_server
 %{_libdir}/libmmfsound.so.*
 %{_libdir}/libsoundplugintone.so.*
@@ -101,7 +109,8 @@ ln -s %{_sysconfdir}/init.d/soundserver %{_sysconfdir}/rc.d/rc4.d/S40soundserver
 %{_libdir}/soundplugins/libsoundpluginheadset.so
 %{_libdir}/soundplugins/libsoundpluginwave.so
 %{_libdir}/soundplugins/libsoundpluginkeytone.so
-%{_sysconfdir}/rc.d/init.d/soundserver
+%{_libdir}/systemd/user/tizen-middleware.target.wants/sound-server.service
+%{_libdir}/systemd/user/sound-server.service
 %{_libdir}/libmmfkeysound.so
 %{_libdir}/libmmfsound.so
 %{_libdir}/libsoundpluginheadset.so
