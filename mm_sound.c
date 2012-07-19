@@ -1074,7 +1074,51 @@ int mm_sound_get_path(int *gain, int *output, int *input, int *option)
 enum {
 	USE_PA_SINK_ALSA = 0,
 	USE_PA_SINK_A2DP,
+	USE_PA_SINK_ALSA_HEADSET,
 };
+
+enum {
+	EARJACK_INSERTED_NONE = 0,
+	EARJACK_INSERTED,
+};
+
+static int check_earjack_status (void)
+{
+	int fd = 0;
+	char readval = EARJACK_INSERTED_NONE;
+	fd = open("/sys/devices/platform/jack/earjack_online", O_RDONLY);
+
+	if (fd == -1) {
+		return readval;
+	}
+
+	read(fd, &readval, sizeof(readval));
+	switch (readval) {
+	case '0':
+		readval = EARJACK_INSERTED_NONE;
+		break;
+	case '1':
+	case '3':
+	case '8':
+		readval = EARJACK_INSERTED;
+		break;
+	case '2':
+		if (1 == read(fd, &readval, sizeof(readval))) {
+			if (readval == '0') {
+				readval = EARJACK_INSERTED;
+			}
+		}
+		break;
+	default:
+		readval = EARJACK_INSERTED_NONE;
+		break;
+	}
+
+	close(fd);
+	return readval;
+}
+
+
 EXPORT_API
 int mm_sound_route_set_system_policy (system_audio_route_t route)
 {
@@ -1165,6 +1209,14 @@ int mm_sound_route_set_system_policy (system_audio_route_t route)
 			return ret;
 		}
 	} else {
+		/* set default sink to headset if it exists*/
+		if (pa_sink == USE_PA_SINK_ALSA && codec_option == AVSYS_AUDIO_PATH_OPTION_JACK_AUTO) {
+			/*inserted?*/
+			if (check_earjack_status() == EARJACK_INSERTED) {
+				debug_msg("Set default sink to headeset since it's inserted\n");
+				pa_sink = USE_PA_SINK_ALSA_HEADSET;
+			}
+		}
 
 		/* Try to change default sink */
 		ret = MMSoundClientSetAudioRoute(pa_sink);
@@ -1181,7 +1233,7 @@ int mm_sound_route_set_system_policy (system_audio_route_t route)
 		}
 
 		/* Do Set path if (IGNORE A2DP or HANDSET) or (DEFAULT with no BT) */
-		if(pa_sink == USE_PA_SINK_ALSA || (pa_sink == USE_PA_SINK_A2DP && ret != MM_ERROR_NONE)) 
+		if(pa_sink == USE_PA_SINK_ALSA || pa_sink == USE_PA_SINK_ALSA_HEADSET || (pa_sink == USE_PA_SINK_A2DP && ret != MM_ERROR_NONE))
 		{
 			ret = avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_KEYTONE, AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE, codec_option);
 			if(AVSYS_FAIL(ret)) {

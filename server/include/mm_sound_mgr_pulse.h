@@ -37,9 +37,11 @@ typedef struct _sink_struct
 	int old_priority;
 	mm_ipc_msg_t *msg;
 	int is_speaker_on;
+	int is_headset_on;
 	int is_bt_on;
 	int route_to;
 	char speaker_name[256];
+	char headset_name[256];
 	char bt_name[256];
 	int (*func)(mm_ipc_msg_t*);
 } sink_struct;

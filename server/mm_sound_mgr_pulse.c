@@ -414,6 +414,14 @@ void get_sink_info_callback(pa_context *c, const pa_sink_info *i, int is_last, v
 				/* route to bt and bt is on */
 				debug_msg ("Trying to set default sink to [%s] \n", ss->bt_name);
 				pa_operation_unref(pa_context_set_default_sink(g_context, ss->bt_name, NULL, NULL));
+			} else if (ss->route_to == 2 && ss->is_headset_on) {
+				/* route to headset and headset is on (PA loads 2 alsa sinks for speaker & headset device)*/
+                                debug_msg ("Trying to set default sink to [%s] \n", ss->headset_name);
+                                pa_operation_unref(pa_context_set_default_sink(g_context, ss->headset_name, NULL, NULL));
+			} else if (ss->route_to == 2 && ss->is_speaker_on) {
+                                /* route to headset and PA loads one alsa sink for speaker&headset devices*/
+                                debug_msg ("Trying to set default sink to [%s] \n", ss->speaker_name);
+                                pa_operation_unref(pa_context_set_default_sink(g_context, ss->speaker_name, NULL, NULL));
 			} else {
 				/* Nothing to do.... */
 				debug_warning ("No match for [%d] \n", ss->route_to);
@@ -454,7 +462,10 @@ void get_sink_info_callback(pa_context *c, const pa_sink_info *i, int is_last, v
    if (i->name) {
 		debug_msg("sink name = [%s]\n", i->name);	 
    
-		if (strstr (i->name, "alsa_")) {
+		if (strstr (i->name, "headset")) {
+			ss->is_headset_on = 1;
+			strncpy (ss->headset_name, i->name, sizeof(ss->headset_name)-1);
+		} else if (strstr (i->name, "alsa_")) {
 			ss->is_speaker_on = 1;
 			strncpy (ss->speaker_name, i->name, sizeof(ss->speaker_name)-1);
 		} else if (strstr (i->name, "bluez")) {
@@ -571,7 +582,7 @@ int MMSoundMgrPulseHandleSetAudioRouteReq (mm_ipc_msg_t *msg, int (*sendfunc)(mm
 	ss->func = sendfunc;
 
 	/* specific setting */
-	ss->is_speaker_on = ss->is_bt_on = 0;
+	ss->is_speaker_on = ss->is_bt_on = ss->is_headset_on = 0;
 	ss->route_to =  msg->sound_msg.handle;
 
 	/* Do async pulse operation */

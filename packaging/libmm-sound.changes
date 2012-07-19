@@ -1,3 +1,7 @@
+* Thur Jun 28 2012 Vivian Zhang <vivian.zhang@intel.com> - 0.5.11
+- Add the check for headset sink in audio route setting, which can handle the case
+  that speaker and headset are 2 separate alsa sinks in pulseaudio
+
 * Thu Jun 28 2012 Patrick McCarty <patrick.mccarty@linux.intel.com> - 0.5.11
 - Remove obsolete Requires(pre) entry for /bin/pidof
 

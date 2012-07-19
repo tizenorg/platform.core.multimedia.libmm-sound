@@ -328,9 +328,13 @@ typedef struct _sinkinfo_struct
 {
 	pa_threaded_mainloop *mainloop;
 	int is_speaker_on;
+	int is_headset_on;
 	int is_bt_on;
 	int route_to;
 	char speaker_name[256];
+	/* Add headset_name to handle the instance that headset and speaker are two separate alsa sinks */
+	/* And we should switch speaker/headset sinks manually */
+	char headset_name[256];
 	char bt_name[256];
 
 } sinkinfo_struct;
@@ -346,12 +350,22 @@ void __get_sink_info_callback(pa_context *c, const pa_sink_info *i, int is_last,
 
    if (is_last) {
 	   /* Change default sink which we want to */
-	   if (ss->route_to == 0 && ss->is_speaker_on ) {
+           /* if route_to == PULSE_DEFAULT_SINK_ALSA (earjack is inserted) */
+	   /* switch to headset sink if it exists, else switch to speaker sink */
+	   if (ss->route_to == 0 && ss->is_headset_on) {
+		   debug_error ("Trying to set default sink to [%s] \n", ss->headset_name);
+		   pa_operation_unref(pa_context_set_default_sink(c, ss->headset_name, NULL, NULL));
+	   } else if (ss->route_to == 0 && ss->is_speaker_on ) {
 		   debug_error ("Trying to set default sink to [%s] \n", ss->speaker_name);
 		   pa_operation_unref(pa_context_set_default_sink(c, ss->speaker_name, NULL, NULL));
+	   /* if route_to == PULSE_DEFAULT_SINK_BT (earjack is ejected) */ 
+	   /* switch to bt sink if it exists, else switch to speaker sink if speaker/headset sinks should be switched manually */
 	   } else if (ss->route_to == 1 && ss->is_bt_on) {
 		   debug_error ("Trying to set default sink to [%s] \n", ss->bt_name);
 		   pa_operation_unref(pa_context_set_default_sink(c, ss->bt_name, NULL, NULL));
+	   } else if (ss->route_to == 1 && ss->is_headset_on && ss->is_speaker_on) {
+		   debug_error ("Trying to set default sink to [%s] \n", ss->speaker_name);
+		   pa_operation_unref(pa_context_set_default_sink(c, ss->speaker_name, NULL, NULL));
 	   } else {
 		   debug_error ("No match for [%d] \n", ss->route_to);
 	   }
@@ -364,8 +378,12 @@ void __get_sink_info_callback(pa_context *c, const pa_sink_info *i, int is_last,
 
    if (i->name) {
 		debug_error("sink name = [%s]\n", i->name);
-
-		if (strstr (i->name, "alsa_")) {
+		/* Check the sink name for headset if it has been loaded in pulseaudio */
+		if (strstr (i->name, "headset")) {
+			ss->is_headset_on = 1;
+			strncpy (ss->headset_name, i->name, sizeof(ss->headset_name)-1);
+		/* If sink for headset is not defined, set the default alsa sink as speaker sink */
+		} else if (strstr (i->name, "alsa_")) {
 			ss->is_speaker_on = 1;
 			strncpy (ss->speaker_name, i->name, sizeof(ss->speaker_name)-1);
 		} else if (strstr (i->name, "bluez")) {
@@ -389,6 +407,7 @@ int __set_audio_route (pa_threaded_mainloop *mainloop, pa_context *context, int 
 	/* parament set */
 	ss->mainloop = mainloop;
 	ss->route_to = route; // 0=alsa 1=bt
+	ss->is_speaker_on = ss->is_headset_on = ss->is_bt_on = 0;
 
 	if(MM_ERROR_NONE != __mm_sound_lock()) {
 		debug_error("Lock failed\n");
