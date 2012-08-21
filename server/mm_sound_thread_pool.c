@@ -81,7 +81,7 @@ int MMSoundThreadPoolDump(int fulldump)
 				g_thread_pool_get_max_unused_threads(),
 				g_thread_pool_get_max_idle_time()	);
 	}
-	debug_msg ("***** [ThreadPool] running=[%d], unused=[%d], %d\n",
+	debug_msg ("***** [ThreadPool] running=[%d], unused=[%d]\n",
 			g_thread_pool_get_num_threads (g_pool),
 			g_thread_pool_get_num_unused_threads() );
 

@@ -31,7 +31,13 @@ int MMSoundClientCallbackFini(void);
 int MMSoundClientPlayTone(int number, int vol_type, double volume, int time, int *handle);
 int MMSoundClientPlaySound(MMSoundParamType *param, int tone, int keytone, int *handle);
 int MMSoundClientStopSound(int handle);
-int MMSoundClientIsBtA2dpOn (int* connected, char** bt_name);
-int MMSoundClientSetAudioRoute(int route);
+int _mm_sound_client_is_route_available(mm_sound_route route, bool *is_available);
+int _mm_sound_client_foreach_available_route_cb(mm_sound_available_route_cb, void *user_data);
+int _mm_sound_client_set_active_route(mm_sound_route route);
+int _mm_sound_client_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
+int _mm_sound_client_add_active_device_changed_callback(mm_sound_active_device_changed_cb func, void* user_data);
+int _mm_sound_client_remove_active_device_changed_callback(void);
+int _mm_sound_client_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void* user_data);
+int _mm_sound_client_remove_available_route_changed_callback(void);
 
 #endif /* __MM_SOUND_CLIENT_H__ */

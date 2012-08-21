@@ -1,5 +1,0 @@
-# if your module, creates shared libraries
-@PREFIX@/lib/*.so*
-@PREFIX@/lib/soundplugins/*.so*
-@PREFIX@/bin/sound_server
-/etc/rc.d/*

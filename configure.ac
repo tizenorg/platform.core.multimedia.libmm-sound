@@ -21,17 +21,6 @@ AC_HEADER_TIME
 AC_PROG_GCC_TRADITIONAL
 AC_PROG_LIBTOOL
 
-AC_ARG_ENABLE(sdk, AC_HELP_STRING([--enable-sdk], [sdk build]),
-	[
-	 case "${enableval}" in
-	  yes) IS_SDK=yes ;;
-	  no)  IS_SDK=no ;;
-	  *)   AC_MSG_ERROR(bad value ${enableval} for --enable-sdk) ;;
-	 esac
-	],
-	[IS_SDK=no])
-AM_CONDITIONAL([IS_SDK], [test "x$IS_SDK" = "xyes"])
-
 # Checks for libraries.
 PKG_CHECK_MODULES(AVSYSTEM, avsysaudio)
 AC_SUBST(AVSYSTEM_CFLAGS)
@@ -70,7 +59,6 @@ PKG_CHECK_MODULES(HEYNOTI, heynoti)
 AC_SUBST(HEYNOTI_CFLAGS)
 AC_SUBST(HEYNOTI_LIBS)
 
-
 AC_ARG_ENABLE(pulse, AC_HELP_STRING([--enable-pulse], [enable pulseaudio client]),
 [
  case "${enableval}" in
@@ -85,6 +73,24 @@ AC_SUBST(PULSE_CFLAGS)
 AC_SUBST(PULSE_LIBS)
 fi
 AM_CONDITIONAL([USE_PULSE], [test "x$USE_PULSE" = "xyes"])
+
+dnl use security --------------------------------------------------------------------------
+AC_ARG_ENABLE(security, AC_HELP_STRING([--enable-security], [using security]),
+[
+ case "${enableval}" in
+    yes) USE_SECURITY=yes ;;
+     no)  USE_SECURITY=no ;;
+      *)   AC_MSG_ERROR(bad value ${enableval} for --enable-security) ;;
+ esac
+ ],[USE_SECURITY=no])
+
+if test "x$USE_SECURITY" = "xyes"; then
+PKG_CHECK_MODULES(SECURITY, security-server)
+AC_SUBST(SECURITY_CFLAGS)
+AC_SUBST(SECURITY_LIBS)
+fi
+AM_CONDITIONAL(USE_SECURITY, test "x$USE_SECURITY" = "xyes")
+dnl end --------------------------------------------------------------------
 
 
 # Checks for header files.
@@ -111,14 +117,10 @@ server/Makefile
 server/plugin/Makefile
 server/plugin/wav/Makefile
 server/plugin/keytone/Makefile
-server/plugin/headset/Makefile
 server/plugin/tone/Makefile
 pkgconfig/Makefile
 pkgconfig/mm-sound.pc
 pkgconfig/mm-keysound.pc
-pkgconfig-sdk/Makefile
-pkgconfig-sdk/mm-sound.pc
-pkgconfig-sdk/mm-keysound.pc
 testsuite/Makefile
 init/Makefile
 ])

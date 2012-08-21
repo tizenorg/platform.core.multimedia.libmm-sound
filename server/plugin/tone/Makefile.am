@@ -17,5 +17,5 @@ libsoundplugintone_la_LIBADD += $(AVSYSTEM_LIBS)
 
 install-exec-hook:
 	mkdir -p $(DESTDIR)$(libdir)/soundplugins
-	ln -sf /usr/lib/libsoundplugintone.so $(DESTDIR)$(libdir)/soundplugins/libsoundpluginktone.so
+	ln -sf /usr/lib/libsoundplugintone.so $(DESTDIR)$(libdir)/soundplugins/libsoundplugintone.so
 

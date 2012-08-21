@@ -38,6 +38,7 @@
 #include <mm_debug.h>
 #include "include/mm_sound_private.h"
 #include "include/mm_sound.h"
+#include "include/mm_sound_utils.h"
 #include "include/mm_sound_client.h"
 #include "include/mm_ipc.h"
 #include "include/mm_sound_common.h"
@@ -53,6 +54,9 @@
 #define _MAX_SYSTEM_SAMPLERATE	48000
 #define MIN_TONE_PLAY_TIME 300
 
+#define	TRUE	1
+#define	FALSE	0
+
 typedef struct {
 	volume_callback_fn	func;
 	void*				data;
@@ -63,6 +67,23 @@ volume_cb_param g_volume_param[VOLUME_TYPE_MAX];
 
 static pthread_mutex_t _volume_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+typedef struct {
+	avsys_handle_t		audio_handle;
+	int					asm_handle;
+	ASM_sound_events_t	asm_event;
+
+	int 				is_started;
+
+	MMMessageCallback	msg_cb;
+	void *msg_cb_param;
+
+
+} mm_sound_pcm_t;
+
+static int _pcm_sound_start (MMSoundPcmHandle_t handle);
+static int _pcm_sound_stop_internal (MMSoundPcmHandle_t handle);
+static int _pcm_sound_stop(MMSoundPcmHandle_t handle);
+
 int _validate_volume(volume_type_t type, int value)
 {
 	if (value < 0)
@@ -70,7 +91,6 @@ int _validate_volume(volume_type_t type, int value)
 
 	switch (type)
 	{
-	case VOLUME_TYPE_ALARM:
 	case VOLUME_TYPE_CALL:
 		if (value >= AVSYS_AUDIO_VOLUME_MAX_BASIC) {
 			return -1;
@@ -78,6 +98,7 @@ int _validate_volume(volume_type_t type, int value)
 		break;
 	case VOLUME_TYPE_SYSTEM:
 	case VOLUME_TYPE_MEDIA:
+	case VOLUME_TYPE_ALARM:
 	case VOLUME_TYPE_EXT_JAVA:
 	case VOLUME_TYPE_NOTIFICATION:
 	case VOLUME_TYPE_RINGTONE:
@@ -206,23 +227,47 @@ int mm_sound_volume_set_value(volume_type_t type, const unsigned int value)
 	char *keystr[] = {VCONF_KEY_VOLUME_TYPE_SYSTEM, VCONF_KEY_VOLUME_TYPE_NOTIFICATION, VCONF_KEY_VOLUME_TYPE_ALARM,
 			VCONF_KEY_VOLUME_TYPE_RINGTONE, VCONF_KEY_VOLUME_TYPE_MEDIA, VCONF_KEY_VOLUME_TYPE_CALL,
 			VCONF_KEY_VOLUME_TYPE_ANDROID,VCONF_KEY_VOLUME_TYPE_JAVA};
+	int vconf_value = 0;
+#ifdef SEPARATE_EARPHONE_VOLUME
+	system_audio_route_device_t dev = 0;
+#endif
 
 	debug_fenter();
 
 	/* Check input param */
-	if(0 > _validate_volume(type, (int)value)) {
+	if (0 > _validate_volume(type, (int)value)) {
 		debug_error("invalid volume type %d, value %u\n", type, value);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+#ifdef SEPARATE_EARPHONE_VOLUME
+	/* Get volume value from VCONF */
+	if (vconf_get_int(keystr[type], &vconf_value)){
+		debug_error("Can not get %s as %d\n", keystr[type], vconf_value);
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	/* Calculate volume value of current device */
+	mm_sound_route_get_playing_device(&dev);
+	if (dev == SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_EARPHONE) {
+		vconf_value = 0x10000 | (vconf_value & 0x00FF) | (value << 8);
+		debug_log("volume_set_value [earphone] %d(0x%04x)", value, vconf_value);
+	} else {
+		vconf_value = (vconf_value & 0xFF00) | value;
+		debug_log("volume_set_value [speaker] %d(0x%04x)", value, vconf_value);
+	}
+#else
+	vconf_value = value;
+#endif
+
 	/* Set volume value to VCONF */
-	if(vconf_set_int(keystr[type], value)) {
-		debug_error("Can not set %s as %d\n", keystr[type], value);
+	if (vconf_set_int(keystr[type], vconf_value)) {
+		debug_error("Can not set %s as %d\n", keystr[type], vconf_value);
 		ret = MM_ERROR_SOUND_INTERNAL;
 	} else {
 		/* update shared memory value */
 		ret = avsys_audio_set_volume_by_type(type, value);
-		if(AVSYS_FAIL(ret)) {
+		if (AVSYS_FAIL(ret)) {
 			debug_error("Can not set volume to shared memory 0x%x\n", ret);
 		}
 	}
@@ -238,22 +283,40 @@ int mm_sound_volume_get_value(volume_type_t type, unsigned int *value)
 	char *keystr[] = {VCONF_KEY_VOLUME_TYPE_SYSTEM, VCONF_KEY_VOLUME_TYPE_NOTIFICATION, VCONF_KEY_VOLUME_TYPE_ALARM,
 			VCONF_KEY_VOLUME_TYPE_RINGTONE, VCONF_KEY_VOLUME_TYPE_MEDIA, VCONF_KEY_VOLUME_TYPE_CALL,
 			VCONF_KEY_VOLUME_TYPE_ANDROID,VCONF_KEY_VOLUME_TYPE_JAVA};
+	int vconf_value = 0;
+#ifdef SEPARATE_EARPHONE_VOLUME
+	system_audio_route_device_t dev = 0;
+#endif
 
 	debug_fenter();
 
 	/* Check input param */
-	if(value == NULL)
+	if (value == NULL)
 		return MM_ERROR_INVALID_ARGUMENT;
-	if(type < 0 || type >= VOLUME_TYPE_MAX) {
+	if (type < 0 || type >= VOLUME_TYPE_MAX) {
 		debug_error("invalid volume type value %d\n", type);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
 	/* Get volume value from VCONF */
-	if(vconf_get_int(keystr[type], (int*)value)) {
+	if (vconf_get_int(keystr[type], &vconf_value)) {
 		debug_error("Can not get value of %s\n", keystr[type]);
 		ret = MM_ERROR_SOUND_INTERNAL;
 	}
+
+#ifdef SEPARATE_EARPHONE_VOLUME
+	/* Get volume value of current device */
+	mm_sound_route_get_playing_device(&dev);
+	if (dev == SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_EARPHONE) {
+		*value = (vconf_value >> 8) & 0x00FF;
+		debug_log("volume_get_value [earphone] %d(0x%04x)", *value, vconf_value);
+	} else {
+		*value = vconf_value & 0x00FF;
+		debug_log("volume_get_value [speaker] %d(0x%04x)", *value, vconf_value);
+	}
+#else
+	*value = vconf_value;
+#endif
 
 	debug_fleave();
 	return ret;
@@ -328,17 +391,6 @@ int mm_sound_volume_get_current_playing_type(volume_type_t *type)
 ///////////////////////////////////
 ////     MMSOUND PCM APIs
 ///////////////////////////////////
-
-typedef struct {
-	avsys_handle_t		audio_handle;
-	int					asm_handle;
-	ASM_sound_events_t	asm_event;
-	int					asm_valid_flag;
-
-	MMMessageCallback	msg_cb;
-	void *msg_cb_param;
-
-} mm_sound_pcm_t;
 
 int _get_asm_event_type(ASM_sound_events_t *type)
 {
@@ -417,18 +469,23 @@ ASM_cb_result_t sound_pcm_asm_callback(int handle, ASM_event_sources_t event_src
 		return cb_res;
 	}
 
-	debug_log ("command = %d, handle = %p, asm_valid_flag = %d\n",command, pcmHandle, pcmHandle->asm_valid_flag);
+	debug_log ("command = %d, handle = %p, is_started = %d\n",command, pcmHandle, pcmHandle->is_started);
 	switch(command)
 	{
 	case ASM_COMMAND_STOP:
-	case ASM_COMMAND_PAUSE:
-		pcmHandle->asm_valid_flag = 0;
+		/* Do stop */
+		_pcm_sound_stop_internal (pcmHandle);
 		cb_res = ASM_CB_RES_PAUSE;
 		break;
-	case ASM_COMMAND_PLAY:
+
 	case ASM_COMMAND_RESUME:
-		pcmHandle->asm_valid_flag = 1;
-		cb_res = ASM_CB_RES_PLAYING;
+		cb_res = ASM_CB_RES_IGNORE;
+		break;
+
+	case ASM_COMMAND_PAUSE:
+	case ASM_COMMAND_PLAY:
+	case ASM_COMMAND_NONE:
+		debug_error ("Not an expected case!!!!\n");
 		break;
 	}
 
@@ -494,17 +551,16 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 		free(pcmHandle);
 		return MM_ERROR_POLICY_INTERNAL;
 	}
-	/* register asm as playing */
+	/* register asm */
 	if(pcmHandle->asm_event != ASM_EVENT_CALL && pcmHandle->asm_event != ASM_EVENT_VIDEOCALL) {
 		if(!ASM_register_sound(-1, &pcmHandle->asm_handle, pcmHandle->asm_event,
-				ASM_STATE_PLAYING, sound_pcm_asm_callback, (void*)pcmHandle, ASM_RESOURCE_NONE, &errorcode))
+				/* ASM_STATE_PLAYING */ ASM_STATE_NONE, sound_pcm_asm_callback, (void*)pcmHandle, ASM_RESOURCE_NONE, &errorcode))
 		{
 			debug_error("ASM_register_sound() failed 0x%x\n", errorcode);
 			free(pcmHandle);
 			return MM_ERROR_POLICY_BLOCKED;
 		}
 	}
-	pcmHandle->asm_valid_flag = 1;
 
 	/* Open */
 	param.mode = AVSYS_AUDIO_MODE_INPUT;
@@ -524,10 +580,91 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 	return size;
 }
 
+static int _pcm_sound_start (MMSoundPcmHandle_t handle)
+{
+	mm_sound_pcm_t *pcmHandle = NULL;
+	int errorcode = 0;
+
+	/* Check input param */
+	pcmHandle = (mm_sound_pcm_t*)handle;
+	if(pcmHandle == NULL)
+		return MM_ERROR_INVALID_ARGUMENT;
+
+	/* ASM set state to PLAYING */
+	if (!ASM_set_sound_state(pcmHandle->asm_handle, pcmHandle->asm_event, ASM_STATE_PLAYING, ASM_RESOURCE_NONE, &errorcode)) {
+		debug_error("ASM_set_sound_state(PLAYING) failed 0x%x\n", errorcode);
+		return MM_ERROR_POLICY_BLOCKED;
+	}
+
+	pcmHandle->is_started = TRUE;
+
+	/* Un-Cork */
+	return avsys_audio_cork(pcmHandle->audio_handle, 0);
+}
+
+
+EXPORT_API
+int mm_sound_pcm_capture_start(MMSoundPcmHandle_t handle)
+{
+	int ret = MM_ERROR_NONE;
+
+	ret = _pcm_sound_start (handle);
+	if (ret != MM_ERROR_NONE)  {
+		debug_error ("_pcm_sound_start() failed (%x)\n", ret);
+		return ret;
+	}
+
+	return ret;
+}
+
+static int _pcm_sound_stop_internal (MMSoundPcmHandle_t handle)
+{
+	mm_sound_pcm_t *pcmHandle = NULL;
+
+	/* Check input param */
+	pcmHandle = (mm_sound_pcm_t*)handle;
+	if(pcmHandle == NULL)
+		return MM_ERROR_INVALID_ARGUMENT;
+
+	pcmHandle->is_started = FALSE;
+
+	/* Cork */
+	return avsys_audio_cork(pcmHandle->audio_handle, 1);
+}
+
+static int _pcm_sound_stop(MMSoundPcmHandle_t handle)
+{
+	mm_sound_pcm_t *pcmHandle = NULL;
+	int errorcode = 0;
+
+	/* Check input param */
+	pcmHandle = (mm_sound_pcm_t*)handle;
+	if(pcmHandle == NULL)
+		return MM_ERROR_INVALID_ARGUMENT;
+
+	/* Set ASM State to STOP */
+	if (!ASM_set_sound_state(pcmHandle->asm_handle, pcmHandle->asm_event, ASM_STATE_STOP, ASM_RESOURCE_NONE, &errorcode)) {
+		debug_error("ASM_set_sound_state(STOP) failed 0x%x\n", errorcode);
+		return MM_ERROR_POLICY_BLOCKED;
+	}
+
+	return _pcm_sound_stop_internal(handle);
+}
+
+
+EXPORT_API
+int mm_sound_pcm_capture_stop(MMSoundPcmHandle_t handle)
+{
+	return _pcm_sound_stop (handle);
+}
+
+
 EXPORT_API
 int mm_sound_pcm_capture_read(MMSoundPcmHandle_t handle, void *buffer, const unsigned int length )
 {
 	mm_sound_pcm_t *pcmHandle = NULL;
+	int is_corked = 0;
+	int result = AVSYS_STATE_SUCCESS;
 
 	/* Check input param */
 	pcmHandle = (mm_sound_pcm_t*)handle;
@@ -540,13 +677,11 @@ int mm_sound_pcm_capture_read(MMSoundPcmHandle_t handle, void *buffer, const uns
 	if(length == 0 )
 		return 0;
 
-	/* Check ASM */
-	if(!pcmHandle->asm_valid_flag) {
-		return MM_ERROR_POLICY_INTERRUPTED;
+	/* Check State : return fail if not started */
+	if (!pcmHandle->is_started) {
+		/*  not started, return fail */
+		return MM_ERROR_SOUND_INVALID_STATE;
 	}
-
-	if(length == 0 )
-		return 0;
 
 	/* Read */
 	return avsys_audio_read(pcmHandle->audio_handle, buffer, length);
@@ -578,7 +713,6 @@ int mm_sound_pcm_capture_close(MMSoundPcmHandle_t handle)
 		if(!ASM_unregister_sound(pcmHandle->asm_handle, pcmHandle->asm_event, &errorcode)) {
     		debug_error("ASM_unregister failed in %s with 0x%x\n", __func__, errorcode);
     	}
-    	pcmHandle->asm_valid_flag = 0;
     }
 
 	/* Free handle */
@@ -666,30 +800,31 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 
 	/* Register ASM */
 	debug_log ("session start : input asm_event = %d-------------\n", asm_event);
-	//get session type
 	if (asm_event == ASM_EVENT_NONE) {
-		if(MM_ERROR_NONE != _get_asm_event_type(&pcmHandle->asm_event)) {
-			free(pcmHandle);
-			return MM_ERROR_POLICY_INTERNAL;
-		}
-		//register asm as playing
 		if(pcmHandle->asm_event != ASM_EVENT_CALL && pcmHandle->asm_event != ASM_EVENT_VIDEOCALL) {
+			/* get session type */
+			if(MM_ERROR_NONE != _get_asm_event_type(&pcmHandle->asm_event)) {
+				free(pcmHandle);
+				return MM_ERROR_POLICY_INTERNAL;
+			}
+
+			/* register asm */
 			if(!ASM_register_sound(-1, &pcmHandle->asm_handle, pcmHandle->asm_event,
-					ASM_STATE_PLAYING, sound_pcm_asm_callback, (void*)pcmHandle, ASM_RESOURCE_NONE, &errorcode)) {
+					ASM_STATE_NONE, sound_pcm_asm_callback, (void*)pcmHandle, ASM_RESOURCE_NONE, &errorcode)) {
 				debug_error("ASM_register_sound() failed 0x%x\n", errorcode);
 				free(pcmHandle);
 				return MM_ERROR_POLICY_BLOCKED;
 			}
 		}
 	} else {
+		/* register asm using asm_event input */
 		if(!ASM_register_sound(-1, &pcmHandle->asm_handle, asm_event,
-				ASM_STATE_PLAYING, NULL, (void*)pcmHandle, ASM_RESOURCE_NONE, &errorcode)) {
+				ASM_STATE_NONE, NULL, (void*)pcmHandle, ASM_RESOURCE_NONE, &errorcode)) {
 			debug_error("ASM_register_sound() failed 0x%x\n", errorcode);
 			free(pcmHandle);
 			return MM_ERROR_POLICY_BLOCKED;
 		}
 	}
-	pcmHandle->asm_valid_flag = 1;
 
 	param.mode = AVSYS_AUDIO_MODE_OUTPUT;
 	param.vol_type = lvol_type;
@@ -720,6 +855,20 @@ int mm_sound_pcm_play_open(MMSoundPcmHandle_t *handle, const unsigned int rate, 
 }
 
 EXPORT_API
+int mm_sound_pcm_play_start(MMSoundPcmHandle_t handle)
+{
+	return _pcm_sound_start (handle);
+}
+
+
+EXPORT_API
+int mm_sound_pcm_play_stop(MMSoundPcmHandle_t handle)
+{
+	return _pcm_sound_stop(handle);
+}
+
+
+EXPORT_API
 int mm_sound_pcm_play_write(MMSoundPcmHandle_t handle, void* ptr, unsigned int length_byte)
 {
 	mm_sound_pcm_t *pcmHandle = NULL;
@@ -735,9 +884,11 @@ int mm_sound_pcm_play_write(MMSoundPcmHandle_t handle, void* ptr, unsigned int l
 	if(length_byte == 0 )
 		return 0;
 
-	/* Check ASM */
-	if(!pcmHandle->asm_valid_flag)
-		return MM_ERROR_POLICY_INTERRUPTED;
+	/* Check State : return fail if not started */
+	if (!pcmHandle->is_started) {
+		/* not started, return fail */
+		return MM_ERROR_SOUND_INVALID_STATE;
+	}
 
 	/* Write */
 	return avsys_audio_write(pcmHandle->audio_handle, ptr, length_byte);
@@ -772,7 +923,6 @@ int mm_sound_pcm_play_close(MMSoundPcmHandle_t handle)
 		if(!ASM_unregister_sound(pcmHandle->asm_handle, pcmHandle->asm_event, &errorcode)) {
     		debug_error("ASM_unregister failed in %s with 0x%x\n",__func__, errorcode);
     	}
-    	pcmHandle->asm_valid_flag = 0;
     }
 
 	/* Free handle */
@@ -812,7 +962,7 @@ int mm_sound_play_loud_solo_sound(const char *filename, const volume_type_t volu
 	param.loop = 1;
 	param.volume_table = lvol_type;
 	param.priority = AVSYS_AUDIO_PRIORITY_SOLO;
-	param.bluetooth = MMSOUNDPARAM_SPEAKER_ONLY;
+	param.handle_route = MM_SOUND_HANDLE_ROUTE_SPEAKER;
 
 	err = MMSoundClientPlaySound(&param, 0, 0, &lhandle);
 	if (err < 0) {
@@ -859,7 +1009,7 @@ int mm_sound_play_solo_sound(const char *filename, const volume_type_t volume_ty
 	param.loop = 1;
 	param.volume_table = lvol_type;
 	param.priority = AVSYS_AUDIO_PRIORITY_SOLO;
-	param.bluetooth = MMSOUNDPARAM_FOLLOWING_ROUTE_POLICY;
+	param.handle_route = MM_SOUND_HANDLE_ROUTE_USING_CURRENT;
 
 	err = MMSoundClientPlaySound(&param, 0, 0, &lhandle);
 	if (err < 0) {
@@ -911,7 +1061,7 @@ int mm_sound_play_sound(const char *filename, const volume_type_t volume_type, m
 	param.loop = 1;
 	param.volume_table = lvol_type;
 	param.priority = AVSYS_AUDIO_PRIORITY_NORMAL;
-	param.bluetooth = AVSYS_AUDIO_HANDLE_ROUTE_FOLLOWING_POLICY;
+	param.handle_route = MM_SOUND_HANDLE_ROUTE_USING_CURRENT;
 
 	err = MMSoundClientPlaySound(&param, 0, 0, &lhandle);
 	if (err < 0) {
@@ -1078,162 +1228,6 @@ enum {
 EXPORT_API
 int mm_sound_route_set_system_policy (system_audio_route_t route)
 {
-	int ret = MM_ERROR_NONE;
-	int pa_sink = USE_PA_SINK_ALSA;
-	int codec_option = AVSYS_AUDIO_PATH_OPTION_JACK_AUTO;
-	int current_route;
-	int gain, out, in, option; 
-
-	debug_fenter();
-
-	debug_log ("route = %d\n", route);
-	switch(route)
-	{
-	case SYSTEM_AUDIO_ROUTE_POLICY_IGNORE_A2DP:
-		codec_option = AVSYS_AUDIO_PATH_OPTION_JACK_AUTO;
-		pa_sink = USE_PA_SINK_ALSA;
-		break;
-	case SYSTEM_AUDIO_ROUTE_POLICY_HANDSET_ONLY:
-		codec_option = AVSYS_AUDIO_PATH_OPTION_NONE;
-		pa_sink = USE_PA_SINK_ALSA;
-		break;
-	case SYSTEM_AUDIO_ROUTE_POLICY_DEFAULT:
-		codec_option = AVSYS_AUDIO_PATH_OPTION_JACK_AUTO;
-		pa_sink = USE_PA_SINK_A2DP;
-		break;
-	default:
-		debug_error("Unknown route %d\n", route);
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	if(MM_ERROR_NONE != __mm_sound_lock()) {
-		debug_error("Lock failed\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	/* Vconf check */
-	ret = vconf_get_int(ROUTE_VCONF_KEY, &current_route);
-	if(ret < 0) {
-		debug_error("Can not get current route policy\n");
-		current_route = SYSTEM_AUDIO_ROUTE_POLICY_DEFAULT;
-		if(0 > vconf_set_int(ROUTE_VCONF_KEY, current_route)) {
-			debug_error("Can not save current audio route policy to %s\n", ROUTE_VCONF_KEY);
-			if(MM_ERROR_NONE != __mm_sound_unlock()) {
-				debug_error("Unlock failed\n");
-				return MM_ERROR_SOUND_INTERNAL;
-			}
-			return MM_ERROR_SOUND_INTERNAL;
-		}
-	}
-
-	/* If same as before, do nothing */
-	if(current_route == route)
-	{
-		debug_warning("Same route policy with current. Skip setting\n");
-		if(MM_ERROR_NONE != __mm_sound_unlock()) {
-			debug_error("Unlock failed\n");
-			return MM_ERROR_SOUND_INTERNAL;
-		}
-		return MM_ERROR_NONE;
-	}
-
-	/* Get Current gain */
-	avsys_audio_get_path_ex(&gain, &out, &in, &option);                                 
-	debug_msg ("gain = %x, out = %x, in = %x, option = %x\n", gain, out, in, option);   
-	if (gain == AVSYS_AUDIO_GAIN_EX_FMRADIO) {
-		int output_path = 0 ,res = 0;
-		
-		debug_msg ("This is FM radio gain mode.....\n");   
-
-		/* select output path from policy */
-		if (route == SYSTEM_AUDIO_ROUTE_POLICY_HANDSET_ONLY)
-			output_path = AVSYS_AUDIO_PATH_EX_SPK;
-		else if (route == SYSTEM_AUDIO_ROUTE_POLICY_DEFAULT || route == SYSTEM_AUDIO_ROUTE_POLICY_IGNORE_A2DP)
-			output_path = AVSYS_AUDIO_PATH_EX_HEADSET;
-
-		/* Do set path */
-		res = avsys_audio_set_path_ex( AVSYS_AUDIO_GAIN_EX_FMRADIO,            
-		                                output_path,                           
-		                                AVSYS_AUDIO_PATH_EX_FMINPUT,                            
-		                                AVSYS_AUDIO_PATH_OPTION_NONE );        
-		if(AVSYS_FAIL(ret)) {
-			debug_error("Can not set playback sound path, error=0x%x\n", ret);
-			if(MM_ERROR_NONE != __mm_sound_unlock()) {
-				debug_error("Unlock failed\n");
-				return MM_ERROR_SOUND_INTERNAL;
-			}
-			return ret;
-		}
-	} else {
-
-		/* Try to change default sink */
-		ret = MMSoundClientSetAudioRoute(pa_sink);
-		if (ret < 0) {
-			debug_error("MMSoundClientsetAudioRoute() Failed for sink [%d]\n", pa_sink);
-			if(pa_sink == USE_PA_SINK_ALSA) {
-				/* PA_A2DP_SINK can be return error; */
-				if(MM_ERROR_NONE != __mm_sound_unlock()) {
-					debug_error("Unlock failed\n");
-					return MM_ERROR_SOUND_INTERNAL;
-				}
-				return ret;
-			}
-		}
-
-		/* Do Set path if (IGNORE A2DP or HANDSET) or (DEFAULT with no BT) */
-		if(pa_sink == USE_PA_SINK_ALSA || (pa_sink == USE_PA_SINK_A2DP && ret != MM_ERROR_NONE)) 
-		{
-			ret = avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_KEYTONE, AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE, codec_option);
-			if(AVSYS_FAIL(ret)) {
-				debug_error("Can not set playback sound path 0x%x\n", ret);
-				if(MM_ERROR_NONE != __mm_sound_unlock()) {
-					debug_error("Unlock failed\n");
-					return MM_ERROR_SOUND_INTERNAL;
-				}
-				return ret;
-			}
-			ret = avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_VOICEREC, AVSYS_AUDIO_PATH_EX_NONE, AVSYS_AUDIO_PATH_EX_MIC, codec_option);
-			if(AVSYS_FAIL(ret)) {
-				debug_error("Can not set capture sound path 0x%x\n", ret);
-				if(MM_ERROR_NONE != __mm_sound_unlock()) {
-					debug_error("Unlock failed\n");
-					return MM_ERROR_SOUND_INTERNAL;
-				}
-				return ret;
-			}
-		}
-
-	} /* if (gain == AVSYS_AUDIO_GAIN_EX_FMRADIO) {} else {} */
-	
-	/* Set route policy */
-	ret = avsys_audio_set_route_policy((avsys_audio_route_policy_t)route);
-	if(AVSYS_FAIL(ret)) {
-		debug_error("Can not set route policy to avsystem 0x%x\n", ret);
-		if(MM_ERROR_NONE != __mm_sound_unlock()) {
-			debug_error("Unlock failed\n");
-			return MM_ERROR_SOUND_INTERNAL;
-		}
-		return ret;
-	}
-
-	/* update vconf */
-	ret = vconf_set_int(ROUTE_VCONF_KEY, (int)route);
-	if(ret < 0) {
-		debug_error("Can not set route policy to vconf %s\n", ROUTE_VCONF_KEY);
-		if(MM_ERROR_NONE != __mm_sound_unlock()) {
-			debug_error("Unlock failed\n");
-			return MM_ERROR_SOUND_INTERNAL;
-		}
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	/* clean up */
-	if(MM_ERROR_NONE != __mm_sound_unlock()) {
-		debug_error("Unlock failed\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	debug_fleave();
 	return MM_ERROR_NONE;
 }
 
@@ -1241,54 +1235,7 @@ int mm_sound_route_set_system_policy (system_audio_route_t route)
 EXPORT_API
 int mm_sound_route_get_system_policy (system_audio_route_t *route)
 {
-	int ret = MM_ERROR_NONE;
-	int lv_route = 0;
-	if(route == NULL) {
-		debug_error("Null pointer\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	if(MM_ERROR_NONE != __mm_sound_lock()) {
-		debug_error("Lock failed\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-	ret = vconf_get_int(ROUTE_VCONF_KEY, &lv_route);
-	if(ret < 0 ) {
-		debug_error("Can not get route policy from vconf. set default\n");
-		if(0> vconf_set_int(ROUTE_VCONF_KEY, SYSTEM_AUDIO_ROUTE_POLICY_DEFAULT))
-		{
-			debug_error("Set audio route policy to default failed\n");
-			ret = MM_ERROR_SOUND_INTERNAL;
-		}
-		else {
-			*route = SYSTEM_AUDIO_ROUTE_POLICY_DEFAULT;
-		}
-	}
-	else {
-		*route = lv_route;
-	}
-
-	if(ret == MM_ERROR_NONE) {
-		avsys_audio_route_policy_t av_route;
-		ret = avsys_audio_get_route_policy((avsys_audio_route_policy_t*)&av_route);
-		if(AVSYS_FAIL(ret)) {
-			debug_error("Can not get route policy to avsystem 0x%x\n", ret);
-			av_route = -1;
-		}
-		if(av_route != *route) {
-			/* match vconf & shared mem info */
-			ret = avsys_audio_set_route_policy(*route);
-			if(AVSYS_FAIL(ret)) {
-				debug_error("avsys_audio_set_route_policy failed 0x%x\n", ret);
-			}
-		}
-	}
-
-	if(MM_ERROR_NONE != __mm_sound_unlock()) {
-		debug_error("Unlock failed\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-	return ret;
+	return MM_ERROR_NONE;
 }
 
 
@@ -1310,34 +1257,35 @@ int mm_sound_route_get_a2dp_status (int *connected, char **bt_name)
 		debug_error("MMSoundClientIsBtA2dpOn() Failed\n");
 		return ret;
 	}
-		
+
 	debug_fleave();
+
 	return ret;
 }
 
 EXPORT_API
 int mm_sound_route_get_playing_device(system_audio_route_device_t *dev)
 {
-	avsys_audio_playing_devcie_t status;
+	mm_sound_device_in device_in = MM_SOUND_DEVICE_IN_NONE;
+	mm_sound_device_out device_out = MM_SOUND_DEVICE_OUT_NONE;
 
 	if(!dev)
 		return MM_ERROR_INVALID_ARGUMENT;
 
-	if(AVSYS_FAIL(avsys_audio_get_playing_device_info(&status)))
-	{
-		debug_error("Can not get playing device info\n");
+	if(MM_ERROR_NONE != mm_sound_get_active_device(&device_in, &device_out)) {
+		debug_error("Can not get active device info\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 
-	switch(status)
+	switch(device_out)
 	{
-	case AVSYS_AUDIO_ROUTE_DEVICE_HANDSET:
+	case MM_SOUND_DEVICE_OUT_SPEAKER:
 		*dev = SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_HANDSET;
 		break;
-	case AVSYS_AUDIO_ROUTE_DEVICE_BLUETOOTH:
+	case MM_SOUND_DEVICE_OUT_BT_A2DP:
 		*dev = SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_BLUETOOTH;
 		break;
-	case AVSYS_AUDIO_ROUTE_DEVICE_EARPHONE:
+	case MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY:
 		*dev = SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_EARPHONE;
 		break;
 	default:
@@ -1348,64 +1296,18 @@ int mm_sound_route_get_playing_device(system_audio_route_device_t *dev)
 	return MM_ERROR_NONE;
 }
 
-
-typedef struct {
-	audio_route_policy_changed_callback_fn func;
-	void* data;
-}route_change_cb_param;
-
-route_change_cb_param g_route_param;
-
-
-void route_change_vconf_cb(keynode_t *node, void *data)
-{
-	int ret = MM_ERROR_NONE;
-	int lv_route = 0;
-	route_change_cb_param *param = (route_change_cb_param *) data;
-
-	debug_msg("%s changed callback called\n", vconf_keynode_get_name(node));
-	ret = vconf_get_int(ROUTE_VCONF_KEY, &lv_route);
-	if(ret < 0) {
-		debug_error("Can not get route info from vconf..(in cb func)\n");
-		return;
-	}
-
-	if(param && (param->func != NULL)) {
-		((audio_route_policy_changed_callback_fn)param->func)(param->data, (system_audio_route_t)lv_route);
-	}
-	return;
-}
-
 EXPORT_API
 int mm_sound_route_add_change_callback(audio_route_policy_changed_callback_fn func, void *user_data)
 {
-	int ret = MM_ERROR_NONE;
-
-	g_route_param.func = func;
-	g_route_param.data = user_data;
-
-	ret = vconf_notify_key_changed(ROUTE_VCONF_KEY, route_change_vconf_cb, (void *)&g_route_param);
-	if(ret < 0) {
-		debug_error("Can not add callback - vconf error\n");
-		ret = MM_ERROR_SOUND_INTERNAL;
-	}
-	return ret;
+	/* Deprecated */
+	return MM_ERROR_NONE;
 }
 
 EXPORT_API
 int mm_sound_route_remove_change_callback()
 {
-	int ret = MM_ERROR_NONE;
-
-	g_route_param.func = NULL;
-	g_route_param.data = NULL;
-
-	ret = vconf_ignore_key_changed(ROUTE_VCONF_KEY, route_change_vconf_cb);
-	if(ret < 0) {
-		debug_error("Can not add callback - vconf error\n");
-		ret = MM_ERROR_SOUND_INTERNAL;
-	}
-	return ret;
+	/* Deprecated */
+	return MM_ERROR_NONE;
 }
 
 #endif /* PULSE_CLIENT */
@@ -1431,6 +1333,171 @@ int mm_sound_system_get_capture_status(system_audio_capture_status_t *status)
 		*status = SYSTEM_AUDIO_CAPTURE_NONE;
 
 	return MM_ERROR_NONE;
+}
+
+EXPORT_API
+int mm_sound_is_route_available(mm_sound_route route, bool *is_available)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (!_mm_sound_is_route_valid(route)) {
+		debug_error("route is invalid %d\n", route);
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+	if (!is_available)
+	{
+		debug_error("is_available is invalid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = _mm_sound_client_is_route_available(route, is_available);
+	if (ret < 0) {
+		debug_error("Can not check given route is available\n");
+	}
+
+	debug_fleave();
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_foreach_available_route_cb(mm_sound_available_route_cb available_route_cb, void *user_data)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (!available_route_cb)
+	{
+		debug_error("available_route_cb is invalid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = _mm_sound_client_foreach_available_route_cb(available_route_cb, user_data);
+	if (ret < 0) {
+		debug_error("Can not set foreach available route callback\n");
+	}
+
+	debug_fleave();
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_set_active_route(mm_sound_route route)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (!_mm_sound_is_route_valid(route)) {
+		debug_error("route is invalid %d\n", route);
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = _mm_sound_client_set_active_route(route);
+	if (ret < 0) {
+		debug_error("Can not set active route\n");
+	}
+
+	debug_fleave();
+	return ret;
+}
+
+
+EXPORT_API
+int mm_sound_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (device_in == NULL || device_out == NULL) {
+		debug_error("argument is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = _mm_sound_client_get_active_device(device_in, device_out);
+	if (ret < 0) {
+		debug_error("Can not add active device callback\n");
+	}
+
+	debug_fleave();
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_add_active_device_changed_callback(mm_sound_active_device_changed_cb func, void *user_data)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (func == NULL) {
+		debug_error("argument is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = _mm_sound_client_add_active_device_changed_callback(func, user_data);
+	if (ret < 0) {
+		debug_error("Can not add active device changed callback\n");
+	}
+
+	debug_fleave();
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_remove_active_device_changed_callback(void)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	ret = _mm_sound_client_remove_active_device_changed_callback();
+	if (ret < 0) {
+		debug_error("Can not remove active device changed callback\n");
+	}
+
+	debug_fleave();
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void *user_data)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (func == NULL) {
+		debug_error("argument is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = _mm_sound_client_add_available_route_changed_callback(func, user_data);
+	if (ret < 0) {
+		debug_error("Can not add available route changed callback\n");
+	}
+
+	debug_fleave();
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_remove_available_route_changed_callback(void)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	ret = _mm_sound_client_remove_available_route_changed_callback();
+	if (ret < 0) {
+		debug_error("Can not remove available route changed callback\n");
+	}
+
+	debug_fleave();
+	return ret;
 }
 
 __attribute__ ((destructor))

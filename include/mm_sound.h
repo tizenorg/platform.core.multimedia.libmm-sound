@@ -762,6 +762,34 @@ int main(int argc, char* argv[])
 int mm_sound_pcm_play_open(MMSoundPcmHandle_t *handle, const unsigned int rate, MMSoundPcmChannel_t channel, MMSoundPcmFormat_t format, const volume_type_t volume);
 
 /**
+ * This function start pcm playback
+ *
+ * @param	handle	[in] handle to start playback
+ *
+ * @return	This function returns MM_ERROR_NONE on success, or negative value
+ *			with error code.
+ * @remark
+ * @see
+ * @pre		PCM playback handle should be allocated.
+ * @post	PCM playback is ready to write.
+ */
+int mm_sound_pcm_play_start(MMSoundPcmHandle_t handle);
+
+/**
+ * This function stop pcm playback
+ *
+ * @param	handle	[in] handle to stop playback
+ *
+ * @return	This function returns MM_ERROR_NONE on success, or negative value
+ *			with error code.
+ * @remark
+ * @see
+ * @pre		PCM playback handle should be allocated.
+ * @post	PCM playback data will not be buffered.
+ */
+int mm_sound_pcm_play_stop(MMSoundPcmHandle_t handle);
+
+/**
  * This function is to play PCM memory buffer.
  *
  * @param	handle	[in] handle to play pcm data
@@ -977,6 +1005,34 @@ int main(int argc, char* argv[])
  * @endcode
  */
 int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rate, MMSoundPcmChannel_t channel, MMSoundPcmFormat_t format);
+
+/**
+ * This function start pcm capture
+ *
+ * @param	handle	[in] handle to start capture
+ *
+ * @return	This function returns read data size on success, or negative value
+ *			with error code.
+ * @remark
+ * @see
+ * @pre		PCM capture handle should be allocated.
+ * @post	PCM capture data will be buffered.
+ */
+int mm_sound_pcm_capture_start(MMSoundPcmHandle_t handle);
+
+/**
+ * This function stop pcm capture
+ *
+ * @param	handle	[in] handle to stop capture
+ *
+ * @return	This function returns read data size on success, or negative value
+ *			with error code.
+ * @remark
+ * @see
+ * @pre		PCM capture handle should be allocated.
+ * @post	PCM capture data will not be buffered.
+ */
+int mm_sound_pcm_capture_stop(MMSoundPcmHandle_t handle);
 
 /**
  * This function captures PCM to memory buffer. (Samsung extension)
@@ -1832,6 +1888,246 @@ int make_callback()
  * @endcode
  */
 int mm_sound_route_remove_change_callback(void);
+
+/*
+ * Enumerations of device & route
+ */
+
+typedef enum{
+	MM_SOUND_DEVICE_IN_NONE				= 0x00,
+	MM_SOUND_DEVICE_IN_MIC				= 0x01,		/**< Device builtin mic. */
+	MM_SOUND_DEVICE_IN_WIRED_ACCESSORY	= 0x02,		/**< Wired input devices */
+	MM_SOUND_DEVICE_IN_BT_SCO			= 0x04,		/**< Bluetooth SCO device */
+} mm_sound_device_in;
+
+typedef enum{
+	MM_SOUND_DEVICE_OUT_NONE			= 0x00,
+	MM_SOUND_DEVICE_OUT_SPEAKER			= 0x01<<8,	/**< Device builtin speaker */
+	MM_SOUND_DEVICE_OUT_RECEIVER		= 0x02<<8,	/**< Device builtin receiver */
+	MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY	= 0x04<<8,	/**< Wired output devices such as headphone, headset, and so on. */
+	MM_SOUND_DEVICE_OUT_BT_SCO			= 0x08<<8,	/**< Bluetooth SCO device */
+	MM_SOUND_DEVICE_OUT_BT_A2DP			= 0x10<<8,	/**< Bluetooth A2DP device */
+} mm_sound_device_out;
+
+#define MM_SOUND_ROUTE_NUM 10
+
+typedef enum{
+	MM_SOUND_ROUTE_OUT_SPEAKER = MM_SOUND_DEVICE_OUT_SPEAKER, /**< Routing audio output to builtin device such as internal speaker. */
+	MM_SOUND_ROUTE_OUT_WIRED_ACCESSORY = MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY,/**< Routing audio output to wired accessory such as headphone, headset, and so on. */
+	MM_SOUND_ROUTE_OUT_BLUETOOTH = MM_SOUND_DEVICE_OUT_BT_A2DP, /**< Routing audio output to bluetooth A2DP. */
+	MM_SOUND_ROUTE_IN_MIC = MM_SOUND_DEVICE_IN_MIC, /**< Routing audio input to device builtin mic. */
+	MM_SOUND_ROUTE_IN_WIRED_ACCESSORY = MM_SOUND_DEVICE_IN_WIRED_ACCESSORY, /**< Routing audio input to wired accessory. */
+	MM_SOUND_ROUTE_IN_MIC_OUT_RECEIVER = MM_SOUND_DEVICE_IN_MIC | MM_SOUND_DEVICE_OUT_RECEIVER, /**< Routing audio input to device builtin mic and routing audio output to builtin receiver*/
+	MM_SOUND_ROUTE_IN_MIC_OUT_SPEAKER = MM_SOUND_DEVICE_IN_MIC | MM_SOUND_DEVICE_OUT_SPEAKER , /**< Routing audio input to device builtin mic and routing audio output to builtin speaker */
+	MM_SOUND_ROUTE_IN_MIC_OUT_HEADPHONE = MM_SOUND_DEVICE_IN_MIC | MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY,/**< Routing audio input to device builtin mic and routing audio output to headphone */
+	MM_SOUND_ROUTE_INOUT_HEADSET = MM_SOUND_DEVICE_IN_WIRED_ACCESSORY | MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY,	/**< Routing audio input and output to headset*/
+	MM_SOUND_ROUTE_INOUT_BLUETOOTH = MM_SOUND_DEVICE_IN_BT_SCO | MM_SOUND_DEVICE_OUT_BT_SCO /**< Routing audio input and output to bluetooth SCO */
+} mm_sound_route;
+
+typedef int (*mm_sound_available_route_cb)(mm_sound_route route, void *user_data);
+
+int mm_sound_is_route_available(mm_sound_route route, bool *is_available);
+
+int mm_sound_foreach_available_route_cb(mm_sound_available_route_cb, void *user_data);
+
+int mm_sound_set_active_route(mm_sound_route route);
+
+/**
+ * This function is to get active playback device and capture device.
+ *
+ * @param	playback_device			[out]	playback device.
+ * @param	capture_device			[out]	capture device.
+ *
+ * @return 	This function returns MM_ERROR_NONE on success, or negative value
+ *			with error code.
+ * @remark	None.
+ * @pre		None.
+ * @post	None.
+ * @see		mm_sound_set_active_route mm_sound_device_in mm_sound_device_out
+ */
+int mm_sound_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
+
+/**
+ * Active device changed callback function type.
+ *
+ * @param	user_data		[in]	Argument passed when callback has called
+ *
+ * @return	No return value
+ * @remark	None.
+ * @see		mm_sound_add_active_device_changed_callback mm_sound_remove_active_device_changed_callback
+ */
+typedef void (*mm_sound_active_device_changed_cb) (mm_sound_device_in device_in, mm_sound_device_out device_out, void *user_data);
+
+/**
+ * This function is to add active device callback.
+ *
+ * @param	func			[in]	callback function pointer
+ * @param	user_data		[in]	user data passing to callback function
+ *
+ * @return 	This function returns MM_ERROR_NONE on success, or negative value
+ * 			with error code.
+ * @remark	None.
+ * @see		mm_sound_remove_active_device_changed_callback mm_sound_active_device_changed_cb
+ * @pre		None.
+ * @post	None.
+ * @par Example
+ * @code
+
+void __active_device_callback(void *user_data)
+{
+	printf("Callback function\n");
+}
+
+int active_device_control()
+{
+	int ret = 0;
+
+	ret = mm_sound_add_active_device_changed_callback(__active_device_callback, NULL);
+	if ( MM_ERROR_NONE != ret)
+	{
+		printf("Can not add callback\n");
+	}
+	else
+	{
+		printf("Add callback success\n");
+	}
+
+	return ret;
+}
+
+ * @endcode
+ */
+int mm_sound_add_active_device_changed_callback(mm_sound_active_device_changed_cb func, void *user_data);
+
+/**
+ * This function is to remove active device callback.
+ *
+ * @return 	This function returns MM_ERROR_NONE on success, or negative value
+ * 			with error code.
+ * @remark	None.
+ * @pre		Active device callback should be registered.
+ * @post	Active device callback deregistered and does not be called anymore.
+ * @see		mm_sound_add_active_device_changed_callback mm_sound_active_device_changed_cb
+ * @par Example
+ * @code
+void __active_device_callback(void *data)
+{
+	printf("Callback function\n");
+}
+
+int active_device_control()
+{
+	int ret = 0;
+
+	mm_sound_add_active_device_changed_callback(__active_device_callback, NULL);
+
+	ret = mm_sound_remove_active_device_changed_callback();
+	if ( MM_ERROR_NONE == ret)
+	{
+		printf("Remove callback success\n");
+	}
+	else
+	{
+		printf("Remove callback failed\n");
+	}
+
+	return ret;
+}
+
+ * @endcode
+ */
+int mm_sound_remove_active_device_changed_callback(void);
+
+/**
+ * Available route changed callback function type.
+ *
+ * @param	user_data		[in]	Argument passed when callback has called
+ *
+ * @return	No return value
+ * @remark	None.
+ * @see		mm_sound_add_active_device_changed_callback mm_sound_remove_active_device_changed_callback
+ */
+typedef void (*mm_sound_available_route_changed_cb) (mm_sound_route route, bool available, void *user_data);
+
+/**
+ * This function is to add available device callback.
+ *
+ * @param	func			[in]	callback function pointer
+ * @param	user_data		[in]	user data passing to callback function
+ *
+ * @return 	This function returns MM_ERROR_NONE on success, or negative value
+ * 			with error code.
+ * @remark	None.
+ * @see		mm_sound_remove_available_route_changed_callback mm_sound_active_device_changed_cb
+ * @pre		None.
+ * @post	None.
+ * @par Example
+ * @code
+
+void __available_device_callback(void *user_data)
+{
+	printf("Callback function\n");
+}
+
+int available_device_control()
+{
+	int ret = 0;
+
+	ret = mm_sound_add_available_route_changed_callback(__available_device_callback, NULL);
+	if ( MM_ERROR_NONE != ret)
+	{
+		printf("Can not add callback\n");
+	}
+	else
+	{
+		printf("Add callback success\n");
+	}
+
+	return ret;
+}
+
+ * @endcode
+ */
+int mm_sound_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void *user_data);
+
+/**
+ * This function is to remove available device callback.
+ *
+ * @return 	This function returns MM_ERROR_NONE on success, or negative value
+ * 			with error code.
+ * @remark	None.
+ * @pre		available device callback should be registered.
+ * @post	available device callback deregistered and does not be called anymore.
+ * @see		mm_sound_add_available_route_changed_callback mm_sound_active_device_changed_cb
+ * @par Example
+ * @code
+void __available_device_callback(void *data)
+{
+	printf("Callback function\n");
+}
+
+int available_device_control()
+{
+	int ret = 0;
+
+	mm_sound_add_available_route_changed_callback(__available_device_callback, NULL);
+
+	ret = mm_sound_remove_available_route_changed_callback();
+	if ( MM_ERROR_NONE == ret)
+	{
+		printf("Remove callback success\n");
+	}
+	else
+	{
+		printf("Remove callback failed\n");
+	}
+
+	return ret;
+}
+
+ * @endcode
+ */
+int mm_sound_remove_available_route_changed_callback(void);
 /**
 	@}
  */

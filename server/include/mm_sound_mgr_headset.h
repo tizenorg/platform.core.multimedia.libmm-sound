@@ -19,24 +19,15 @@
  *
  */
 
-#ifndef __MM_SOUND_MGR_IPC_H__
-#define __MM_SOUND_MGR_IPC_H__
+#ifndef __MM_SOUND_MGR_HEADSET_H__
+#define __MM_SOUND_MGR_HEADSET_H__
 
-#include "../../include/mm_sound_msg.h"
+#include "../../include/mm_ipc.h"
 
-#define SOUND_MSG_SET(sound_msg, x_msgtype, x_handle, x_code, x_msgid) \
-do { \
-	sound_msg.msgtype = x_msgtype; \
-	sound_msg.handle = x_handle; \
-	sound_msg.code = x_code; \
-	sound_msg.msgid = x_msgid; \
-} while(0)
+int MMSoundMgrHeadsetInit(void);
+int MMSoundMgrHeadsetFini(void);
+int MMSoundMgrHeadsetGetType (int *type);
 
-int MMSoundMgrIpcInit(void);
-int MMSoundMgrIpcFini(void);
-int MMSoundMgrIpcReady(void);
 
-int _MMIpcCBSndMsg(mm_ipc_msg_t *msg);
-
-#endif /* __MM_SOUND_MGR_H__ */
+#endif /* __MM_SOUND_MGR_HEADSET_H__ */
 

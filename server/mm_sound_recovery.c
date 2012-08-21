@@ -26,7 +26,9 @@
 #include <vconf.h>
 #include <avsys-audio.h>
 
+#include "../include/mm_sound.h"
 #include "include/mm_sound_common.h"
+#include "include/mm_sound_mgr_session.h"
 
 
 int sound_system_bootup_recovery()
@@ -36,10 +38,14 @@ int sound_system_bootup_recovery()
 			VCONF_KEY_VOLUME_TYPE_RINGTONE, VCONF_KEY_VOLUME_TYPE_MEDIA, VCONF_KEY_VOLUME_TYPE_CALL,
 			VCONF_KEY_VOLUME_TYPE_ANDROID,VCONF_KEY_VOLUME_TYPE_JAVA, VCONF_KEY_VOLUME_TYPE_MEDIA};
 	int vol[AVSYS_AUDIO_VOLUME_TYPE_MAX] = {5,7,6,13,7,7,0,11,11}, i=0;
+#ifdef SEPARATE_EARPHONE_VOLUME
+	mm_sound_device_in device_in = MM_SOUND_DEVICE_OUT_NONE;
+	mm_sound_device_out device_out = MM_SOUND_DEVICE_OUT_NONE;
+#endif
 
-	for(i=0; i<AVSYS_AUDIO_VOLUME_TYPE_MAX; i++) {
-		if(vconf_get_int(keystr[i], (int*)&vol[i])) {
-			if(vconf_set_int(keystr[i], vol[i])) {
+	for (i=0; i<AVSYS_AUDIO_VOLUME_TYPE_MAX; i++) {
+		if (vconf_get_int(keystr[i], (int*)&vol[i])) {
+			if (vconf_set_int(keystr[i], vol[i])) {
 				debug_error("Error on volume vconf key %s\n", keystr[i]);
 			} else {
 				debug_error("Set %s to default value %d\n", keystr[i], vol[i]);
@@ -47,6 +53,15 @@ int sound_system_bootup_recovery()
 		} else {
 			debug_msg("Volume value of %s is %d\n", keystr[i], vol[i]);
 		}
+#ifdef SEPARATE_EARPHONE_VOLUME
+		/* Get volume value of current device */
+		MMSoundMgrSessionGetDeviceActive(&device_out, &device_in);
+		if (device_out == MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY) {
+			vol[i] = vol[i] >> 8;
+		} else {
+			vol[i] = vol[i] & 0x00FF;
+		}
+#endif
 	}
 
 	err = avsys_audio_hibernation_reset(vol);

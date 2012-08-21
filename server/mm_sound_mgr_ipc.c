@@ -37,6 +37,7 @@
 #include "../include/mm_sound_msg.h"
 #include "include/mm_sound_thread_pool.h"
 #include "include/mm_sound_mgr_codec.h"
+#include "include/mm_sound_mgr_device.h"
 #include <mm_error.h>
 #include <mm_debug.h>
 
@@ -44,7 +45,7 @@
 
 #define SHM_OPEN
 
-#ifdef	PULSE_CLIENT
+#ifdef PULSE_CLIENT
 #include "include/mm_sound_mgr_pulse.h"
 #endif
 
@@ -60,29 +61,21 @@ static int _MMSoundMgrStopCB(int msgid, void* msgcallback, void *msgdata);	/* ms
 static int _MMSoundMgrIpcPlayFile(int *codechandle, mm_ipc_msg_t *msg);	/* codechandle means codec slotid */
 static int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg);
 static int _MMSoundMgrIpcStop(mm_ipc_msg_t *msg);
-static int _MMSoundMgrIpcCreate(int *codechandle, mm_ipc_msg_t *msg);
-static int _MMSoundMgrIpcDestroy(mm_ipc_msg_t *msg);
-static int _MMSoundMgrIpcPlay(mm_ipc_msg_t *msg);
 static int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg);
-
-
+static int __mm_sound_mgr_ipc_is_route_available(mm_ipc_msg_t *msg, bool *is_available);
+static int __mm_sound_mgr_ipc_foreach_available_route_cb(mm_ipc_msg_t *msg);
+static int __mm_sound_mgr_ipc_set_active_route(mm_ipc_msg_t *msg);
+static int __mm_sound_mgr_ipc_get_active_device(mm_ipc_msg_t *msg, mm_sound_device_in *device_in, mm_sound_device_out *device_out);
+static int __mm_sound_mgr_ipc_add_active_device_changed_cb(mm_ipc_msg_t *msg);
+static int __mm_sound_mgr_ipc_remove_active_device_changed_cb(mm_ipc_msg_t *msg);
+static int __mm_sound_mgr_ipc_add_available_device_changed_cb(mm_ipc_msg_t *msg);
+static int __mm_sound_mgr_ipc_remove_available_device_changed_cb(mm_ipc_msg_t *msg);
 static int _MMIpcRecvMsg(int msgtype, mm_ipc_msg_t *msg);
 static int _MMIpcSndMsg(mm_ipc_msg_t *msg);
-static int _MMIpcCBSndMsg(mm_ipc_msg_t *msg);
-
-static int _MMSoundSetRespMsg(mm_ipc_msg_t *msgresp, int msgtype, int scmsgid, int handle, int code);
-
-#define SOUND_MSG_SET(sound_msg, x_msgtype, x_handle, x_code, x_msgid) \
-do { \
-	sound_msg.msgtype = x_msgtype; \
-	sound_msg.handle = x_handle; \
-	sound_msg.code = x_code; \
-	sound_msg.msgid = x_msgid; \
-} while(0)
 
 int MMSoundMgrIpcInit(void)
 {
-	debug_enter("\n");
+	debug_fenter();
 
 	/* create msg queue rcv, snd, cb */
 	/* This func is called only once */
@@ -109,7 +102,7 @@ int MMSoundMgrIpcInit(void)
 	debug_msg("Created server msg queue id : [%d]\n", g_sndid);
 	debug_msg("Created server msg queue id : [%d]\n", g_cbid);
 	
-	debug_leave("\n");
+	debug_fleave();
 	return MM_ERROR_NONE;
 }
 
@@ -125,7 +118,7 @@ int MMSoundMgrIpcReady(void)
 	mm_ipc_msg_t msg = {0,};
 	mm_ipc_msg_t resp  = {0,};
 
-	debug_enter("\n");
+	debug_fenter();
 
 	debug_msg("Created server msg queue id : [%d]\n", g_rcvid);
 	debug_msg("Created server msg queue id : [%d]\n", g_sndid);
@@ -156,12 +149,20 @@ int MMSoundMgrIpcReady(void)
 		case MM_SOUND_MSG_REQ_FILE:
 		case MM_SOUND_MSG_REQ_MEMORY:
 		case MM_SOUND_MSG_REQ_STOP:
-#ifdef PULSE_CLIENT			
+#ifdef PULSE_CLIENT
 		case MM_SOUND_MSG_REQ_GET_AUDIO_ROUTE:
 		case MM_SOUND_MSG_REQ_SET_AUDIO_ROUTE:
+#endif
 		case MM_SOUND_MSG_REQ_IS_BT_A2DP_ON:
-#endif			
 		case MM_SOUND_MSG_REQ_DTMF:
+		case MM_SOUND_MSG_REQ_IS_ROUTE_AVAILABLE:
+		case MM_SOUND_MSG_REQ_FOREACH_AVAILABLE_ROUTE_CB:
+		case MM_SOUND_MSG_REQ_SET_ACTIVE_ROUTE:
+		case MM_SOUND_MSG_REQ_GET_ACTIVE_DEVICE:
+		case MM_SOUND_MSG_REQ_ADD_ACTIVE_DEVICE_CB:
+		case MM_SOUND_MSG_REQ_REMOVE_ACTIVE_DEVICE_CB:
+		case MM_SOUND_MSG_REQ_ADD_AVAILABLE_ROUTE_CB:
+		case MM_SOUND_MSG_REQ_REMOVE_AVAILABLE_ROUTE_CB:
 			{
 				/* Create msg to queue : this will be freed inside thread function after use */
 				mm_ipc_msg_t* msg_to_queue = malloc (sizeof(mm_ipc_msg_t));
@@ -207,7 +208,7 @@ int MMSoundMgrIpcReady(void)
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 	
-	debug_leave("\n");
+	debug_fleave();
 	return MM_ERROR_NONE;
 }
 
@@ -217,8 +218,11 @@ static void _MMSoundMgrRun(mm_ipc_msg_t *msg)
 	int ret = MM_ERROR_NONE;
 	int instance;
 	int handle = -1;
+	bool is_available = 0;
+	mm_sound_device_in device_in = MM_SOUND_DEVICE_IN_NONE;
+	mm_sound_device_out device_out = MM_SOUND_DEVICE_OUT_NONE;
 
-	debug_enter("\n");
+	debug_fenter();
 
 	instance = msg->sound_msg.msgid;
 
@@ -259,16 +263,6 @@ static void _MMSoundMgrRun(mm_ipc_msg_t *msg)
 		break;
 		
 #ifdef PULSE_CLIENT
-	case MM_SOUND_MSG_REQ_GET_AUDIO_ROUTE:
-		debug_msg("Recv REQ_GET_AUDIO_ROUTE msg\n");
-		MMSoundMgrPulseHandleGetAudioRouteReq (msg, _MMIpcSndMsg);
-		return; /* sending result will be done by inside _MMIpcSndMsg which is called by MMSoundMgrPulseHandleGetAudioRouteReq() : for sync operation.*/
-
-	case MM_SOUND_MSG_REQ_SET_AUDIO_ROUTE:
-		debug_msg("Recv REQ_SET_AUDIO_ROUTE msg\n");
-		MMSoundMgrPulseHandleSetAudioRouteReq (msg, _MMIpcSndMsg);
-		return;
-
 	case MM_SOUND_MSG_REQ_IS_BT_A2DP_ON:
 		debug_msg("Recv REQ_IS_BT_A2DP_ON msg\n");
 		MMSoundMgrPulseHandleIsBtA2DPOnReq (msg,_MMIpcSndMsg);
@@ -286,6 +280,98 @@ static void _MMSoundMgrRun(mm_ipc_msg_t *msg)
 			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_DTMF, handle, MM_ERROR_NONE, instance);
 		}
 		break;
+
+	case MM_SOUND_MSG_REQ_IS_ROUTE_AVAILABLE:
+		debug_msg("Recv REQ_SET_ACTIVE_ROUTE msg\n");
+		ret = __mm_sound_mgr_ipc_is_route_available(msg, &is_available);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to MM_SOUND_MSG_REQ_IS_ROUTE_AVAILABLE.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_IS_ROUTE_AVAILABLE, 0, MM_ERROR_NONE, instance);
+			respmsg.sound_msg.is_available = is_available;
+		}
+		break;
+
+	case MM_SOUND_MSG_REQ_FOREACH_AVAILABLE_ROUTE_CB:
+		debug_msg("Recv REQ_FOREACH_AVAILABLE_ROUTE_CB msg\n");
+		ret = __mm_sound_mgr_ipc_foreach_available_route_cb(&respmsg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to MM_SOUND_MSG_REQ_FOREACH_AVAILABLE_ROUTE_CB.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_FOREACH_AVAILABLE_ROUTE_CB, 0, MM_ERROR_NONE, instance);
+		}
+		break;
+
+	case MM_SOUND_MSG_REQ_SET_ACTIVE_ROUTE:
+		debug_msg("Recv REQ_SET_ACTIVE_ROUTE msg\n");
+		ret = __mm_sound_mgr_ipc_set_active_route(msg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to MM_SOUND_MSG_REQ_SET_ACTIVE_ROUTE.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_SET_ACTIVE_ROUTE, 0, MM_ERROR_NONE, instance);
+		}
+		break;
+
+	case MM_SOUND_MSG_REQ_GET_ACTIVE_DEVICE:
+		debug_msg("Recv REQ_GET_ACTIVE_DEVICE msg\n");
+		ret = __mm_sound_mgr_ipc_get_active_device(msg, &device_in, &device_out);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to MM_SOUND_MSG_REQ_GET_ACTIVE_DEVICE.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_GET_ACTIVE_DEVICE, 0, MM_ERROR_NONE, instance);
+			respmsg.sound_msg.device_in = device_in;
+			respmsg.sound_msg.device_out = device_out;
+		}
+		break;
+
+	case MM_SOUND_MSG_REQ_ADD_ACTIVE_DEVICE_CB:
+		debug_msg("Recv REQ_ADD_ACTIVE_DEVICE_CB msg\n");
+		ret = __mm_sound_mgr_ipc_add_active_device_changed_cb(msg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to MM_SOUND_MSG_REQ_ADD_DEVICE_CB.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ADD_ACTIVE_DEVICE_CB, 0, MM_ERROR_NONE, instance);
+		}
+		break;
+
+	case MM_SOUND_MSG_REQ_REMOVE_ACTIVE_DEVICE_CB:
+		debug_msg("Recv REQ_REMOVE_ACTIVE_DEVICE_CB msg\n");
+		ret = __mm_sound_mgr_ipc_remove_active_device_changed_cb(msg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to MM_SOUND_MSG_REQ_REMOVE_DEVICE_CB.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_REMOVE_ACTIVE_DEVICE_CB, 0, MM_ERROR_NONE, instance);
+		}
+		break;
+
+	case MM_SOUND_MSG_REQ_ADD_AVAILABLE_ROUTE_CB:
+		debug_msg("Recv REQ_ADD_AVAILABLE_ROUTE_CB msg\n");
+		ret = __mm_sound_mgr_ipc_add_available_device_changed_cb(msg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to MM_SOUND_MSG_REQ_ADD_DEVICE_CB.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ADD_AVAILABLE_ROUTE_CB, 0, MM_ERROR_NONE, instance);
+		}
+		break;
+
+	case MM_SOUND_MSG_REQ_REMOVE_AVAILABLE_ROUTE_CB:
+		debug_msg("Recv REQ_REMOVE_AVAILABLE_ROUTE_CB msg\n");
+		ret = __mm_sound_mgr_ipc_remove_available_device_changed_cb(msg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to MM_SOUND_MSG_REQ_REMOVE_DEVICE_CB.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_REMOVE_AVAILABLE_ROUTE_CB, 0, MM_ERROR_NONE, instance);
+		}
+		break;
+
 	default:
 		/* Response error unknown operation */;
 		debug_critical("Unexpected msg. %d for PID:%d\n", msg->sound_msg.msgtype, msg->sound_msg.msgid );		
@@ -307,7 +393,7 @@ static void _MMSoundMgrRun(mm_ipc_msg_t *msg)
 	}
 
 	debug_msg("Ready to next msg\n");
-	debug_leave("\n");
+	debug_fleave();
 }
 
 static int _MMSoundMgrStopCB(int msgid, void* msgcallback, void *msgdata)
@@ -316,7 +402,7 @@ static int _MMSoundMgrStopCB(int msgid, void* msgcallback, void *msgdata)
 	mm_ipc_msg_t resp = {0,};
 	int ret = MM_ERROR_SOUND_INTERNAL;
 	
-	debug_enter("\n");
+	debug_fenter();
 
 	SOUND_MSG_SET(resp.sound_msg, MM_SOUND_MSG_INF_STOP_CB, 0, MM_ERROR_NONE, msgid);
 	resp.sound_msg.callback = msgcallback;
@@ -326,7 +412,7 @@ static int _MMSoundMgrStopCB(int msgid, void* msgcallback, void *msgdata)
 	if (ret != MM_ERROR_NONE)
 		debug_error("Fail to send callback message\n");
 
-	debug_leave("\n");
+	debug_fleave();
 	return MM_ERROR_NONE;
 }
 
@@ -337,7 +423,7 @@ static int _MMSoundMgrIpcPlayFile(int *codechandle, mm_ipc_msg_t *msg)
 	int ret = MM_ERROR_NONE;
 	int mm_session_type = MM_SESSION_TYPE_SHARE;
 	
-	debug_enter("\n");
+	debug_fenter();
 
 	/* Set source */
 	source = (MMSourceType*)malloc(sizeof(MMSourceType));
@@ -377,7 +463,6 @@ static int _MMSoundMgrIpcPlayFile(int *codechandle, mm_ipc_msg_t *msg)
 	debug_msg("keytone %d\n", param.keytone);
 	debug_msg("Handle route %d\n", param.handle_route);
 
-
 	//convert mm_session_type to asm_event_type
 	switch(mm_session_type)
 	{
@@ -413,15 +498,14 @@ static int _MMSoundMgrIpcPlayFile(int *codechandle, mm_ipc_msg_t *msg)
 		return ret;		
 	}
 
-	debug_leave("\n");
-
+	debug_fleave();
 	return MM_ERROR_NONE;
 }
 static int _MMSoundMgrIpcStop(mm_ipc_msg_t *msg)
 {
 	int ret = MM_ERROR_NONE;
 
-	debug_enter("\n");
+	debug_fenter();
 
 	ret = MMSoundMgrCodecStop(msg->sound_msg.handle);
 
@@ -430,7 +514,7 @@ static int _MMSoundMgrIpcStop(mm_ipc_msg_t *msg)
 		return ret;
 	}
 
-	debug_leave("\n");
+	debug_fleave();
 	return MM_ERROR_NONE;
 }
 
@@ -442,9 +526,9 @@ static int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg)
 	int shm_fd = -1;
 	void* mmap_buf = NULL;
 
-	debug_enter("\n");
+	debug_fenter();
 
-#ifndef SHM_OPEN	
+#ifndef SHM_OPEN
 	if ((shmid = shmget((key_t)(msg->sound_msg.sharedkey), msg->sound_msg.memsize, 0)) == -1)
 	{
 		if(errno == ENOENT)
@@ -539,8 +623,7 @@ static int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg)
 		return ret;		
 	}
 
-	debug_leave("\n");
-
+	debug_fleave();
 	return ret;
 }
 
@@ -550,7 +633,7 @@ static int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg)
 	mmsound_mgr_codec_param_t param = {0,};
 	int ret = MM_ERROR_NONE;
 
-	debug_enter("\n");
+	debug_fenter();
 
 	/* Set sound player parameter */
 	param.tone = msg->sound_msg.tone;
@@ -578,22 +661,134 @@ static int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg)
 		return ret;		
 	}
 	
-	debug_leave("\n");
-
+	debug_fleave();
 	return ret;
 }
 
-
-/* scmsgid means Sound Client msg id : instance / The param MUST be set indeed */ 
-static int _MMSoundSetRespMsg(mm_ipc_msg_t *msgresp, int msgtype, int scmsgid, int handle, int code)
+static int __mm_sound_mgr_ipc_is_route_available(mm_ipc_msg_t *msg, bool *is_available)
 {
-	msgresp->sound_msg.msgid = scmsgid;
-	msgresp->sound_msg.msgtype = msgtype;
-	msgresp->sound_msg.handle = handle;
-	msgresp->sound_msg.code = code;
-	msgresp->sound_msg.msgid = scmsgid;
-	
-	return MM_ERROR_NONE;
+	_mm_sound_mgr_device_param_t param;
+	mm_sound_route route;
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	param.route = msg->sound_msg.route;
+	ret = _mm_sound_mgr_device_is_route_available(&param, is_available);
+
+	debug_fleave();
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_foreach_available_route_cb(mm_ipc_msg_t *msg)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	ret = _mm_sound_mgr_device_foreach_available_route_cb(msg);
+
+	debug_fleave();
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_set_active_route(mm_ipc_msg_t *msg)
+{
+	_mm_sound_mgr_device_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	param.pid = msg->sound_msg.msgid;
+	param.route = msg->sound_msg.route;
+	ret = _mm_sound_mgr_device_set_active_route(&param);
+
+	debug_fleave();
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_get_active_device(mm_ipc_msg_t *msg, mm_sound_device_in *device_in, mm_sound_device_out *device_out)
+{
+	_mm_sound_mgr_device_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_device_param_t));
+	param.pid = msg->sound_msg.msgid;
+
+	ret = _mm_sound_mgr_device_get_active_device(&param, device_in, device_out);
+
+	debug_fleave();
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_add_active_device_changed_cb(mm_ipc_msg_t *msg)
+{
+	_mm_sound_mgr_device_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_device_param_t));
+	param.pid = msg->sound_msg.msgid;
+	param.callback = msg->sound_msg.callback;
+	param.cbdata = msg->sound_msg.cbdata;
+
+	ret = _mm_sound_mgr_device_add_active_device_callback(&param);
+
+	debug_fleave();
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_remove_active_device_changed_cb(mm_ipc_msg_t *msg)
+{
+	_mm_sound_mgr_device_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_device_param_t));
+	param.pid = msg->sound_msg.msgid;
+
+	ret = _mm_sound_mgr_device_remove_active_device_callback(&param);
+
+	debug_fleave();
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_add_available_device_changed_cb(mm_ipc_msg_t *msg)
+{
+	_mm_sound_mgr_device_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_device_param_t));
+	param.pid = msg->sound_msg.msgid;
+	param.callback = msg->sound_msg.callback;
+	param.cbdata = msg->sound_msg.cbdata;
+
+	ret = _mm_sound_mgr_device_add_available_route_callback(&param);
+
+	debug_fleave();
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_remove_available_device_changed_cb(mm_ipc_msg_t *msg)
+{
+	_mm_sound_mgr_device_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_device_param_t));
+	param.pid = msg->sound_msg.msgid;
+
+	ret = _mm_sound_mgr_device_remove_available_route_callback(&param);
+
+	debug_fleave();
+	return ret;
 }
 
 static int _MMIpcRecvMsg(int msgtype, mm_ipc_msg_t *msg)
@@ -652,7 +847,7 @@ int _MMIpcSndMsg(mm_ipc_msg_t *msg)
 	return MM_ERROR_NONE;
 }
 
-static int _MMIpcCBSndMsg(mm_ipc_msg_t *msg)
+int _MMIpcCBSndMsg(mm_ipc_msg_t *msg)
 {
 	/* rcv message */
 	msg->msg_type = msg->sound_msg.msgid;

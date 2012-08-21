@@ -1,3 +1,0 @@
-# if your module, creates shared libraries
-@PREFIX@/bin/mm_sound_testsuite
-

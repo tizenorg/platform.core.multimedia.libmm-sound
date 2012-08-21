@@ -1,1 +1,1 @@
-SUBDIRS = headset wav keytone tone
+SUBDIRS = wav keytone tone

@@ -94,22 +94,16 @@ enum MMSoundPathOptionType {
 	MM_SOUND_PATH_OPTION_NONE					= 0x00000000,	/**< no sound path option */
 	MM_SOUND_PATH_OPTION_AUTO_HEADSET_CONTROL	= 0x00000001,	/**< automatic sound path change by earphone event */
 	MM_SOUND_PATH_OPTION_SPEAKER_WITH_HEADSET	= 0x00000002,	/**< play sound via speaker and earphone (if inserted) */
-	MM_SOUND_PATH_OPTION_LEFT_SPEAKER_ONLY		= 0x00000004,	/**< not used */
-	MM_SOUND_PATH_OPTION_RIGHT_SPEAKER_ONLY		= 0x00000008,	/**< not used */
 	MM_SOUND_PATH_OPTION_VOICECALL_REC			= 0x00000010,	/**< voice call recording option */
 	MM_SOUND_PATH_OPTION_USE_SUB_MIC				= 0x00000020,	/**< use sub-mic on call and recording */
-	MM_SOUND_PATH_OPTION_LEGACY_MODE				= 0x10000000,	/**< not used */
 };
 
-/**
- * Sound param
- */
-enum {
-	MMSOUNDPARAM_FOLLOWING_ROUTE_POLICY,
-	MMSOUNDPARAM_SPEAKER_ONLY,
-	MMSOUNDPARAM_EARPHONE_AUTO,
-	MMSOUNDPARAM_SPEAKER_WITH_EARPHONE,
+
+enum mm_sound_handle_route_t {
+	MM_SOUND_HANDLE_ROUTE_USING_CURRENT,
+	MM_SOUND_HANDLE_ROUTE_SPEAKER
 };
+
 typedef struct {
 	const char			*filename;		/**< filename to play */
 	int					volume;			/**< relative volume level */
@@ -118,7 +112,7 @@ typedef struct {
 	void				*data;			/**< user data to callback */
 	void				*mem_ptr;		/**< memory buffer to play */
 	int					mem_size;		/**< size of memory buffer */
-	int					bluetooth;		/**< 1 for speaker only, 0 for by route policy */
+	int					handle_route;	/**< 1 for speaker, 0 for current */
 	int					volume_table;	/**< Volume Type (SW Volume table type) */
 	int					priority;		/**< 0 or 1 */
 } MMSoundParamType;

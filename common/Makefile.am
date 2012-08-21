@@ -2,6 +2,7 @@
 lib_LTLIBRARIES = libmmfsoundcommon.la
 
 libmmfsoundcommon_la_SOURCES = mm_ipc.c \
+							mm_sound_utils.c \
 							mm_source.c
 
 #libmmfsoundcommon_la_DEPENDENCIES = $(libdir)/libmmfcommon.la
@@ -18,9 +19,5 @@ libmmfsoundcommon_la_LIBADD = $(MMCOMMON_LIBS) \
 
 
 #For logmanager
-if IS_SDK
-libmmfsoundcommon_la_CFLAGS += -D_I386_SDK_BUILD_
-else
 libmmfsoundcommon_la_CFLAGS += $(MMLOGSVR_CFLAGS) -DMMF_LOG_OWNER=0x020 -DMMF_DEBUG_PREFIX=\"MMF-SOUND\"
 libmmfsoundcommon_la_LIBADD += $(MMLOGSVR_LIBS)
-endif

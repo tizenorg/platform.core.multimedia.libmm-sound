@@ -1,16 +1,8 @@
-if IS_SDK
-SUBDIRS = 	common \
-		pkgconfig-sdk \
-		. \
-		server \
-		testsuite
-else
 SUBDIRS = common \
 		pkgconfig \
 		. \
 		server \
 		testsuite
-endif
 
 SUBDIRS += init
 		
@@ -53,11 +45,8 @@ libmmfsound_la_LIBADD = $(MMCOMMON_LIBS) \
 libmmfsound_la_LDFLAGS = -version-info 1:0:1
 
 #For logmanager
-if IS_SDK
-else
 libmmfsound_la_CFLAGS += $(MMLOGSVR_CFLAGS) -DMMF_LOG_OWNER=0x020 -DMMF_DEBUG_PREFIX=\"MMF-SOUND\"
 libmmfsound_la_LIBADD += $(MMLOGSVR_LIBS)
-endif
 
 
 
@@ -76,9 +65,5 @@ libmmfkeysound_la_CFLAGS = -I$(srcdir)/include \
 			-D_USE_INTERNAL_SOUND_PATH_
 
 libmmfkeysound_la_LIBADD = $(MMCOMMON_LIBS)
-if IS_SDK
-else
 libmmfkeysound_la_CFLAGS += $(MMLOGSVR_CFLAGS) -DMMF_LOG_OWNER=0x020 -DMMF_DEBUG_PREFIX=\"MMF-SOUND\"
 libmmfkeysound_la_LIBADD += $(MMLOGSVR_LIBS)
-endif
-

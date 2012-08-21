@@ -1,6 +1,0 @@
-# if your module creates shared libraries
-@PREFIX@/include/mmf/mm_sound.h
-@PREFIX@/lib/*.a
-@PREFIX@/lib/*.la
-@PREFIX@/lib/pkgconfig/*
-

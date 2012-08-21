@@ -19,24 +19,34 @@
  *
  */
 
-#ifndef __MM_SOUND_MGR_IPC_H__
-#define __MM_SOUND_MGR_IPC_H__
+/**
+ * @file		mm_sound_utils.h
+ * @brief		Internal utility library for sound module.
+ * @date
+ * @version		Release
+ *
+ * Internal utility library for sound module.
+ */
 
-#include "../../include/mm_sound_msg.h"
+#ifndef __MM_SOUND_UTILS_H__
+#define __MM_SOUND_UTILS_H__
 
-#define SOUND_MSG_SET(sound_msg, x_msgtype, x_handle, x_code, x_msgid) \
-do { \
-	sound_msg.msgtype = x_msgtype; \
-	sound_msg.handle = x_handle; \
-	sound_msg.code = x_code; \
-	sound_msg.msgid = x_msgid; \
-} while(0)
+#include <mm_types.h>
+#include <mm_error.h>
 
-int MMSoundMgrIpcInit(void);
-int MMSoundMgrIpcFini(void);
-int MMSoundMgrIpcReady(void);
+#include "../include/mm_sound.h"
 
-int _MMIpcCBSndMsg(mm_ipc_msg_t *msg);
+#ifdef __cplusplus
+	extern "C" {
+#endif
 
-#endif /* __MM_SOUND_MGR_H__ */
+int _mm_sound_get_valid_route_list(mm_sound_route **route_list);
+bool _mm_sound_is_route_valid(mm_sound_route route);
+void _mm_sound_get_devices_from_route(mm_sound_route route, mm_sound_device_in *device_in, mm_sound_device_out *device_out);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __MM_SOUND_UTILS_H__ */
 

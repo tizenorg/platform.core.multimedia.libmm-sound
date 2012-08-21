@@ -561,9 +561,6 @@ static void interpret (char *cmd)
 		}
 		else if (strncmp (cmd, "3",1) == 0) {
 			//dual out
-			if (mm_sound_set_path(MM_SOUND_GAIN_KEYTONE, MM_SOUND_PATH_SPK, MM_SOUND_PATH_NONE, MM_SOUND_PATH_OPTION_AUTO_HEADSET_CONTROL)<0)
-				debug_log ("Fail to set sound path !!!\n");
-			g_print("Set path for auto headset control\n");
 		}
 		else if (strncmp (cmd, "4",1) == 0) {
 			//recording
@@ -573,9 +570,6 @@ static void interpret (char *cmd)
 		}
 		else if (strncmp (cmd, "5",1) == 0) {
 			//record release
-			if (mm_sound_set_path(MM_SOUND_GAIN_VOICEREC, MM_SOUND_PATH_NONE, MM_SOUND_PATH_MIC, MM_SOUND_PATH_OPTION_AUTO_HEADSET_CONTROL)<0)
-				debug_log ("Fail to set sound path !!!\n");
-			g_print("Set path for recording with auto earjack control\n");
 		}
 		else if (strncmp (cmd, "6",1) == 0) {
 			//voice call
@@ -781,7 +775,6 @@ int main(int argc, char *argv[])
 	g_volume_type = VOLUME_TYPE_MEDIA;
 	mm_sound_volume_get_value(g_volume_type, &g_volume_value);
 	mm_sound_volume_add_callback(g_volume_type, volume_change_callback, (void*) &g_volume_type);
-	mm_sound_route_add_change_callback(audio_route_policy_changed_callback, (void*)111);
 	displaymenu();
 	g_main_loop_run (g_loop);
 

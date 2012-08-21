@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "mm_sound.h"
+
 #define FILE_PATH 512
 
 typedef enum {
@@ -50,6 +52,13 @@ typedef struct
 	int memsize;
 	int sharedkey;
 	char filename[FILE_PATH];
+
+	/* Device */
+	int route;
+	int device_in;
+	int device_out;
+	int is_available;
+	int route_list[MM_SOUND_ROUTE_NUM];
 
 	/* Common data */
 	int handle;

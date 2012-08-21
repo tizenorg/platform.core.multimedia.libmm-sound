@@ -45,7 +45,7 @@
 #include "../../include/mm_sound_plugin_codec.h"
 
 #define TIMEOUT_SEC 2
-#define DASF_BUFFER_SIZE 1920
+#define MAX_BUFFER_SIZE 1920
 #define KEYTONE_PATH "/tmp/keytone"		/* Keytone pipe path */
 #define KEYTONE_GROUP	6526			/* Keytone group : assigned by security */
 #define FILE_FULL_PATH 1024				/* File path lenth */
@@ -134,9 +134,7 @@ int MMSoundPlugRunKeytoneControlRun(void)
 	/* INIT IPC */
 	pre_mask = umask(0);
 	if (mknod(KEYTONE_PATH,S_IFIFO|0660,0)<0) {
-		if (errno!=EEXIST) {
-			debug_warning("Already Exist device %s\n", KEYTONE_PATH);
-		}
+		debug_warning ("mknod failed. errno=[%d][%s]\n", errno, strerror(errno));
 	}
 	umask(pre_mask);
 
@@ -147,9 +145,14 @@ int MMSoundPlugRunKeytoneControlRun(void)
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 
+	/* change access mode so group can use keytone pipe */
+	if (fchmod (fd, 0660) == -1) {
+		debug_warning("Changing keytone access mode is failed. errno=[%d][%s]\n", errno, strerror(errno));
+	}
+
 	/* change group due to security request */
 	if (fchown (fd, -1, KEYTONE_GROUP) == -1) {
-		debug_warning("Changing keytone group is failed. errno=[%d]\n", errno);
+		debug_warning("Changing keytone group is failed. errno=[%d][%s]\n", errno, strerror(errno));
 	}
 
 	/* Init Audio Handle & internal buffer */
@@ -161,7 +164,7 @@ int MMSoundPlugRunKeytoneControlRun(void)
 	stop_flag = 1;
 	source.ptr = NULL;
 
-	debug_msg("Trace\n");
+	debug_msg("[%s] Trace\n", __func__);
 	size = sizeof(ipc_type);
 	int once= MMSOUND_TRUE;
 	int flag= MMSOUND_FALSE;
@@ -169,16 +172,17 @@ int MMSoundPlugRunKeytoneControlRun(void)
 
 	while(stop_flag) {
 		memset(&data, 0, sizeof(ipc_type));
-		debug_msg("The Keytone plugin is running\n");
+		debug_msg("[%s] The Keytone plugin is running......\n", __func__);
 		ret = read(fd, (void *)&data, size);
 		if(ret == -1) {
-			debug_error("Fail to read file\n");
+			debug_error("[%s] Fail to read file\n", __func__);
 			continue;
 		}
+		debug_msg("[%s] The Keytone plugin is running......READ returns....\n", __func__);
 
 		pthread_mutex_lock(&g_keytone.sw_lock);
 		g_keytone.vol_type = data.vol_type;
-		debug_log("The volume type is [%d]\n", g_keytone.vol_type);
+		debug_log("[%s] The volume type is [%d]\n", __func__, g_keytone.vol_type);
 
 		if (g_keytone.state == RENDER_STARTED) {
 			g_keytone.state = RENDER_STOP;
@@ -226,6 +230,7 @@ int MMSoundPlugRunKeytoneControlRun(void)
 			pthread_cond_signal(&g_keytone.sw_cond);
 		}
 
+		debug_log ("[%s] set state to START, unlock \n", __func__);
 		g_keytone.state = RENDER_START;
 		pthread_mutex_unlock(&g_keytone.sw_lock);
 
@@ -340,8 +345,8 @@ int CreateAudioHandle(mmsound_codec_info_t info)
 
 
 	//FIXME :: remove dasf buffer size
-	if(g_keytone.period>DASF_BUFFER_SIZE) {
-		g_keytone.period = DASF_BUFFER_SIZE;
+	if(g_keytone.period>MAX_BUFFER_SIZE) {
+		g_keytone.period = MAX_BUFFER_SIZE;
 	}
 
 	return err;
@@ -353,7 +358,7 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 	//static int IsAmpON = MMSOUND_FALSE; //FIXME :: this should be removed
 	MMSourceType source = {0,};
 	mmsound_codec_info_t info = {0,};
-	unsigned char *buf = NULL, Outbuf[g_keytone.period];
+	unsigned char *buf = NULL, Outbuf[MAX_BUFFER_SIZE];
 	unsigned int size=0;
 	buf_param_t *param=NULL;
 	struct timespec timeout;
@@ -365,6 +370,7 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 	while(stop_flag) {
 		pthread_mutex_lock(&g_keytone.sw_lock);
 		if(g_keytone.state == RENDER_STOPED) {
+			debug_log ("[%s] set state to STOPPED_N_WAIT and do cond wait\n", __func__);
 			g_keytone.state = RENDER_STOPED_N_WAIT;
 			pthread_cond_wait(&g_keytone.sw_cond, &g_keytone.sw_lock);
 		}
@@ -372,6 +378,7 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 		if(g_keytone.state == RENDER_START) {
 			//IsAmpON = MMSOUND_TRUE;
 
+			debug_log ("[%s] state is START\n", __func__);
 			param = (buf_param_t *)g_keytone.src;
 
 			source = *param->source; /* Copy source */
@@ -395,6 +402,7 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 		while(size && stop_flag) {
 			pthread_mutex_lock(&g_keytone.sw_lock);
 			if (g_keytone.state == RENDER_STOP) {
+				debug_log ("[%s] state is STOP\n", __func__);
 				pthread_mutex_unlock(&g_keytone.sw_lock);
 				break;
 			}
@@ -402,7 +410,7 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 
 			if(size<g_keytone.period) {
 #if defined(_DEBUG_VERBOS_)
-				debug_msg("[Keysound] Last Buffer :: size=%d,period=%d\n", size, g_keytone.period);
+				debug_msg("[%s][Keysound] Last Buffer :: size=%d, period=%d\n", __func__, size, g_keytone.period);
 #endif
 				memset(Outbuf, 0, g_keytone.period);
 				memcpy(Outbuf, buf, size);
@@ -415,7 +423,7 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 				size = 0;
 			} else {
 #if defined(_DEBUG_VERBOS_)
-				debug_msg("[Keysound] size=%d,period=%d\n",size, g_keytone.period);
+				debug_msg("[%s][Keysound] size=%d, period=%d\n", __func__, size, g_keytone.period);
 #endif
 				memcpy(Outbuf, buf, g_keytone.period);
 
@@ -431,31 +439,27 @@ static int _MMSoundKeytoneRender(void *param_not_used)
 
 		pthread_mutex_lock(&g_keytone.sw_lock);
 		if(g_keytone.state == RENDER_STOP ) {
+			debug_msg("[%s] state is STOP, do cond signal \n", __func__);
 			g_keytone.state = RENDER_STOPED;
 			pthread_cond_signal(&g_keytone.sw_cond);
 		} else {
+			debug_msg("[%s] state is not STOP\n", __func__);
 			g_keytone.state = RENDER_COND_TIMED_WAIT;
 			gettimeofday(&tv, NULL);
 			timeout.tv_sec = tv.tv_sec + TIMEOUT_SEC;
 			timeout.tv_nsec = tv.tv_usec;
 			stat = pthread_cond_timedwait(&g_keytone.sw_cond, &g_keytone.sw_lock, &timeout);
 			if(stat == ETIMEDOUT && g_keytone.state != RENDER_START) {
-				//if(IsAmpON == MMSOUND_TRUE)
-				{
-					debug_msg("close\n");
-					if(AVSYS_FAIL(avsys_audio_close(g_keytone.handle)))	{
-						debug_critical("avsys_audio_close() failed !!!!!!!!\n");
-					}
-
-					g_CreatedFlag = MMSOUND_FALSE;
-
-					//IsAmpON = MMSOUND_FALSE;
+				debug_msg("[%s] Do audio handle close and set state to STOPPED\n", __func__);
+				if(AVSYS_FAIL(avsys_audio_close(g_keytone.handle)))	{
+					debug_critical("avsys_audio_close() failed !!!!!!!!\n");
 				}
+
+				g_CreatedFlag = MMSOUND_FALSE;
 				g_keytone.state = RENDER_STOPED;
-				pthread_mutex_unlock(&g_keytone.sw_lock);
-				continue;
 			}
-		}
+		} /* while(stop_flag) */
+
 		pthread_mutex_unlock(&g_keytone.sw_lock);
 	}
 	return MMSOUND_FALSE;

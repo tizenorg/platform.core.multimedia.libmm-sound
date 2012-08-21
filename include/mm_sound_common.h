@@ -22,12 +22,10 @@
 #ifndef __MM_SOUND_COMMON_H__
 #define __MM_SOUND_COMMON_H__
 
-#define ROUTE_VCONF_KEY "memory/Sound/RoutePolicy"
-
 ///////////////////////////////////
 ////     MMSOUND VOLUME APIs
 ///////////////////////////////////
-#define VCONF_KEY_VOLUME_PREFIX				"db/volume"
+#define VCONF_KEY_VOLUME_PREFIX				"db/private/sound/volume"
 #define VCONF_KEY_VOLUME_TYPE_SYSTEM		VCONF_KEY_VOLUME_PREFIX"/system"
 #define VCONF_KEY_VOLUME_TYPE_NOTIFICATION	VCONF_KEY_VOLUME_PREFIX"/notification"
 #define VCONF_KEY_VOLUME_TYPE_ALARM			VCONF_KEY_VOLUME_PREFIX"/alarm"
@@ -36,6 +34,8 @@
 #define VCONF_KEY_VOLUME_TYPE_CALL			VCONF_KEY_VOLUME_PREFIX"/call"
 #define VCONF_KEY_VOLUME_TYPE_ANDROID		VCONF_KEY_VOLUME_PREFIX"/fixed"
 #define VCONF_KEY_VOLUME_TYPE_JAVA			VCONF_KEY_VOLUME_PREFIX"/java"
+
+#define ASM_READY_KEY		"memory/Sound/ASMReady"
 
 #define MMSOUND_ENTER_CRITICAL_SECTION(x_mutex) \
 switch ( pthread_mutex_lock( x_mutex ) ) \

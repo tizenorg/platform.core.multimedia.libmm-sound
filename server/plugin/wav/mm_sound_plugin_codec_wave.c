@@ -29,11 +29,10 @@
 #include <mm_error.h>
 #include <mm_debug.h>
 #include <pthread.h>
-#include <mm_sound.h>
-#include <mm_ipc.h>
-
 #include <avsys-audio.h>
 
+#include "../../include/mm_sound.h"
+#include "../../include/mm_ipc.h"
 #include "../../include/mm_sound_thread_pool.h"
 #include "../../include/mm_sound_plugin_codec.h"
 #include "../../../include/mm_sound_private.h"
@@ -290,10 +289,10 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	audio_param.vol_type = param->volume_table;
 	audio_param.channels = info->channels;
 	audio_param.samplerate = info->samplerate;
-	if(param->handle_route == MMSOUNDPARAM_FOLLOWING_ROUTE_POLICY)
-		audio_param.bluetooth = AVSYS_AUDIO_HANDLE_ROUTE_FOLLOWING_POLICY;
-	else
-		audio_param.bluetooth = AVSYS_AUDIO_HANDLE_ROUTE_HANDSET_ONLY;
+	if(param->handle_route == MM_SOUND_HANDLE_ROUTE_USING_CURRENT) /* normal, solo */
+		audio_param.handle_route = AVSYS_AUDIO_HANDLE_ROUTE_FOLLOWING_POLICY;
+	else /* loud solo */
+		audio_param.handle_route = AVSYS_AUDIO_HANDLE_ROUTE_HANDSET_ONLY;
 	p->handle_route = param->handle_route;
 
 	switch(info->format)
@@ -310,7 +309,7 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	}
 
 	debug_msg("[CODEC WAV] PARAM mode : [%d]\n", audio_param.mode);
-	debug_msg("[CODEC WAV] ARAM priority: [%d]\n", audio_param.priority);
+	debug_msg("[CODEC WAV] PARAM priority: [%d]\n", audio_param.priority);
 	debug_msg("[CODEC WAV] PARAM channels : [%d]\n", audio_param.channels);
 	debug_msg("[CODEC WAV] PARAM samplerate : [%d]\n", audio_param.samplerate);
 	debug_msg("[CODEC WAV] PARAM format : [%d]\n", audio_param.format);
@@ -371,14 +370,12 @@ static void _runing(void *param)
 	int stop_size;
 	char *dummy = NULL;
 	int ret;
-	avsys_audio_route_policy_t route_policy = AVSYS_AUDIO_ROUTE_POLICY_DEFAULT;
+
+	int gain, out, in, option;
+	int gain_after, out_after, in_after, option_after;
+
 
 	debug_enter("[CODEC WAV] (Slot ID %d)\n", p->cb_param);
-
-
-	if(AVSYS_FAIL(avsys_audio_get_route_policy(&route_policy))) {
-		debug_error("[CODEC WAV] Can not get system audio route policy\n");
-	}
 
 	/* Set the thread schedule */
 	org_cur = p->ptr_current;
@@ -403,16 +400,17 @@ static void _runing(void *param)
 	 */
 	switch(p->handle_route)
 	{
-	case MMSOUNDPARAM_SPEAKER_ONLY:
-		avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_AUDIOPLAYER, AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE, AVSYS_AUDIO_PATH_OPTION_NONE);
+	case MM_SOUND_HANDLE_ROUTE_SPEAKER:
+		debug_msg("[CODEC WAV] Save backup path\n");
+		avsys_audio_get_path_ex(&gain, &out, &in, &option);
+
+		/* if current out is not speaker, then force set path to speaker */
+		if (out != AVSYS_AUDIO_PATH_EX_SPK) {
+			debug_msg("[CODEC WAV] current out is not SPEAKER, set path to SPEAKER now!!!\n");
+			avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_AUDIOPLAYER, AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE, AVSYS_AUDIO_PATH_OPTION_NONE);
+		}
 		break;
-	case MMSOUNDPARAM_EARPHONE_AUTO:
-		avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_AUDIOPLAYER, AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE, AVSYS_AUDIO_PATH_OPTION_JACK_AUTO);
-		break;
-	case MMSOUNDPARAM_SPEAKER_WITH_EARPHONE:
-		avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_AUDIOPLAYER, AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE, AVSYS_AUDIO_PATH_OPTION_DUAL_OUT);
-		break;
-	case MMSOUNDPARAM_FOLLOWING_ROUTE_POLICY:
+	case MM_SOUND_HANDLE_ROUTE_USING_CURRENT:
 	default:
 		break;
 	}
@@ -470,19 +468,18 @@ static void _runing(void *param)
 		/*
 		 * Restore path here
 		 */
-		switch(route_policy)
-		{
-		case AVSYS_AUDIO_ROUTE_POLICY_HANDSET_ONLY:
-			ret = avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_AUDIOPLAYER, AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE, AVSYS_AUDIO_PATH_OPTION_NONE);
-			break;
-		case AVSYS_AUDIO_ROUTE_POLICY_IGNORE_A2DP:
-		case AVSYS_AUDIO_ROUTE_POLICY_DEFAULT:
-		default:
-			ret = avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_AUDIOPLAYER, AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE, AVSYS_AUDIO_PATH_OPTION_JACK_AUTO);
-			break;
-		}
-		if(AVSYS_FAIL(ret)) {
-			debug_error("[CODEC WAV] Can not restore sound path\n");
+		if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER) {
+			avsys_audio_get_path_ex(&gain_after, &out_after, &in_after, &option_after);
+
+			/* If current path is not same as before playing sound, restore the sound path */
+			if (gain_after != gain || out_after != out || in_after != in || option_after != option) {
+
+				debug_msg("[CODEC WAV] Restore path to previous one\n");
+				ret = avsys_audio_set_path_ex(gain, out, in, option);
+				if(AVSYS_FAIL(ret)) {
+					debug_error("[CODEC WAV] Can not restore sound path\n");
+				}
+			}
 		}
 
 		ret = avsys_audio_close(p->audio_handle);

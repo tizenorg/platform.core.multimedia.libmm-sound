@@ -60,14 +60,11 @@ int mm_sound_play_keysound(const char *filename, const volume_type_t vol_type)
 	/* Check whether file exists */
 	fd = open(filename, O_RDONLY);
 	if(fd == -1) {
-		debug_error("file open failed with %s\n", strerror(errno));
+		debug_error("file open failed with [%s][%d]\n", strerror(errno), errno);
 		switch(errno)
 		{
-		case EACCES:
+		case ENOENT:
 			return MM_ERROR_SOUND_FILE_NOT_FOUND;
-		case EMFILE:
-		case ENFILE:
-			return MM_ERROR_SOUND_INVALID_STATE;
 		default:
 			return MM_ERROR_SOUND_INTERNAL;
 		}

@@ -37,7 +37,12 @@
 #include "include/mm_sound_mgr_codec.h"
 #include "include/mm_sound_mgr_ipc.h"
 #include "include/mm_sound_mgr_pulse.h"
+#include "include/mm_sound_mgr_asm.h"
+#include "include/mm_sound_mgr_session.h"
+#include "include/mm_sound_mgr_headset.h"
 #include "include/mm_sound_recovery.h"
+#include "include/mm_sound_utils.h"
+#include "include/mm_sound_common.h"
 
 #include <heynoti.h>
 
@@ -47,9 +52,10 @@
 #define PLUGIN_DIR "/usr/lib/soundplugins/"
 #define PLUGIN_MAX 30
 
-#define HIBERNATION_CHECK_KEY	"memory/hibernation/sound_ready"
-#define HIBERNATION_READY		1
+#define HIBERNATION_SOUND_CHECK_PATH	"/tmp/hibernation/sound_ready"
 #define USE_SYSTEM_SERVER_PROCESS_MONITORING
+
+#define	ASM_CHECK_INTERVAL	10000
 
 typedef struct {
     char *plugdir;
@@ -70,6 +76,8 @@ static void _exit_handler(int sig);
 
 GMainLoop *g_mainloop;
 
+void* pulse_handle;
+
 GThreadFunc event_loop_thread(gpointer data)
 {
 	g_mainloop = g_main_loop_new(NULL, TRUE);
@@ -82,7 +90,8 @@ GThreadFunc event_loop_thread(gpointer data)
 
 void hibernation_leave_cb()
 {
-	MMSoundMgrPulseHandleRegisterMonoAudio();
+	MMSoundMgrPulseHandleRegisterMonoAudio(pulse_handle);
+	MMSoundMgrPulseHandleRegisterBluetoothStatus (pulse_handle);
 
 	if(sound_system_bootup_recovery()) {
 		debug_error("Audio reset failed\n");
@@ -91,6 +100,20 @@ void hibernation_leave_cb()
 	}
 }
 
+void wait_for_asm_ready ()
+{
+	int retry_count = 0;
+	int asm_ready = 0;
+	while (!asm_ready) {
+		debug_log("Checking ASM ready....[%d]\n", retry_count++);
+		if (vconf_get_int(ASM_READY_KEY, &asm_ready)) {
+			debug_warning("vconf_get_int for ASM_READY_KEY (%s) failed\n", ASM_READY_KEY);
+		}
+		usleep (ASM_CHECK_INTERVAL);
+	}
+	debug_log("ASM is now ready...clear key!!!\n");
+	vconf_unset (ASM_READY_KEY);
+}
 
 int main(int argc, char **argv)
 {
@@ -98,6 +121,7 @@ int main(int argc, char **argv)
 	struct sigaction action;
 	int ret;
 	int heynotifd = -1;
+
 
 	action.sa_handler = _exit_handler;
 	action.sa_flags = 0;
@@ -182,7 +206,13 @@ int main(int argc, char **argv)
 		if (!serveropt.testmode)
 			MMSoundMgrIpcInit();
 
-		MMSoundMgrPulseInit();
+		pulse_handle = MMSoundMgrPulseInit();
+		MMSoundMgrASMInit();
+		/* Wait for ASM Ready */
+		wait_for_asm_ready();
+		_mm_sound_mgr_device_init();
+		MMSoundMgrHeadsetInit();
+		MMSoundMgrSessionInit();
 	}
 
 	if (serveropt.startserver) {
@@ -190,9 +220,7 @@ int main(int argc, char **argv)
 		MMSoundMgrRunRunAll();
 
 		/* set hibernation check */
-		if(vconf_set_int(HIBERNATION_CHECK_KEY, HIBERNATION_READY)) {
-			debug_error("[SoundServer] Hibernation check vconf_set_int fail\n");
-		}
+		_mm_sound_check_hibernation (HIBERNATION_SOUND_CHECK_PATH);
 
 		/* Start Ipc mgr */
 		MMSoundMgrIpcReady();
@@ -207,7 +235,11 @@ int main(int argc, char **argv)
 		MMSoundMgrRunFini();
 		MMSoundThreadPoolFini();
 
-		MMSoundMgrPulseFini();
+		MMSoundMgrHeadsetFini();
+		MMSoundMgrSessionFini();
+		_mm_sound_mgr_device_fini();
+		MMSoundMgrASMFini();
+		MMSoundMgrPulseFini(pulse_handle);
 
 		if(heynoti_unsubscribe(heynotifd, "HIBERNATION_LEAVE", NULL)) {
 			debug_error("heynoti_unsubscribe failed..\n");
@@ -305,7 +337,7 @@ static void _exit_handler(int sig)
 		debug_error("signal(SIGSYS) error");
 		break;
 	default:
-	    ;
+		break;
 	}
 	raise(sig);
 }

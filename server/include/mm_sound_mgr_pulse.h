@@ -22,45 +22,19 @@
 #ifndef __MM_SOUND_MGR_PULSE_H__
 #define __MM_SOUND_MGR_PULSE_H__
 
-#include <pulse/pulseaudio.h>
+
 #include "../../include/mm_ipc.h"
-#include <vconf.h>
 
-typedef struct _server_struct
-{
-	mm_ipc_msg_t *msg;
-	 int (*func)(mm_ipc_msg_t*);
-} server_struct;
+void* MMSoundMgrPulseInit(void);
+int MMSoundMgrPulseFini(void* handle);
 
-typedef struct _sink_struct
-{
-	int old_priority;
-	mm_ipc_msg_t *msg;
-	int is_speaker_on;
-	int is_bt_on;
-	int route_to;
-	char speaker_name[256];
-	char bt_name[256];
-	int (*func)(mm_ipc_msg_t*);
-} sink_struct;
+void MMSoundMgrPulseSetDefaultSink (char* default_sink_name);
 
-typedef struct _bt_struct
-{
-	int old_priority;
-	mm_ipc_msg_t *msg;
-	int bt_found;
-	char bt_name[256];
-	int (*func)(mm_ipc_msg_t*);
-} bt_struct;
+int MMSoundMgrPulseHandleRegisterMonoAudio (void* pinfo);
+int MMSoundMgrPulseHandleRegisterBluetoothStatus (void* pinfo);
 
-int MMSoundMgrPulseInit(void);
-int MMSoundMgrPulseFini(void);
-
-int MMSoundMgrPulseHandleGetAudioRouteReq (mm_ipc_msg_t *msg, int (*sendfunc)(mm_ipc_msg_t*));
-int MMSoundMgrPulseHandleSetAudioRouteReq (mm_ipc_msg_t *msg, int (*sendfunc)(mm_ipc_msg_t*));
 int MMSoundMgrPulseHandleIsBtA2DPOnReq (mm_ipc_msg_t *msg, int (*sendfunc)(mm_ipc_msg_t*));
-
-int MMSoundMgrPulseHandleRegisterMonoAudio ();
+void MMSoundMgrPulseGetInitialBTStatus (bool *a2dp, bool *sco);
 
 #endif /* __MM_SOUND_MGR_PULSE_H__ */
 

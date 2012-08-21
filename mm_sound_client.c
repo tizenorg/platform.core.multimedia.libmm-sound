@@ -27,7 +27,6 @@
 #include <fcntl.h>
 #include <sys/msg.h>
 #include <assert.h>
-
 #include <errno.h>
 
 #include <pthread.h>
@@ -68,7 +67,7 @@ struct __callback_param
 
 pthread_t g_thread;
 static int g_exit_thread = 0;
-int g_thread_id=-1;
+int g_thread_id = -1;
 int g_mutex_initted = -1;
 pthread_mutex_t g_thread_mutex;
 
@@ -81,21 +80,12 @@ static int __MMIpcSndMsg(mm_ipc_msg_t *msg);
 static int __MMIpcCBRecvMsg(int msgtype, mm_ipc_msg_t *msg);
 static int __MMSoundGetMsg(void);
 
-int MMSoundCallbackInit(void)
-{
-	int ret = MM_ERROR_NONE;
-	debug_enter("\n");
-	
-	g_thread_id = -1;	/* for manage only one thread */
-
-	debug_leave("\n");
-	return ret;
-}
 int MMSoundClientInit(void)
 {
 	int ret = MM_ERROR_NONE;
-	debug_enter("\n");
-	debug_leave("\n");
+	debug_fenter();
+
+	debug_fleave();
 	return ret;
 }
 
@@ -104,7 +94,7 @@ int MMSoundClientCallbackFini(void)
 	mm_ipc_msg_t msgsnd={0,};
 	int ret = MM_ERROR_NONE;
 	
-	debug_enter("\n");
+	debug_fenter();
 
 	/* When the the callback thread is not created, do not wait destory thread */
 	/* g_thread_id is initialized : -1 */
@@ -126,10 +116,10 @@ int MMSoundClientCallbackFini(void)
 
 	if (g_mutex_initted != -1)
 	{
-   		pthread_mutex_destroy(&g_thread_mutex);
+		pthread_mutex_destroy(&g_thread_mutex);
 		g_mutex_initted = -1;
 	}
-	debug_leave("\n");
+	debug_fleave();
 	return MM_ERROR_NONE;
 }
 
@@ -181,11 +171,11 @@ static void* callbackfunc(void *param)
 	int run = 1;
 	int instance;
 
-	debug_enter("\n");
-	
+	debug_fenter();
+
 	instance = getpid();
 	debug_msg("[Client] callback thread for [%d] is created\n", instance);
-	
+
 	msgrcv = (mm_ipc_msg_t*)malloc(sizeof(mm_ipc_msg_t));
 	if(NULL == msgrcv)
 	{
@@ -207,15 +197,13 @@ static void* callbackfunc(void *param)
 		debug_warning("[Client] Waiting message\n");
 		ret = __MMIpcCBRecvMsg(instance, msgrcv);
 		if (ret != MM_ERROR_NONE)
-		{	
+		{
 			debug_error("[Client] Fail to receive msg in callback\n");
 			continue;
 		}
-		
 
 		debug_msg("[Client] Receive msgtype : [%d]\n", msgrcv->sound_msg.msgtype);
 
-		
 		switch (msgrcv->sound_msg.msgtype)
 		{
 		case MM_SOUND_MSG_INF_STOP_CB:
@@ -297,32 +285,58 @@ static void* callbackfunc(void *param)
 		case MM_SOUND_MSG_INF_DESTROY_CB:
 			run = 0;
 			break;
+
+		case MM_SOUND_MSG_INF_ACTIVE_DEVICE_CB:
+			debug_msg("[Client] device_in : %p\n", msgrcv->sound_msg.device_in);
+			debug_msg("[Client] device_out : %p\n", msgrcv->sound_msg.device_out);
+			debug_msg("[Client] callback : %p\n", msgrcv->sound_msg.callback);
+			debug_msg("[Client] data : %p\n", msgrcv->sound_msg.cbdata);
+
+			if (msgrcv->sound_msg.callback)
+			{
+				((mm_sound_active_device_changed_cb)msgrcv->sound_msg.callback)(msgrcv->sound_msg.device_in, msgrcv->sound_msg.device_out, msgrcv->sound_msg.cbdata);
+			}
+			break;
+		case MM_SOUND_MSG_INF_AVAILABLE_ROUTE_CB:
+			debug_msg("[Client] callback : %p\n", msgrcv->sound_msg.callback);
+			debug_msg("[Client] data : %p\n", msgrcv->sound_msg.cbdata);
+
+			if (msgrcv->sound_msg.callback)
+			{
+				int route_index;
+				mm_sound_route route;
+
+				for (route_index = 0; route_index < sizeof(msgrcv->sound_msg.route_list) / sizeof(int); route_index++) {
+					route = msgrcv->sound_msg.route_list[route_index];
+					if (route == 0)
+						break;
+					if (msgrcv->sound_msg.is_available) {
+						debug_msg("[Client] available route : %d\n", route);
+					} else {
+						debug_msg("[Client] unavailable route : %d\n", route);
+					}
+					((mm_sound_available_route_changed_cb)msgrcv->sound_msg.callback)(route, msgrcv->sound_msg.is_available, msgrcv->sound_msg.cbdata);
+				}
+			}
+			break;
 		default:
 			/* Unexpected msg */
 			debug_msg("Receive wrong msg in callback func\n");
 			break;
 		}
-
-
 	}
 	if(msgrcv)
 		free(msgrcv);
 
 	g_exit_thread = 1;
 	debug_msg("[Client] callback [%d] is leaved\n", instance);
-	debug_leave("\n");
+	debug_fleave();
 	return NULL;
 }
 
-int MMSoundClientPlayTone(int number, int vol_type, double volume, int time, int *handle)
+static int __mm_sound_client_get_msg_queue(void)
 {
-	mm_ipc_msg_t msgrcv = {0,};
-	mm_ipc_msg_t msgsnd = {0,};
-
 	int ret = MM_ERROR_NONE;
-	int instance = -1; 	/* instance is unique to communicate with server : client message queue filter type */
-
-	debug_enter("\n");
 
 	if (g_mutex_initted == -1)
 	{
@@ -335,9 +349,24 @@ int MMSoundClientPlayTone(int number, int vol_type, double volume, int time, int
 		if(ret != MM_ERROR_NONE)
 		{
 			debug_critical("[Client] Fail to get message queue id\n");
-			return ret;
 		}
 	}
+
+	return ret;
+}
+
+int MMSoundClientPlayTone(int number, int vol_type, double volume, int time, int *handle)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+
+	int ret = MM_ERROR_NONE;
+	int instance = -1; 	/* instance is unique to communicate with server : client message queue filter type */
+
+	debug_fenter();
+
+	if (__mm_sound_client_get_msg_queue() != MM_ERROR_NONE)
+		return ret;
 
 	/* read mm-session type */
 	int sessionType = MM_SESSION_TYPE_SHARE;
@@ -408,7 +437,7 @@ int MMSoundClientPlayTone(int number, int vol_type, double volume, int time, int
 cleanup:
 	pthread_mutex_unlock(&g_thread_mutex);
 
-	debug_leave("\n");
+	debug_fleave();
 	return ret;
 }
 
@@ -427,23 +456,12 @@ int MMSoundClientPlaySound(MMSoundParamType *param, int tone, int keytone, int *
 	static int keybase = 0;
 	int shm_fd = -1;
 
-	debug_enter("\n");
+	debug_fenter();
 	memset(shm_name, 0, sizeof(shm_name));
 
-	if (g_mutex_initted == -1)
-	{
-		pthread_mutex_init(&g_thread_mutex, NULL);
-		debug_msg("[Client] mutex initialized. \n");
-		g_mutex_initted = 1;		
-
-		/* Get msg queue id */
-		ret = __MMSoundGetMsg();
-		if(ret != MM_ERROR_NONE)
-		{
-			debug_critical("[Client] Fail to get message queue id\n");
-			return ret;
-		}
-	}
+	ret = __mm_sound_client_get_msg_queue();
+	if (ret != MM_ERROR_NONE)
+		return ret;
 
 	/* read mm-session type */
 	int sessionType = MM_SESSION_TYPE_SHARE;
@@ -548,7 +566,7 @@ int MMSoundClientPlaySound(MMSoundParamType *param, int tone, int keytone, int *
 		msgsnd.sound_msg.repeat = param->loop;
 		msgsnd.sound_msg.volume_table = param->volume_table;
 		msgsnd.sound_msg.keytone = keytone;
-		msgsnd.sound_msg.handle_route = param->bluetooth;
+		msgsnd.sound_msg.handle_route = param->handle_route;
 
 		/* Send req memory */
 		debug_msg("[Client] Shared mem ptr %p, %p, size %d\n", sharedmem, param->mem_ptr, param->mem_size);
@@ -583,7 +601,7 @@ int MMSoundClientPlaySound(MMSoundParamType *param, int tone, int keytone, int *
 		msgsnd.sound_msg.volume_table = param->volume_table;
 		msgsnd.sound_msg.session_type = sessionType;//asm_session_type;
 		msgsnd.sound_msg.priority = param->priority;
-		msgsnd.sound_msg.handle_route = param->bluetooth;
+		msgsnd.sound_msg.handle_route = param->handle_route;
 
 		if((strlen(param->filename)) < FILE_PATH)
 		{
@@ -650,7 +668,7 @@ int MMSoundClientPlaySound(MMSoundParamType *param, int tone, int keytone, int *
 cleanup:
 	pthread_mutex_unlock(&g_thread_mutex);
 
-	debug_leave("\n");
+	debug_fleave();
 	return ret;
 }
 
@@ -661,7 +679,7 @@ int MMSoundClientStopSound(int handle)
 	int ret = MM_ERROR_NONE;
 	int instance;
 
-	debug_enter("\n");
+	debug_fenter();
 	debug_msg("[Client] The stop audio handle ::: [%d]\n", handle);
 
 	instance = getpid();
@@ -672,23 +690,9 @@ int MMSoundClientStopSound(int handle)
 		return ret;
 	}
 	
-	/* For exception, if MMSoundStopSound is called at first, mutex & message queue must be initialized */
-	if (g_mutex_initted == -1)
-	{
-		pthread_mutex_init(&g_thread_mutex, NULL);
-		debug_msg("[Client] mutex initialized. \n");
-		g_mutex_initted = 1;		
+	if (__mm_sound_client_get_msg_queue() != MM_ERROR_NONE)
+		return ret;
 
-		/* Get msg queue id */
-		ret = __MMSoundGetMsg();
-		if(ret != MM_ERROR_NONE)
-		{
-			debug_critical("[Client] Fail to get message queue id\n");
-			return ret;
-		}
-	}
-
-			
 	pthread_mutex_lock(&g_thread_mutex);
 	
 	/* Send req STOP */
@@ -731,7 +735,474 @@ cleanup:
 	pthread_mutex_unlock(&g_thread_mutex);
 
 
-	debug_leave("\n");
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_is_route_available(mm_sound_route route, bool *is_available)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	*is_available = FALSE;
+
+	if (__mm_sound_client_get_msg_queue() != MM_ERROR_NONE)
+		return ret;
+
+	pthread_mutex_lock(&g_thread_mutex);
+
+	instance = getpid();
+	/* Send REQ_IS_ROUTE_AVAILABLE */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_IS_ROUTE_AVAILABLE;
+	msgsnd.sound_msg.msgid = instance;
+	msgsnd.sound_msg.route = route;
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE)
+		goto cleanup;
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE)
+		goto cleanup;
+
+	switch (msgrcv.sound_msg.msgtype)
+	{
+	case MM_SOUND_MSG_RES_IS_ROUTE_AVAILABLE:
+		*is_available = msgrcv.sound_msg.is_available;
+		debug_msg("[Client] Success to check given route is available %d\n", *is_available);
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_critical("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex);
+
+	debug_fleave();
+	return ret;
+}
+
+static int _handle_foreach_callback(mm_ipc_msg_t *msg)
+{
+	int instance;
+	int route_index;
+	mm_sound_route route;
+
+	debug_fenter();
+
+	if (msg->sound_msg.callback == NULL) {
+		debug_error ("[Client] Foreach callback is [%p], cbdata = %p => exit",
+				msg->sound_msg.callback, msg->sound_msg.cbdata);
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	for (route_index = 0; route_index < sizeof(msg->sound_msg.route_list); route_index++) {
+		route = msg->sound_msg.route_list[route_index];
+		if (route == 0)
+			break;
+		debug_msg("[Client] available route : %d\n", route);
+		if (((mm_sound_available_route_cb)msg->sound_msg.callback)(route, msg->sound_msg.cbdata) == false) {
+			debug_msg ("[Client] user doesn't want anymore. quit loop!!\n");
+			break;
+		}
+	}
+
+	debug_fleave();
+
+	return MM_ERROR_NONE;
+}
+
+int _mm_sound_client_foreach_available_route_cb(mm_sound_available_route_cb available_route_cb, void *user_data)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+	pthread_t thread_forech;
+
+	debug_fenter();
+
+	if (__mm_sound_client_get_msg_queue() != MM_ERROR_NONE)
+		return ret;
+
+	pthread_mutex_lock(&g_thread_mutex);
+
+	instance = getpid();
+	/* Send REQ_FOREACH_AVAILABLE_ROUTE_CB */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_FOREACH_AVAILABLE_ROUTE_CB;
+	msgsnd.sound_msg.msgid = instance;
+	msgsnd.sound_msg.callback = (void *)available_route_cb;
+	msgsnd.sound_msg.cbdata = (void *)user_data;
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE)
+		goto cleanup;
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE)
+		goto cleanup;
+
+	switch (msgrcv.sound_msg.msgtype)
+	{
+	case MM_SOUND_MSG_RES_FOREACH_AVAILABLE_ROUTE_CB:
+		debug_msg("[Client] Success to set foreach available route callback\n");
+		msgrcv.sound_msg.callback = (void *)available_route_cb;
+		msgrcv.sound_msg.cbdata = (void *)user_data;
+		ret = _handle_foreach_callback (&msgrcv);
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_critical("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex);
+
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_set_active_route(mm_sound_route route)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	if (__mm_sound_client_get_msg_queue() != MM_ERROR_NONE)
+		return ret;
+
+	pthread_mutex_lock(&g_thread_mutex);
+
+	instance = getpid();
+	/* Send REQ_SET_ACTIVE_ROUTE */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_SET_ACTIVE_ROUTE;
+	msgsnd.sound_msg.msgid = instance;
+	msgsnd.sound_msg.route = route;
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE)
+		goto cleanup;
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE)
+		goto cleanup;
+
+	switch (msgrcv.sound_msg.msgtype)
+	{
+	case MM_SOUND_MSG_RES_SET_ACTIVE_ROUTE:
+		debug_msg("[Client] Success to add active device callback\n");
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_critical("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex);
+
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	if (__mm_sound_client_get_msg_queue() != MM_ERROR_NONE)
+		return ret;
+
+	pthread_mutex_lock(&g_thread_mutex);
+
+	instance = getpid();
+	/* Send REQ_GET_ACTIVE_DEVICE */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_GET_ACTIVE_DEVICE;
+	msgsnd.sound_msg.msgid = instance;
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE)
+		goto cleanup;
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE)
+		goto cleanup;
+
+	switch (msgrcv.sound_msg.msgtype)
+	{
+	case MM_SOUND_MSG_RES_GET_ACTIVE_DEVICE:
+		*device_in = msgrcv.sound_msg.device_in;
+		*device_out = msgrcv.sound_msg.device_out;
+		debug_msg("[Client] Success to get active device %d %d\n", *device_in, *device_out);
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_critical("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex);
+
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_add_active_device_changed_callback(mm_sound_active_device_changed_cb func, void* user_data)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	if (__mm_sound_client_get_msg_queue() != MM_ERROR_NONE)
+		return ret;
+
+	pthread_mutex_lock(&g_thread_mutex);
+
+	instance = getpid();
+	/* Send REQ_ADD_ACTIVE_DEVICE_CB */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_ADD_ACTIVE_DEVICE_CB;
+	msgsnd.sound_msg.msgid = instance;
+	msgsnd.sound_msg.callback = func;
+	msgsnd.sound_msg.cbdata = user_data;
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE)
+		goto cleanup;
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE)
+		goto cleanup;
+
+	switch (msgrcv.sound_msg.msgtype)
+	{
+	case MM_SOUND_MSG_RES_ADD_ACTIVE_DEVICE_CB:
+		debug_msg("[Client] Success to add active device callback\n");
+		if (g_thread_id == -1)
+		{
+			g_thread_id = pthread_create(&g_thread, NULL, callbackfunc, NULL);
+			if (g_thread_id == -1)
+			{
+				debug_critical("[Client] Fail to create thread %s\n", strerror(errno));
+				ret = MM_ERROR_SOUND_INTERNAL;
+				goto cleanup;
+			}
+		}
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_critical("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex);
+
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_remove_active_device_changed_callback(void)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	if (__mm_sound_client_get_msg_queue() != MM_ERROR_NONE)
+		return ret;
+
+	pthread_mutex_lock(&g_thread_mutex);
+
+	instance = getpid();
+	/* Send REQ_REMOVE_ACTIVE_DEVICE_CB */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_REMOVE_ACTIVE_DEVICE_CB;
+	msgsnd.sound_msg.msgid = instance;
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE)
+		goto cleanup;
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE)
+		goto cleanup;
+
+	switch (msgrcv.sound_msg.msgtype)
+	{
+	case MM_SOUND_MSG_RES_REMOVE_ACTIVE_DEVICE_CB:
+		debug_msg("[Client] Success to remove active device callback\n");
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_critical("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex);
+
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void* user_data)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	if (__mm_sound_client_get_msg_queue() != MM_ERROR_NONE)
+		return ret;
+
+	pthread_mutex_lock(&g_thread_mutex);
+
+	instance = getpid();
+	/* Send REQ_ADD_AVAILABLE_ROUTE_CB */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_ADD_AVAILABLE_ROUTE_CB;
+	msgsnd.sound_msg.msgid = instance;
+	msgsnd.sound_msg.callback = func;
+	msgsnd.sound_msg.cbdata = user_data;
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE)
+		goto cleanup;
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE)
+		goto cleanup;
+
+	switch (msgrcv.sound_msg.msgtype)
+	{
+	case MM_SOUND_MSG_RES_ADD_AVAILABLE_ROUTE_CB:
+		debug_msg("[Client] Success to add available route callback\n");
+		if (g_thread_id == -1)
+		{
+			g_thread_id = pthread_create(&g_thread, NULL, callbackfunc, NULL);
+			if (g_thread_id == -1)
+			{
+				debug_critical("[Client] Fail to create thread %s\n", strerror(errno));
+				ret = MM_ERROR_SOUND_INTERNAL;
+				goto cleanup;
+			}
+		}
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_critical("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex);
+
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_remove_available_route_changed_callback(void)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	if (__mm_sound_client_get_msg_queue() != MM_ERROR_NONE)
+		return ret;
+
+	pthread_mutex_lock(&g_thread_mutex);
+
+	instance = getpid();
+	/* Send REQ_REMOVE_AVAILABLE_ROUTE_CB */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_REMOVE_AVAILABLE_ROUTE_CB;
+	msgsnd.sound_msg.msgid = instance;
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE)
+		goto cleanup;
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE)
+		goto cleanup;
+
+	switch (msgrcv.sound_msg.msgtype)
+	{
+	case MM_SOUND_MSG_RES_REMOVE_AVAILABLE_ROUTE_CB:
+		debug_msg("[Client] Success to remove available route callback\n");
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_critical("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex);
+
+	debug_fleave();
 	return ret;
 }
 
@@ -797,7 +1268,7 @@ static int __MMIpcCBRecvMsg(int msgtype, mm_ipc_msg_t *msg)
 			debug_warning("[Client] Invalid msgid \n");
 		}
 
-		debug_critical("[Client] Fail to callback receive msgid : [%d] \n", g_msg_sccb);
+		debug_error("[Client] Fail to callback receive msgid : [%d] \n", g_msg_sccb);
 		return MM_ERROR_COMMON_UNKNOWN;
 	}
 	return MM_ERROR_NONE;
@@ -805,55 +1276,37 @@ static int __MMIpcCBRecvMsg(int msgtype, mm_ipc_msg_t *msg)
 
 static int __MMIpcRecvMsg(int msgtype, mm_ipc_msg_t *msg)
 {
-	/* rcv message */
-
 	int retry_count = 0;
-	while(msgrcv(g_msg_scrcv, msg, DSIZE, msgtype, IPC_NOWAIT) == -1)
-	{
-		if(errno == ENOMSG)
-		{
-			if (retry_count < 20000) /* usec is 10^-6 sec so, 5ms * 20000 = 10sec. */
-			{
+
+	/* rcv message */
+	while (msgrcv(g_msg_scrcv, msg, DSIZE, msgtype, IPC_NOWAIT) == -1) {
+		if (errno == ENOMSG) {
+			if (retry_count < 20000) { /* usec is 10^-6 sec so, 5ms * 20000 = 10sec. */
 				usleep(5000);
 				retry_count++;
 				continue;
-			}
-			else
-			{
+			} else {
 				return MM_ERROR_SOUND_INTERNAL;
 			}
-		}
-		else if(errno == E2BIG)
-		{
+		} else if (errno == E2BIG) {
 			debug_warning("[Client] Not acces.\n");
-		}
-		else if(errno == EACCES)
-		{
+		} else if (errno == EACCES) {
 			debug_warning("[Client] Access denied\n");
-		}
-		else if(errno == ENOMSG)
-		{
+		} else if (errno == ENOMSG) {
 			debug_warning("[Client] Blocked process [msgflag & IPC_NOWAIT != 0]\n");
-		}
-		else if(errno == EIDRM)
-		{
+		} else if (errno == EIDRM) {
 			debug_warning("[Client] Removed msgid from system\n");
-		}
-		else if(errno == EINTR)
-		{
+		} else if (errno == EINTR) {
 			debug_warning("[Client] Iterrrupted by singnal\n");
-               continue;
-		}
-		else if(errno == EINVAL)
-		{
+			continue;
+		} else if (errno == EINVAL) {
 			debug_warning("[Client] Invalid msgid \n");
 		}
 
-		debug_warning("[Client] Fail to recive msgid : [%d] \n", g_msg_scrcv);
+		debug_error("[Client] Fail to recive msgid : [%d] \n", g_msg_scrcv);
 		return MM_ERROR_COMMON_UNKNOWN;
 	}
-     debug_log("[Client] Retry %d times when receive msg\n", retry_count);
-
+	debug_log("[Client] Retry %d times when receive msg\n", retry_count);
 	return MM_ERROR_NONE;
 }
 
@@ -863,32 +1316,19 @@ static int __MMIpcSndMsg(mm_ipc_msg_t *msg)
 	msg->msg_type = msg->sound_msg.msgid;
 	if (msgsnd(g_msg_scsnd, msg,DSIZE, 0) == -1)
 	{
-		if(errno == EACCES)
-		{
+		if (errno == EACCES) {
 			debug_warning("[Client] Not access.\n");
-		}
-		else if(errno == EAGAIN)
-		{
+		} else if (errno == EAGAIN) {
 			debug_warning("[Client] Blocked process msgflag & IPC_NOWAIT != 0]\n");
-		}
-		else if(errno == EIDRM)
-		{
+		} else if (errno == EIDRM) {
 			debug_warning("[Client] Removed msgid from system\n");
-		}
-		else if(errno == EINTR)
-		{
+		} else if (errno == EINTR) {
 			debug_warning("[Client] Iterrrupted by singnal\n");
-		}
-		else if(errno == EINVAL)
-		{
+		} else if (errno == EINVAL) {
 			debug_warning("Invalid msgid or msgtype < 1 or out of data size \n");
-		}
-		else if(errno == EFAULT)
-		{
+		} else if (errno == EFAULT) {
 			debug_warning("[Client] The address pointed to by msgp isn't accessible \n");
-		}
-		else if(errno == ENOMEM)
-		{
+		} else if (errno == ENOMEM) {
 			debug_warning("[Client] The system does not have enough memory to make a copy of the message pointed to by msgp\n");
 		}
 
@@ -903,25 +1343,19 @@ static int __MMSoundGetMsg(void)
 	/* Init message queue, generate msgid for communication to server */
 	/* The key value to get msgid is defined "mm_sound_msg.h". Shared with server */
 	
-	debug_enter("\n");
+	debug_fenter();
 	
-	/* get msg queue rcv, snd, cb */	
-	g_msg_scsnd	= msgget(ftok(KEY_BASE_PATH, RCV_MSG), 0666);
-	g_msg_scrcv	= msgget(ftok(KEY_BASE_PATH, SND_MSG), 0666);
-	g_msg_sccb	= msgget(ftok(KEY_BASE_PATH, CB_MSG), 0666);
+	/* get msg queue rcv, snd, cb */
+	g_msg_scsnd = msgget(ftok(KEY_BASE_PATH, RCV_MSG), 0666);
+	g_msg_scrcv = msgget(ftok(KEY_BASE_PATH, SND_MSG), 0666);
+	g_msg_sccb = msgget(ftok(KEY_BASE_PATH, CB_MSG), 0666);
 
-	if ((g_msg_scsnd == -1 || g_msg_scrcv == -1 || g_msg_sccb == -1) != MM_ERROR_NONE)
-	{
-		if(errno == EACCES)
-		{
+	if ((g_msg_scsnd == -1 || g_msg_scrcv == -1 || g_msg_sccb == -1) != MM_ERROR_NONE) {
+		if (errno == EACCES) {
 			debug_warning("Require ROOT permission.\n");
-		}
-		else if(errno == ENOMEM)
-		{
+		} else if (errno == ENOMEM) {
 			debug_warning("System memory is empty.\n");
-		}
-		else if(errno == ENOSPC)
-		{
+		} else if(errno == ENOSPC) {
 			debug_warning("Resource is empty.\n");
 		}
 		debug_error("Fail to GET msgid\n");
@@ -932,156 +1366,11 @@ static int __MMSoundGetMsg(void)
 	debug_msg("Get msg queue id from server : [%d]\n", g_msg_scrcv);
 	debug_msg("Get msg queue id from server : [%d]\n", g_msg_sccb);
 	
-	debug_leave("\n");
+	debug_fleave();
 	return MM_ERROR_NONE;
 }
 
 #ifdef PULSE_CLIENT
-int MMSoundClientGetAudioRoute()
-{
-	mm_ipc_msg_t msgrcv = {0,};
-	mm_ipc_msg_t msgsnd = {0,};
-	int ret = MM_ERROR_NONE;
-	int instance;
-
-	debug_enter("\n");
-
-	instance = getpid();	
-
-	/* For exception, if MMSoundStopSound is called at first, mutex & messagequeue must be initialized */
-	if (g_mutex_initted == -1)
-	{
-		pthread_mutex_init(&g_thread_mutex, NULL);
-		debug_msg("mutex initialized. \n");
-		g_mutex_initted = 1;
-
-		/* Get msg queue id */
-		ret = __MMSoundGetMsg();
-		if(ret != MM_ERROR_NONE)
-		{
-			debug_critical("Fail to get message queue id\n");
-			return ret;
-		}
-	}
-
-	pthread_mutex_lock(&g_thread_mutex);
-
-	/* Send req STOP */
-	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_GET_AUDIO_ROUTE;
-	msgsnd.sound_msg.msgid = instance;
-
-	ret = __MMIpcSndMsg(&msgsnd);
-	if (ret != MM_ERROR_NONE)
-	{
-		debug_error("[Client] Fail to send msg\n");
-		goto cleanup;
-	}
-
-	/* Recieve */
-	ret = __MMIpcRecvMsg(instance, &msgrcv);
-	if (ret != MM_ERROR_NONE)
-	{
-		debug_error("[Client] Fail to recieve msg\n");
-		goto cleanup;
-	}
-	switch (msgrcv.sound_msg.msgtype)
-	{
-	case MM_SOUND_MSG_RES_GET_AUDIO_ROUTE:
-		debug_msg("[Client] Success to get audio route [%d]\n", msgrcv.sound_msg.code);
-		ret = msgrcv.sound_msg.code;
-		break;
-	case MM_SOUND_MSG_RES_ERROR:
-		debug_error("[Client] Error occurred \n");
-		ret = msgrcv.sound_msg.code;
-		goto cleanup;
-		break;
-	default:
-		debug_critical("[Client] Unexpected state with communication \n");
-		ret = msgrcv.sound_msg.code;
-		goto cleanup;
-		break;
-	}
-
-cleanup:
-	pthread_mutex_unlock(&g_thread_mutex);
-
-	debug_leave("\n");
-	return ret;
-}
-
-
-int MMSoundClientSetAudioRoute(int route)
-{
-	mm_ipc_msg_t msgrcv = {0,};
-	mm_ipc_msg_t msgsnd = {0,};
-	int ret = MM_ERROR_NONE;
-	int instance;
-
-	debug_enter("\n");
-
-	instance = getpid();	
-
-	/* For exception, if MMSoundStopSound is called at first, mutex & messagequeue must be initialized */
-	if (g_mutex_initted == -1)
-	{
-		pthread_mutex_init(&g_thread_mutex, NULL);
-		debug_msg("mutex initialized. \n");
-		g_mutex_initted = 1;
-
-		/* Get msg queue id */
-		ret = __MMSoundGetMsg();
-		if(ret != MM_ERROR_NONE)
-		{
-			debug_critical("Fail to get message queue id\n");
-			return ret;
-		}
-	}
-
-	pthread_mutex_lock(&g_thread_mutex);
-
-	/* Send req STOP */
-	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_SET_AUDIO_ROUTE;
-	msgsnd.sound_msg.msgid = instance;
-	msgsnd.sound_msg.handle = route;		/* handle means audio handle slot id */
-
-	ret = __MMIpcSndMsg(&msgsnd);
-	if (ret != MM_ERROR_NONE)
-	{
-		debug_error("Fail to send msg\n");
-		goto cleanup;
-	}
-
-	/* Recieve */
-	ret = __MMIpcRecvMsg(instance, &msgrcv);
-	if (ret != MM_ERROR_NONE)
-	{
-		debug_error("Fail to recieve msg\n");
-		goto cleanup;
-	}
-	switch (msgrcv.sound_msg.msgtype)
-	{
-		case MM_SOUND_MSG_RES_SET_AUDIO_ROUTE:
-			debug_msg("Success to set audio route [%d]\n", msgrcv.sound_msg.code);
-			ret = msgrcv.sound_msg.code;
-			break;
-		case MM_SOUND_MSG_RES_ERROR:
-			debug_error("Error occurred \n");
-			ret = msgrcv.sound_msg.code;
-			goto cleanup;
-			break;
-		default:
-			debug_critical("Unexpected state with communication \n");
-			ret = msgrcv.sound_msg.code;
-			goto cleanup;
-			break;
-	}
-
-cleanup:
-		pthread_mutex_unlock(&g_thread_mutex);
-
-	debug_leave("\n");
-	return ret;
-}
 
 int MMSoundClientIsBtA2dpOn (int *connected, char** bt_name)
 {
@@ -1090,25 +1379,12 @@ int MMSoundClientIsBtA2dpOn (int *connected, char** bt_name)
 	int ret = MM_ERROR_NONE;
 	int instance;
 
-	debug_enter("\n");
+	debug_fenter();
 
 	instance = getpid();	
 
-	/* For exception, if MMSoundStopSound is called at first, mutex & messagequeue must be initialized */
-	if (g_mutex_initted == -1)
-	{
-		pthread_mutex_init(&g_thread_mutex, NULL);
-		debug_msg("mutex initialized. \n");
-		g_mutex_initted = 1;
-
-		/* Get msg queue id */
-		ret = __MMSoundGetMsg();
-		if(ret != MM_ERROR_NONE)
-		{
-			debug_critical("Fail to get message queue id\n");
-			return ret;
-		}
-	}
+	if (__mm_sound_client_get_msg_queue() != MM_ERROR_NONE)
+		return ret;
 
 	pthread_mutex_lock(&g_thread_mutex);
 
@@ -1155,7 +1431,8 @@ int MMSoundClientIsBtA2dpOn (int *connected, char** bt_name)
 cleanup:
 		pthread_mutex_unlock(&g_thread_mutex);
 
-	debug_leave("\n");
+	debug_fleave();
 	return ret;
 }
+
 #endif // PULSE_CLIENT

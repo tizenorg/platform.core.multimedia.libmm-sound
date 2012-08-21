@@ -52,7 +52,6 @@
 EXPORT_API
 int __mm_sound_lock()
 {
-#if !defined(_I386_SDK_BUILD_)
     sem_t *sem = NULL;
     int ret;
     int err = MM_ERROR_NONE;
@@ -123,15 +122,11 @@ retry_lock:
     }
     sem_close(sem);
     return err;
-#else
-    return MM_ERROR_NONE;
-#endif
 }
 
 EXPORT_API
 int __mm_sound_unlock()
 {
-#if !defined(_I386_SDK_BUILD_)
     sem_t *sem = NULL;
     int ret;
     int err = MM_ERROR_NONE;
@@ -152,8 +147,5 @@ int __mm_sound_unlock()
 
     sem_close(sem);
     return err;
-#else
-    return MM_ERROR_NONE;
-#endif
 }
 

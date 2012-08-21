@@ -19,24 +19,17 @@
  *
  */
 
-#ifndef __MM_SOUND_MGR_IPC_H__
-#define __MM_SOUND_MGR_IPC_H__
+#ifndef __MM_SOUND_MGR_ASM_H__
+#define __MM_SOUND_MGR_ASM_H__
 
-#include "../../include/mm_sound_msg.h"
+#include "mm_ipc.h"
+#include <audio-session-manager.h>
 
-#define SOUND_MSG_SET(sound_msg, x_msgtype, x_handle, x_code, x_msgid) \
-do { \
-	sound_msg.msgtype = x_msgtype; \
-	sound_msg.handle = x_handle; \
-	sound_msg.code = x_code; \
-	sound_msg.msgid = x_msgid; \
-} while(0)
+int MMSoundMgrASMInit(void);
+int MMSoundMgrASMFini(void);
 
-int MMSoundMgrIpcInit(void);
-int MMSoundMgrIpcFini(void);
-int MMSoundMgrIpcReady(void);
+int __asm_process_message (ASM_msg_lib_to_asm_t *asm_rcv_msg, ASM_msg_asm_to_lib_t *asm_ret_msg);
 
-int _MMIpcCBSndMsg(mm_ipc_msg_t *msg);
 
-#endif /* __MM_SOUND_MGR_H__ */
+#endif /* __MM_SOUND_MGR_ASM_H__ */
 
