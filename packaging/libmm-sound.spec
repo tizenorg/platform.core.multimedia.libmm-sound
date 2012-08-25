@@ -1,7 +1,7 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
 Version:    0.6.0
-Release:    13
+Release:    15
 Group:      System/Libraries
 License:    LGPL
 Source0:    %{name}-%{version}.tar.gz

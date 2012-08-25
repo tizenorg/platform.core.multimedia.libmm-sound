@@ -54,9 +54,6 @@
 #define _MAX_SYSTEM_SAMPLERATE	48000
 #define MIN_TONE_PLAY_TIME 300
 
-#define	TRUE	1
-#define	FALSE	0
-
 typedef struct {
 	volume_callback_fn	func;
 	void*				data;
@@ -72,7 +69,8 @@ typedef struct {
 	int					asm_handle;
 	ASM_sound_events_t	asm_event;
 
-	int 				is_started;
+	bool 				is_started;
+	bool				is_playback;
 
 	MMMessageCallback	msg_cb;
 	void *msg_cb_param;
@@ -83,6 +81,8 @@ typedef struct {
 static int _pcm_sound_start (MMSoundPcmHandle_t handle);
 static int _pcm_sound_stop_internal (MMSoundPcmHandle_t handle);
 static int _pcm_sound_stop(MMSoundPcmHandle_t handle);
+
+static void __sound_pcm_send_message (mm_sound_pcm_t *pcmHandle, int message, int code);
 
 int _validate_volume(volume_type_t type, int value)
 {
@@ -392,6 +392,7 @@ int mm_sound_volume_get_current_playing_type(volume_type_t *type)
 ////     MMSOUND PCM APIs
 ///////////////////////////////////
 
+
 int _get_asm_event_type(ASM_sound_events_t *type)
 {
 	int	sessionType = MM_SESSION_TYPE_SHARE;
@@ -440,7 +441,7 @@ int _get_asm_event_type(ASM_sound_events_t *type)
 	return MM_ERROR_NONE;
 }
 
-void __sound_pcm_send_message (mm_sound_pcm_t *pcmHandle, int message, int code)
+static void __sound_pcm_send_message (mm_sound_pcm_t *pcmHandle, int message, int code)
 {
 	int ret = 0;
 	if (pcmHandle->msg_cb) {
@@ -506,6 +507,7 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 
 	debug_fenter();
 	memset(&param, 0, sizeof(avsys_audio_param_t));
+
 
 	if (rate < _MIN_SYSTEM_SAMPLERATE || rate > _MAX_SYSTEM_SAMPLERATE) {
 		debug_error("unsupported sample rate %u", rate);
@@ -573,6 +575,8 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 		return MM_ERROR_SOUND_DEVICE_NOT_OPENED;
 	}
 
+	pcmHandle->is_playback = false;
+
 	/* Set handle to return */
 	*handle = (MMSoundPcmHandle_t)pcmHandle;
 
@@ -585,10 +589,14 @@ static int _pcm_sound_start (MMSoundPcmHandle_t handle)
 	mm_sound_pcm_t *pcmHandle = NULL;
 	int errorcode = 0;
 
+	debug_fenter();
+
 	/* Check input param */
 	pcmHandle = (mm_sound_pcm_t*)handle;
-	if(pcmHandle == NULL)
+	if(pcmHandle == NULL) {
+		debug_error ("Handle is null, return Invalid Argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
+	}
 
 	/* ASM set state to PLAYING */
 	if (!ASM_set_sound_state(pcmHandle->asm_handle, pcmHandle->asm_event, ASM_STATE_PLAYING, ASM_RESOURCE_NONE, &errorcode)) {
@@ -596,7 +604,10 @@ static int _pcm_sound_start (MMSoundPcmHandle_t handle)
 		return MM_ERROR_POLICY_BLOCKED;
 	}
 
-	pcmHandle->is_started = TRUE;
+	/* Update State */
+	pcmHandle->is_started = true;
+
+	debug_fleave();
 
 	/* Un-Cork */
 	return avsys_audio_cork(pcmHandle->audio_handle, 0);
@@ -626,7 +637,21 @@ static int _pcm_sound_stop_internal (MMSoundPcmHandle_t handle)
 	if(pcmHandle == NULL)
 		return MM_ERROR_INVALID_ARGUMENT;
 
-	pcmHandle->is_started = FALSE;
+	/* Check State */
+	if (pcmHandle->is_started == false) {
+		debug_warning ("Can't stop because not started\n");
+		return MM_ERROR_SOUND_INVALID_STATE;
+	}
+
+	/* Drain if playback mode */
+	if (pcmHandle->is_playback) {
+		if(AVSYS_FAIL(avsys_audio_drain(pcmHandle->audio_handle))) {
+			debug_error("drain failed\n");
+		}
+	}
+
+	/* Update State */
+	pcmHandle->is_started = false;
 
 	/* Cork */
 	return avsys_audio_cork(pcmHandle->audio_handle, 1);
@@ -636,19 +661,32 @@ static int _pcm_sound_stop(MMSoundPcmHandle_t handle)
 {
 	mm_sound_pcm_t *pcmHandle = NULL;
 	int errorcode = 0;
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
 
 	/* Check input param */
 	pcmHandle = (mm_sound_pcm_t*)handle;
-	if(pcmHandle == NULL)
+	if(pcmHandle == NULL) {
+		debug_error ("Handle is null, return Invalid Argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
-
-	/* Set ASM State to STOP */
-	if (!ASM_set_sound_state(pcmHandle->asm_handle, pcmHandle->asm_event, ASM_STATE_STOP, ASM_RESOURCE_NONE, &errorcode)) {
-		debug_error("ASM_set_sound_state(STOP) failed 0x%x\n", errorcode);
-		return MM_ERROR_POLICY_BLOCKED;
 	}
 
-	return _pcm_sound_stop_internal(handle);
+	/* Do stop procedure */
+	ret = _pcm_sound_stop_internal(handle);
+	if (ret == MM_ERROR_NONE) {
+		/* Set ASM State to STOP */
+		if (!ASM_set_sound_state(pcmHandle->asm_handle, pcmHandle->asm_event, ASM_STATE_STOP, ASM_RESOURCE_NONE, &errorcode)) {
+			debug_error("ASM_set_sound_state(STOP) failed 0x%x\n", errorcode);
+			ret = MM_ERROR_POLICY_BLOCKED;
+		}
+	}
+
+	debug_log ("pcm sound [%p] stopped success!!!\n", handle);
+
+	debug_fleave();
+
+	return ret;
 }
 
 
@@ -663,23 +701,26 @@ EXPORT_API
 int mm_sound_pcm_capture_read(MMSoundPcmHandle_t handle, void *buffer, const unsigned int length )
 {
 	mm_sound_pcm_t *pcmHandle = NULL;
-	int is_corked = 0;
-	int result = AVSYS_STATE_SUCCESS;
 
 	/* Check input param */
 	pcmHandle = (mm_sound_pcm_t*)handle;
-	if(pcmHandle == NULL)
+	if(pcmHandle == NULL) {
+		debug_error ("Handle is null, return Invalid Argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
+	}
 	if(buffer == NULL) {
 		debug_error("Invalid buffer pointer\n");
 		return MM_ERROR_SOUND_INVALID_POINTER;
 	}
-	if(length == 0 )
+	if(length == 0 ) {
+		debug_error ("length is 0, return 0\n");
 		return 0;
+	}
 
 	/* Check State : return fail if not started */
 	if (!pcmHandle->is_started) {
 		/*  not started, return fail */
+		debug_error ("Not started yet, return Invalid State \n");
 		return MM_ERROR_SOUND_INVALID_STATE;
 	}
 
@@ -698,8 +739,10 @@ int mm_sound_pcm_capture_close(MMSoundPcmHandle_t handle)
 
 	/* Check input param */
 	pcmHandle = (mm_sound_pcm_t*)handle;
-	if(pcmHandle == NULL)
+	if(pcmHandle == NULL) {
+		debug_error ("Handle is null, return Invalid Argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
+	}
 
 	/* Close */
 	result = avsys_audio_close(pcmHandle->audio_handle);
@@ -804,6 +847,7 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 		if(pcmHandle->asm_event != ASM_EVENT_CALL && pcmHandle->asm_event != ASM_EVENT_VIDEOCALL) {
 			/* get session type */
 			if(MM_ERROR_NONE != _get_asm_event_type(&pcmHandle->asm_event)) {
+				debug_error ("_get_asm_event_type failed....\n");
 				free(pcmHandle);
 				return MM_ERROR_POLICY_INTERNAL;
 			}
@@ -841,6 +885,8 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 		return MM_ERROR_SOUND_DEVICE_NOT_OPENED;
 	}
 
+	pcmHandle->is_playback = true;
+
 	/* Set handle to return */
 	*handle = (MMSoundPcmHandle_t)pcmHandle;
 
@@ -875,18 +921,23 @@ int mm_sound_pcm_play_write(MMSoundPcmHandle_t handle, void* ptr, unsigned int l
 
 	/* Check input param */
 	pcmHandle = (mm_sound_pcm_t*)handle;
-	if(pcmHandle == NULL)
+	if(pcmHandle == NULL) {
+		debug_error ("Handle is null, return Invalid Argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
+	}
 	if(ptr == NULL) {
 		debug_error("Invalid buffer pointer\n");
 		return MM_ERROR_SOUND_INVALID_POINTER;
 	}
-	if(length_byte == 0 )
+	if(length_byte == 0 ) {
+		debug_error ("length is 0, return 0\n");
 		return 0;
+	}
 
 	/* Check State : return fail if not started */
 	if (!pcmHandle->is_started) {
 		/* not started, return fail */
+		debug_error ("Not started yet, return Invalid State \n");
 		return MM_ERROR_SOUND_INVALID_STATE;
 	}
 
@@ -901,14 +952,21 @@ int mm_sound_pcm_play_close(MMSoundPcmHandle_t handle)
 	mm_sound_pcm_t *pcmHandle = NULL;
 	int errorcode = 0;
 
+	debug_fenter();
+
 	/* Check input param */
 	pcmHandle = (mm_sound_pcm_t*)handle;
-	if(pcmHandle == NULL)
+	if(pcmHandle == NULL) {
+		debug_error ("Handle is null, return Invalid Argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
+	}
 
-	/* Drain */
-	if(AVSYS_FAIL(avsys_audio_drain(pcmHandle->audio_handle))) {
-		debug_error("drain failed\n");
+	/* Drain if needed */
+	if (pcmHandle->is_started) {
+		/* stop() is not called before close(), drain is needed */
+		if(AVSYS_FAIL(avsys_audio_drain(pcmHandle->audio_handle))) {
+			debug_error("drain failed\n");
+		}
 	}
 
 	/* Close */
@@ -921,12 +979,16 @@ int mm_sound_pcm_play_close(MMSoundPcmHandle_t handle)
 	/* Unregister ASM */
 	if(pcmHandle->asm_event != ASM_EVENT_CALL && pcmHandle->asm_event != ASM_EVENT_VIDEOCALL) {
 		if(!ASM_unregister_sound(pcmHandle->asm_handle, pcmHandle->asm_event, &errorcode)) {
-    		debug_error("ASM_unregister failed in %s with 0x%x\n",__func__, errorcode);
-    	}
-    }
+			debug_error("ASM_unregister failed in %s with 0x%x\n",__func__, errorcode);
+		}
+	}
+
+	debug_log ("pcm sound [%p] closed success!!!\n", handle);
 
 	/* Free handle */
-    free(pcmHandle);    pcmHandle= NULL;
+	free(pcmHandle);    pcmHandle= NULL;
+
+	debug_fleave();
 
 	return result;
 }
