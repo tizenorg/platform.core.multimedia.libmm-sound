@@ -34,6 +34,7 @@
 
 #include "include/mm_sound_mgr_common.h"
 #include "../include/mm_sound_common.h"
+#include "../include/mm_sound.h"
 
 #include <mm_error.h>
 #include <mm_debug.h>
@@ -102,6 +103,8 @@ static int __set_sound_path_to_dual ();
 #define _mm_sound_mgr_device_active_device_callback(a,b)	MM_ERROR_NONE
 #endif
 
+#define SOUND_DOCK_ON	"/usr/share/svi/sound/operation/new_chat.wav"
+#define SOUND_DOCK_OFF	"/usr/share/svi/sound/operation/sent_chat.wav"
 
 typedef struct _session_info_struct
 {
@@ -122,7 +125,7 @@ typedef struct _session_info_struct
 
 SESSION_INFO_STRUCT g_info;
 
-#define PLAYBACK_NUM	5
+#define PLAYBACK_NUM	6
 #define CAPTURE_NUM	3
 
 typedef enum
@@ -136,7 +139,7 @@ static void dump_info ()
 {
 	int i = 0;
 
-	char *playback_device_str[] = { "SPEAKER ", "RECEIVER ", "HEADSET ", "BTSCO ", "BTA2DP " };
+	char *playback_device_str[] = { "SPEAKER ", "RECEIVER ", "HEADSET ", "BTSCO ", "BTA2DP ", "DOCK " };
 	char *capture_device_str[] = { "MAINMIC ", "HEADSET ", "BTMIC "  };
 
 	static char tmp_str[128];
@@ -508,6 +511,8 @@ static int __set_sound_path_for_current_active ()
 		out = AVSYS_AUDIO_PATH_EX_BTHEADSET;
 	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_A2DP)) {
 		out = AVSYS_AUDIO_PATH_EX_A2DP;
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_DOCK)) {
+		out = AVSYS_AUDIO_PATH_EX_DOCK;
 	}
 
 	/* GAIN */
@@ -599,6 +604,9 @@ static void _select_playback_active_device ()
 	if (IS_AVAILABLE(MM_SOUND_DEVICE_OUT_BT_A2DP)) {
 		debug_log ("BT A2DP available, set as active!!\n");
 		SET_ACTIVE(MM_SOUND_DEVICE_OUT_BT_A2DP);
+	} else if (IS_AVAILABLE(MM_SOUND_DEVICE_OUT_DOCK)) {
+		debug_log ("DOCK available, set as active!!\n");
+		SET_ACTIVE(MM_SOUND_DEVICE_OUT_DOCK);
 	} else if (IS_AVAILABLE(MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY)) {
 		debug_log ("WIRED available, set as active!!\n");
 		SET_ACTIVE(MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY);
@@ -826,6 +834,75 @@ static void handle_headset_off ()
 	dump_info ();
 }
 
+void _sound_finished_cb (void *data)
+{
+	debug_log ("sound play finished!!!\n");
+	*(bool*)data = true;
+}
+
+static void _play_dock_sound_sync(int is_on)
+{
+	int handle;
+	bool is_play_finished = false;
+
+	debug_log ("start to play dock sound [%d]\n", is_on);
+	mm_sound_play_loud_solo_sound((is_on? SOUND_DOCK_ON : SOUND_DOCK_OFF), VOLUME_TYPE_FIXED, _sound_finished_cb, &is_play_finished, &handle);
+	/* FIXME : need to enhance waiting method */
+	debug_log ("waiting for dock sound finish\n");
+	while (!is_play_finished) {
+		usleep (10000); // 10 ms
+	}
+	debug_log ("dock sound finished!!!\n");
+}
+
+static void handle_dock_on ()
+{
+	/* ToDo : alarm/notification session ???? */
+	if (IS_COMMUNICATION_SESSION()) {
+		debug_log ("Current session is VOICECALL, no auto-activation!!!\n");
+		return;
+	}
+
+	debug_log ("Activate DOCK device\n");
+	SET_PLAYBACK_ONLY_ACTIVE(MM_SOUND_DEVICE_OUT_DOCK);
+
+	/* Enforced audio */
+	_play_dock_sound_sync(true);
+
+	/* Do set path and notify result */
+	_set_path_with_notification(DO_NOTI);
+
+	dump_info ();
+}
+
+static void handle_dock_off ()
+{
+	if (!IS_ACTIVE(MM_SOUND_DEVICE_OUT_DOCK)) {
+		debug_msg("MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY was not active. nothing to do here.");
+		return;
+	}
+
+	/* if DOCK was active, then do asm pause */
+	debug_msg("Do pause here");
+	_asm_pause_process (g_info.asm_handle);
+
+	/* Enforced audio */
+	_play_dock_sound_sync(false);
+
+	/* set DOCK device to none */
+	debug_msg("Deactivate DOCK device\n");
+	UNSET_ACTIVE(MM_SOUND_DEVICE_OUT_DOCK);
+
+	/* activate current available device based on priority */
+	_select_playback_active_device();
+
+	/* Do set path and notify result */
+	_set_path_with_notification(DO_NOTI);
+
+	dump_info ();
+}
+
+
 /* ------------------------- EXTERNAL FUNCTIONS ------------------------------------*/
 /* DEVICE : Called by mgr_pulse for updating current default_sink_name */
 int MMSoundMgrSessionSetDefaultSink (char *default_sink_name)
@@ -955,6 +1032,30 @@ int MMSoundMgrSessionSetDeviceAvailable (device_type_t device, int available, in
 		break;
 
 	case DEVICE_DOCK:
+		if (available) {
+			if (!IS_AVAILABLE(MM_SOUND_DEVICE_OUT_DOCK)) {
+				SET_AVAILABLE(MM_SOUND_DEVICE_OUT_DOCK);
+				_mm_sound_mgr_device_available_device_callback(
+											MM_SOUND_DEVICE_IN_NONE,
+											MM_SOUND_DEVICE_OUT_DOCK,
+											AVAILABLE);
+				handle_dock_on();
+			} else {
+				debug_log ("Already device [%d] is available...\n", device);
+			}
+		} else {
+			if (IS_AVAILABLE(MM_SOUND_DEVICE_OUT_DOCK)) {
+				UNSET_AVAILABLE(MM_SOUND_DEVICE_OUT_DOCK);
+				_mm_sound_mgr_device_available_device_callback(
+											MM_SOUND_DEVICE_IN_NONE,
+											MM_SOUND_DEVICE_OUT_DOCK,
+											NOT_AVAILABLE);
+
+				handle_dock_off();
+			} else {
+				debug_log ("Already device [%d] is unavailable...\n", device);
+			}
+		}
 		break;
 	}
 

@@ -7,6 +7,7 @@ sound_server_SOURCES = mm_sound_mgr_codec.c \
 						mm_sound_mgr_asm.c \
 						mm_sound_mgr_device.c \
 						mm_sound_mgr_headset.c \
+						mm_sound_mgr_dock.c \
 						mm_sound_mgr_session.c \
 						mm_sound_mgr_run.c \
 						mm_sound_plugin.c \

@@ -1907,6 +1907,7 @@ typedef enum{
 	MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY	= 0x04<<8,	/**< Wired output devices such as headphone, headset, and so on. */
 	MM_SOUND_DEVICE_OUT_BT_SCO			= 0x08<<8,	/**< Bluetooth SCO device */
 	MM_SOUND_DEVICE_OUT_BT_A2DP			= 0x10<<8,	/**< Bluetooth A2DP device */
+	MM_SOUND_DEVICE_OUT_DOCK			= 0x20<<8,	/**< DOCK device */
 } mm_sound_device_out;
 
 #define MM_SOUND_ROUTE_NUM 10
@@ -1915,6 +1916,7 @@ typedef enum{
 	MM_SOUND_ROUTE_OUT_SPEAKER = MM_SOUND_DEVICE_OUT_SPEAKER, /**< Routing audio output to builtin device such as internal speaker. */
 	MM_SOUND_ROUTE_OUT_WIRED_ACCESSORY = MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY,/**< Routing audio output to wired accessory such as headphone, headset, and so on. */
 	MM_SOUND_ROUTE_OUT_BLUETOOTH = MM_SOUND_DEVICE_OUT_BT_A2DP, /**< Routing audio output to bluetooth A2DP. */
+	MM_SOUND_ROUTE_OUT_DOCK = MM_SOUND_DEVICE_OUT_DOCK, /**< Routing audio output to DOCK */
 	MM_SOUND_ROUTE_IN_MIC = MM_SOUND_DEVICE_IN_MIC, /**< Routing audio input to device builtin mic. */
 	MM_SOUND_ROUTE_IN_WIRED_ACCESSORY = MM_SOUND_DEVICE_IN_WIRED_ACCESSORY, /**< Routing audio input to wired accessory. */
 	MM_SOUND_ROUTE_IN_MIC_OUT_RECEIVER = MM_SOUND_DEVICE_IN_MIC | MM_SOUND_DEVICE_OUT_RECEIVER, /**< Routing audio input to device builtin mic and routing audio output to builtin receiver*/

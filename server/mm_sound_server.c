@@ -40,6 +40,7 @@
 #include "include/mm_sound_mgr_asm.h"
 #include "include/mm_sound_mgr_session.h"
 #include "include/mm_sound_mgr_headset.h"
+#include "include/mm_sound_mgr_dock.h"
 #include "include/mm_sound_recovery.h"
 #include "include/mm_sound_utils.h"
 #include "include/mm_sound_common.h"
@@ -212,6 +213,7 @@ int main(int argc, char **argv)
 		wait_for_asm_ready();
 		_mm_sound_mgr_device_init();
 		MMSoundMgrHeadsetInit();
+		MMSoundMgrDockInit();
 		MMSoundMgrSessionInit();
 	}
 
@@ -235,6 +237,7 @@ int main(int argc, char **argv)
 		MMSoundMgrRunFini();
 		MMSoundThreadPoolFini();
 
+		MMSoundMgrDockFini();
 		MMSoundMgrHeadsetFini();
 		MMSoundMgrSessionFini();
 		_mm_sound_mgr_device_fini();
