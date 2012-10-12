@@ -241,8 +241,13 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 	 */
 
 	if(param->session_type != ASM_EVENT_CALL && param->session_type != ASM_EVENT_VIDEOCALL) {
+#ifdef MURPHY
+		if(!ASM_register_sound((int)param->param, &param->session_handle, param->session_type, ASM_STATE_PLAYING,
+								sound_codec_asm_callback, (void*)*slotid, ASM_RESOURCE_NONE, &errorcode))	{
+#else
 		if(!ASM_register_sound_ex((int)param->param, &param->session_handle, param->session_type, ASM_STATE_PLAYING,
 								sound_codec_asm_callback, (void*)*slotid, ASM_RESOURCE_NONE, &errorcode, __asm_process_message))	{
+#endif
 			debug_critical("ASM_register_sound() failed %d\n", errorcode);
 			pthread_mutex_unlock(&g_slot_mutex);
 			return MM_ERROR_POLICY_INTERNAL;
@@ -286,7 +291,11 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 
 cleanup:
 	if(param->session_type != ASM_EVENT_CALL  && param->session_type != ASM_EVENT_VIDEOCALL && need_asm_unregister == 1) {
+#ifdef MURPHY
+		if(!ASM_unregister_sound(param->session_handle, param->session_type, &errorcode)) {
+#else
 		if(!ASM_unregister_sound_ex(param->session_handle, param->session_type, &errorcode,__asm_process_message)) {
+#endif
 			debug_error("Unregister sound failed 0x%X\n", errorcode);
 			return MM_ERROR_POLICY_INTERNAL;
 		}
@@ -358,8 +367,13 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 	int need_asm_unregister = 0;
 
 	if(param->session_type != ASM_EVENT_CALL && param->session_type != ASM_EVENT_VIDEOCALL)	{
+#ifdef MURPHY
+		if(!ASM_register_sound((int)param->param, &param->session_handle, param->session_type, ASM_STATE_PLAYING,
+								sound_codec_asm_callback, (void*)*slotid, ASM_RESOURCE_NONE, &errorcode)) {
+#else
 		if(!ASM_register_sound_ex((int)param->param, &param->session_handle, param->session_type, ASM_STATE_PLAYING,
 								sound_codec_asm_callback, (void*)*slotid, ASM_RESOURCE_NONE, &errorcode, __asm_process_message)) {
+#endif
 			debug_critical("ASM_register_sound() failed %d\n", errorcode);
 			pthread_mutex_unlock(&g_slot_mutex);
 			return MM_ERROR_POLICY_INTERNAL;
@@ -454,7 +468,11 @@ static int _MMSoundMgrCodecStopCallback(int param)
 
 	if(g_slots[param].session_type != ASM_EVENT_CALL && g_slots[param].session_type != ASM_EVENT_VIDEOCALL)	{
 		debug_msg("[CODEC MGR] ASM unregister\n");
+#ifdef MURPHY
+		if(!ASM_unregister_sound(g_slots[param].session_handle, g_slots[param].session_type, &errorcode)) {
+#else
 		if(!ASM_unregister_sound_ex(g_slots[param].session_handle, g_slots[param].session_type, &errorcode, __asm_process_message)) {
+#endif
 			debug_error("[CODEC MGR] Unregister sound failed 0x%X\n", errorcode);
 		}
 	}

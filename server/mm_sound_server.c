@@ -253,9 +253,11 @@ int main(int argc, char **argv)
 			MMSoundMgrIpcInit();
 
 		pulse_handle = MMSoundMgrPulseInit();
+#ifndef MURPHY
 		MMSoundMgrASMInit();
 		/* Wait for ASM Ready */
 		__wait_for_asm_ready();
+#endif
 		_mm_sound_mgr_device_init();
 		MMSoundMgrHeadsetInit();
 		MMSoundMgrDockInit();

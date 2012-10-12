@@ -187,6 +187,7 @@ static void dump_info ()
 /* ------------------------- ASM ------------------------------------*/
 static pthread_mutex_t _asm_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+#ifndef MURPHY
 static bool _asm_register_for_headset (int * handle)
 {
 	int asm_error = 0;
@@ -252,6 +253,7 @@ static bool _asm_unregister_for_headset (int *handle)
 
 	return true;
 }
+#endif
 
 /* ------------------------- INTERNAL FUNCTIONS ------------------------------------*/
 
@@ -734,9 +736,11 @@ static void __handle_bt_a2dp_off (void)
 		return;
 	}
 
+#ifndef MURPHY
 	/* if bt was active, then do asm pause */
 	debug_msg("Do pause here");
 	_asm_pause_process (g_info.asm_handle);
+#endif
 
 	/* set bt device to none */
 	debug_msg("Deactivate BT_A2DP device\n");
@@ -808,9 +812,11 @@ static void __handle_headset_off (void)
 		return;
 	}
 
+#ifndef MURPHY
 	/* if bt was active, then do asm pause */
 	debug_msg("Do pause here");
 	_asm_pause_process (g_info.asm_handle);
+#endif
 
 	/* set bt device to none */
 	debug_msg("Deactivate WIRED IN/OUT device\n");
@@ -896,9 +902,11 @@ static void __handle_hdmi_off (void)
 		return;
 	}
 
+#ifndef MURPHY
 	/* if HDMI was active, then do asm pause */
 	debug_msg("Do pause here");
 	_asm_pause_process (g_info.asm_handle);
+#endif
 
 	/* set DOCK device to none */
 	debug_msg("Deactivate HDMIdevice\n");
@@ -937,9 +945,11 @@ static void __handle_wfd_off (void)
 		return;
 	}
 
+#ifndef MURPHY
 	/* if WFD was active, then do asm pause */
 	debug_msg("Do pause here");
 	_asm_pause_process (g_info.asm_handle);
+#endif
 
 	/* set WFD device to none */
 	debug_msg("Deactivate WFD device\n");
@@ -982,9 +992,11 @@ static void __handle_usb_audio_off (void)
 		return;
 	}
 
+#ifndef MURPHY
 	/* if device was active, then do asm pause */
 	debug_msg("Do pause here");
 	_asm_pause_process (g_info.asm_handle);
+#endif
 
 	/* set bt device to none */
 	debug_msg("Deactivate USB Audio device\n");
@@ -1470,10 +1482,12 @@ int MMSoundMgrSessionInit(void)
 	/* FIXME: Initial status should be updated */
 	__set_initial_active_device ();
 
+#ifndef MURPHY
 	/* Register for headset unplug */
 	if (_asm_register_for_headset (&g_info.asm_handle) == false) {
 		debug_error ("Failed to register ASM for headset\n");
 	}
+#endif
 
 	debug_fleave();
 
@@ -1487,8 +1501,10 @@ int MMSoundMgrSessionFini(void)
 
 	debug_fenter();
 
+#ifndef MURPHY
 	/* Unregister for headset unplug */
 	_asm_unregister_for_headset (&g_info.asm_handle);
+#endif
 
 	debug_fleave();
 
