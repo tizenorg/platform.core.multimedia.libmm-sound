@@ -336,9 +336,13 @@ static void sink_info_cb (pa_context *c, const pa_sink_info *i, int is_last, voi
 
 static void pulse_set_default_sink (pulse_info_t * pinfo, char *device_api_name, char *device_bus_name)
 {
+    pa_operation *op;
 	strcpy (pinfo->device_api_name, device_api_name);
 	strcpy (pinfo->device_bus_name, device_bus_name);
-	pa_operation_unref(pa_context_get_sink_info_list(pinfo->context, sink_info_cb, pinfo));
+
+    op = pa_context_get_sink_info_list(pinfo->context, sink_info_cb, pinfo);
+    if (op)
+        pa_operation_unref(op);
 }
 
 static int pulse_deinit (pulse_info_t * pinfo)
