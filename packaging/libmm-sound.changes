@@ -1,0 +1,2 @@
+* Thu Dec 6 2012 Vivian Zhang <vivian.zhang@intel.com> - 0.6.0
+- Support the case that speaker and wired_accessory are 2 separate alsa sinks in pulseaudio for IA build
