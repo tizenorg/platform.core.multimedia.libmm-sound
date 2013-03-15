@@ -306,16 +306,23 @@ static void* callbackfunc(void *param)
 				int route_index;
 				mm_sound_route route;
 
-				for (route_index = 0; route_index < sizeof(msgrcv->sound_msg.route_list) / sizeof(int); route_index++) {
+				int list_count = sizeof(msgrcv->sound_msg.route_list) / sizeof(int);
+
+				for (route_index = list_count-1; route_index >= 0; route_index--) {
 					route = msgrcv->sound_msg.route_list[route_index];
 					if (route == 0)
-						break;
+						continue;
 					if (msgrcv->sound_msg.is_available) {
 						debug_msg("[Client] available route : %d\n", route);
 					} else {
 						debug_msg("[Client] unavailable route : %d\n", route);
 					}
 					((mm_sound_available_route_changed_cb)msgrcv->sound_msg.callback)(route, msgrcv->sound_msg.is_available, msgrcv->sound_msg.cbdata);
+
+					if (route == MM_SOUND_ROUTE_INOUT_HEADSET || route == MM_SOUND_ROUTE_IN_MIC_OUT_HEADPHONE) {
+						debug_msg("[Client] no need to proceed further more....\n");
+						break;
+					}
 				}
 			}
 			break;

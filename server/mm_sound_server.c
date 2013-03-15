@@ -49,6 +49,7 @@
 #include "include/mm_sound_mgr_dock.h"
 #include "include/mm_sound_mgr_hdmi.h"
 #include "include/mm_sound_mgr_wfd.h"
+#include <audio-session-manager.h>
 
 #include <heynoti.h>
 
@@ -70,6 +71,7 @@ typedef struct {
     int startserver;
     int printlist;
     int testmode;
+    int poweroff;
 } server_arg;
 
 static int getOption(int argc, char **argv, server_arg *arg);
@@ -128,6 +130,25 @@ static void __wait_for_asm_ready ()
 	vconf_unset (ASM_READY_KEY);
 }
 
+static int _handle_power_off ()
+{
+	int handle = 0;
+	int asm_error = 0;
+
+	if (ASM_register_sound (-1, &handle, ASM_EVENT_EXCLUSIVE_MMPLAYER, ASM_STATE_PLAYING, NULL, NULL, ASM_RESOURCE_NONE, &asm_error)) {
+		if (ASM_unregister_sound (handle, ASM_EVENT_EXCLUSIVE_MMPLAYER, &asm_error)) {
+			debug_log ("asm register/unregister success!!!\n");
+			return 0;
+		} else {
+			debug_error ("asm unregister failed...0x%x\n", asm_error);
+		}
+	} else {
+		debug_error ("asm register failed...0x%x\n", asm_error);
+	}
+
+	return -1;
+}
+
 int main(int argc, char **argv)
 {
 	server_arg serveropt;
@@ -153,6 +174,15 @@ int main(int argc, char **argv)
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
 		daemon(0,0); //chdir to ("/"), and close stdio
 #endif
+	}
+
+	if (serveropt.poweroff) {
+		if (_handle_power_off() == 0) {
+			debug_log("_handle_power_off success!!\n");
+		} else {
+			debug_error("_handle_power_off failed..\n");
+		}
+		return 0;
 	}
 
 	signal(SIGPIPE, SIG_IGN); //ignore SIGPIPE
@@ -211,6 +241,7 @@ int main(int argc, char **argv)
 		fprintf(stderr,"event loop thread create failed\n");
 		return 3;
 	}
+
 
 
 	if (serveropt.startserver || serveropt.printlist) {
@@ -279,6 +310,7 @@ static int getOption(int argc, char **argv, server_arg *arg)
 	char *plugin_env_dir = NULL;
 	static struct option long_options[] = {
 		{"start", 0, 0, 'S'},
+		{"poweroff", 0, 0, 'F'},
 		{"list", 0, 0, 'L'},
 		{"help", 0, 0, 'H'},
 		{"plugdir", 1, 0, 'P'},
@@ -300,13 +332,16 @@ static int getOption(int argc, char **argv, server_arg *arg)
 	{
 		int opt_idx = 0;
 
-		c = getopt_long (argc, argv, "SLHRP:T", long_options, &opt_idx);
+		c = getopt_long (argc, argv, "SFLHRP:T", long_options, &opt_idx);
 		if (c == -1)
 			break;
 		switch (c)
 		{
 		case 'S': /* Start daemon */
 			arg->startserver = 1;
+			break;
+		case 'F': /* Poweroff */
+			arg->poweroff = 1;
 			break;
 		case 'L': /* list of plugins */
 			arg->printlist = 1;
@@ -374,9 +409,12 @@ static int usgae(int argc, char **argv)
 {
 	fprintf(stderr, "Usage: %s [Options]\n", argv[0]);
 	fprintf(stderr, "\t%-20s: start sound server.\n", "--start,-S");
+	fprintf(stderr, "\t%-20s: handle poweroff\n", "--poweroff,-F");
+	fprintf(stderr, "\t%-20s: help message.\n", "--help,-H");
+#if 0 /* currently not in use */
 	fprintf(stderr, "\t%-20s: print plugin list.\n", "--list,-L");
-	fprintf(stderr, "\t%-20s: print this message.\n", "--help,-H");
 	fprintf(stderr, "\t%-20s: print this message.\n", "--plugdir,-P");
+#endif
 
 	return 1;
 }

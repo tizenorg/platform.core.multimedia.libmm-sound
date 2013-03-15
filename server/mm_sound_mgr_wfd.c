@@ -50,28 +50,22 @@
 
 
 /* WFD status value */
-static void _wfd_status_changed_cb(keynode_t* node, void* data)
+static void _miracast_wfd_status_changed_cb(keynode_t* node, void* data)
 {
-	int wfd_available = 0;
-	int wfd_status = 0;
+	int miracast_wfd_status = 0;
 
 	/* Get actual vconf value */
-	vconf_get_int(VCONFKEY_WIFI_DIRECT_STATE, &wfd_status);
+	vconf_get_bool(VCONFKEY_MIRACAST_WFD_SOURCE_STATUS, &miracast_wfd_status);
+	debug_msg ("[%s] changed callback called, status=[%d]\n", vconf_keynode_get_name(node), miracast_wfd_status);
 
-	debug_msg ("[%s] changed callback called\n", vconf_keynode_get_name(node));
-	debug_msg ("WFD : [%s]=[%d]\n",
-			VCONFKEY_WIFI_DIRECT_STATE, wfd_status);
-
-	wfd_available = (wfd_status == VCONFKEY_WIFI_DIRECT_GROUP_OWNER)? 1 : 0;
-
-	MMSoundMgrSessionSetDeviceAvailable (DEVICE_WFD, wfd_available, 0, NULL);
+	MMSoundMgrSessionSetDeviceAvailable (DEVICE_WFD, miracast_wfd_status, 0, NULL);
 }
 
 static int _register_wfd_status(void)
 {
 	/* set callback for vconf key change */
-	int ret = vconf_notify_key_changed(VCONFKEY_WIFI_DIRECT_STATE, _wfd_status_changed_cb, NULL);
-	debug_msg ("vconf [%s] set ret = [%d]\n", VCONFKEY_WIFI_DIRECT_STATE, ret);
+	int ret = vconf_notify_key_changed(VCONFKEY_MIRACAST_WFD_SOURCE_STATUS, _miracast_wfd_status_changed_cb, NULL);
+	debug_msg ("vconf [%s] set ret = [%d]\n", VCONFKEY_MIRACAST_WFD_SOURCE_STATUS, ret);
 	return ret;
 }
 

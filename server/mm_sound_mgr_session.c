@@ -341,7 +341,7 @@ static int __set_playback_route_communication (session_state_t state)
 		else if (g_info.session == SESSION_VOIP)
 			gain = AVSYS_AUDIO_GAIN_EX_VIDEOCALL;
 		else {
-			debug_warning ("Not valid session info....\n");
+			debug_warning ("Not valid session info....[%d]\n", g_info.session);
 			gain = AVSYS_AUDIO_GAIN_EX_VOICECALL;
 		}
 
@@ -1404,7 +1404,7 @@ int MMSoundMgrSessionSetSession(session_t session, session_state_t state)
 {
 	LOCK_SESSION();
 
-	debug_msg ("[SESSION][%s][%d] session=[%d] state=[%d]\n", __func__, __LINE__, session, state);
+	debug_warning ("[SESSION][%s][%d] session=[%d] state=[%d]\n", __func__, __LINE__, session, state);
 
 	/* Update session */
 	if (state)

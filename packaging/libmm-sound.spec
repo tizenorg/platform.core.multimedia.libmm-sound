@@ -1,11 +1,12 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
 Version:    0.7.1
-Release:    1
+Release:    2
 Group:      System/Libraries
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1:    sound-server.service
+Source2:    sound-server.path
 Requires(pre): /bin/pidof
 Requires(post): /sbin/ldconfig
 Requires(post): /usr/bin/vconftool
@@ -73,7 +74,8 @@ make %{?_smp_mflags}
 %make_install
 install -d %{buildroot}%{_libdir}/systemd/user/tizen-middleware.target.wants
 install -m0644 %{SOURCE1} %{buildroot}%{_libdir}/systemd/user/
-ln -sf ../sound-server.service %{buildroot}%{_libdir}/systemd/user/tizen-middleware.target.wants/sound-server.service
+install -m0644 %{SOURCE2} %{buildroot}%{_libdir}/systemd/user/
+ln -sf ../sound-server.path %{buildroot}%{_libdir}/systemd/user/tizen-middleware.target.wants/sound-server.path
 
 # FIXME: remove after systemd is in
 mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc3.d
@@ -118,8 +120,9 @@ ln -s %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4
 %attr(0755,root,root) %{_sysconfdir}/rc.d/init.d/soundserver
 %{_sysconfdir}/rc.d/rc3.d/S23soundserver
 %{_sysconfdir}/rc.d/rc4.d/S23soundserver
-%{_libdir}/systemd/user/tizen-middleware.target.wants/sound-server.service
+%{_libdir}/systemd/user/tizen-middleware.target.wants/sound-server.path
 %{_libdir}/systemd/user/sound-server.service
+%{_libdir}/systemd/user/sound-server.path
 /usr/share/sounds/sound-server/*
 
 %files devel

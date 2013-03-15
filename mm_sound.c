@@ -88,6 +88,7 @@ static int _pcm_sound_stop_internal (MMSoundPcmHandle_t handle);
 static int _pcm_sound_stop(MMSoundPcmHandle_t handle);
 
 static void __sound_pcm_send_message (mm_sound_pcm_t *pcmHandle, int message, int code);
+static int _pcm_sound_ignore_session (MMSoundPcmHandle_t handle);
 
 static int __validate_volume(volume_type_t type, int value)
 {
@@ -225,6 +226,8 @@ int mm_sound_volume_set_value(volume_type_t type, const unsigned int value)
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
+
+	debug_warning ("%s : type=[%d], value=[%d]\n", __func__, type, value);
 
 	/* Check input param */
 	if (0 > __validate_volume(type, (int)value)) {
@@ -456,6 +459,46 @@ ASM_cb_result_t sound_pcm_asm_callback(int handle, ASM_event_sources_t event_src
 	return cb_res;
 }
 
+static int _pcm_sound_ignore_session (MMSoundPcmHandle_t handle)
+{
+	int result = MM_ERROR_NONE;
+	mm_sound_pcm_t *pcmHandle = (mm_sound_pcm_t*)handle;
+	int errorcode = 0;
+
+	debug_fenter();
+
+	/* Check input param */
+	if(pcmHandle == NULL) {
+		debug_error ("Handle is null, return Invalid Argument\n");
+		result = MM_ERROR_INVALID_ARGUMENT;
+		goto EXIT;
+	}
+
+	if (pcmHandle->is_started) {
+		debug_error ("Operation is not permitted while started\n");
+		result = MM_ERROR_SOUND_INVALID_STATE;
+		goto EXIT;
+	}
+
+	PCM_LOCK_INTERNAL(&pcmHandle->pcm_mutex_internal);
+
+	/* Unregister ASM */
+	if (pcmHandle->skip_session == false && pcmHandle->asm_handle) {
+		if(!ASM_unregister_sound(pcmHandle->asm_handle, pcmHandle->asm_event, &errorcode)) {
+			debug_error("ASM_unregister failed in %s with 0x%x\n", __func__, errorcode);
+			result = MM_ERROR_SOUND_INTERNAL;
+		}
+		pcmHandle->skip_session = true;
+		pcmHandle->asm_handle = 0;
+	}
+
+	PCM_UNLOCK_INTERNAL(&pcmHandle->pcm_mutex_internal);
+
+EXIT:
+	debug_fleave();
+	return result;
+}
+
 EXPORT_API
 int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rate, MMSoundPcmChannel_t channel, MMSoundPcmFormat_t format)
 {
@@ -465,7 +508,10 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 	int result = AVSYS_STATE_SUCCESS;
 	int errorcode = 0;
 	int ret_mutex = 0;
+
 	debug_fenter();
+	debug_warning ("%s enter : rate=[%d], channel=[%x], format=[%x]\n", __func__, rate, channel, format);
+
 	memset(&param, 0, sizeof(avsys_audio_param_t));
 
 
@@ -549,8 +595,16 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 
 	/* Set handle to return */
 	*handle = (MMSoundPcmHandle_t)pcmHandle;
+
+	debug_warning ("%s success : handle=[%p]\n", __func__, handle);
 	debug_fleave();
 	return size;
+}
+
+EXPORT_API
+int mm_sound_pcm_capture_ignore_session(MMSoundPcmHandle_t *handle)
+{
+	return _pcm_sound_ignore_session(handle);
 }
 
 static int _pcm_sound_start (MMSoundPcmHandle_t handle)
@@ -600,6 +654,7 @@ int mm_sound_pcm_capture_start(MMSoundPcmHandle_t handle)
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
+	debug_warning ("%s enter : handle=[%p]\n", __func__, handle);
 
 	ret = _pcm_sound_start (handle);
 	if (ret != MM_ERROR_NONE)  {
@@ -608,6 +663,8 @@ int mm_sound_pcm_capture_start(MMSoundPcmHandle_t handle)
 	}
 
 EXIT:
+	debug_warning ("%s success : handle=[%p]\n", __func__, handle);
+
 	debug_fleave();
 	return ret;
 }
@@ -686,7 +743,11 @@ int mm_sound_pcm_capture_stop(MMSoundPcmHandle_t handle)
 	int ret = 0;
 	debug_fenter();
 
+	debug_warning ("%s enter : handle=[%p]\n", __func__, handle);
+
 	ret = _pcm_sound_stop(handle);
+
+	debug_warning ("%s success : handle=[%p]\n", __func__, handle);
 
 	debug_fleave();
 	return ret;
@@ -743,6 +804,9 @@ int mm_sound_pcm_capture_close(MMSoundPcmHandle_t handle)
 	int errorcode = 0;
 
 	debug_fenter();
+
+	debug_warning ("%s enter : handle=[%p]\n", __func__, handle);
+
 	/* Check input param */
 	if(pcmHandle == NULL) {
 		debug_error ("Handle is null, return Invalid Argument\n");
@@ -778,6 +842,7 @@ NULL_HDL:
 		free(pcmHandle);
 		pcmHandle = NULL;
 	}
+	debug_warning ("%s success : handle=[%p]\n", __func__, handle);
 	debug_fleave();
 	return result;
 }
@@ -811,6 +876,8 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 	int ret_mutex = 0;
 
 	debug_fenter();
+	debug_warning ("%s enter : rate=[%d], channel=[%x], format=[%x]\n", __func__, rate, channel, format);
+
 	memset(&param, 0, sizeof(avsys_audio_param_t));
 
 	/* Check input param */
@@ -917,6 +984,8 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 
 	/* Set handle to return */
 	*handle = (MMSoundPcmHandle_t)pcmHandle;
+
+	debug_warning ("%s success : handle=[%p]\n", __func__, handle);
 	debug_fleave();
 	return size;
 }
@@ -938,9 +1007,9 @@ int mm_sound_pcm_play_start(MMSoundPcmHandle_t handle)
 {
 	int ret = 0;
 	debug_fenter();
-
+	debug_warning ("%s enter : handle=[%p]\n", __func__, handle);
 	ret = _pcm_sound_start (handle);
-
+	debug_warning ("%s success : handle=[%p]\n", __func__, handle);
 	debug_fleave();
 	return ret;
 
@@ -952,9 +1021,9 @@ int mm_sound_pcm_play_stop(MMSoundPcmHandle_t handle)
 {
 	int ret = 0;
 	debug_fenter();
-
+	debug_warning ("%s enter : handle=[%p]\n", __func__, handle);
 	ret = _pcm_sound_stop(handle);
-
+	debug_warning ("%s success : handle=[%p]\n", __func__, handle);
 	debug_fleave();
 	return ret;
 }
@@ -1011,6 +1080,8 @@ int mm_sound_pcm_play_close(MMSoundPcmHandle_t handle)
 	int errorcode = 0;
 
 	debug_fenter();
+	debug_warning ("%s enter : handle=[%p]\n", __func__, handle);
+
 	/* Check input param */
 	if(pcmHandle == NULL) {
 		debug_error ("Handle is null, return Invalid Argument\n");
@@ -1059,9 +1130,17 @@ NULL_HANDLE:
 		free(pcmHandle);
 		pcmHandle= NULL;
 	}
+	debug_warning ("%s success : handle=[%p]\n", __func__, handle);
 	debug_fleave();
 	return result;
 }
+
+EXPORT_API
+int mm_sound_pcm_play_ignore_session(MMSoundPcmHandle_t *handle)
+{
+	return _pcm_sound_ignore_session(handle);
+}
+
 
 ///////////////////////////////////
 ////     MMSOUND PLAY APIs
@@ -1137,6 +1216,8 @@ int mm_sound_play_sound_ex(MMSoundPlayParam *param, int *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	debug_warning ("%s enter : priority=[%d], handle_route=[%d]\n", __func__, param->priority, param->handle_route);
+
 	/* Play sound */
 	err = MMSoundClientPlaySound(param, 0, 0, &lhandle);
 	if (err < 0) {
@@ -1151,6 +1232,7 @@ int mm_sound_play_sound_ex(MMSoundPlayParam *param, int *handle)
 		debug_critical("The sound hadle cannot be get [%d]\n", lhandle);
 	}
 
+	debug_warning ("%s success : handle=[%p]\n", __func__, handle);
 	debug_fleave();
 	return MM_ERROR_NONE;
 }
@@ -1162,14 +1244,14 @@ int mm_sound_stop_sound(int handle)
 	int err;
 
 	debug_fenter();
-
+	debug_warning ("%s enter : handle=[%p]\n", __func__, handle);
 	/* Stop sound */
 	err = MMSoundClientStopSound(handle);
 	if (err < 0) {
 		debug_error("Fail to stop sound\n");
 		return err;
 	}
-
+	debug_warning ("%s success : handle=[%p]\n", __func__, handle);
 	debug_fleave();
 	return MM_ERROR_NONE;
 }
@@ -1384,7 +1466,7 @@ int mm_sound_is_route_available(mm_sound_route route, bool *is_available)
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-
+	debug_warning ("%s enter : route=[%x]\n", __func__, route);
 	if (!_mm_sound_is_route_valid(route)) {
 		debug_error("route is invalid %d\n", route);
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -1399,7 +1481,7 @@ int mm_sound_is_route_available(mm_sound_route route, bool *is_available)
 	if (ret < 0) {
 		debug_error("Can not check given route is available\n");
 	}
-
+	debug_warning ("%s success : route=[%x], available=[%d]\n", __func__, route, *is_available);
 	debug_fleave();
 	return ret;
 }
@@ -1432,7 +1514,7 @@ int mm_sound_set_active_route(mm_sound_route route)
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-
+	debug_warning ("%s enter : route=[%x]\n", __func__, route);
 	if (!_mm_sound_is_route_valid(route)) {
 		debug_error("route is invalid %d\n", route);
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -1442,7 +1524,7 @@ int mm_sound_set_active_route(mm_sound_route route)
 	if (ret < 0) {
 		debug_error("Can not set active route\n");
 	}
-
+	debug_warning ("%s success : route=[%x]\n", __func__, route);
 	debug_fleave();
 	return ret;
 }
@@ -1454,7 +1536,7 @@ int mm_sound_get_active_device(mm_sound_device_in *device_in, mm_sound_device_ou
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-
+	debug_warning ("%s enter\n", __func__);
 	if (device_in == NULL || device_out == NULL) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -1464,7 +1546,7 @@ int mm_sound_get_active_device(mm_sound_device_in *device_in, mm_sound_device_ou
 	if (ret < 0) {
 		debug_error("Can not add active device callback\n");
 	}
-
+	debug_warning ("%s success : in=[%x], out=[%x]\n", __func__, *device_in, *device_out);
 	debug_fleave();
 	return ret;
 }

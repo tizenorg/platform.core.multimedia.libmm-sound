@@ -267,6 +267,7 @@ gboolean __is_need_resume (ASM_sound_events_t sound_event)
 	switch (sound_event) {
 	case ASM_EVENT_ALARM:
 	case ASM_EVENT_EMERGENCY:
+	case ASM_EVENT_EXCLUSIVE_MMCAMCORDER:
 		result = TRUE;
 		break;
 	default:
@@ -1791,6 +1792,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 					break;
 				case ASM_EVENT_EXCLUSIVE_MMCAMCORDER:
 					debug_log ("[ASM_Server] ****** EXCLUSIVE_MMCAMCORDER end ******");
+					__asm_do_all_resume_callback(ASM_EVENT_SOURCE_RESUMABLE_MEDIA);
 					break;
 
 				default:

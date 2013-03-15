@@ -942,7 +942,19 @@ int main(int argc, char* argv[])
  */
 int mm_sound_pcm_play_close(MMSoundPcmHandle_t handle);
 
-
+/**
+ * This function is to ignore session for playback
+ *
+ * @param	handle	[in] handle to play pcm data
+ *
+ * @return	This function returns MM_ERROR_NONE on success, or negative value
+ *			with error code.
+ * @remark	This function only works for not started pcm handle and can't be reversed.
+ * @see
+ * @pre		PCM play handle should be created and not started.
+ * @post	PCM play session will be set to mix.
+ */
+int mm_sound_pcm_play_ignore_session(MMSoundPcmHandle_t *handle);
 
 /**
  * This function is to create handle for PCM capture.
@@ -1192,6 +1204,20 @@ int main(int argc, char* argv[])
  * @endcode
  */
 int mm_sound_pcm_capture_close(MMSoundPcmHandle_t handle);
+
+/**
+ * This function is to ignore session for capture
+ *
+ * @param	handle	[in] handle to capture pcm data
+ *
+ * @return	This function returns MM_ERROR_NONE on success, or negative value
+ *			with error code.
+ * @remark	This function only works for not started pcm handle and can't be reversed.
+ * @see
+ * @pre		PCM capture handle should be created and not started.
+ * @post	PCM capture session will be set to mix.
+ */
+int mm_sound_pcm_capture_ignore_session(MMSoundPcmHandle_t *handle);
 
 /**
  * This function sets callback function for receiving messages from pcm API.
