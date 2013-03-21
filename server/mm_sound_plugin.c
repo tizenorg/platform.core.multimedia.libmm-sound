@@ -42,6 +42,7 @@ char* MMSoundPluginGetTypeName(int type)
         "ERROR",
         "SOUND",
         "RUN",
+        "HAL",
     };
 
     if (type < MM_SOUND_PLUGIN_TYPE_LAST && type > -1)
@@ -138,11 +139,13 @@ int MMSoundPluginOpen(char *file, MMSoundPluginType *plugin)
 
     debug_msg("%s is %s\n", file,
                 t == MM_SOUND_PLUGIN_TYPE_CODEC ? "CODEC":
-                t == MM_SOUND_PLUGIN_TYPE_RUN ? "RUN" : "Unknown");
+                t == MM_SOUND_PLUGIN_TYPE_RUN ? "RUN" :
+                t == MM_SOUND_PLUGIN_TYPE_HAL ? "HAL": "Unknown");
     switch(t)
     {
         case MM_SOUND_PLUGIN_TYPE_CODEC:
         case MM_SOUND_PLUGIN_TYPE_RUN:
+        case MM_SOUND_PLUGIN_TYPE_HAL:
             plugin->type = t;
             plugin->module = pdll;
             break;

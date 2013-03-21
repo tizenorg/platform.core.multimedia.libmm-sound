@@ -44,23 +44,11 @@
 #include "include/mm_sound_mgr_headset.h"
 #include "include/mm_sound_mgr_pulse.h"
 #include "include/mm_sound_mgr_asm.h"
+#include "include/mm_sound_hal.h"
 
 #define EARJACK_WITH_MIC	2
 
 #define MAX_STRING_LEN	256
-
-#define DEVICE_API_BLUETOOTH	"bluez"
-#define DEVICE_API_ALSA	"alsa"
-#ifdef USE_PULSE_WFD /* Not enabled yet */
-#define DEVICE_API_WFD	"wfd"
-#endif
-
-#define DEVICE_BUS_BLUETOOTH "bluetooth"
-#define DEVICE_BUS_USB "usb"
-#define DEVICE_BUS_BUILTIN "builtin"
-#ifdef SEPARATE_SPEAKER_AND_WIRED_ACCESSORY
-#define DEVICE_BUS_WIRED "wired"
-#endif
 
 #define	MM_SOUND_DEVICE_OUT_ANY 0x000FFF00
 #define MM_SOUND_DEVICE_IN_ANY	 0x000000FF
@@ -346,10 +334,10 @@ static int __set_playback_route_communication (session_state_t state)
 		}
 
 
-		if (AVSYS_FAIL(avsys_audio_set_path_ex( gain,
+		if (audio_hal_set_sound_path(gain,
 				AVSYS_AUDIO_PATH_EX_NONE, AVSYS_AUDIO_PATH_EX_NONE,
-				AVSYS_AUDIO_PATH_OPTION_NONE ))) {
-			debug_error ("avsys_audio_set_path_ex() failed [%x]\n", ret);
+				AVSYS_AUDIO_PATH_OPTION_NONE)) {
+			debug_error ("audio_hal_set_sound_path() failed\n");
 			ret = MM_ERROR_SOUND_INTERNAL;
 			goto ROUTE_COMM_EXIT;
 		}
@@ -390,21 +378,20 @@ static int __set_playback_route_fmradio (session_state_t state)
 			out = AVSYS_AUDIO_PATH_EX_A2DP;
 
 		/* PATH SET */
-		if (AVSYS_FAIL(avsys_audio_set_path_ex( AVSYS_AUDIO_GAIN_EX_FMRADIO,
+		if (audio_hal_set_sound_path(AVSYS_AUDIO_GAIN_EX_FMRADIO,
 										out, AVSYS_AUDIO_PATH_EX_FMINPUT,
-										AVSYS_AUDIO_PATH_OPTION_NONE))) {
-			debug_error ("avsys_audio_set_path_ex() failed\n");
+										AVSYS_AUDIO_PATH_OPTION_NONE)) 	{
+			debug_error ("audio_hal_set_sound_path() failed\n");
 			ret = MM_ERROR_SOUND_INTERNAL;
 			goto ROUTE_FMRADIO_EXIT;
 		}
 
-
 	} else { /* SESSION_END */
 		/* PATH RELEASE */
-		if (AVSYS_FAIL(avsys_audio_set_path_ex( AVSYS_AUDIO_GAIN_EX_FMRADIO,
+		if (audio_hal_set_sound_path(AVSYS_AUDIO_GAIN_EX_FMRADIO,
 										AVSYS_AUDIO_PATH_EX_NONE, AVSYS_AUDIO_PATH_EX_NONE,
-										AVSYS_AUDIO_PATH_OPTION_NONE ))) {
-			debug_error ("avsys_audio_set_path_ex() failed\n");
+										AVSYS_AUDIO_PATH_OPTION_NONE)) {
+			debug_error ("audio_hal_set_sound_path() failed\n");
 			ret = MM_ERROR_SOUND_INTERNAL;
 			goto ROUTE_FMRADIO_EXIT;
 		}
@@ -487,27 +474,12 @@ static int __set_sound_path_for_current_active (void)
 	}
 
 	/* Pulseaudio route */
-	if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_A2DP)) {
-		debug_log ("BT A2DP is active, Set default sink to BLUEZ");
-		MMSoundMgrPulseSetDefaultSink (DEVICE_API_BLUETOOTH, DEVICE_BUS_BLUETOOTH);
-		goto CURRENT_ACTIVE_END;
-	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_WFD)) {
-#ifdef USE_PULSE_WFD /* Not enabled yet */
-		debug_log ("WFD is active, Set default sink to WFD");
-		MMSoundMgrPulseSetDefaultSink (DEVICE_API_WFD, DEVICE_BUS_BUILTIN);
-		goto CURRENT_ACTIVE_END;
-#endif
-	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_USB_AUDIO)) {
-		debug_log ("USB Audio is active, Set default sink to USB Audio");
-		MMSoundMgrPulseSetDefaultSink (DEVICE_API_ALSA, DEVICE_BUS_USB);
+	if (audio_hal_pulse_sink_route(g_info.device_active)) {
 		goto CURRENT_ACTIVE_END;
 	}
-
-#ifndef SEPARATE_SPEAKER_AND_WIRED_ACCESSORY
-	/* ALSA route */
-	debug_log ("Set default sink to ALSA with BUILTIN");
-	MMSoundMgrPulseSetDefaultSink (DEVICE_API_ALSA, DEVICE_BUS_BUILTIN);
-#endif
+	if (audio_hal_pulse_source_route(g_info.device_active)) {
+		goto CURRENT_ACTIVE_END;
+	}
 
 	/* prepare IN */
 	if (IS_ACTIVE(MM_SOUND_DEVICE_IN_MIC)) {
@@ -587,24 +559,9 @@ static int __set_sound_path_for_current_active (void)
 		break;
 	}
 
-#ifdef SEPARATE_SPEAKER_AND_WIRED_ACCESSORY
-	if (!IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_A2DP)) {
-		debug_log ("BT A2DP is not active, Set default sink to ALSA_XX");
-		if (out == AVSYS_AUDIO_PATH_EX_HEADSET) {
-			debug_log ("Set default sink to ALSA_WIRED_ACCESSORY");
-			MMSoundMgrPulseSetDefaultSink (DEVICE_API_ALSA, DEVICE_BUS_WIRED);
-		} else if (out == AVSYS_AUDIO_PATH_EX_SPK) {
-			debug_log ("Set default sink to ALSA_SPEAKER");
-			MMSoundMgrPulseSetDefaultSink (DEVICE_API_ALSA, DEVICE_BUS_BUILTIN);
-		}
-	}
-#endif
-
-	debug_log ("Trying to set avsys set path gain[%d], out[%d], in[%d], option[%d]\n", gain, out, in, option);
-
 	/* Set Path (GAIN, OUT, IN) */
-	if (AVSYS_FAIL(avsys_audio_set_path_ex(gain, out, in, option))) {
-		debug_error ("avsys_audio_set_path_ex failed\n");
+	if (audio_hal_set_sound_path(gain, out, in, option)) {
+		debug_error ("audio_hal_set_sound_path failed\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
 	}
 
@@ -622,10 +579,10 @@ static int __set_sound_path_to_dual (void)
 
 	/* Sound path for ALSA */
 	debug_log ("Set path to DUAL.\n");
-	if (AVSYS_FAIL(avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_KEYTONE,
+	if (audio_hal_set_sound_path(AVSYS_AUDIO_GAIN_EX_KEYTONE,
 						AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE,
-						AVSYS_AUDIO_PATH_OPTION_DUAL_OUT))) {
-		debug_error ("avsys_audio_set_path_ex failed\n");
+						AVSYS_AUDIO_PATH_OPTION_DUAL_OUT)) {
+		debug_error ("audio_hal_set_sound_path() failed\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
 	}
 
@@ -642,10 +599,10 @@ static int __set_sound_path_to_speaker (void)
 
 	/* Sound path for ALSA */
 	debug_log ("Set path to SPEAKER.\n");
-	if(AVSYS_FAIL(avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_KEYTONE,
+	if (audio_hal_set_sound_path(AVSYS_AUDIO_GAIN_EX_KEYTONE,
 						AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE,
-						AVSYS_AUDIO_PATH_OPTION_NONE))) {
-		debug_error ("avsys_audio_set_path_ex failed\n");
+						AVSYS_AUDIO_PATH_OPTION_NONE)) {
+		debug_error ("audio_hal_set_sound_path failed\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
 	}
 

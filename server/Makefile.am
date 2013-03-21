@@ -14,7 +14,8 @@ sound_server_SOURCES = mm_sound_mgr_codec.c \
 						mm_sound_mgr_run.c \
 						mm_sound_plugin.c \
 						mm_sound_server.c \
-						mm_sound_thread_pool.c
+						mm_sound_thread_pool.c \
+						mm_sound_hal.c
 
 sound_server_CFLAGS = -I$(srcdir)/../include \
 					  -I$(srcdir)/include \
@@ -23,6 +24,7 @@ sound_server_CFLAGS = -I$(srcdir)/../include \
 					  -DMMF_LOG_OWNER=0x020 \
 					  -DMMF_DEBUG_PREFIX=\"MMF-SOUND\" \
 					  -D__DEBUG_MODE__ -DUSE_VCONF -D__USE_LOGMANAGER__ \
+					  -rdynamic \
 					  $(MMSESSION_CFLAGS) \
 					  $(AVSYSTEM_CFLAGS) \
 			  		  $(AUDIOSESSIONMGR_CFLAGS) \

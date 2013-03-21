@@ -460,6 +460,7 @@ int MMSoundMgrPulseHandleIsBtA2DPOnReq (mm_ipc_msg_t *msg, int (*sendfunc)(mm_ip
 	return ret;
 }
 
+EXPORT_API
 void MMSoundMgrPulseSetDefaultSink (char* device_api_name, char* device_bus_name)
 {
 	debug_enter("\n");

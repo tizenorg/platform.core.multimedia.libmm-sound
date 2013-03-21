@@ -131,6 +131,8 @@ ln -s %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4
 %{_libdir}/libmmfsound.so
 %{_libdir}/libmmfsoundcommon.so
 %{_includedir}/mmf/mm_sound_private.h
+%{_includedir}/mmf/mm_sound_plugin.h
+%{_includedir}/mmf/mm_sound_plugin_hal.h
 
 
 %files sdk-devel

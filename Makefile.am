@@ -10,7 +10,9 @@ lib_LTLIBRARIES = libmmfsound.la
 
 includelibmmfsounddir = $(includedir)/mmf
 includelibmmfsound_HEADERS = include/mm_sound.h \
-							include/mm_sound_private.h
+							include/mm_sound_private.h \
+							server/include/mm_sound_plugin.h \
+							server/include/mm_sound_plugin_hal.h
 
 libmmfsound_la_SOURCES = mm_sound.c \
 			mm_sound_client.c 

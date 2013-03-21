@@ -248,6 +248,7 @@ int main(int argc, char **argv)
 		MMSoundThreadPoolInit();
 		MMSoundMgrRunInit(serveropt.plugdir);
 		MMSoundMgrCodecInit(serveropt.plugdir);
+		MMSoundMgrHALInit(serveropt.plugdir);
 		if (!serveropt.testmode)
 			MMSoundMgrIpcInit();
 
@@ -283,6 +284,7 @@ int main(int argc, char **argv)
 
 		MMSoundMgrCodecFini();
 		MMSoundMgrRunFini();
+		MMSoundMgrHALFini();
 		MMSoundThreadPoolFini();
 
 		MMSoundMgrWfdFini();

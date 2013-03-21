@@ -35,6 +35,7 @@
 #include "../../include/mm_ipc.h"
 #include "../../include/mm_sound_thread_pool.h"
 #include "../../include/mm_sound_plugin_codec.h"
+#include "../../include/mm_sound_hal.h"
 #include "../../../include/mm_sound_private.h"
 
 
@@ -408,7 +409,7 @@ static void _runing(void *param)
 		/* if current out is not speaker, then force set path to speaker */
 		if (out != AVSYS_AUDIO_PATH_EX_SPK) {
 			debug_msg("[CODEC WAV] current out is not SPEAKER, set path to SPEAKER now!!!\n");
-			avsys_audio_set_path_ex(AVSYS_AUDIO_GAIN_EX_AUDIOPLAYER, AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE, AVSYS_AUDIO_PATH_OPTION_NONE);
+			audio_hal_set_sound_path(AVSYS_AUDIO_GAIN_EX_AUDIOPLAYER, AVSYS_AUDIO_PATH_EX_SPK, AVSYS_AUDIO_PATH_EX_NONE, AVSYS_AUDIO_PATH_OPTION_NONE);
 		}
 		break;
 	case MM_SOUND_HANDLE_ROUTE_USING_CURRENT:
@@ -476,8 +477,7 @@ static void _runing(void *param)
 			if (gain_after != gain || out_after != out || in_after != in || option_after != option) {
 
 				debug_msg("[CODEC WAV] Restore path to previous one\n");
-				ret = avsys_audio_set_path_ex(gain, out, in, option);
-				if(AVSYS_FAIL(ret)) {
+				if (audio_hal_set_sound_path(gain, out, in, option)) {
 					debug_error("[CODEC WAV] Can not restore sound path\n");
 				}
 			}
