@@ -1,0 +1,8 @@
+Change-Id: I4e242376569ec549460ba2b9fdb026017315b4a3
+Code-Review+2: Anas Nashif
+Verified+1: Rusty Lynch <rusty.lynch@intel.com>
+Submitted-by: Anas Nashif
+Submitted-at: Wed, 29 May 2013 05:47:49 -0700
+Reviewed-on: https://review.tizen.org/gerrit/3708
+Project: platform/core/multimedia/libmm-sound
+Branch: refs/heads/tizen
