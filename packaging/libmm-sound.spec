@@ -7,6 +7,7 @@ License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1:    sound-server.service
 Source2:    sound-server.path
+Source1001: 	libmm-sound.manifest
 Requires(post): /sbin/ldconfig
 Requires(post): /usr/bin/vconftool
 Requires(postun): /sbin/ldconfig
@@ -53,6 +54,7 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
 
 
 %build
@@ -104,7 +106,7 @@ ln -s %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4
 
 
 %files
-%manifest libmm-sound.manifest
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_bindir}/sound_server
 %{_libdir}/libmmfsound.so.*
@@ -125,6 +127,7 @@ ln -s %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4
 %{_libdir}/systemd/system/sound-server.path
 
 %files devel
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_libdir}/libmmfkeysound.so
 %{_libdir}/libmmfsound.so
@@ -135,11 +138,13 @@ ln -s %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4
 
 
 %files sdk-devel
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_includedir}/mmf/mm_sound.h
 %{_libdir}/pkgconfig/mm-keysound.pc
 %{_libdir}/pkgconfig/mm-sound.pc
 
 %files tool
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_bindir}/mm_sound_testsuite
