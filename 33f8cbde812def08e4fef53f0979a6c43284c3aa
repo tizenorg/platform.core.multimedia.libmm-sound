@@ -1,0 +1,8 @@
+Change-Id: I33f8cbde812def08e4fef53f0979a6c43284c3aa
+Code-Review+2: Ryan Ware <ware@linux.intel.com>
+Verified+1: Ryan Ware <ware@linux.intel.com>
+Submitted-by: Ryan Ware <ware@linux.intel.com>
+Submitted-at: Mon, 08 Jul 2013 10:06:21 -0700
+Reviewed-on: https://review.tizen.org/gerrit/4586
+Project: platform/core/multimedia/libmm-sound
+Branch: refs/heads/tizen
