@@ -73,10 +73,10 @@ make %{?_smp_mflags}
 
 %install
 %make_install
-install -d %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants
-install -m0644 %{SOURCE1} %{buildroot}%{_libdir}/systemd/system/
-install -m0644 %{SOURCE2} %{buildroot}%{_libdir}/systemd/system/
-ln -sf ../sound-server.path %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants/sound-server.path
+install -d %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
+install -m0644 %{SOURCE1} %{buildroot}/usr/lib/systemd/system/
+install -m0644 %{SOURCE2} %{buildroot}/usr/lib/systemd/system/
+ln -sf ../sound-server.path %{buildroot}/usr/lib/systemd/system/multi-user.target.wants/sound-server.path
 
 # FIXME: remove after systemd is in
 mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc3.d
@@ -122,9 +122,9 @@ ln -s %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4
 %{_sysconfdir}/rc.d/rc3.d/S23soundserver
 %{_sysconfdir}/rc.d/rc4.d/S23soundserver
 /usr/share/sounds/sound-server/*
-%{_libdir}/systemd/system/multi-user.target.wants/sound-server.path
-%{_libdir}/systemd/system/sound-server.service
-%{_libdir}/systemd/system/sound-server.path
+/usr/lib/systemd/system/multi-user.target.wants/sound-server.path
+/usr/lib/systemd/system/sound-server.service
+/usr/lib/systemd/system/sound-server.path
 
 %files devel
 %manifest %{name}.manifest

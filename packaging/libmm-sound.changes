@@ -1,3 +1,6 @@
+* Tue Jul 09 2013 Patrick McCarty <patrick.mccarty@linux.intel.com> dc6f19c
+- Fix paths for systemd service files
+
 * Tue May 28 2013 Rusty Lynch <rusty.lynch@intel.com> submit/tizen/20130529.060510@9ed1664
 - Remove bogus dep on pidof
 
