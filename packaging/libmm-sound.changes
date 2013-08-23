@@ -1,3 +1,7 @@
+* Fri Aug 23 2013 Ismo Puustinen <ismo.puustinen@intel.com> submit/tizen/20130710.221358@1b14690
+- Do not unref a NULL pointer.
+- Make ASM handling external.
+
 * Tue Jul 09 2013 Patrick McCarty <patrick.mccarty@linux.intel.com> dc6f19c
 - Fix paths for systemd service files
 
