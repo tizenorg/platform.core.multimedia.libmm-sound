@@ -1,3 +1,6 @@
+* Thu Sep 26 2013 Ismo Puustinen <ismo.puustinen@intel.com> submit/tizen/20130906.020125@15f62f0
+- packaging: use the same rpmbuild macro name for enabling Murphy support everywhere.
+
 * Fri Aug 23 2013 Ismo Puustinen <ismo.puustinen@intel.com> submit/tizen/20130710.221358@1b14690
 - Do not unref a NULL pointer.
 - Make ASM handling external.

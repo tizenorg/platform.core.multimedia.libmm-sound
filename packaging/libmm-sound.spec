@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.7.2b
+Version:    0.7.2c
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -68,7 +68,7 @@ CFLAGS="%{optflags} -fvisibility=hidden -DMM_DEBUG_FLAG -DEXPORT_API=\"__attribu
 CFLAGS="%{optflags} -fvisibility=hidden -DMM_DEBUG_FLAG -DSEPARATE_SPEAKER_AND_WIRED_ACCESSORY -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\""; export CFLAGS
 %endif
 %endif
-%if 0%{?enable_murphy}
+%if %{with audio_session_manager_with_murphy}
 CFLAGS=$CFLAGS" -DMURPHY"; export CFLAGS
 %endif
 %configure --prefix=/usr --enable-pulse --enable-security
