@@ -70,7 +70,7 @@ CFLAGS="%{optflags} -fvisibility=hidden -DMM_DEBUG_FLAG -DSEPARATE_SPEAKER_AND_W
 %endif
 %endif
 %if %{with audio_session_manager_with_murphy}
-CFLAGS=$CFLAGS" -DMURPHY"; export CFLAGS
+CFLAGS="$CFLAGS -DMURPHY"; export CFLAGS
 %endif
 %configure --prefix=/usr --enable-pulse --enable-security
 make %{?_smp_mflags}
