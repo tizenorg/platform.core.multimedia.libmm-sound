@@ -1,3 +1,7 @@
+* Thu Sep 27 2013 Jaska Uimonen <jaska.uimonen@intel.com> 0.7.2e
+- packaging: more shell-safe CFLAGS appending.
+- Fixes TIVI-1887 (https://bugs.tizen.org/jira/browse/TIVI-1887).
+
 * Thu Sep 27 2013 Jaska Uimonen <jaska.uimonen@intel.com> 0.7.2d
 - packaging: enable conditional variable propagation from build configuration.
 
