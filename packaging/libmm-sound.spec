@@ -1,7 +1,7 @@
 %bcond_with audio_session_manager_with_murphy
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.7.2c
+Version:    0.7.2d
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0

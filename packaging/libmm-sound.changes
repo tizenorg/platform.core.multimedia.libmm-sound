@@ -1,3 +1,6 @@
+* Thu Sep 27 2013 Jaska Uimonen <jaska.uimonen@intel.com> 0.7.2d
+- packaging: enable conditional variable propagation from build configuration.
+
 * Thu Sep 26 2013 Ismo Puustinen <ismo.puustinen@intel.com> submit/tizen/20130906.020125@15f62f0
 - packaging: use the same rpmbuild macro name for enabling Murphy support everywhere.
 
