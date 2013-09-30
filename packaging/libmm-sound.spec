@@ -51,7 +51,13 @@ Requires:   %{name} = %{version}-%{release}
 %description tool
 MMSound utility package - contians mm_sound_testsuite, sound_check for sound system
 
+%package -n sound-server
+Summary: MMSound server
+Group:   System/Audio
+Requires: %{name} = %{version}-%{release}
 
+%description -n sound-server
+MMSound server package - contains sound-server binaries
 
 %prep
 %setup -q
@@ -106,7 +112,6 @@ ln -sf ../sound-server.path %{buildroot}/usr/lib/systemd/system/multi-user.targe
 %files
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
-%{_bindir}/sound_server
 %{_libdir}/libmmfsound.so.*
 %{_libdir}/libmmfsoundcommon.so.*
 %{_libdir}/libmmfkeysound.so.*
@@ -116,10 +121,6 @@ ln -sf ../sound-server.path %{buildroot}/usr/lib/systemd/system/multi-user.targe
 %{_libdir}/soundplugins/libsoundplugintone.so
 %{_libdir}/soundplugins/libsoundpluginwave.so
 %{_libdir}/soundplugins/libsoundpluginkeytone.so
-/usr/share/sounds/sound-server/*
-/usr/lib/systemd/system/multi-user.target.wants/sound-server.path
-/usr/lib/systemd/system/sound-server.service
-/usr/lib/systemd/system/sound-server.path
 
 %files devel
 %manifest %{name}.manifest
@@ -143,3 +144,12 @@ ln -sf ../sound-server.path %{buildroot}/usr/lib/systemd/system/multi-user.targe
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_bindir}/mm_sound_testsuite
+
+%files -n sound-server
+%manifest %{name}.manifest
+%defattr(-,root,root,-)
+%{_bindir}/sound_server
+%{_datadir}/sounds/sound-server/*
+/usr/lib/systemd/system/multi-user.target.wants/sound-server.path
+/usr/lib/systemd/system/sound-server.service
+/usr/lib/systemd/system/sound-server.path
