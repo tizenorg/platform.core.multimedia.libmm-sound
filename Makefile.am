@@ -13,10 +13,10 @@ includelibmmfsound_HEADERS = include/mm_sound.h \
 							server/include/mm_sound_plugin_hal.h
 
 libmmfsound_la_SOURCES = mm_sound.c \
-			mm_sound_client.c 
+			mm_sound_client.c
 
 libmmfsound_la_DEPENDENCIES = common/libmmfsoundcommon.la
-								
+
 
 libmmfsound_la_CFLAGS = -I$(srcdir)/include \
 			$(MMCOMMON_CFLAGS) \
@@ -32,7 +32,7 @@ libmmfsound_la_CFLAGS = -I$(srcdir)/include \
 if USE_PULSE
 libmmfsound_la_CFLAGS += -DPULSE_CLIENT
 endif
-			
+
 
 libmmfsound_la_LIBADD = $(MMCOMMON_LIBS) \
 			$(AVSYSTEM_LIBS) \
@@ -41,7 +41,7 @@ libmmfsound_la_LIBADD = $(MMCOMMON_LIBS) \
 			$(GLIB2_LIBS) \
 			$(srcdir)/common/libmmfsoundcommon.la \
 			$(VCONF_LIBS)
-			
+
 libmmfsound_la_LDFLAGS = -version-info 1:0:1
 
 #For logmanager
