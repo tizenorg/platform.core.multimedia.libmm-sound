@@ -45,7 +45,7 @@ MMSound development package for sound system
 
 %package tool
 Summary: MMSound utility package - contians mm_sound_testsuite, sound_check
-Group:      TO_BE/FILLED_IN
+Group:      System/Audio
 Requires:   %{name} = %{version}-%{release}
 
 %description tool
