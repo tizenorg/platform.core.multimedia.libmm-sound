@@ -235,7 +235,7 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 
 	debug_enter("\n");
 	debug_msg("[CODEC WAV] Local keytone_period : %d\n", keytone_period);
-	debug_msg("[CODEC WAV] Local keytone_handle : %d\n", (int)keytone_handle);
+	debug_msg("[CODEC WAV] Local keytone_handle : %p\n", keytone_handle);
 	
 	debug_msg("[CODEC WAV] Type %s\n", info->codec == MM_SOUND_SUPPORTED_CODEC_WAVE ? "PCM Wave" : "Unknown");
 	debug_msg("[CODEC WAV] channels   : %d\n", info->channels);
