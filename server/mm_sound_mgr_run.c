@@ -28,7 +28,7 @@
 #include <mm_error.h>
 #include <mm_debug.h>
 
-static void _MMsoundMgrRunRunInternal(void *param);
+static void _MMsoundMgrRunRunInternal(int param);
 
 static MMSoundPluginType *g_run_plugins = NULL;
 
@@ -92,15 +92,15 @@ int MMSoundMgrRunStopAll(void)
     return MM_ERROR_NONE;
 }
 
-static void _MMsoundMgrRunRunInternal(void *param)
+static void _MMsoundMgrRunRunInternal(int param)
 {
 	int err = MM_ERROR_NONE;
 	mmsound_run_interface_t intface;
 	void* func = NULL;
 
-	debug_enter("plugin number %d\n", (int)param);
+	debug_enter("plugin number %p\n", param);
 
-	err = MMSoundPluginGetSymbol(&g_run_plugins[(int)param], RUN_GET_INTERFACE_FUNC_NAME, &func);
+	err = MMSoundPluginGetSymbol(&g_run_plugins[param], RUN_GET_INTERFACE_FUNC_NAME, &func);
 	if (err  != MM_ERROR_NONE) {
 		debug_error("Get Symbol RUN_GET_INTERFACE_FUNC_NAME is fail : %x\n", err);
 	}

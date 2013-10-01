@@ -458,7 +458,7 @@ static int _MMSoundMgrIpcPlayFile(int *codechandle, mm_ipc_msg_t *msg)
 	debug_msg("Priority %d\n", param.priority);
 	debug_msg("VolumeConfig %x\n", param.volume_config);
 	debug_msg("callback %p\n", param.callback);
-	debug_msg("param %d\n", (int)param.param);
+	debug_msg("param %p\n", param.param);
 	debug_msg("source type %d\n", param.source->type);
 	debug_msg("source ptr %p\n", param.source->ptr);
 	debug_msg("keytone %d\n", param.keytone);
@@ -613,7 +613,7 @@ static int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg)
 	debug_msg("Priority %d\n",param.priority);
 	debug_msg("VolumeConfig %x\n",param.volume_config);
 	debug_msg("callback %p\n", param.callback);
-	debug_msg("param %d\n", (int)param.param);
+	debug_msg("param %p\n", param.param);
 	debug_msg("source type %d\n", param.source->type);
 	debug_msg("source ptr %p\n", param.source->ptr);
 	debug_msg("keytone %d\n", param.keytone);
@@ -685,7 +685,7 @@ static int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg)
 	debug_msg("VolumeConfig %x\n",param.volume_config);
 	debug_msg("Priority %d\n", param.priority);
 	debug_msg("callback %p\n", param.callback);
-	debug_msg("param %d\n", (int)param.param);
+	debug_msg("param %p\n", param.param);
 	debug_msg("session %d\n", param.session_type);
 
 	ret = MMSoundMgrCodecPlayDtmf(codechandle, &param);
