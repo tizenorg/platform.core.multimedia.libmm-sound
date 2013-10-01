@@ -79,7 +79,8 @@ int mm_source_open_file(const char *filename, MMSourceType *source, int drmsuppo
 	debug_fenter();
 	debug_msg("Open file name is %s\n", filename);
     unsigned int mediaSize,readSize,offSet=0;
-	char genStr[20],i; 
+	char genStr[20];
+	int i;
 		
 	if (fd == -1)
 	{
@@ -216,7 +217,7 @@ int mm_source_open_full_memory(const void *ptr, int totsize, int alloc, MMSource
 	}
 	else
 	{
-	    source->ptr = ptr;
+	    source->ptr = (void*)ptr;
 	    source->tot_size = totsize;
 	    source->cur_size = totsize;
 
