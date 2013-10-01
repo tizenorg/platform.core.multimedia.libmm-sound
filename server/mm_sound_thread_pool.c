@@ -43,7 +43,7 @@ typedef struct __THREAD_INFO
 
 static void __DummyWork (void* param)
 {
-	debug_msg ("thread index = %d\n", (int)param);
+	debug_msg ("thread index = %p\n", param);
 	sleep (1);
 }
 

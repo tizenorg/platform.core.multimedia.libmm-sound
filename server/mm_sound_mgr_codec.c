@@ -483,9 +483,9 @@ static int _MMSoundMgrCodecStopCallback(int param)
 		debug_msg("[CODEC MGR] msgcallback : %p\n", g_slots[param].msgcallback);
 		debug_msg("[CODEC MGR] msg data : %p\n", g_slots[param].msgdata);
 		debug_msg("[CODEC MGR] mgr codec callback : %p\n", g_slots[param].callback);
-		g_slots[param].callback((int)g_slots[param].param, g_slots[param].msgcallback, g_slots[param].msgdata);		/*param means client msg_type */
+		g_slots[param].callback(g_slots[param].param, g_slots[param].msgcallback, g_slots[param].msgdata); /* param means client msg_type */
 	}
-	debug_msg("Client callback msg_type (instance) : [%d]\n", (int)g_slots[param].param);
+	debug_msg("Client callback msg_type (instance) : [%p]\n", g_slots[param].param);
 	debug_msg("Handle allocated handle : [0x%08X]\n", g_slots[param].plughandle);
 	err = g_plugins[g_slots[param].pluginid].Destroy(g_slots[param].plughandle);
 	if (err < 0 ) {
