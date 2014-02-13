@@ -1,3 +1,7 @@
+* Thu Feb 13 2014 Jaska Uimonen <jaska.uimonen@intel.com> 0.7.2f
+- makes samsung policy optional
+- Fixes TIVI-2711 (https://bugs.tizen.org/jira/browse/TIVI-2711).
+
 * Thu Sep 27 2013 Jaska Uimonen <jaska.uimonen@intel.com> 0.7.2e
 - packaging: more shell-safe CFLAGS appending.
 - Fixes TIVI-1887 (https://bugs.tizen.org/jira/browse/TIVI-1887).
