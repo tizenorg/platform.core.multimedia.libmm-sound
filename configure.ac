@@ -76,6 +76,20 @@ AC_SUBST(PULSE_LIBS)
 fi
 AM_CONDITIONAL([USE_PULSE], [test "x$USE_PULSE" = "xyes"])
 
+AC_ARG_ENABLE(policy, AC_HELP_STRING([--enable-policy], [enable use of samsung policy module in pulse]),
+[
+ case "${enableval}" in
+	 yes) USE_POLICY=yes ; AC_MSG_NOTICE([using samsung policy]);;
+	 no)  USE_POLICY=no ; AC_MSG_NOTICE([not using samsung policy]);;
+	 *)   AC_MSG_ERROR(bad value ${enableval} for --enable-policy) ;;
+ esac
+ ],[USE_POLICY=no])
+
+AM_CONDITIONAL([USE_POLICY], [test "x$USE_POLICY" = "xyes"])
+if test "x$USE_POLICY" = "xyes"; then
+    AC_DEFINE([USE_POLICY], 1, [enable samsung policy])
+fi
+
 dnl use security --------------------------------------------------------------------------
 AC_ARG_ENABLE(security, AC_HELP_STRING([--enable-security], [using security]),
 [

@@ -1,4 +1,6 @@
 %bcond_with audio_session_manager_with_murphy
+%bcond_with pulseaudio_samsung_policy
+
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
 Version:    0.7.2e
@@ -72,7 +74,11 @@ CFLAGS="%{optflags} -fvisibility=hidden -DMM_DEBUG_FLAG -DSEPARATE_SPEAKER_AND_W
 %if %{with audio_session_manager_with_murphy}
 CFLAGS="$CFLAGS -DMURPHY"; export CFLAGS
 %endif
+%if %{with pulseaudio_samsung_policy}
+%configure --prefix=/usr --enable-pulse --enable-security --enable-policy
+%else
 %configure --prefix=/usr --enable-pulse --enable-security
+%endif
 make %{?_smp_mflags}
 
 %install

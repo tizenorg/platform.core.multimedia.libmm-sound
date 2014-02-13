@@ -32,6 +32,7 @@
 
 #include <errno.h>
 
+#include "config.h"
 #include "include/mm_sound_mgr_common.h"
 #include "../include/mm_sound_common.h"
 
@@ -42,7 +43,10 @@
 //#include <avsys-audio.h>
 
 #include <pulse/pulseaudio.h>
+
+#ifdef USE_POLICY
 #include <pulse/ext-policy.h>
+#endif
 
 #define SUPPORT_MONO_AUDIO
 
@@ -387,7 +391,9 @@ static void mono_changed_cb(keynode_t* node, void* data)
 	vconf_get_bool(MONO_KEY, &key_value);
 	debug_msg ("key value = %d\n", key_value);
 
+#ifdef USE_POLICY
 	pa_operation_unref (pa_ext_policy_set_mono (pinfo->context, key_value, success_cb, NULL));
+#endif
 }
 
 int MMSoundMgrPulseHandleRegisterMonoAudio (void* pinfo)
