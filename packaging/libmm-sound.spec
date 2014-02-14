@@ -23,6 +23,7 @@ BuildRequires: pkgconfig(vconf)
 BuildRequires: pkgconfig(heynoti)
 BuildRequires: pkgconfig(security-server)
 BuildRequires: pkgconfig(libpulse)
+BuildRequires: pulseaudio-module-devel
 
 %description
 MMSound Package contains client lib and sound_server binary for sound system
