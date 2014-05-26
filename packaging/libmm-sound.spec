@@ -1,5 +1,4 @@
 %bcond_with audio_session_manager_with_murphy
-%bcond_with pulseaudio_samsung_policy
 
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
