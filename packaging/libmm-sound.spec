@@ -74,7 +74,7 @@ CFLAGS="%{optflags} -fvisibility=hidden -DMM_DEBUG_FLAG -DSEPARATE_SPEAKER_AND_W
 %if %{with audio_session_manager_with_murphy}
 CFLAGS="$CFLAGS -DMURPHY"; export CFLAGS
 %endif
-%if %{with pulseaudio_samsung_policy}
+%if 0%{?_with_pulseaudio_samsung_policy}
 %configure --prefix=/usr --enable-pulse --enable-security --enable-policy
 %else
 %configure --prefix=/usr --enable-pulse --enable-security
