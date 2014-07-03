@@ -10,20 +10,20 @@ License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1:    sound-server.service
 Source2:    sound-server.path
-Source1001: 	libmm-sound.manifest
-Requires(post): /sbin/ldconfig
-Requires(post): /usr/bin/vconftool
-Requires(postun): /sbin/ldconfig
-BuildRequires: pkgconfig(mm-common)
-BuildRequires: pkgconfig(avsystem)
-BuildRequires: pkgconfig(mm-log)
-BuildRequires: pkgconfig(mm-session)
-BuildRequires: pkgconfig(audio-session-mgr)
-BuildRequires: pkgconfig(sysman)
-BuildRequires: pkgconfig(glib-2.0)
-BuildRequires: pkgconfig(vconf)
-BuildRequires: pkgconfig(heynoti)
-BuildRequires: pkgconfig(security-server)
+Source1001:         libmm-sound.manifest
+Requires(post):     /sbin/ldconfig
+Requires(post):     /usr/bin/vconftool
+Requires(postun):   /sbin/ldconfig
+BuildRequires:      pkgconfig(mm-common)
+BuildRequires:      pkgconfig(avsystem)
+BuildRequires:      pkgconfig(mm-log)
+BuildRequires:      pkgconfig(mm-session)
+BuildRequires:      pkgconfig(audio-session-mgr)
+BuildRequires:      pkgconfig(sysman)
+BuildRequires:      pkgconfig(glib-2.0)
+BuildRequires:      pkgconfig(vconf)
+BuildRequires:      pkgconfig(heynoti)
+BuildRequires:      pkgconfig(security-server)
 
 %description
 MMSound Package contains client lib and sound_server binary for sound system
@@ -31,7 +31,7 @@ MMSound Package contains client lib and sound_server binary for sound system
 
 %package devel
 Summary: MMSound development package
-Group:      Development/Libraries
+Group:      System/Libraries
 Requires:   %{name} = %{version}-%{release}
 
 %description devel
@@ -39,7 +39,7 @@ MMSound development package for sound system
 
 %package sdk-devel
 Summary: MMSound development package
-Group:      Development/Libraries
+Group:      System/Libraries
 Requires:   %{name}-devel = %{version}-%{release}
 
 %description sdk-devel
@@ -47,12 +47,11 @@ MMSound development package for sound system
 
 %package tool
 Summary: MMSound utility package - contians mm_sound_testsuite, sound_check
-Group:      TO_BE/FILLED_IN
+Group:      System/Utilities
 Requires:   %{name} = %{version}-%{release}
 
 %description tool
 MMSound utility package - contians mm_sound_testsuite, sound_check for sound system
-
 
 
 %prep
@@ -75,26 +74,26 @@ CFLAGS="%{optflags} -fvisibility=hidden -DMM_DEBUG_FLAG -DSEPARATE_SPEAKER_AND_W
 CFLAGS="$CFLAGS -DMURPHY"; export CFLAGS
 %endif
 %if %{with pulseaudio_samsung_policy}
-%configure --prefix=/usr --enable-pulse --enable-security --enable-policy
+%reconfigure --prefix=/usr --enable-pulse --enable-security --enable-policy
 %else
-%configure --prefix=/usr --enable-pulse --enable-security
+%reconfigure --prefix=/usr --enable-pulse --enable-security
 %endif
-make %{?_smp_mflags}
+%__make %{?_smp_mflags}
+
 
 %install
 %make_install
-install -d %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
-install -m0644 %{SOURCE1} %{buildroot}/usr/lib/systemd/system/
-install -m0644 %{SOURCE2} %{buildroot}/usr/lib/systemd/system/
-ln -sf ../sound-server.path %{buildroot}/usr/lib/systemd/system/multi-user.target.wants/sound-server.path
+install -d %{buildroot}%{_prefix}/lib/systemd/system/multi-user.target.wants
+install -m0644 %{SOURCE1} %{buildroot}%{_prefix}/lib/systemd/system/
+install -m0644 %{SOURCE2} %{buildroot}%{_prefix}/lib/systemd/system/
+ln -sf ../sound-server.path %{buildroot}%{_prefix}/lib/systemd/system/multi-user.target.wants/sound-server.path
 
 # FIXME: remove after systemd is in
 mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc3.d
 mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc4.d
 mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc5.d
-ln -s %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S23soundserver
-ln -s %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4.d/S23soundserver
-
+ln -sf %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S23soundserver
+ln -sf %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4.d/S23soundserver
 
 
 %post
@@ -131,10 +130,10 @@ ln -s %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4
 %attr(0755,root,root) %{_sysconfdir}/rc.d/init.d/soundserver
 %{_sysconfdir}/rc.d/rc3.d/S23soundserver
 %{_sysconfdir}/rc.d/rc4.d/S23soundserver
-/usr/share/sounds/sound-server/*
-/usr/lib/systemd/system/multi-user.target.wants/sound-server.path
-/usr/lib/systemd/system/sound-server.service
-/usr/lib/systemd/system/sound-server.path
+%{_prefix}/share/sounds/sound-server/*
+%{_prefix}/lib/systemd/system/multi-user.target.wants/sound-server.path
+%{_prefix}/lib/systemd/system/sound-server.service
+%{_prefix}/lib/systemd/system/sound-server.path
 
 %files devel
 %manifest %{name}.manifest
@@ -145,7 +144,6 @@ ln -s %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4
 %{_includedir}/mmf/mm_sound_private.h
 %{_includedir}/mmf/mm_sound_plugin.h
 %{_includedir}/mmf/mm_sound_plugin_hal.h
-
 
 %files sdk-devel
 %manifest %{name}.manifest
