@@ -213,7 +213,7 @@ int mm_sound_volume_get_step(volume_type_t type, int *step)
 
 	err = avsys_audio_get_volume_max_ex((int)type, step);
 	if (AVSYS_FAIL(err)) {
-		err = MM_ERROR_INVALID_ARGUMENT;
+		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
 	debug_fleave();
