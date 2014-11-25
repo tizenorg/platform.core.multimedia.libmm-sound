@@ -79,7 +79,6 @@ ASM_cb_result_t
 sound_codec_asm_callback(int handle, ASM_event_sources_t event_src, ASM_sound_commands_t command, unsigned int sound_status, void* cb_data)
 {
 	int slotid = (int)cb_data;
-	int result = MM_ERROR_NONE;
 	ASM_cb_result_t	cb_res = ASM_CB_RES_NONE;
 
 	debug_log("Got audio session callback msg for session_handle %d\n", handle);
@@ -89,7 +88,7 @@ sound_codec_asm_callback(int handle, ASM_event_sources_t event_src, ASM_sound_co
 	case ASM_COMMAND_STOP:
 	case ASM_COMMAND_PAUSE:
 		debug_log("Got msg from asm to Stop or Pause %d\n", command);
-		result = MMSoundMgrCodecStop(slotid);
+		MMSoundMgrCodecStop(slotid);
 		cb_res = ASM_CB_RES_STOP;
 		break;
 	case ASM_COMMAND_RESUME:
