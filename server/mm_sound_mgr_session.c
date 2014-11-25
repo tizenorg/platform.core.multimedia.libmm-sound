@@ -366,7 +366,7 @@ ROUTE_COMM_EXIT:
 static int __set_playback_route_fmradio (session_state_t state)
 {
 	int ret = MM_ERROR_NONE;
-	int out;
+	int out = 0; // initizlize out
 
 	debug_fenter();
 
