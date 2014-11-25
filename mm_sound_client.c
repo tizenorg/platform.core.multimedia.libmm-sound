@@ -1297,8 +1297,6 @@ static int __MMIpcRecvMsg(int msgtype, mm_ipc_msg_t *msg)
 			debug_warning("[Client] Not acces.\n");
 		} else if (errno == EACCES) {
 			debug_warning("[Client] Access denied\n");
-		} else if (errno == ENOMSG) {
-			debug_warning("[Client] Blocked process [msgflag & IPC_NOWAIT != 0]\n");
 		} else if (errno == EIDRM) {
 			debug_warning("[Client] Removed msgid from system\n");
 		} else if (errno == EINTR) {
