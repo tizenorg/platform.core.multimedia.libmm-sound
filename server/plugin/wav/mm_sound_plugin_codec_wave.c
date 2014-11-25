@@ -368,7 +368,6 @@ static void _runing(void *param)
 	int nread = 0;
 	char *org_cur = NULL;
 	int org_size = 0;
-	int stop_size;
 	char *dummy = NULL;
 	int ret;
 
@@ -389,7 +388,6 @@ static void _runing(void *param)
 	}
 	memset(dummy, 0, p->period);
 	p->transper_size = p->period;
-	stop_size = org_size > p->period ? org_size : p->period;
 
 	debug_msg("[CODEC WAV] Wait start signal\n");
 
