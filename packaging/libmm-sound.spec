@@ -5,7 +5,7 @@ Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
 Version:    0.7.2f
 Release:    0
-Group:      System/Libraries
+Group:      Multimedia/Media Playback
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1:    sound-server.service
@@ -26,12 +26,11 @@ BuildRequires:      pkgconfig(heynoti)
 BuildRequires:      pkgconfig(security-server)
 
 %description
-MMSound Package contains client lib and sound_server binary for sound system
+MMSound Package contains client lib for sound system
 
 
 %package devel
 Summary: MMSound development package
-Group:      System/Libraries
 Requires:   %{name} = %{version}-%{release}
 
 %description devel
@@ -39,7 +38,6 @@ MMSound development package for sound system
 
 %package sdk-devel
 Summary: MMSound development package
-Group:      System/Libraries
 Requires:   %{name}-devel = %{version}-%{release}
 
 %description sdk-devel
@@ -47,12 +45,17 @@ MMSound development package for sound system
 
 %package tool
 Summary: MMSound utility package - contians mm_sound_testsuite, sound_check
-Group:      System/Utilities
 Requires:   %{name} = %{version}-%{release}
 
 %description tool
 MMSound utility package - contians mm_sound_testsuite, sound_check for sound system
 
+%package -n sound-server
+Summary: Sound server package
+Requires: %{name} = %{version}-%{release}
+
+%description -n sound-server
+Sound server package
 
 %prep
 %setup -q
@@ -106,24 +109,16 @@ install -m0644 %{SOURCE2} %{buildroot}%{_unitdir}/
 
 %postun -p /sbin/ldconfig
 
+%post -n sound-server -p /sbin/ldconfig
+
+%postun -n sound-server -p /sbin/ldconfig
 
 %files
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
-%{_bindir}/sound_server
 %{_libdir}/libmmfsound.so.*
 %{_libdir}/libmmfsoundcommon.so.*
 %{_libdir}/libmmfkeysound.so.*
-%{_libdir}/libsoundplugintone.so*
-%{_libdir}/libsoundpluginwave.so*
-%{_libdir}/libsoundpluginkeytone.so*
-%{_libdir}/soundplugins/libsoundplugintone.so
-%{_libdir}/soundplugins/libsoundpluginwave.so
-%{_libdir}/soundplugins/libsoundpluginkeytone.so
-%{_prefix}/share/sounds/sound-server/*
-%{_unitdir}/multi-user.target.wants/sound-server.path
-%{_unitdir}/sound-server.service
-%{_unitdir}/sound-server.path
 
 %files devel
 %manifest %{name}.manifest
@@ -146,3 +141,18 @@ install -m0644 %{SOURCE2} %{buildroot}%{_unitdir}/
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_bindir}/mm_sound_testsuite
+
+%files -n sound-server
+%manifest %{name}.manifest
+%defattr(-,root,root,-)
+%{_bindir}/sound_server
+%{_libdir}/libsoundplugintone.so*
+%{_libdir}/libsoundpluginwave.so*
+%{_libdir}/libsoundpluginkeytone.so*
+%{_libdir}/soundplugins/libsoundplugintone.so
+%{_libdir}/soundplugins/libsoundpluginwave.so
+%{_libdir}/soundplugins/libsoundpluginkeytone.so
+%{_prefix}/share/sounds/sound-server/*
+%{_unitdir}/multi-user.target.wants/sound-server.path
+%{_unitdir}/sound-server.service
+%{_unitdir}/sound-server.path
