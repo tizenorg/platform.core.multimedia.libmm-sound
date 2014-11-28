@@ -89,14 +89,6 @@ install -m0644 %{SOURCE2} %{buildroot}%{_unitdir}/
 
 %install_service multi-user.target.wants sound-server.path
 
-# FIXME: remove after systemd is in
-mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc3.d
-mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc4.d
-mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc5.d
-ln -sf %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S23soundserver
-ln -sf %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc4.d/S23soundserver
-
-
 %post
 /sbin/ldconfig
 
@@ -128,9 +120,6 @@ ln -sf %{_sysconfdir}/rc.d/init.d/soundserver %{buildroot}%{_sysconfdir}/rc.d/rc
 %{_libdir}/soundplugins/libsoundplugintone.so
 %{_libdir}/soundplugins/libsoundpluginwave.so
 %{_libdir}/soundplugins/libsoundpluginkeytone.so
-%config %attr(0755,root,root) %{_sysconfdir}/rc.d/init.d/soundserver
-%config %{_sysconfdir}/rc.d/rc3.d/S23soundserver
-%config %{_sysconfdir}/rc.d/rc4.d/S23soundserver
 %{_prefix}/share/sounds/sound-server/*
 %{_unitdir}/multi-user.target.wants/sound-server.path
 %{_unitdir}/sound-server.service

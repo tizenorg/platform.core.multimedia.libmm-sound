@@ -138,6 +138,5 @@ pkgconfig/Makefile
 pkgconfig/mm-sound.pc
 pkgconfig/mm-keysound.pc
 testsuite/Makefile
-init/Makefile
 ])
 AC_OUTPUT
