@@ -36,6 +36,12 @@ static char* __strcatdup(const char *str1, const char *str2);
 static int _MMSoundPluginGetList(const char *plugdir ,char ***list);
 static int _MMSoundPluginDestroyList(char **list);
 
+/* default "empty list" used in case of error */
+static MMSoundPluginType empty_plugin_list = { 
+    .type = MM_SOUND_PLUGIN_TYPE_NONE,
+    .module = NULL
+};
+
 char* MMSoundPluginGetTypeName(int type)
 {
     static char *typename[] = {
@@ -64,8 +70,10 @@ int MMSoundPluginScan(const char *plugindir, const int type, MMSoundPluginType *
 
     debug_msg(" Plugin dir :: %s \n", plugindir);
     err = _MMSoundPluginGetList(plugindir, &list);
-    if (err != MM_ERROR_NONE)
+    if (err != MM_ERROR_NONE) {
+        *pluginlist = &empty_plugin_list;
         return err;
+    }
 
     while((item = list[index++]) != NULL) {
         if(MMSoundPluginOpen(item, &plugin[plugin_index]) != MM_ERROR_NONE) {
@@ -107,7 +115,8 @@ int MMSoundPluginRelease(MMSoundPluginType *pluginlist)
         MMSoundPluginClose(&pluginlist[loop++]);
     }
 
-    free (pluginlist);
+    if (pluginlist != &empty_plugin_list)
+        free (pluginlist);
 
     debug_fleave ();
 

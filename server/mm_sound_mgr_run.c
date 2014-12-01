@@ -74,12 +74,13 @@ int MMSoundMgrRunRunAll(void)
 
 int MMSoundMgrRunStopAll(void)
 {
-	mmsound_run_interface_t intface;
-	void *func = NULL;
-	int loop = 0;
+    mmsound_run_interface_t intface;
+    void *func = NULL;
+    int loop = 0;
 
-	debug_fenter();
+    debug_fenter();
 
+    if (g_run_plugins) {
 	while (g_run_plugins[loop].type != MM_SOUND_PLUGIN_TYPE_NONE) {
 		debug_msg("loop : %d\n", loop);	
 		MMSoundPluginGetSymbol(&g_run_plugins[loop], RUN_GET_INTERFACE_FUNC_NAME, &func);
@@ -87,8 +88,9 @@ int MMSoundMgrRunStopAll(void)
 		intface.stop();
 		loop++;
 	}
+    }
 
-	debug_fleave();
+    debug_fleave();
     return MM_ERROR_NONE;
 }
 
