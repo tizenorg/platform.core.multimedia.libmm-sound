@@ -163,7 +163,7 @@ int MMSoundMgrHALInit(const char *targetdir)
     return AUDIO_HAL_STATE_SUCCESS;
 
 err_out_and_free:
-    free(g_hal_plugin);
+    MMSoundPluginRelease(g_hal_plugin);
     g_hal_plugin = NULL;
     debug_fleave();
     return AUDIO_HAL_STATE_ERROR_INTERNAL;
