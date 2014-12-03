@@ -4,8 +4,6 @@ SUBDIRS = common \
 		server \
 		testsuite
 
-SUBDIRS += init
-		
 lib_LTLIBRARIES = libmmfsound.la
 
 includelibmmfsounddir = $(includedir)/mmf
