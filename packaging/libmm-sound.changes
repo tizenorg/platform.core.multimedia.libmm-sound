@@ -1,3 +1,7 @@
+* Wed Dec 4 2014 Jaska Uimonen <jaska.uimonen@intel.com> 0.7.2g
+- fix tizen P1 and P2 bugs
+- fix warnings
+
 * Thu Feb 13 2014 Jaska Uimonen <jaska.uimonen@intel.com> 0.7.2f
 - makes samsung policy optional
 - Fixes TIVI-2711 (https://bugs.tizen.org/jira/browse/TIVI-2711).
