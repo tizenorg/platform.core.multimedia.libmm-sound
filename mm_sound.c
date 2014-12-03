@@ -651,7 +651,7 @@ NULL_HANDLE:
 EXPORT_API
 int mm_sound_pcm_capture_start(MMSoundPcmHandle_t handle)
 {
-	int ret = MM_ERROR_NONE;
+	int ret;
 	debug_fenter();
 
 	debug_warning ("%s enter : handle=[%p]\n", __func__, handle);
@@ -1575,7 +1575,7 @@ int mm_sound_add_active_device_changed_callback(mm_sound_active_device_changed_c
 EXPORT_API
 int mm_sound_remove_active_device_changed_callback(void)
 {
-	int ret = MM_ERROR_NONE;
+	int ret;
 
 	debug_fenter();
 
@@ -1612,7 +1612,7 @@ int mm_sound_add_available_route_changed_callback(mm_sound_available_route_chang
 EXPORT_API
 int mm_sound_remove_available_route_changed_callback(void)
 {
-	int ret = MM_ERROR_NONE;
+	int ret;
 
 	debug_fenter();
 
