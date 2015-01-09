@@ -408,7 +408,7 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 	pthread_mutex_unlock(&g_slot_mutex);
 
 	debug_msg("Using Slotid : [%d] Slot Status : [%d]\n", *slotid, g_slots[*slotid].status);
-	debug_msg("After Slot_mutex UNLOCK\n")
+	debug_msg("After Slot_mutex UNLOCK\n");
 
 cleanup:		
 	debug_leave("\n");

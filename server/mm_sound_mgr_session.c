@@ -471,7 +471,7 @@ static int __set_sound_path_for_current_active (void)
 	debug_fenter();
 
 	if (__is_forced_session()) {
-		debug_log ("Current session is NOTI/EMER, pending path setting. path set will be done after session ends")
+		debug_log ("Current session is NOTI/EMER, pending path setting. path set will be done after session ends");
 		goto CURRENT_ACTIVE_END;
 	}
 
