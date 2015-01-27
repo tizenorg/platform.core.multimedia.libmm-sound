@@ -29,9 +29,11 @@
 #include "include/mm_sound.h"
 #include "include/mm_sound_device.h"
 
-bool is_new_device_list = true;
+#define VOLUME_TYPE_LEN 64
 
-static int check_for_valid_mask (mm_sound_device_flags_e flags)
+bool g_is_new_device_list = true;
+
+static int _check_for_valid_mask (mm_sound_device_flags_e flags)
 {
 	int ret = MM_ERROR_NONE;
 	bool at_least_cond = false;
@@ -63,6 +65,38 @@ static int check_for_valid_mask (mm_sound_device_flags_e flags)
 	return ret;
 }
 
+static int __convert_device_type_to_enum (char *device_type, mm_sound_device_type_e *device_type_enum)
+{
+	int ret = MM_ERROR_NONE;
+
+	if (!device_type || !device_type_enum) {
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (!strncmp(device_type, "builtin-speaker", VOLUME_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_BUILTIN_SPEAKER;
+	} else if (!strncmp(device_type, "builtin-receiver", VOLUME_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_BUILTIN_RECEIVER;
+	} else if (!strncmp(device_type, "builtin-mic", VOLUME_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_BUILTIN_MIC;
+	} else if (!strncmp(device_type, "audio-jack", VOLUME_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_AUDIOJACK;
+	} else if (!strncmp(device_type, "bt", VOLUME_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_BLUETOOTH;
+	} else if (!strncmp(device_type, "hdmi", VOLUME_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_HDMI;
+	} else if (!strncmp(device_type, "forwarding", VOLUME_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_MIRRORING;
+	} else if (!strncmp(device_type, "usb-audio", VOLUME_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_USB_AUDIO;
+	} else {
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		debug_error("not supported device_type(%s), err(0x%08x)", device_type, ret);
+	}
+
+	return ret;
+}
+
 EXPORT_API
 int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sound_device_connected_cb func, void *user_data)
 {
@@ -72,9 +106,9 @@ int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sou
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	ret = check_for_valid_mask(flags);
+	ret = _check_for_valid_mask(flags);
 	if (ret == MM_ERROR_NONE) {
-		ret = _mm_sound_client_add_device_connected_callback(flags, func, user_data);
+		ret = mm_sound_client_add_device_connected_callback(flags, func, user_data);
 		if (ret < 0) {
 			debug_error("Could not add device connected callback, ret = %x\n", ret);
 		}
@@ -88,7 +122,7 @@ int mm_sound_remove_device_connected_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = _mm_sound_client_remove_device_connected_callback();
+	ret = mm_sound_client_remove_device_connected_callback();
 	if (ret < 0) {
 		debug_error("Could not remove device connected callback, ret = %x\n", ret);
 	}
@@ -105,9 +139,9 @@ int mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e fla
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	ret = check_for_valid_mask(flags);
+	ret = _check_for_valid_mask(flags);
 	if (ret == MM_ERROR_NONE) {
-		ret = _mm_sound_client_add_device_info_changed_callback(flags, func, user_data);
+		ret = mm_sound_client_add_device_info_changed_callback(flags, func, user_data);
 		if (ret < 0) {
 			debug_error("Could not add device information changed callback, ret = %x\n", ret);
 		}
@@ -121,7 +155,7 @@ int mm_sound_remove_device_information_changed_callback()
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = _mm_sound_client_remove_device_info_changed_callback();
+	ret = mm_sound_client_remove_device_info_changed_callback();
 	if (ret < 0) {
 		debug_error("Could not remove device information changed callback, ret = %x\n", ret);
 	}
@@ -137,13 +171,13 @@ int mm_sound_get_current_device_list(mm_sound_device_flags_e flags, MMSoundDevic
 	if (!device_list) {
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	ret = check_for_valid_mask(flags);
+	ret = _check_for_valid_mask(flags);
 	if (ret == MM_ERROR_NONE) {
-		ret = _mm_sound_client_get_current_connected_device_list(flags, (mm_sound_device_list_t**)device_list);
+		ret = mm_sound_client_get_current_connected_device_list(flags, (mm_sound_device_list_t**)device_list);
 		if (ret < 0) {
 			debug_error("Could not get current connected device list, ret = %x\n", ret);
 		} else {
-			is_new_device_list = true;
+			g_is_new_device_list = true;
 		}
 	}
 
@@ -161,7 +195,7 @@ int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	device_list_t = (mm_sound_device_list_t*) device_list;
-	if (is_new_device_list) {
+	if (g_is_new_device_list) {
 		node = g_list_first(device_list_t->list);
 	} else {
 		node = g_list_next(device_list_t->list);
@@ -169,8 +203,8 @@ int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 	if (!node) {
 		ret = MM_ERROR_SOUND_NO_DATA;
 	} else {
-		if (is_new_device_list) {
-			is_new_device_list = false;
+		if (g_is_new_device_list) {
+			g_is_new_device_list = false;
 		} else {
 			device_list_t->list = node;
 		}
@@ -207,11 +241,11 @@ EXPORT_API
 int mm_sound_get_device_type(MMSoundDevice_t device_h, mm_sound_device_type_e *type)
 {
 	mm_sound_device_t *device = (mm_sound_device_t*)device_h;
-	if(!device) {
-		debug_error("invalid handle\n");
+	if(!device || !type) {
+		debug_error("invalid argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	*type = device->type;
+	__convert_device_type_to_enum(device->type, type);
 	debug_log("device_handle:0x%x, type:%d\n", device, *type);
 
 	return MM_ERROR_NONE;
@@ -226,7 +260,7 @@ int mm_sound_get_device_io_direction(MMSoundDevice_t device_h, mm_sound_device_i
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	*io_direction = device->io_direction;
-	debug_log("device_handle:0x%x, io_direction:%d (0:IN,1:OUT,2:INOUT)\n", device, *io_direction);
+	debug_log("device_handle:0x%x, io_direction:%d (1:IN,2:OUT,3:INOUT)\n", device, *io_direction);
 
 	return MM_ERROR_NONE;
 }
@@ -239,8 +273,8 @@ int mm_sound_get_device_id(MMSoundDevice_t device_h, int *id)
 		debug_error("invalid handle\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	debug_log("device_handle:0x%x, id:%d\n", device, *id);
 	*id = device->id;
+	debug_log("device_handle:0x%x, id:%d\n", device, *id);
 
 	return MM_ERROR_NONE;
 }
@@ -253,8 +287,8 @@ int mm_sound_get_device_state(MMSoundDevice_t device_h, mm_sound_device_state_e 
 		debug_error("invalid handle\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	debug_log("device_handle:0x%x, state:%d (0:INACTIVATED,1:ACTIVATED)\n", device, *state);
 	*state = device->state;
+	debug_log("device_handle:0x%x, state:%d (0:INACTIVATED,1:ACTIVATED)\n", device, *state);
 
 	return MM_ERROR_NONE;
 }

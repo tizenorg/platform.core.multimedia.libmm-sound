@@ -273,6 +273,7 @@
 	</table></div>
 
  */
+#define MM_SOUND_STREAM_TYPE_LEN 64
 
 /*
  * MMSound Volume APIs
@@ -293,7 +294,7 @@ typedef enum {
 	VOLUME_TYPE_VOICE,				/**< VOICE volume type */
 	VOLUME_TYPE_FIXED,				/**< Volume type for fixed acoustic level */
 	VOLUME_TYPE_MAX,				/**< Volume type count */
-	VOLUME_TYPE_EXT_ANDROID = VOLUME_TYPE_FIXED,		/**< External system volume for Android */
+	VOLUME_TYPE_UNKNOWN = -1,	/**< volume type is not determined */
 } volume_type_t;
 
 typedef enum {
@@ -350,17 +351,6 @@ typedef void (*volume_callback_fn)(void* user_data);
  */
 typedef void (*mm_sound_volume_changed_cb) (volume_type_t type, unsigned int volume, void *user_data);
 
-
-/**
- * Muteall state change callback function type.
- *
- * @param	user_data		[in]	Argument passed when callback has called
- *
- * @return	No return value
- * @remark	None.
- * @see		mm_sound_muteall_add_callback mm_sound_muteall_remove_callback
- */
-typedef void (*muteall_callback_fn)(void* user_data);
 
 /**
  * This function is to retrieve number of volume level.
@@ -506,86 +496,6 @@ int mm_sound_volume_remove_callback(volume_type_t type);
 int mm_sound_remove_volume_changed_callback(void);
 
 /**
- * This function is to add muteall changed callback.
- *
- * @param	func			[in]	callback function pointer
- * @param	user_data		[in]	user data passing to callback function
- *
- * @return 	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @see		muteall_callback_fn
- * @code
-void _muteall_callback(void *data)
-{
-	int  muteall;
-
-	mm_sound_get_muteall(&muteall);
-	g_print("Muteall Callback Runs :::: muteall value = %d\n", muteall);
-}
-
-int muteall_callback()
-{
-	int ret = 0;
-
-	ret = mm_sound_muteall_add_callback( _muteall_callback);
-
-	if ( MM_ERROR_NONE != ret)
-	{
-		printf("Can not add callback\n");
-	}
-	else
-	{
-		printf("Add callback success\n");
-	}
-
-	return 0;
-}
-
- * @endcode
- */
-int mm_sound_muteall_add_callback(muteall_callback_fn func);
-
-
-/**
- * This function is to remove muteall changed callback.
- *
- * @param	func			[in]	callback function pointer
- *
- * @return 	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	None.
- * @post	Callback function will not be called anymore.
- * @see		muteall_callback_fn
- * @code
-void _muteall_callback(void *data)
-{
-	printf("Callback function\n");
-}
-
-int muteall_callback()
-{
-	int ret = 0;
-
-	mm_sound_muteall_add_callback( _muteall_callback);
-
-	ret = mm_sound_muteall_remove_callback(_muteall_callback);
-	if ( MM_ERROR_NONE == ret)
-	{
-		printf("Remove callback success\n");
-	}
-	else
-	{
-		printf("Remove callback failed\n");
-	}
-
-	return ret;
-}
-
- * @endcode
- */
-int mm_sound_muteall_remove_callback(muteall_callback_fn func);
-
-/**
  * This function is to set volume level of certain volume type.
  *
  * @param	type			[in]	volume type to set value.
@@ -620,26 +530,7 @@ else
 }
  * @endcode
  */
-int mm_sound_volume_set_value(volume_type_t type, const unsigned int value);
-
-
-
-
-
-
-/**
- * This function is to set all volume type to mute or unmute.
- *
- * @param	muteall			[in]	the switch to control  mute or unmute.
- *
- * @return 	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	None.
- * @pre		None.
- * @post	None.
- */
-int mm_sound_mute_all(int muteall);
-
+int mm_sound_volume_set_value(volume_type_t type, const unsigned int volume_level);
 
 
 /**
@@ -705,7 +596,7 @@ static int _pause(void* data)
 {
 	int ret = 0;
 
-	ret = mm_sound_volume_primary_type_clear();
+	ret = mm_sound_volume_primary_type_set(VOLUME_TYPE_UNKNOWN);
 	if(ret < 0)
 	{
 		printf("Can not clear primary volume type\n");
@@ -729,122 +620,11 @@ int main()
  * @endcode
  */
 int mm_sound_volume_primary_type_set(volume_type_t type);
-
-
-
-/**
- * This function is to clear primary volume type.
- *
- *
- * @return 	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	mm_sound_volume_primary_type_set() and mm_sound_volume_primary_type_clear() should be used as pair
- * @see		mm_sound_volume_primary_type_set
- * @pre		primary volume should be set at same process.
- * @post	primary volume will be cleared.
- * @par Example
- * @code
-static int _resume(void *data)
-{
-	int ret = 0;
-
-	ret = mm_sound_volume_primary_type_set(VOLUME_TYPE_MEDIA);
-	if(ret < 0)
-	{
-		printf("Can not set primary volume type\n");
-	}
-	...
-}
-
-static int _pause(void* data)
-{
-	int ret = 0;
-
-	ret = mm_sound_volume_primary_type_clear();
-	if(ret < 0)
-	{
-		printf("Can not clear primary volume type\n");
-	}
-	...
-}
-
-int main()
-{
-	...
-	struct appcore_ops ops = {
-		.create = _create,
-		.terminate = _terminate,
-		.pause = _pause,
-		.resume = _resume,
-		.reset = _reset,
-	};
-	...
-	return appcore_efl_main(PACKAGE, ..., &ops);
-}
- * @endcode
- */
+int mm_sound_volume_primary_type_get(volume_type_t *type);
 int mm_sound_volume_primary_type_clear(void);
 
-
-
-/**
- * This function is to get current playing volume type
- *
- * @param	type			[out]	current playing volume type
- *
- * @return 	This function returns MM_ERROR_NONE on success,
- *          or MM_ERROR_SOUND_VOLUME_NO_INSTANCE when there is no existing playing instance,
- *          or MM_ERROR_SOUND_VOLUME_CAPTURE_ONLY when only capture audio instances are exist.
- *          or negative value with error code for other errors.
- * @remark	None.
- * @pre		None.
- * @post	None.
- * @see		mm_sound_volume_get_value, mm_sound_volume_set_value
- * @par Example
- * @code
-int ret=0;
-volume_type_t type = 0;
-
-ret = mm_sound_volume_get_current_playing_type(&type);
-switch(ret)
-{
-case MM_ERROR_NONE:
-	printf("Current playing is %d\n", type);
-	break;
-case MM_ERROR_SOUND_VOLUME_NO_INSTANCE:
-	printf("No sound instance\n");
-	break;
-case MM_ERROR_SOUND_VOLUME_CAPTURE_ONLY:
-	printf("Only sound capture instances are exist\n");
-	break;
-default:
-	printf("Error\n");
-	break;
-}
-
- * @endcode
- */
-int mm_sound_volume_get_current_playing_type(volume_type_t *type);
-
-int mm_sound_volume_set_balance (float balance);
-
-int mm_sound_volume_get_balance (float *balance);
-
-int mm_sound_set_muteall (int muteall);
-
-int mm_sound_get_muteall (int *muteall);
-
-int mm_sound_set_stereo_to_mono (int ismono);
-
-int mm_sound_get_stereo_to_mono (int *ismono);
-
 int mm_sound_set_call_mute(volume_type_t type, int mute);
-
 int mm_sound_get_call_mute(volume_type_t type, int *mute);
-
-int mm_sound_set_factory_loopback_test(int loopback);
-
-int mm_sound_get_factory_loopback_test(int *loopback);
 
 typedef enum {
 	MM_SOUND_FACTORY_MIC_TEST_STATUS_OFF = 0,
@@ -1961,165 +1741,11 @@ else
  */
 int mm_sound_play_tone (MMSoundTone_t num, int volume_config, const double volume, const int duration, int *handle);
 
+int mm_sound_play_tone_with_stream_info(MMSoundTone_t tone, char *stream_type, int stream_id, const double volume, const int duration, int *handle);
+
 /*
  * Enumerations of System audio route policy
  */
-typedef enum {
-	SYSTEM_AUDIO_ROUTE_POLICY_DEFAULT,			/**< Play via a2dp headset if connected. or play via headset if connected. or play via speaker.
-													And capture via 4pole headset-mic if connected. or capture via mic */
-	SYSTEM_AUDIO_ROUTE_POLICY_IGNORE_A2DP,		/**< Play via headset if connected. or play via speaker
-													 And capture via 4pole headset-mic if connected. or capture via mic */
-	SYSTEM_AUDIO_ROUTE_POLICY_HANDSET_ONLY,		/**< Play via speaker. and capture via mic  */
-	SYSTEM_AUDIO_ROUTE_POLICY_MAX
-}system_audio_route_t;
-
-typedef enum {
-	SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_NONE,			/**< Abnormal case */
-	SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_HANDSET,		/**< Speaker or Headset or Earpiece */
-	SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_BLUETOOTH,	/**< Bluetooth */
-	SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_EARPHONE,	/**< Earphone */
-	SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_MAX,
-}system_audio_route_device_t;
-
-typedef enum {
-	SYSTEM_AUDIO_CAPTURE_NONE,	/**< Capture device is not in use */
-	SYSTEM_AUDIO_CAPTURE_ACTIVE,	/**< Capture device is in use */
-	SYSTEM_AUDIO_CAPTURE_MAX,
-}system_audio_capture_status_t;
-
-
-/**
- * This function set system route policy.
- *
- * @param	route		[in] audio route type
- *
- * @return	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	If bluetooth has disconnected during SYSTEM_AUDIO_ROUTE_POLICY_IGNORE_A2DP policy,
- * 			The audio route policy will be changed to SYSTEM_AUDIO_ROUTE_POLICY_DEFAULT.
- * @see		mm_sound_route_get_system_policy system_audio_route_t mm_sound_route_is_a2dp_on
- * @pre		None.
- * @post	Audio routing policy will be changed with given type. And route change callback function will be called if registered.
- * @par Example
- * @code
-int g_stop = 0;
-void _stop_callback()
-{
-	g_stop = 1;
-}
-
-int play_file_via_speaker()
-{
-	int ret = 0;
-	system_audio_route_t route, original_route;
-
-	//get backup current policy
-	ret = mm_sound_route_get_system_policy(&original_route);
-	if(ret < 0)
-	{
-		printf("Can not get system audio route policy\n");
-	}
-	else
-	{
-		//set route policy to ignore a2dp
-		route = SYSTEM_AUDIO_ROUTE_POLICY_IGNORE_A2DP;
-		ret = mm_sound_route_set_system_policy(route);
-		if(ret < 0)
-		{
-			printf("Ca not set route policy\n");
-		}
-		else
-		{
-			int handle;
-			//play wav file
-			ret = mm_sound_play_sound("/opt/media/Sound/alert.wav", VOLUME_TYPE_SYSTEM, NULL, NULL, &handle);
-			if(ret < 0)
-			{
-				printf("Can not play wav file\n");
-			}
-			else
-			{
-				while(g_stop == 0)
-				{
-					sleep(1);
-				}
-				//restore original policy
-				mm_sound_route_set_system_policy(original_route);
-			}
-		}
-	}
-	return 0;
-}
- * @endcode
- */
-int mm_sound_route_set_system_policy (system_audio_route_t route);
-
-/**
- * This function get sysytem route policy.
- *
- * @param	route		[out] audio route type
- *
- * @return	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	None.
- * @see		mm_sound_route_set_system_policy system_audio_route_t mm_sound_route_is_a2dp_on
- * @pre		None.
- * @post	None.
- * @par Example
- * @code
-int g_stop = 0;
-void _stop_callback()
-{
-	g_stop = 1;
-}
-
-int play_file_via_speaker()
-{
-	int ret = 0;
-	system_audio_route_t route, original_route;
-
-	//get backup current policy
-	ret = mm_sound_route_get_system_policy(&original_route);
-	if(ret < 0)
-	{
-		printf("Can not get system audio route policy\n");
-	}
-	else
-	{
-		//set route policy to ignore a2dp
-		route = SYSTEM_AUDIO_ROUTE_POLICY_IGNORE_A2DP;
-		ret = mm_sound_route_set_system_policy(route);
-		if(ret < 0)
-		{
-			printf("Can not set route policy\n");
-		}
-		else
-		{
-			int handle;
-			//play wav file
-			ret = mm_sound_play_sound("/opt/media/Sound/alert.wav", VOLUME_TYPE_SYSTEM, NULL, NULL, &handle);
-			if(ret < 0)
-			{
-				printf("Can not play wav file\n");
-			}
-			else
-			{
-				while(g_stop == 0)
-				{
-					sleep(1);
-				}
-				//restore original policy
-				mm_sound_route_set_system_policy(original_route);
-			}
-		}
-	}
-	return 0;
-}
- * @endcode
- */
-int mm_sound_route_get_system_policy (system_audio_route_t *route);
-
-
 
 /**
  * This function get a2dp activation information.
@@ -2154,155 +1780,6 @@ if (ret == MM_ERROR_NONE) {
  */
 int mm_sound_route_get_a2dp_status (bool* connected, char** bt_name);
 
-
-/**
- * This function get current playing device.
- *
- * @param	dev		[out] current playing device information
- *
- * @return	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	if there is no running instance in system,
- * 			output parameter dev can be SYSTEM_AUDIO_ROUTE_PLAYING_DEVICE_NONE.
- *
- * @see		system_audio_route_device_t
- * @pre		None.
- * @post	None.
- * @par Example
- * @code
-int ret = 0;
-system_audio_route_device_t dev;
-
-ret = mm_sound_route_get_playing_device (&dev);
-if(ret == MM_ERROR_NONE)
-{
-	switch(dev)
-	{
-	case SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_HANDSET:
-		printf("Handset is playing\n");
-		break;
-	case SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_BLUETOOTH:
-		printf("Bluetooth is playing\n");
-		break;
-	case SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_NONE:
-	default:
-		printf("Unexptected\n");
-		break;
-	}
-}
-else
-{
-	printf ("Can not get current running device\n");
-}
-
- * @endcode
- */
-int mm_sound_route_get_playing_device(system_audio_route_device_t *dev);
-
-/**
- * Audio route policy change callback function type.
- *
- * @param	user_data		[in]	Argument passed when callback has called
- * @param	policy			[in]	changed policy type
- *
- * @return	No return value
- * @remark
- * @see		mm_sound_volume_add_callback mm_sound_volume_remove_callback
- */
-typedef void (*audio_route_policy_changed_callback_fn)(void* user_data, system_audio_route_t policy);
-
-/**
- * This function set system audio policy changed callback function.
- *
- * @param	func		[in] callback function pointer
- * @param	user_data	[in] user data will be called with func
- *
- * @return	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	None.
- * @see		mm_sound_route_remove_change_callback mm_sound_route_set_system_policy mm_sound_route_get_system_policy system_audio_route_t
- * @pre		None.
- * @post	None.
- * @par Example
- * @code
-void audio_route_policy_changed_callback(void* data, system_audio_route_t policy)
-{
-	int value = (int) data;
-	system_audio_route_t lv_policy;
-	char *str_route[SYSTEM_AUDIO_ROUTE_POLICY_MAX] = {
-			"DEFAULT","IGN_A2DP","HANDSET"
-		};
-	printf("Audio Route Policy has changed to [%s]\n", str_route[policy]);
-	printf("user data : %d\n", value);
-	if(0 > mm_sound_route_get_system_policy(&lv_policy)) {
-		printf("Can not get policy...in callback function\n");
-	}
-	else {
-		printf("readed policy [%s]\n", str_route[lv_policy]);
-	}
-}
-int make_callback()
-{
-	int ret = 0;
-	ret = mm_sound_route_add_change_callback(audio_route_policy_changed_callback, (void*)111);
-	if(ret < 0)
-	{
-		printf("Can not add callback\n");
-	}
-	return 0;
-}
- * @endcode
- */
-int mm_sound_route_add_change_callback(audio_route_policy_changed_callback_fn func, void* user_data);
-
-/**
- * This function remove system audio policy changed callback function.
- *
- * @return	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	None.
- * @see		mm_sound_route_add_change_callback mm_sound_route_set_system_policy mm_sound_route_get_system_policy system_audio_route_t
- * @pre		Sound route change callback should be registered.
- * @post	Sound route change callback deregistered and does not be called anymore.
- * @par Example
- * @code
-void audio_route_policy_changed_callback(void* data, system_audio_route_t policy)
-{
-	int value = (int) data;
-	system_audio_route_t lv_policy;
-	char *str_route[SYSTEM_AUDIO_ROUTE_POLICY_MAX] = {
-			"DEFAULT","IGN_A2DP","HANDSET"
-		};
-	printf("Audio Route Policy has changed to [%s]\n", str_route[policy]);
-	printf("user data : %d\n", value);
-	if(0 > mm_sound_route_get_system_policy(&lv_policy)) {
-		printf("Can not get policy...in callback function\n");
-	}
-	else {
-		printf("readed policy [%s]\n", str_route[lv_policy]);
-	}
-}
-int make_callback()
-{
-	int ret = 0;
-	ret = mm_sound_route_add_change_callback(audio_route_policy_changed_callback, (void*)111);
-	if(ret < 0)
-	{
-		printf("Can not add callback\n");
-	}
-	else
-	{
-		ret = mm_sound_route_remove_change_callback();
-		if(ret < 0)
-		{
-			printf("Can not remove callback\n");
-		}
-	}
-	return 0;
-}
- * @endcode
- */
-int mm_sound_route_remove_change_callback(void);
 
 /*
  * Enumerations of device & route
@@ -2387,9 +1864,9 @@ typedef enum {
 } mm_sound_device_flags_e;
 
 typedef enum {
-	MM_SOUND_DEVICE_IO_DIRECTION_IN,
-	MM_SOUND_DEVICE_IO_DIRECTION_OUT,
-	MM_SOUND_DEVICE_IO_DIRECTION_BOTH,
+	MM_SOUND_DEVICE_IO_DIRECTION_IN           = 0x1,
+	MM_SOUND_DEVICE_IO_DIRECTION_OUT          = 0x2,
+	MM_SOUND_DEVICE_IO_DIRECTION_BOTH         = MM_SOUND_DEVICE_IO_DIRECTION_IN | MM_SOUND_DEVICE_IO_DIRECTION_OUT,
 } mm_sound_device_io_direction_e;
 
 typedef enum {
@@ -2678,6 +2155,26 @@ int mm_sound_set_sound_path_for_active_device(mm_sound_device_out device_out, mm
 * @*/
 
 int mm_sound_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
+
+
+
+typedef void (*mm_sound_test_cb) (int a, void *user_data);
+int mm_sound_test(int a, int b, int* get);
+int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data);
+int mm_sound_remove_test_callback(void);
+
+void mm_sound_convert_volume_type_to_stream_type(int volume_type, char *stream_type);
+
+typedef enum {
+	MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS,
+	MM_SOUND_SIGNAL_MAX,
+} mm_sound_signal_name_t;
+
+typedef void (* mm_sound_signal_callback) (mm_sound_signal_name_t signal, int value, void *user_data);
+int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subscribe_id, mm_sound_signal_callback callback, void *user_data);
+void mm_sound_unsubscribe_signal(unsigned int subscribe_id);
+int mm_sound_send_signal(mm_sound_signal_name_t signal, int value);
+int mm_sound_get_signal_value(mm_sound_signal_name_t signal, int *value);
 
 /**
 	@}

@@ -3,6 +3,7 @@ SUBDIRS = plugin
 bin_PROGRAMS = sound_server
 sound_server_SOURCES = mm_sound_mgr_codec.c \
 						mm_sound_mgr_ipc.c \
+						mm_sound_mgr_ipc_dbus.c \
 						mm_sound_mgr_pulse.c \
 						mm_sound_mgr_asm.c \
 						mm_sound_mgr_device.c \
@@ -42,17 +43,18 @@ sound_server_LDADD = $(MMLOGSVR_LIBS) \
 		     $(srcdir)/../libmmfsound.la \
 		     $(srcdir)/../common/libmmfsoundcommon.la
 
-sound_server_CFLAGS += $(BLUETOOTH_API_CFLAGS)
-sound_server_LDADD += $(BLUETOOTH_API_LIBS)
-
-if SUPPORT_BT_SCO
-sound_server_CFLAGS += $(BLUETOOTH_CFLAGS)
-sound_server_LDADD += $(BLUETOOTH_LIBS)
-endif
-
 if USE_PULSE
 sound_server_CFLAGS += -DPULSE_CLIENT $(PA_CFLAGS) $(PASIMPLE_CFLAGS)
 sound_server_LDADD += $(PA_LIBS) $(PASIMPLE_CFLAGS)
+endif
+
+if USE_SECURITY
+sound_server_CFLAGS += $(SECURITY_CFLAGS) -DUSE_SECURITY
+sound_server_LDADD += $(SECURITY_LIBS)
+endif
+
+if USE_FOCUS
+sound_server_SOURCES += mm_sound_mgr_focus.c
 endif
 
 sound_server_DEPENDENCIES = $(srcdir)/../common/libmmfsoundcommon.la

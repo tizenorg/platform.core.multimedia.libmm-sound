@@ -49,6 +49,7 @@
 #include <vconf.h>
 #include <vconf-keys.h>
 
+#if 0
 
 /* WFD status value */
 static void _miracast_wfd_status_changed_cb(keynode_t* node, void* data)
@@ -91,4 +92,5 @@ int MMSoundMgrWfdFini(void)
 	debug_leave("\n");
 	return MM_ERROR_NONE;
 }
+#endif
 

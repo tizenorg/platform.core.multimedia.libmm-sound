@@ -24,6 +24,7 @@
 
 #include "../../include/mm_ipc.h"
 
+#if 0
 typedef enum
 {
 	DOCK_NONE      = 0,
@@ -35,6 +36,7 @@ typedef enum
 
 int MMSoundMgrDockInit(void);
 int MMSoundMgrDockFini(void);
+#endif
 
 
 #endif /* __MM_SOUND_MGR_DOCK_H__ */
