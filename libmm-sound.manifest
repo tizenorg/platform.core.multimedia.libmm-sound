@@ -1,4 +1,20 @@
 <manifest>
+	<define>
+		<request>
+			<smack request="system::vconf" type="arwxt"/>
+			<smack request="system::vconf_system" type="arwxt"/>
+			<smack request="system::vconf_inhouse" type="arwxt"/>
+			<smack request="system::vconf_network" type="arwxt"/>
+			<smack request="system::vconf_multimedia" type="arwxt"/>
+			<smack request="system::share" type="rwx"/>
+			<smack request="system::homedir" type="arwxt"/>
+			<smack request="device::sys_logging" type="w"/>
+			<smack request="device::app_logging" type="w"/>
+			<smack request="sys-assert::core" type="arwxt"/>
+			<smack request="pulseaudio" type="rwx"/>
+			<smack request="org.tizen.setting" type="rw"/>
+		</request>
+	</define>
 	<request>
 		<domain name="_"/>
 	</request>

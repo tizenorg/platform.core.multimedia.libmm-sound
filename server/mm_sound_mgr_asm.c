@@ -69,7 +69,6 @@ pthread_mutex_t g_mutex_asm = PTHREAD_MUTEX_INITIALIZER;
 #include <string.h>
 #include <errno.h>
 
-
 #define USE_SYSTEM_SERVER_PROCESS_MONITORING
 
 #define ROW_NUM_OF_SUB_EVENT		12 /* it should be exactly same with number of ASM_CASE_SUB_EVENT in ASM_sound_case table */
@@ -168,6 +167,11 @@ typedef struct _list
 	unsigned short			monitor_active;
 	unsigned short			monitor_dirty;
 	bool					is_registered_for_watching;
+
+#ifdef SUPPORT_CONTAINER
+	container_info_t		container;
+#endif
+
 	struct _list 			*next;
 } asm_instance_list_t;
 
@@ -396,7 +400,7 @@ subsession_t g_camcorder_ex_subsession = SUBSESSION_NUM;
 
 #define MAX_WATCH_CALLBACK_CALCUL_NUM 128
 
-void ___select_sleep(int secs)
+static void ___select_sleep(int secs)
 {
 	struct timeval timeout;
 	timeout.tv_sec = (secs < 1 || secs > 10) ? 3 : secs;
@@ -405,7 +409,7 @@ void ___select_sleep(int secs)
 	return;
 }
 
-int __get_adv_event_idx_for_subtable(ASM_sound_events_t sound_event, int *index)
+static int __get_adv_event_idx_for_subtable(ASM_sound_events_t sound_event, int *index)
 {
 	int ret = MM_ERROR_NONE;
 	if (!index) {
@@ -432,7 +436,7 @@ int __get_adv_event_idx_for_subtable(ASM_sound_events_t sound_event, int *index)
 	return ret;
 }
 
-int __get_sub_case_table_idx(ASM_sound_events_t sound_event, int *index)
+static int __get_sub_case_table_idx(ASM_sound_events_t sound_event, int *index)
 {
 	int ret = MM_ERROR_NONE;
 	if (!index) {
@@ -476,7 +480,7 @@ int __get_sub_case_table_idx(ASM_sound_events_t sound_event, int *index)
 	return ret;
 }
 
-gboolean __is_media_session (ASM_sound_events_t sound_event)
+static gboolean __is_media_session (ASM_sound_events_t sound_event)
 {
 	gboolean result = FALSE;
 	switch (sound_event) {
@@ -494,7 +498,8 @@ gboolean __is_media_session (ASM_sound_events_t sound_event)
 	return result;
 }
 
-ASM_event_sources_t __mapping_sound_event_to_event_src(ASM_sound_events_t sound_event, ASM_resource_t resource, ASM_sound_cases_t sound_case)
+static ASM_event_sources_t __mapping_sound_event_to_event_src(ASM_sound_events_t sound_event,
+														ASM_resource_t resource, ASM_sound_cases_t sound_case)
 {
 	ASM_event_sources_t event_src = ASM_EVENT_SOURCE_MEDIA;
 
@@ -538,7 +543,7 @@ ASM_event_sources_t __mapping_sound_event_to_event_src(ASM_sound_events_t sound_
 	return event_src;
 }
 
-ASM_event_sources_t __convert_eventsrc_interrupted_to_completed(ASM_event_sources_t eventsrc)
+static ASM_event_sources_t __convert_eventsrc_interrupted_to_completed(ASM_event_sources_t eventsrc)
 {
 	ASM_event_sources_t completed_eventsrc = ASM_EVENT_SOURCE_MEDIA;
 
@@ -563,7 +568,7 @@ ASM_event_sources_t __convert_eventsrc_interrupted_to_completed(ASM_event_source
 	return completed_eventsrc;
 }
 
-gboolean __is_valid_session_options(ASM_sound_events_t sound_event, int option_flags, int *error_code)
+static gboolean __is_valid_session_options(ASM_sound_events_t sound_event, int option_flags, int *error_code)
 {
 	gboolean result = true;
 	*error_code = ERR_ASM_ERROR_NONE;
@@ -587,7 +592,8 @@ gboolean __is_valid_session_options(ASM_sound_events_t sound_event, int option_f
 	return result;
 }
 
-gboolean __is_need_resume (ASM_sound_events_t incoming_sound_event, ASM_resource_t incoming_resource, ASM_sound_events_t current_sound_event, int current_handle)
+static gboolean __is_need_resume (ASM_sound_events_t incoming_sound_event, ASM_resource_t incoming_resource,
+								ASM_sound_events_t current_sound_event, int current_handle)
 {
 	gboolean result = FALSE;
 	switch (incoming_sound_event) {
@@ -652,7 +658,7 @@ gboolean __is_session_using_media_volume (ASM_sound_events_t sound_event)
 	return result;
 }
 
-gboolean __find_clean_monitor_handle(int instance_id, int *handle)
+static gboolean __find_clean_monitor_handle(int instance_id, int *handle)
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 	int lhandle = ASM_HANDLE_INIT_VAL;
@@ -676,7 +682,7 @@ gboolean __find_clean_monitor_handle(int instance_id, int *handle)
 	}
 }
 
-void __update_monitor_active(int instance_id)
+static void __update_monitor_active(int instance_id)
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 	asm_instance_list_t *monitor_list = NULL;
@@ -710,7 +716,7 @@ void __update_monitor_active(int instance_id)
 	monitor_list->monitor_active = active;
 }
 
-void __set_all_monitor_clean()
+static void __set_all_monitor_clean()
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 
@@ -722,7 +728,7 @@ void __set_all_monitor_clean()
 	}
 }
 
-void __set_monitor_dirty(int instance_id)
+static void __set_monitor_dirty(int instance_id)
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 
@@ -735,11 +741,70 @@ void __set_monitor_dirty(int instance_id)
 	}
 }
 
+#ifdef SUPPORT_CONTAINER
+static void __set_container_data(int handle, const char* container_name, int container_pid)
+{
+	asm_instance_list_t *temp_list = head_list_ptr;
+
+	while (temp_list != NULL) {
+		if (temp_list->sound_handle == handle) {
+			debug_error("Set container [%s][%d] to handle[%d] instanceID[%d]",
+						container_name, container_pid, handle, temp_list->instance_id);
+			if (container_name)
+				strcpy (temp_list->container.name, container_name);
+			temp_list->container.pid = container_pid;
+			break;
+		}
+		temp_list = temp_list->next;
+	}
+}
+
+static container_info_t* __get_container_info(int instance_id)
+{
+	asm_instance_list_t *temp_list = head_list_ptr;
+
+	while (temp_list != NULL) {
+		if (temp_list->instance_id == instance_id) {
+			return &temp_list->container;
+		}
+		temp_list = temp_list->next;
+	}
+}
+#endif /* SUPPORT_CONTAINER */
+
+static char* __get_asm_pipe_path(int instance_id, int handle, const char* postfix)
+{
+	char* path = NULL;
+	char* path2 = NULL;
+
+#ifdef SUPPORT_CONTAINER
+	container_info_t* container_info = __get_container_info(instance_id);
+
+	if (instance_id == container_info->pid) {
+		debug_error ("This might be in the HOST(%s)[%d], let's form normal path",
+					container_info->name, instance_id);
+		path = g_strdup_printf("/tmp/ASM.%d.%d", instance_id, handle);
+	} else {
+		path = g_strdup_printf("/var/lib/lxc/%s/rootfs/tmp/ASM.%d.%d",
+								container_info->name, container_info->pid, handle);
+	}
+#else
+	path = g_strdup_printf("/tmp/ASM.%d.%d", instance_id, handle);
+#endif
+	if (path && postfix) {
+		path2 = g_strconcat(path, postfix, NULL);
+		g_free(path);
+		path = path2;
+	}
+
+	return path;
+}
+
 /* callback without retcb */
 void __do_callback_wo_retcb(int instance_id,int handle,int command)
 {
 	int fd_ASM = -1, cur_handle = 0;
-	char *filename = g_strdup_printf("/tmp/ASM.%d.%d", instance_id, handle);
+	char *filename = __get_asm_pipe_path(instance_id, handle, NULL);
 
 	if ((fd_ASM = open(filename,O_WRONLY|O_NONBLOCK)) < 0) {
 		debug_log("[CallCB] %s open error",filename);
@@ -785,7 +850,7 @@ int __do_callback(int instance_id, int handle, int command, ASM_event_sources_t 
 	 * Open callback cmd pipe
 	 *
 	 **************************************/
-	filename = g_strdup_printf("/tmp/ASM.%d.%d", instance_id, handle);
+	filename = __get_asm_pipe_path(instance_id, handle, NULL);
 	if ((fd_ASM = open(filename, O_WRONLY|O_NONBLOCK)) < 0) {
 		debug_error("[CallCB] %s open error\n", filename);
 		goto fail;
@@ -797,7 +862,7 @@ int __do_callback(int instance_id, int handle, int command, ASM_event_sources_t 
 	 * before writing callback cmd to pipe
 	 *
 	 ******************************************/
-	filename2 = g_strdup_printf("/tmp/ASM.%d.%dr", instance_id, handle);
+	filename2 = __get_asm_pipe_path(instance_id, handle, "r");
 	if ((fd=open(filename2,O_RDONLY|O_NONBLOCK))== -1) {
 		char str_error[256];
 		strerror_r (errno, str_error, sizeof(str_error));
@@ -974,7 +1039,7 @@ int __do_watch_callback(ASM_sound_events_t sound_event, ASM_sound_states_t updat
 		 * Open callback cmd pipe
 		 *
 		 **************************************/
-		filename = g_strdup_printf("/tmp/ASM.%d.%d", instance_id_list[num], handle_list[num]);
+		filename = __get_asm_pipe_path(instance_id_list[num], handle_list[num], NULL);
 		if ((fd_ASM = open(filename, O_WRONLY|O_NONBLOCK)) < 0) {
 			debug_error("[CallCB] %s open error\n", filename);
 			goto fail;
@@ -986,7 +1051,7 @@ int __do_watch_callback(ASM_sound_events_t sound_event, ASM_sound_states_t updat
 		 * before writing callback cmd to pipe
 		 *
 		 ******************************************/
-		filename2 = g_strdup_printf("/tmp/ASM.%d.%dr", instance_id_list[num], handle_list[num]);
+		filename2 = __get_asm_pipe_path(instance_id_list[num], handle_list[num], "r");
 		if ((fd=open(filename2,O_RDONLY|O_NONBLOCK))== -1) {
 			char str_error[256];
 			strerror_r (errno, str_error, sizeof(str_error));
@@ -1111,6 +1176,29 @@ void __temp_print_list(char * msg)
 	}
 	while (temp_list != NULL) {
 		if (!temp_list->is_registered_for_watching) {
+#ifdef SUPPORT_CONTAINER
+			if (!ASM_IS_ADVANCED_ASM_EVENT(temp_list->sound_event)) {
+				debug_msg(" List[%02d] ( %10s, %5d(%5d), %2d, %-22s, %-15s, %9s checked by%5d/%d, 0x%04x, 0x%04x)\n" , i,
+												temp_list->container.name,
+												temp_list->instance_id, temp_list->container.pid, temp_list->sound_handle,
+												ASM_sound_event_str[temp_list->sound_event],
+												ASM_sound_state_str[temp_list->sound_state],
+												ASM_sound_resume_str[temp_list->need_resume],
+												temp_list->paused_by_id.pid,
+												temp_list->paused_by_id.sound_handle,
+												temp_list->mm_resource,
+												temp_list->option_flags);
+			} else {
+				debug_msg(" List[%02d] ( %10s, %5d(%5d), %2d, %-22s, %-15s, %-15s, 0x%04x)\n", i,
+												temp_list->container.name,
+												temp_list->instance_id, temp_list->container.pid,
+												temp_list->sound_handle,
+												ASM_sound_event_str[temp_list->sound_event],
+												ASM_sound_state_str[temp_list->sound_state],
+												ASM_sound_sub_event_str[temp_list->sound_sub_event],
+												temp_list->mm_resource);
+			}
+#else
 			if (!ASM_IS_ADVANCED_ASM_EVENT(temp_list->sound_event)) {
 				debug_msg(" List[%02d] ( %5d, %2d, %-22s, %-15s, %9s checked by%5d/%d, 0x%04x, 0x%04x)\n" , i,
 												temp_list->instance_id, temp_list->sound_handle,
@@ -1130,6 +1218,7 @@ void __temp_print_list(char * msg)
 												ASM_sound_sub_event_str[temp_list->sound_sub_event],
 												temp_list->mm_resource);
 			}
+#endif
 			i++;
 		}
 		temp_list = temp_list->next;
@@ -1138,10 +1227,18 @@ void __temp_print_list(char * msg)
 	debug_log(" listed below are requests for watching session\n");
 	while (temp_list != NULL) {
 		if (temp_list->is_registered_for_watching) {
+#ifdef SUPPORT_CONTAINER
+			debug_msg(" List[%02d] ( %10s, %5d(%5d), %2d, %-22s, %-15s, %5s)\n", i, temp_list->container.name,
+												temp_list->instance_id, temp_list->container.pid, temp_list->sound_handle,
+												ASM_sound_event_str[temp_list->sound_event],
+												ASM_sound_state_str[temp_list->sound_state],
+												"WATCHING");
+#else
 			debug_msg(" List[%02d] ( %5d, %2d, %-22s, %-15s, %5s)\n", i, temp_list->instance_id, temp_list->sound_handle,
 												ASM_sound_event_str[temp_list->sound_event],
 												ASM_sound_state_str[temp_list->sound_state],
 												"WATCHING");
+#endif
 			i++;
 		}
 		temp_list = temp_list->next;
@@ -1176,9 +1273,9 @@ void ___update_phone_status()
 		temp_list = temp_list->next;
 	}
 
-	if (vconf_set_int(SOUND_STATUS_KEY, g_sound_status_playing)) {
+	if ((error = vconf_set_int(SOUND_STATUS_KEY, g_sound_status_playing))) {
 		debug_error("[ASM_Server[Error = %d][1st try] phonestatus_set \n", error);
-		if (vconf_set_int(SOUND_STATUS_KEY, g_sound_status_playing)) {
+		if ((error = vconf_set_int(SOUND_STATUS_KEY, g_sound_status_playing))) {
 			debug_error("[Error = %d][2nd try]  phonestatus_set \n", error);
 		}
 	}
@@ -1208,6 +1305,12 @@ asm_instance_list_t* __asm_register_list(int instance_id, int handle, ASM_sound_
 	temp_list->monitor_active = 0;
 	temp_list->monitor_dirty = 0;
 	temp_list->is_registered_for_watching = is_requested_for_watching;
+#ifdef SUPPORT_CONTAINER
+	memset (&temp_list->container, 0, sizeof (container_info_t));
+	strcpy (temp_list->container.name, "NONAME");
+	temp_list->container.pid = instance_id;
+#endif
+
 	temp_list->next = head_list_ptr;
 	head_list_ptr = temp_list;
 	if (tail_list_ptr == NULL) {
@@ -1262,31 +1365,14 @@ int __asm_unregister_list(int handle)
 }
 
 /* -------------------------
- * if PID exist return true, else return false
- */
-gboolean ___is_pid_exist(int pid)
-{
-	if (pid > 999999 || pid < 2)
-		return FALSE;
-	gchar *tmp = g_malloc0(25);
-	g_sprintf(tmp, "/proc/%d", pid);
-	if (access(tmp, R_OK)==0) {
-		g_free(tmp);
-		return TRUE;
-	}
-	g_free(tmp);
-	return FALSE;
-}
-
-/* -------------------------
  *
  */
-void __check_dead_process()
+static void __check_dead_process()
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 	asm_instance_list_t *temp_list_prev = head_list_ptr;
 	while (temp_list != NULL) {
-		if (!___is_pid_exist(temp_list->instance_id)) {
+		if (!mm_sound_util_is_process_alive(temp_list->instance_id)) {
 			debug_warning(" PID(%d) not exist! -> ASM_Server resource of pid(%d) will be cleared \n", temp_list->instance_id, temp_list->instance_id);
 			g_handle_info[temp_list->sound_handle].is_registered = 0;
 			g_handle_info[temp_list->sound_handle].option_flags = 0;
@@ -1309,7 +1395,7 @@ void __check_dead_process()
 			}
 		} else {
 			if (temp_list->paused_by_id.pid) {
-				if (!___is_pid_exist(temp_list->paused_by_id.pid)) {
+				if (!mm_sound_util_is_process_alive(temp_list->paused_by_id.pid)) {
 					temp_list->need_resume = ASM_NEED_NOT_RESUME;
 					temp_list->paused_by_id.pid = 0;
 					temp_list->paused_by_id.sound_handle = ASM_HANDLE_INIT_VAL;
@@ -1339,7 +1425,7 @@ void __reset_resume_check(int instance_id, int handle)
 	}
 }
 
-void __emergent_exit(int exit_pid)
+static void __emergent_exit(int exit_pid)
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 	int handle = ASM_HANDLE_INIT_VAL;
@@ -1348,13 +1434,10 @@ void __emergent_exit(int exit_pid)
 	while (temp_list != NULL) {
 		if (temp_list->instance_id == exit_pid) {
 			handle = temp_list->sound_handle;
-
-			instance_id = __asm_unregister_list(handle);
-
-			if (instance_id != -1) {
+			if (temp_list->instance_id != -1) {
 				char str_error[256];
-				char* filename = g_strdup_printf("/tmp/ASM.%d.%d", instance_id, handle);
-				char* filename2 = g_strdup_printf("/tmp/ASM.%d.%dr", instance_id, handle);
+				char* filename = __get_asm_pipe_path(temp_list->instance_id, handle, NULL);
+				char* filename2 = __get_asm_pipe_path(temp_list->instance_id, handle, "r");
 				if (!remove(filename)) {
 					debug_log(" remove %s success\n", filename);
 				} else {
@@ -1372,6 +1455,7 @@ void __emergent_exit(int exit_pid)
 				g_free(filename);
 				g_free(filename2);
 			}
+			instance_id = __asm_unregister_list(handle);
 			temp_list = head_list_ptr;
 		} else {
 			temp_list = temp_list->next;
@@ -1549,44 +1633,6 @@ void __asm_change_need_resume_list(int instance_id, int handle, ASM_resume_state
 	}
 }
 
-void __asm_create_message_queue()
-{
-	asm_rcv_msgid = msgget((key_t)2014, 0666 | IPC_CREAT);
-	asm_snd_msgid = msgget((key_t)4102, 0666 | IPC_CREAT);
-	asm_cb_msgid = msgget((key_t)4103, 0666 | IPC_CREAT);
-
-	if (asm_snd_msgid == -1 || asm_rcv_msgid == -1 || asm_cb_msgid == -1) {
-		debug_error(" msgget failed with error(%d,%s) \n", errno, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-}
-
-void __asm_snd_message(ASM_msg_asm_to_lib_t *asm_snd_msg)
-{
-	if (msgsnd(asm_snd_msgid, (void *)asm_snd_msg, sizeof(asm_snd_msg->data), 0) == -1) {
-		debug_error(" msgsnd failed with error %d\n", errno);
-		exit(EXIT_FAILURE);
-	} else {
-		debug_warning(" success : handle(%d), pid(%d), result_state(%s), result_command(%s), source_request(%s)",
-			asm_snd_msg->data.alloc_handle, asm_snd_msg->instance_id,
-			ASM_sound_state_str[asm_snd_msg->data.result_sound_state],
-			ASM_sound_command_str[asm_snd_msg->data.result_sound_command],
-			ASM_sound_request_str[asm_snd_msg->data.source_request_id]);
-		asm_snd_msg->data.result_sound_state = ASM_STATE_NONE;
-		asm_snd_msg->data.result_sound_command = ASM_COMMAND_NONE;
-	}
-}
-
-void __asm_rcv_message(ASM_msg_lib_to_asm_t *asm_rcv_msg)
-{
-	if (msgrcv(asm_rcv_msgid, (void *)asm_rcv_msg, sizeof(asm_rcv_msg->data), 0, 0) == -1) {
-		debug_error(" msgrcv failed with error %d\n", errno);
-		exit(EXIT_FAILURE);
-	} else {
-		debug_log(" success");
-	}
-}
-
 void __asm_get_empty_handle(int instance_id, int *handle)
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
@@ -1654,8 +1700,8 @@ gboolean __need_to_compare_again(ASM_sound_events_t current_playing_event, int c
 		mm_sound_device_in device_in = MM_SOUND_DEVICE_IN_NONE;
 		bool available = false;
 
-		if (incoming_playing_event == ASM_EVENT_NOTIFY && (_mm_sound_is_recording() || _mm_sound_is_mute_policy()) ) {
-			ret = MMSoundMgrSessionIsDeviceAvailable (device_out_wired_accessory, device_in, &available);
+		if (incoming_playing_event == ASM_EVENT_NOTIFY && (mm_sound_util_is_recording() || mm_sound_util_is_mute_policy()) ) {
+//			ret = MMSoundMgrSessionIsDeviceAvailable (device_out_wired_accessory, device_in, &available);
 			if (ret) {
 				debug_error("Failed to IsDeviceAvailable()\n");
 			} else {
@@ -1684,7 +1730,7 @@ gboolean __need_to_compare_again(ASM_sound_events_t current_playing_event, int c
 			}
 		} else if (current_playing_event == ASM_EVENT_NOTIFY &&
 			(incoming_playing_event != ASM_EVENT_EARJACK_UNPLUG && __is_session_using_media_volume(incoming_playing_event))) {
-			ret = MMSoundMgrSessionGetDeviceActive(&device_out, &device_in);
+//			ret = MMSoundMgrSessionGetDeviceActive(&device_out, &device_in);
 			if (ret) {
 				debug_error("Failed to GetDeviceActive()\n");
 			} else {
@@ -1700,7 +1746,7 @@ gboolean __need_to_compare_again(ASM_sound_events_t current_playing_event, int c
 				}
 			}
 		} else if (current_playing_event == ASM_EVENT_ALARM && incoming_playing_event == ASM_EVENT_NOTIFY) {
-			if ((_mm_sound_is_recording() || _mm_sound_is_mute_policy())) {
+			if ((mm_sound_util_is_recording() || mm_sound_util_is_mute_policy())) {
 				debug_warning("EXCEPTION case for notification on alarm in 1PAUSE_2PLAY => go to 1PLAY_2STOP\n");
 				*sound_case = ASM_CASE_1PLAY_2STOP;
 				*blocked_reason = ERR_ASM_POLICY_CANNOT_PLAY_BY_PROFILE;
@@ -2474,7 +2520,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 	int ret = MM_ERROR_NONE;
 	session_t cur_session;
 
-	MMSoundMgrSessionGetSession(&cur_session);
+//	MMSoundMgrSessionGetSession(&cur_session);
 	debug_warning (" cur_session[%d] (0:MEDIA 1:VC 2:VT 3:VOIP 4:FM 5:NOTI 6:ALARM 7:EMER 8:VR)\n",cur_session);
 	if (is_for_recovery) {
 		if (need_to_resume) {
@@ -2492,21 +2538,21 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 			switch (rcv_sound_event) {
 			case ASM_EVENT_CALL:
 				debug_warning (" ****** SESSION_VOICECALL start ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VOICECALL, SESSION_START);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VOICECALL, SESSION_START);
 				if (ret) {
 					goto ERROR_CASE;
 				}
 				break;
 			case ASM_EVENT_VIDEOCALL:
 				debug_warning (" ****** SESSION_VIDEOCALL start ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VIDEOCALL, SESSION_START);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VIDEOCALL, SESSION_START);
 				if (ret) {
 					goto ERROR_CASE;
 				}
 				break;
 			case ASM_EVENT_VOIP:
 				debug_warning (" ****** SESSION_VOIP start ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VOIP, SESSION_START);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VOIP, SESSION_START);
 				if (ret) {
 					goto ERROR_CASE;
 				}
@@ -2514,10 +2560,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 			case ASM_EVENT_EXCLUSIVE_RESOURCE:
 				if ( rcv_resource & ASM_RESOURCE_VOICECONTROL ) {
 					debug_warning (" ****** ASM_RESOURCE_VOICECONTROL START ******\n");
-					if (vconf_set_int(VCONFKEY_SOUND_VOICE_CONTROL_STATUS, 1)) {
-						debug_error(" vconf_set_int(SOUND_VOICE_CONTROL_KEY, 1) fail\n");
-					}
-					MMSoundMgrSessionSetVoiceControlState(true);
+//					MMSoundMgrSessionSetVoiceControlState(true);
 				}
 				break;
 			default:
@@ -2538,7 +2581,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 					debug_warning (" ****** Notify starts on Call/Voip session ******\n");
 				} else {
 					debug_warning (" ****** SESSION_NOTIFICATION start ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_NOTIFICATION, SESSION_START);
+//					ret = MMSoundMgrSessionSetSession(SESSION_NOTIFICATION, SESSION_START);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2554,7 +2597,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 					debug_warning (" ****** Alarm starts on Call/Voip session ******\n");
 				} else {
 					debug_warning (" ****** SESSION_ALARM start ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_START);
+//					ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_START);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2568,7 +2611,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 					SESSION_REF(cur_session);
 				} else {
 					debug_warning (" ****** SESSION_EMERGENCY start ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_EMERGENCY, SESSION_START);
+//					ret = MMSoundMgrSessionSetSession(SESSION_EMERGENCY, SESSION_START);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2582,7 +2625,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 					SESSION_REF(cur_session);
 				} else {
 					debug_warning (" ****** SESSION_FMRADIO start ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_FMRADIO, SESSION_START);
+//					ret = MMSoundMgrSessionSetSession(SESSION_FMRADIO, SESSION_START);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2625,7 +2668,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 					SESSION_REF(cur_session);
 				} else {
 					debug_warning (" ****** SESSION_VOICE_RECOGNITION start ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_START);
+//					ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_START);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2655,7 +2698,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 				/* wakeup mode */
 				if (cur_session == SESSION_VOICE_RECOGNITION) {
 					subsession_t subsession = 0;
-					MMSoundMgrSessionGetSubSession(&subsession);
+//					MMSoundMgrSessionGetSubSession(&subsession);
 					if (subsession == SUBSESSION_VR_NORMAL || subsession == SUBSESSION_VR_DRIVE) {
 						/* do nothing */
 					}
@@ -2665,7 +2708,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 				/* command mode */
 				if (cur_session == SESSION_VOICE_RECOGNITION) {
 					subsession_t subsession = 0;
-					MMSoundMgrSessionGetSubSession(&subsession);
+//					MMSoundMgrSessionGetSubSession(&subsession);
 					if (subsession == SUBSESSION_VR_NORMAL || subsession == SUBSESSION_VR_DRIVE) {
 						/* do nothing */
 					}
@@ -2686,7 +2729,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 			switch (rcv_sound_event) {
 			case ASM_EVENT_CALL:
 				debug_warning (" ****** SESSION_VOICECALL end ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VOICECALL, SESSION_END);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VOICECALL, SESSION_END);
 				if (ret) {
 					goto ERROR_CASE;
 				}
@@ -2694,7 +2737,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 				break;
 			case ASM_EVENT_VIDEOCALL:
 				debug_warning (" ****** SESSION_VIDEOCALL end ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VIDEOCALL, SESSION_END);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VIDEOCALL, SESSION_END);
 				if (ret) {
 					goto ERROR_CASE;
 				}
@@ -2702,7 +2745,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 				break;
 			case ASM_EVENT_VOIP:
 				debug_warning (" ****** SESSION_VOIP end ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VOIP, SESSION_END);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VOIP, SESSION_END);
 				if (ret) {
 					goto ERROR_CASE;
 				}
@@ -2721,7 +2764,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 						debug_warning (" ****** KEEP GOING SESSION_VOICE_RECOGNITION ****** current ref.count(%d)\n", g_session_ref_count);
 					} else {
 						debug_warning (" ****** SESSION_VOICE_RECOGNITION end ******\n");
-						ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_END);
+//						ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_END);
 						if (ret) {
 							goto ERROR_CASE;
 						}
@@ -2733,7 +2776,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 			case ASM_EVENT_MMCAMCORDER_VIDEO:
 				if (cur_session == SESSION_MEDIA) {
 					debug_warning (" ****** SESSION_MEDIA for MMCAMCORDER end ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_MEDIA, SESSION_END);
+//					ret = MMSoundMgrSessionSetSession(SESSION_MEDIA, SESSION_END);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2741,11 +2784,8 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 				break;
 			case ASM_EVENT_EXCLUSIVE_RESOURCE:
 				if ( rcv_resource & ASM_RESOURCE_VOICECONTROL ) {
+//					MMSoundMgrSessionSetVoiceControlState(false);
 					debug_warning (" ****** ASM_RESOURCE_VOICECONTROL END ******\n");
-					MMSoundMgrSessionSetVoiceControlState(false);
-					if (vconf_set_int(VCONFKEY_SOUND_VOICE_CONTROL_STATUS, 0)) {
-						debug_error(" vconf_set_int(SOUND_VOICE_CONTROL_KEY, 0) fail\n");
-					}
 				}
 				break;
 			default:
@@ -2764,7 +2804,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_NOTIFICATION ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_NOTIFICATON end ******\n");
-							ret = MMSoundMgrSessionSetSession(SESSION_NOTIFICATION, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_NOTIFICATION, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2775,7 +2815,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_ALARM ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_ALARM end ******\n");
-							ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2792,7 +2832,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_ALARM ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_ALARM end ******\n");
-							ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2811,7 +2851,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_EMERGENCY ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_EMERGENCY end ******\n");
-							ret = MMSoundMgrSessionSetSession(SESSION_EMERGENCY, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_EMERGENCY, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2828,7 +2868,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_FMRADIO ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_FMRADIO end ******");
-							ret = MMSoundMgrSessionSetSession(SESSION_FMRADIO, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_FMRADIO, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2851,7 +2891,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_VOICE_RECOGNITION ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_VOICE_RECOGNITION end ******\n");
-							ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2880,14 +2920,14 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 		debug_warning (" need_to_resume[%d]", *need_to_resume);
 	}
 
-	MMSoundMgrSessionGetSession(&cur_session);
+//	MMSoundMgrSessionGetSession(&cur_session);
 	debug_msg (" cur_session[%d] : leave", cur_session);
 
 	return ret;
 
 RECOVERY_CASE:
 	debug_warning (" ****** recovery case : current session(%d) end ******\n", cur_session);
-	ret = MMSoundMgrSessionSetSession(cur_session, SESSION_END);
+//	ret = MMSoundMgrSessionSetSession(cur_session, SESSION_END);
 	if (ret) {
 		goto ERROR_CASE;
 	}
@@ -2899,6 +2939,407 @@ ERROR_CASE:
 	return ret;
 }
 
+int _mm_sound_mgr_asm_register_sound(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					    int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_unregister_sound(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_register_watcher(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					      int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_unregister_watcher(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_get_mystate(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					 int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_get_state(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+				       int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_set_state(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+				       int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state, int *snd_error_code)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+	*snd_error_code = asm_snd_gvariant.data.error_code;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_set_subsession(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					    int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_get_subsession(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					    int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_set_subevent(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					  int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_get_subevent(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					  int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_set_session_option(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+						int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_error_code)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_error_code = asm_snd_gvariant.data.error_code;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_get_session_option(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+						int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_option_flag)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_option_flag = asm_snd_gvariant.data.error_code;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_reset_resume_tag(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					      int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_sound_state = asm_snd_gvariant.data.error_code;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_dump(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_emergent_exit(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	return ret;
+
+}
+
+#ifdef SUPPORT_CONTAINER
+void _mm_sound_mgr_asm_update_container_data(int handle, const char* container_name, int container_pid)
+{
+	__set_container_data(handle, container_name, container_pid);
+	__temp_print_list(NULL);
+}
+#endif
 
 int __asm_process_message (void *rcv_msg, void *ret_msg)
 {
@@ -2954,9 +3395,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		__asm_get_empty_handle(rcv_instance_id, &rcv_sound_handle);
 		if (rcv_sound_handle == ASM_HANDLE_INIT_VAL) {
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, ASM_HANDLE_INIT_VAL, ASM_HANDLE_INIT_VAL, rcv_request_id);
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 		} else {
 			asm_compare_result_t compare_result = __asm_compare_priority_matrix(&asm_snd_msg, asm_ret_msg,
 									rcv_instance_id, rcv_sound_handle, rcv_request_id, rcv_sound_event, rcv_sound_state, rcv_resource);
@@ -2969,9 +3407,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 				}
 			}
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 			ASM_DO_WATCH_CALLBACK_FROM_RESULT(compare_result);
 		}
 
@@ -3013,18 +3448,12 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 				__asm_change_state_list(rcv_instance_id, rcv_sound_handle, rcv_sound_state, rcv_resource);
 				asm_snd_msg.data.result_sound_command = ASM_COMMAND_NONE;
 				asm_snd_msg.data.result_sound_state = rcv_sound_state;
-				if (asm_ret_msg == NULL && rcv_sound_state == ASM_STATE_PLAYING) {
-					__asm_snd_message(&asm_snd_msg);
-				}
-			} else if (_mm_sound_is_mute_policy() && (ASM_EVENT_NOTIFY == rcv_sound_event)) {
+			} else if (mm_sound_util_is_mute_policy() && (ASM_EVENT_NOTIFY == rcv_sound_event)) {
 				/*do not play notify sound in mute profile.*/
 				asm_snd_msg.data.result_sound_command = ASM_COMMAND_STOP;
 				asm_snd_msg.data.result_sound_state   = ASM_STATE_STOP;
 				asm_snd_msg.data.error_code           = ERR_ASM_POLICY_CANNOT_PLAY_BY_PROFILE;
 				__asm_change_state_list(rcv_instance_id, rcv_sound_handle, ASM_STATE_STOP, rcv_resource);
-				if (asm_ret_msg == NULL) {
-					__asm_snd_message(&asm_snd_msg);
-				}
 				__temp_print_list("Set State (Not Play)");
 				break;
 			} else {
@@ -3039,9 +3468,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 					if (ret) {
 						debug_error (" failed to __asm_change_session(), error(0x%x)", ret);
 					}
-				}
-				if (asm_ret_msg == NULL && rcv_sound_state == ASM_STATE_PLAYING) {
-					__asm_snd_message(&asm_snd_msg);
 				}
 
 				ASM_DO_WATCH_CALLBACK_FROM_RESULT(compare_result);
@@ -3102,9 +3528,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 			asm_snd_msg.data.source_request_id = rcv_request_id;
 		}
 		ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
-		}
 		break;
 	}
 
@@ -3112,9 +3535,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		__check_dead_process();
 		ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
 		asm_snd_msg.data.result_sound_state = __asm_find_process_status(rcv_instance_id);
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
-		}
 		break;
 
 	case ASM_REQUEST_DUMP:
@@ -3157,7 +3577,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 				int session_order = -1;
 
 				session_t cur_session;
-				MMSoundMgrSessionGetSession(&cur_session);
+//				MMSoundMgrSessionGetSession(&cur_session);
 				debug_warning (" cur_session[%d] (0:MEDIA 1:VC 2:VT 3:VOIP 4:FM 5:NOTI 6:ALARM 7:EMER 8:VR)\n",cur_session);
 				if (cur_session == SESSION_VOICECALL ||
 					cur_session == SESSION_VIDEOCALL ||
@@ -3177,7 +3597,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 					session_order = SESSION_END;
 				}
 				if (session_order != -1) {
-					ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, session_order);
+//					ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, session_order);
 					if (ret) {
 						debug_error (" failed to MMSoundMgrSessionSetSession() for VOICE_RECOGNITION\n");
 						do_set_subsession = false;
@@ -3190,7 +3610,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 						}
 					}
 				}
-				MMSoundMgrSessionGetSession(&cur_session);
+//				MMSoundMgrSessionGetSession(&cur_session);
 				debug_msg (" cur_session[%d] : leave", cur_session);
 				break;
 			}
@@ -3200,7 +3620,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 				int ret = 0;
 				int session_order = -1;
 				session_t cur_session;
-				MMSoundMgrSessionGetSession(&cur_session);
+//				MMSoundMgrSessionGetSession(&cur_session);
 				debug_warning (" cur_session[%d] (0:MEDIA 1:VC 2:VT 3:VOIP 4:FM 5:NOTI 6:ALARM 7:EMER 8:VR)\n",cur_session);
 				if (cur_session == SESSION_VOICECALL ||
 					cur_session == SESSION_VIDEOCALL ||
@@ -3219,13 +3639,13 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 					session_order = SESSION_END;
 				}
 				if (session_order != -1) {
-					ret = MMSoundMgrSessionSetSession(SESSION_MEDIA, session_order);
+//					ret = MMSoundMgrSessionSetSession(SESSION_MEDIA, session_order);
 					if (ret) {
 						debug_error (" failed to MMSoundMgrSessionSetSession() for MMCAMCORDER_AUDIO/VIDEO\n");
 						do_set_subsession = false;
 					}
 				}
-				MMSoundMgrSessionGetSession(&cur_session);
+//				MMSoundMgrSessionGetSession(&cur_session);
 				debug_msg (" cur_session[%d] : leave", cur_session);
 
 				break;
@@ -3255,7 +3675,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 					}
 				}
 
-				ret = MMSoundMgrSessionSetSubSession(rcv_subsession, result_resource);
+//				ret = MMSoundMgrSessionSetSubSession(rcv_subsession, result_resource);
 				if (ret != MM_ERROR_NONE) {
 					/* TODO : Error Handling */
 					debug_error (" MMSoundMgrSessionSetSubSession failed....ret = [%x]\n", ret);
@@ -3274,9 +3694,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 
 			/* Return result msg */
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 		}
 		break;
 
@@ -3286,7 +3703,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 
 			/* FIXME: have to check only call instance with playing stsate can request this */
 			debug_warning (" ****** GET SUB-SESSION ******\n");
-			ret = MMSoundMgrSessionGetSubSession(&subsession);
+//			ret = MMSoundMgrSessionGetSubSession(&subsession);
 			if (ret != MM_ERROR_NONE) {
 				/* TODO : Error Handling */
 				debug_error (" MMSoundMgrSessionGetSubSession failed....ret = [%x]\n", ret);
@@ -3295,9 +3712,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 			/* Return result msg */
 			asm_snd_msg.data.result_sound_command = subsession;
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 		}
 		break;
 
@@ -3352,9 +3766,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 					debug_error (" failed to __asm_change_session(), error(0x%x)", ret);
 				}
 			}
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 		}
 
 		__temp_print_list("Set Sub-event");
@@ -3366,9 +3777,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		/* Return result msg */
 		asm_instance_h = __asm_find_list(rcv_sound_handle);
 		asm_snd_msg.data.result_sound_command = (asm_instance_h ? asm_instance_h->sound_sub_event : ASM_SUB_EVENT_NONE);
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
-		}
 		break;
 
 	case ASM_REQUEST_SET_SESSION_OPTIONS:
@@ -3397,9 +3805,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		}
 
 		ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
-		}
 		break;
 	}
 
@@ -3410,9 +3815,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		asm_snd_msg.data.option_flags = (asm_instance_h ? asm_instance_h->option_flags : 0);
 		if (!asm_instance_h) {
 			asm_snd_msg.data.result_sound_command = ASM_COMMAND_STOP;
-		}
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
 		}
 		break;
 
@@ -3467,16 +3869,10 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		__asm_get_empty_handle(rcv_instance_id, &rcv_sound_handle);
 		if (rcv_sound_handle == ASM_HANDLE_INIT_VAL) {
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, ASM_HANDLE_INIT_VAL, ASM_HANDLE_INIT_VAL, rcv_request_id);
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 		} else {
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
 			asm_snd_msg.data.result_sound_command = ASM_COMMAND_PLAY;
 			asm_snd_msg.data.result_sound_state = rcv_sound_state;
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 			__asm_register_list(rcv_instance_id, rcv_sound_handle, rcv_sound_event, rcv_sound_state, 0, true);
 		}
 		break;
@@ -3499,9 +3895,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
 		asm_snd_msg.data.result_sound_command = ASM_COMMAND_PLAY;
 		asm_snd_msg.data.result_sound_state = rcv_sound_state;
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
-		}
 		break;
 	}
 
@@ -3516,32 +3909,14 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 	pthread_mutex_unlock(&g_mutex_asm);
 	debug_log (" ===================================================================== End (UNLOCKED) ");
 
-	return 0;
+	return ret;
 }
 
 void __asm_main_run (void* param)
 {
-	ASM_msg_lib_to_asm_t asm_rcv_msg;
+	//ASM_msg_lib_to_asm_t asm_rcv_msg;
 
 	signal(SIGPIPE, SIG_IGN);
-
-	/* Init Msg Queue */
-	__asm_create_message_queue();
-
-	int temp_msgctl_id1 = msgctl(asm_snd_msgid, IPC_RMID, 0);
-	int temp_msgctl_id2 = msgctl(asm_rcv_msgid, IPC_RMID, 0);
-	int temp_msgctl_id3 = msgctl(asm_cb_msgid, IPC_RMID, 0);
-
-	if (temp_msgctl_id1 == -1 || temp_msgctl_id2 == -1 || temp_msgctl_id3 == -1) {
-		debug_error(" msgctl failed with error(%d,%s) \n", errno, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-	//-------------------------------------------------------------------
-	/*
-		This is unnessasry finaly, but nessasary during implement.
-	*/
-	/* FIXME: Do we need to do this again ? */
-	__asm_create_message_queue();
 
 	/*
 	 * Init Vconf
@@ -3556,21 +3931,6 @@ void __asm_main_run (void* param)
 	/* Set READY flag */
 	if (vconf_set_int(ASM_READY_KEY, 1)) {
 		debug_error(" vconf_set_int fail\n");
-	}
-
-	/* Msg Loop */
-	while (true) {
-		debug_log(" asm_Server is waiting message(%d)!!!\n", asm_is_send_msg_to_cb);
-		if (asm_is_send_msg_to_cb)
-			continue;
-
-		/* Receive Msg */
-		__asm_rcv_message(&asm_rcv_msg);
-
-		/* Do msg handling */
-		__asm_process_message (&asm_rcv_msg, NULL);
-
-		/* TODO : Error Handling */
 	}
 }
 

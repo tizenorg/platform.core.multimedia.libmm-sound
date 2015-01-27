@@ -27,6 +27,9 @@
 
 #include "mm_sound.h"
 #include "mm_sound_device.h"
+#ifdef USE_FOCUS
+#include "mm_sound_stream.h"
+#endif
 
 
 #define FILE_PATH 512
@@ -68,6 +71,13 @@ typedef struct
 	int is_available;
 	int route_list[MM_SOUND_ROUTE_NUM];
 
+#ifdef USE_FOCUS
+	/* Focus */
+	int handle_id;
+	int focus_type;
+	int changed_state;
+	char stream_type[MAX_STREAM_TYPE_LEN];
+#endif
 	/* Volume */
 	int type;
 	int val;
@@ -94,6 +104,7 @@ typedef struct
 {
 	long msg_type;
 	mmsound_ipc_t sound_msg;
+	bool wait_for_reply;
 } mm_ipc_msg_t;
 
 typedef void (*mm_ipc_callback_t)(int code, int size);

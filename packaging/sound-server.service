@@ -2,6 +2,9 @@
 Description=Start the sound profile service
 
 [Service]
+User=system
+Group=system
+SmackProcessLabel=sound_server
 ExecStart=/usr/bin/sound_server -S
 Restart=always
 RestartSec=0

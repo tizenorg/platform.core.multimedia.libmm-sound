@@ -69,6 +69,8 @@
 
 int g_saved_dock_status;
 
+#if 0
+
 static void __dock_sound_finished_cb(void *data , int id)
 {
 	bool* is_finish = (bool*)data;
@@ -215,3 +217,4 @@ int MMSoundMgrDockFini(void)
 	return MM_ERROR_NONE;
 }
 
+#endif

@@ -30,6 +30,8 @@
 #define RCV_MSG	0x21	/* rcv key */
 #define SND_MSG 0x24	/* snd key */
 #define CB_MSG   0x64		/* cb key */
+#define RCV_CB_MSG   0x41	/* cb rcv key */
+#define SND_CB_MSG   0x44	/* cb snd key */
 
 #define MEMTYPE_SUPPORT_MAX (1024 * 1024) /* 1MB */
 
@@ -95,6 +97,100 @@ enum {
 	MM_SOUND_MSG_INF_DEVICE_INFO_CHANGED_CB,
 	MM_SOUND_MSG_REQ_GET_CONNECTED_DEVICE_LIST,
 	MM_SOUND_MSG_RES_GET_CONNECTED_DEVICE_LIST,
+#ifdef USE_FOCUS
+	MM_SOUND_MSG_REQ_REGISTER_FOCUS,
+	MM_SOUND_MSG_RES_REGISTER_FOCUS,
+	MM_SOUND_MSG_REQ_UNREGISTER_FOCUS,
+	MM_SOUND_MSG_RES_UNREGISTER_FOCUS,
+	MM_SOUND_MSG_REQ_ACQUIRE_FOCUS,
+	MM_SOUND_MSG_RES_ACQUIRE_FOCUS,
+	MM_SOUND_MSG_REQ_RELEASE_FOCUS,
+	MM_SOUND_MSG_RES_RELEASE_FOCUS,
+	MM_SOUND_MSG_INF_FOCUS_CHANGED_CB,
+	MM_SOUND_MSG_REQ_SET_FOCUS_WATCH_CB,
+	MM_SOUND_MSG_RES_SET_FOCUS_WATCH_CB,
+	MM_SOUND_MSG_REQ_UNSET_FOCUS_WATCH_CB,
+	MM_SOUND_MSG_RES_UNSET_FOCUS_WATCH_CB,
+	MM_SOUND_MSG_INF_FOCUS_WATCH_CB,
+#endif
+};
+
+
+/* TODO : make this general , can be used in other IPC not only dbus */
+enum {
+        METHOD_CALL_TEST,
+        METHOD_CALL_PLAY_FILE_START,
+        METHOD_CALL_PLAY_FILE_START_WITH_STREAM_INFO,
+        METHOD_CALL_PLAY_FILE_STOP,
+        METHOD_CALL_PLAY_DTMF,
+        METHOD_CALL_PLAY_DTMF_WITH_STREAM_INFO,
+        METHOD_CALL_GET_BT_A2DP_STATUS,
+        METHOD_CALL_SET_PATH_FOR_ACTIVE_DEVICE,
+        METHOD_CALL_GET_CONNECTED_DEVICE_LIST,
+        METHOD_CALL_GET_AUDIO_PATH,
+        METHOD_CALL_SET_VOLUME_LEVEL,
+
+        METHOD_CALL_REGISTER_FOCUS,
+        METHOD_CALL_UNREGISTER_FOCUS,
+        METHOD_CALL_ACQUIRE_FOCUS,
+        METHOD_CALL_RELEASE_FOCUS,
+        METHOD_CALL_WATCH_FOCUS,
+        METHOD_CALL_UNWATCH_FOCUS,
+
+        METHOD_CALL_ASM_REGISTER_SOUND,
+        METHOD_CALL_ASM_UNREGISTER_SOUND,
+        METHOD_CALL_ASM_REGISTER_WATCHER,
+        METHOD_CALL_ASM_UNREGISTER_WATCHER,
+        METHOD_CALL_ASM_GET_MYSTATE,
+        METHOD_CALL_ASM_GET_STATE,
+        METHOD_CALL_ASM_SET_STATE,
+        METHOD_CALL_ASM_SET_SUBSESSION,
+        METHOD_CALL_ASM_GET_SUBSESSION,
+        METHOD_CALL_ASM_SET_SUBEVENT,
+        METHOD_CALL_ASM_GET_SUBEVENT,
+        METHOD_CALL_ASM_SET_SESSION_OPTION,
+        METHOD_CALL_ASM_GET_SESSION_OPTION,
+        METHOD_CALL_ASM_RESET_RESUME_TAG,
+        METHOD_CALL_ASM_DUMP,
+        METHOD_CALL_ASM_EMERGENT_EXIT,
+
+        METHOD_CALL_MAX,
+};
+
+
+typedef enum sound_server_signal {
+        SIGNAL_TEST,
+        SIGNAL_PLAY_FILE_END,
+        SIGNAL_VOLUME_CHANGED,
+        SIGNAL_DEVICE_CONNECTED,
+        SIGNAL_DEVICE_INFO_CHANGED,
+        SIGNAL_FOCUS_CHANGED,
+        SIGNAL_FOCUS_WATCH,
+        SIGNAL_MAX
+} sound_server_signal_t;
+
+typedef enum pulseaudio_property {
+        PULSEAUDIO_PROP_AUDIO_BALANCE,
+        PULSEAUDIO_PROP_MONO_AUDIO,
+        PULSEAUDIO_PROP_MUTE_ALL,
+        PULSEAUDIO_PROP_MAX
+} pulseaudio_property_t;
+
+struct mm_sound_dbus_method_info{
+        const char* name;
+        /*
+        const char* argument;
+        const char* reply;
+        */
+};
+
+struct mm_sound_dbus_signal_info{
+        const char* name;
+        const char* argument;
+};
+
+struct pulseaudio_dbus_property_info {
+        const char* name;
 };
 
 #define DSIZE sizeof(mm_ipc_msg_t)-sizeof(long)	/* data size for rcv & snd */

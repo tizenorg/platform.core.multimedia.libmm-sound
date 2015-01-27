@@ -23,6 +23,7 @@
 #ifndef __MM_SOUND_MGR_DEVICE_H__
 #define __MM_SOUND_MGR_DEVICE_H__
 
+#if 0
 #include "../include/mm_sound.h"
 #include "../include/mm_sound_device.h"
 #include "../include/mm_ipc.h"
@@ -56,22 +57,15 @@ int _mm_sound_mgr_device_init(void);
 int _mm_sound_mgr_device_fini(void);
 int _mm_sound_mgr_device_is_route_available(const _mm_sound_mgr_device_param_t *param, bool *is_available);
 int _mm_sound_mgr_device_foreach_available_route_cb(mm_ipc_msg_t *msg);
-int _mm_sound_mgr_device_set_active_route(const _mm_sound_mgr_device_param_t *param);
-int _mm_sound_mgr_device_get_active_device(const _mm_sound_mgr_device_param_t *param, mm_sound_device_in *device_in, mm_sound_device_out *device_out);
-int _mm_sound_mgr_device_add_active_device_callback(const _mm_sound_mgr_device_param_t *param);
-int _mm_sound_mgr_device_remove_active_device_callback(const _mm_sound_mgr_device_param_t *param);
 int _mm_sound_mgr_device_active_device_callback(mm_sound_device_in device_in, mm_sound_device_out device_out);
-int _mm_sound_mgr_device_add_available_route_callback(const _mm_sound_mgr_device_param_t *param);
-int _mm_sound_mgr_device_remove_available_route_callback(const _mm_sound_mgr_device_param_t *param);
 int _mm_sound_mgr_device_available_device_callback(mm_sound_device_in device_in, mm_sound_device_out device_out, bool available);
 int _mm_sound_mgr_device_get_volume_value_by_active_device(char *buf, mm_sound_device_out device_out, unsigned int *value);
 int _mm_sound_mgr_device_set_volume_value_by_active_device(char *buf, mm_sound_device_out device_out, int value);
-int _mm_sound_mgr_device_set_active_route_auto(void);
 int _mm_sound_mgr_device_set_sound_path_for_active_device(mm_sound_device_out playback, mm_sound_device_in capture);
 int _mm_sound_mgr_device_add_volume_callback(const _mm_sound_mgr_device_param_t *param);
 int _mm_sound_mgr_device_remove_volume_callback(const _mm_sound_mgr_device_param_t *param);
 int _mm_sound_mgr_device_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
-int _mm_sound_mgr_device_get_current_connected_dev_list(const _mm_sound_mgr_device_param_t *param, GList **device_list);
+int _mm_sound_mgr_device_get_current_connected_dev_list(int device_flags, mm_sound_device_t **device_list, int *dev_num);
 int _mm_sound_mgr_device_add_connected_callback(const _mm_sound_mgr_device_param_t *param);
 int _mm_sound_mgr_device_remove_connected_callback(const _mm_sound_mgr_device_param_t *param);
 int _mm_sound_mgr_device_add_info_changed_callback(const _mm_sound_mgr_device_param_t *param);
@@ -80,5 +74,6 @@ int MMSoundMgrDeviceGetIoDirectionById (int id, device_io_direction_e *io_direct
 int MMSoundMgrDeviceUpdateStatus (device_update_status_e update_status, device_type_e device_type, device_io_direction_e io_direction, int id, const char* name, device_state_e state, int *alloc_id);
 int MMSoundMgrDeviceUpdateStatusWithoutNotification (device_update_status_e update_status, device_type_e device_type, device_io_direction_e io_direction, int id, const char* name, device_state_e state, int *alloc_id);
 
+#endif
 #endif /* __MM_SOUND_MGR_DEVICE_H__ */
 
