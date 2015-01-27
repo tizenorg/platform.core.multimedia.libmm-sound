@@ -58,6 +58,7 @@
 #include <vconf.h>
 #include <vconf-keys.h>
 
+#if 0
 /* earjack status value */
 static void _earjack_status_changed_cb(keynode_t* node, void* data)
 {
@@ -105,3 +106,4 @@ int MMSoundMgrHeadsetFini(void)
 	return MM_ERROR_NONE;
 }
 
+#endif

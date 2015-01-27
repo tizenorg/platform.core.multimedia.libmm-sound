@@ -47,14 +47,15 @@
 #include "include/mm_sound_mgr_run.h"
 #include "include/mm_sound_mgr_codec.h"
 #include "include/mm_sound_mgr_ipc.h"
-#include "include/mm_sound_mgr_pulse.h"
+#include "include/mm_sound_mgr_ipc_dbus.h"
+//#include "include/mm_sound_mgr_pulse.h"
 #include "include/mm_sound_mgr_asm.h"
-#include "include/mm_sound_mgr_session.h"
-#include "include/mm_sound_mgr_device.h"
-#include "include/mm_sound_mgr_device_headset.h"
-#include "include/mm_sound_mgr_device_dock.h"
-#include "include/mm_sound_mgr_device_hdmi.h"
-#include "include/mm_sound_mgr_device_wfd.h"
+//#include "include/mm_sound_mgr_session.h"
+//#include "include/mm_sound_mgr_device.h"
+//#include "include/mm_sound_mgr_device_headset.h"
+//#include "include/mm_sound_mgr_device_dock.h"
+//#include "include/mm_sound_mgr_device_hdmi.h"
+//#include "include/mm_sound_mgr_device_wfd.h"
 #include <audio-session-manager.h>
 
 #include <glib.h>
@@ -66,7 +67,7 @@
 #define HIBERNATION_SOUND_CHECK_PATH	"/tmp/hibernation/sound_ready"
 #define USE_SYSTEM_SERVER_PROCESS_MONITORING
 
-#define	ASM_CHECK_INTERVAL	10000
+#define VCONFKEY_CHECK_INTERVAL	10000
 
 #define MAX_PLUGIN_DIR_PATH_LEN	256
 
@@ -106,55 +107,53 @@ GMainLoop *g_mainloop;
 
 void* pulse_handle;
 
-gpointer event_loop_thread(gpointer data)
+void mainloop_run()
 {
 	g_mainloop = g_main_loop_new(NULL, TRUE);
 	if(g_mainloop == NULL) {
 		debug_error("g_main_loop_new() failed\n");
 	}
 	g_main_loop_run(g_mainloop);
-	return NULL;
 }
 
-static void __wait_for_asm_ready ()
+static void __wait_for_vconfkey_ready (const char *keyname)
 {
 	int retry_count = 0;
-	int asm_ready = 0;
-	while (!asm_ready) {
-		debug_msg("Checking ASM ready....[%d]\n", retry_count++);
-		if (vconf_get_int(ASM_READY_KEY, &asm_ready)) {
-			debug_warning("vconf_get_int for ASM_READY_KEY (%s) failed\n", ASM_READY_KEY);
+	int vconf_ready = 0;
+	while (!vconf_ready) {
+		debug_msg("Checking the vconf key[%s] ready....[%d]\n", keyname, retry_count++);
+		if (vconf_get_int(keyname, &vconf_ready)) {
+			debug_warning("vconf_get_int for vconf key[%s] failed\n", keyname);
 		}
-		usleep (ASM_CHECK_INTERVAL);
+		usleep (VCONFKEY_CHECK_INTERVAL);
 	}
-	debug_msg("ASM is now ready...clear the key!!!\n");
-	vconf_set_int(ASM_READY_KEY, 0);
+	debug_msg("vconf key[%s] is now ready...clear the key!!!\n", keyname);
+	vconf_set_int(keyname, 0);
 }
 
 static int _handle_power_off ()
 {
-	int handle = 0;
-	int asm_error = 0;
-
-	if (ASM_register_sound (-1, &handle, ASM_EVENT_EMERGENCY, ASM_STATE_PLAYING, NULL, NULL, ASM_RESOURCE_NONE, &asm_error)) {
-		if (ASM_unregister_sound (handle, ASM_EVENT_EMERGENCY, &asm_error)) {
-			debug_log ("asm register/unregister success!!!\n");
-			return 0;
-		} else {
-			debug_error ("asm unregister failed...0x%x\n", asm_error);
-		}
-	} else {
-		debug_error ("asm register failed...0x%x\n", asm_error);
-	}
-
-	return -1;
+	debug_warning ("not supported\n");
+	return 0;
 }
 
 static int _handle_sound_reset ()
 {
-	int ret = 0;
 	debug_warning ("not supported\n");
 	return 0;
+}
+
+static void _pa_disconnect_cb (void *user_data)
+{
+	debug_warning ("g_mainloop = %p, user_data = %p", g_mainloop, user_data);
+
+	if (pulse_handle) {
+		free(pulse_handle);
+		pulse_handle = NULL;
+	}
+
+	if (g_mainloop)
+		g_main_loop_quit(g_mainloop);
 }
 
 static sem_t* sem_create_n_wait()
@@ -249,33 +248,28 @@ int main(int argc, char **argv)
 	sigaction(SIGTERM, &action, &sigterm_action);
 	sigaction(SIGSYS, &action, &sigsys_action);
 
-	if (!g_thread_supported ())
-		g_thread_init (NULL);
-
-	if(NULL == g_thread_create(event_loop_thread, NULL, FALSE, NULL)) {
-		fprintf(stderr,"event loop thread create failed\n");
-		return 3;
-	}
-
 	if (serveropt.startserver || serveropt.printlist) {
 		MMSoundThreadPoolInit();
 		MMSoundMgrRunInit(serveropt.plugdir);
 		MMSoundMgrCodecInit(serveropt.plugdir);
-		if (!serveropt.testmode)
-			MMSoundMgrIpcInit();
 
-		pulse_handle = MMSoundMgrPulseInit();
+		MMSoundMgrDbusInit();
+
+//		pulse_handle = MMSoundMgrPulseInit(_pa_disconnect_cb, g_mainloop);
 		MMSoundMgrASMInit();
 		/* Wait for ASM Ready */
-		__wait_for_asm_ready();
+		__wait_for_vconfkey_ready(ASM_READY_KEY);
 		debug_warning("sound_server [%d] asm ready...now, initialize devices!!!\n", getpid());
+#ifdef USE_FOCUS
+		MMSoundMgrFocusInit();
+#endif
 
-		_mm_sound_mgr_device_init();
-		MMSoundMgrHeadsetInit();
-		MMSoundMgrDockInit();
-		MMSoundMgrHdmiInit();
-		MMSoundMgrWfdInit();
-		MMSoundMgrSessionInit();
+//		_mm_sound_mgr_device_init();
+//		MMSoundMgrHeadsetInit();
+//		MMSoundMgrDockInit();
+//		MMSoundMgrHdmiInit();
+//		MMSoundMgrWfdInit();
+//		MMSoundMgrSessionInit();
 	}
 
 	debug_warning("sound_server [%d] initialization complete...now, start running!!\n", getpid());
@@ -284,40 +278,40 @@ int main(int argc, char **argv)
 		/* Start Run types */
 		MMSoundMgrRunRunAll();
 
-#ifdef USE_HIBERNATION
-		/* set hibernation check */
-		_mm_sound_check_hibernation (HIBERNATION_SOUND_CHECK_PATH);
-#endif
 		unlink(PA_READY); // remove pa_ready file after sound-server init.
 
-		if (sem_post(sem) == -1) {
-			debug_error ("error sem post : %d", errno);
-		} else {
-			debug_msg ("Ready to play booting sound!!!!");
+		if (sem) {
+			if (sem_post(sem) == -1) {
+				debug_error ("error sem post : %d", errno);
+			} else {
+				debug_msg ("Ready to play booting sound!!!!");
+			}
 		}
 		/* Start Ipc mgr */
-		MMSoundMgrIpcReady();
+
+		mainloop_run();
 	}
 
 	debug_warning("sound_server [%d] terminating \n", getpid());
 
 	if (serveropt.startserver || serveropt.printlist) {
 		MMSoundMgrRunStopAll();
-		if (!serveropt.testmode)
-			MMSoundMgrIpcFini();
-
+		MMSoundMgrDbusFini();
 		MMSoundMgrCodecFini();
 		MMSoundMgrRunFini();
 		MMSoundThreadPoolFini();
 
-		MMSoundMgrWfdFini();
-		MMSoundMgrHdmiFini();
-		MMSoundMgrDockFini();
-		MMSoundMgrHeadsetFini();
-		MMSoundMgrSessionFini();
-		_mm_sound_mgr_device_fini();
+//		MMSoundMgrWfdFini();
+//		MMSoundMgrHdmiFini();
+//		MMSoundMgrDockFini();
+//		MMSoundMgrHeadsetFini();
+//		MMSoundMgrSessionFini();
+//		_mm_sound_mgr_device_fini();
+#ifdef USE_FOCUS
+		MMSoundMgrFocusFini();
+#endif
 		MMSoundMgrASMFini();
-		MMSoundMgrPulseFini(pulse_handle);
+//		MMSoundMgrPulseFini(pulse_handle);
 #ifdef USE_HIBERNATION
 		if(heynoti_unsubscribe(heynotifd, "HIBERNATION_LEAVE", NULL)) {
 			debug_error("heynoti_unsubscribe failed..\n");
@@ -326,7 +320,7 @@ int main(int argc, char **argv)
 #endif
 	}
 
-	debug_warning("sound_server [%d] exit \n", getpid());
+	debug_warning("sound_server [%d] exit ----------------- END \n", getpid());
 
 	return 0;
 }

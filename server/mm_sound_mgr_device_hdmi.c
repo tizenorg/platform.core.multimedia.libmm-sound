@@ -48,6 +48,7 @@
 
 #include "mm_sound.h"
 
+#if 0
 #define SUPPORT_DBUS_HDMI_AUDIO
 #ifdef SUPPORT_DBUS_HDMI_AUDIO
 
@@ -211,3 +212,4 @@ int MMSoundMgrHdmiFini(void)
 	return MM_ERROR_NONE;
 }
 
+#endif

@@ -29,6 +29,9 @@
 #define MAX_PATH_LEN		1024
 #define MIN_TONE_PLAY_TIME 300
 #include "../include/mm_sound.h"
+#ifdef USE_FOCUS
+#include "../include/mm_sound_focus.h"
+#endif
 #include "../include/mm_sound_common.h"
 #include "../include/mm_sound_private.h"
 #include "../include/mm_sound_pa_client.h"
@@ -66,7 +69,7 @@ GIOChannel *stdin_channel;
 char g_file_name[MAX_STRING_LEN];
 char g_dir_name[MAX_PATH_LEN];
 
-
+int g_focus_watch_index = -1;
 GMainLoop* g_loop;
 
 // Function
@@ -96,16 +99,21 @@ void test_callback(void *data, int id)
 	debug_log("test_callback is called\n");
 	test_callback_done = 1;
 }
+void mm_sound_test_cb1(int a, void *user_data)
+{
+	debug_log("dbus test user callback called: param(%d), userdata(%d)\n", a, (int)user_data);
+	g_print("my callback pid : %u  tid : %u\n", getpid(), pthread_self());
+}
 void device_connected_cb (MMSoundDevice_t device_h, bool is_connected, void *user_data)
 {
 	int ret = 0;
-	int type = 0;
+	int device_type = 0;
 	int io_direction = 0;
 	int state = 0;
 	int id = 0;
 	char *name = NULL;
 	debug_log("*** device_connected_cb is called, device_h[0x%x], is_connected[%d], user_date[0x%x]\n", device_h, is_connected, user_data);
-	ret = mm_sound_get_device_type(device_h, &type);
+	ret = mm_sound_get_device_type(device_h, &device_type);
 	if (ret) {
 		debug_error("failed to mm_sound_get_device_type()\n");
 	}
@@ -125,18 +133,18 @@ void device_connected_cb (MMSoundDevice_t device_h, bool is_connected, void *use
 	if (ret) {
 		debug_error("failed to mm_sound_get_device_name()\n");
 	}
-	debug_log("*** --- type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", type, id, io_direction, state, name);
+	debug_log("*** --- type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", device_type, id, io_direction, state, name);
 }
 void device_info_changed_cb (MMSoundDevice_t device_h, int changed_info_type, void *user_data)
 {
 	int ret = 0;
-	int type = 0;
+	int device_type = 0;
 	int io_direction = 0;
 	int state = 0;
 	int id = 0;
 	char *name = NULL;
 	debug_log("*** device_info_changed_cb is called, device_h[0x%x], changed_info_type[%d], user_date[0x%x]\n", device_h, changed_info_type, user_data);
-	ret = mm_sound_get_device_type(device_h, &type);
+	ret = mm_sound_get_device_type(device_h, &device_type);
 	if (ret) {
 		debug_error("failed to mm_sound_get_device_type()\n");
 	}
@@ -156,8 +164,40 @@ void device_info_changed_cb (MMSoundDevice_t device_h, int changed_info_type, vo
 	if (ret) {
 		debug_error("failed to mm_sound_get_device_name()\n");
 	}
-	debug_log("*** --- type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", type, id, io_direction, state, name);
+	debug_log("*** --- type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", device_type, id, io_direction, state, name);
 }
+#ifdef USE_FOCUS
+void focus_cb0 (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
+{
+	char *_state = NULL;
+	if (state == FOCUS_IS_RELEASED)
+		_state = "RELEASED";
+	else
+		_state = "ACQUIRED";
+	debug_log("*** focus_cb0 is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
+			index, type, _state, reason_for_change, additional_info, user_data);
+}
+void focus_cb1 (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
+{
+	char *_state = NULL;
+	if (state == FOCUS_IS_RELEASED)
+		_state = "RELEASED";
+	else
+		_state = "ACQUIRED";
+	debug_log("*** focus_cb1 is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
+			index, type, _state, reason_for_change, additional_info, user_data);
+}
+void focus_watch_cb (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
+{
+	char *_state = NULL;
+	if (state == FOCUS_IS_RELEASED)
+		_state = "RELEASED";
+	else
+		_state = "ACQUIRED";
+	debug_log("*** focus_watch_cb is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
+			index, type, _state, reason_for_change, additional_info, user_data);
+}
+#endif
 void quit_program()
 {
 	g_main_loop_quit(g_loop);
@@ -182,12 +222,15 @@ static void displaymenu()
 		g_print("	Sound Play APIs\n");
 		g_print("==================================================================\n");
 		g_print("k : Key Sound     \t");
-		g_print("a : play sound    \t");
+		g_print("an : play sound    \t");
+		g_print("as : play sound with stream type\t");
 		g_print("A : play loud solo\n");
 		g_print("c : play sound ex \t");
-		g_print("F : Play DTMF     \t");
+		g_print("FN : Play DTMF     \t");
+		g_print("FS : Play DTMF with stream type\t");
 		g_print("b : Play directory\n");
-		g_print("s : Stop play     \n");
+		g_print("s : Stop play     \t");
+		g_print("m : stereo to mono\n");
 		g_print("==================================================================\n");
 		g_print("	Volume APIs\n");
 		g_print("==================================================================\n");
@@ -200,8 +243,6 @@ static void displaymenu()
 		g_print("g : Get voice   \t");
 		g_print("h : Inc. voice  \t");
 		g_print("j : Dec. voice  \n");
-		g_print("B : Set audio balance\n");
-		g_print("M : Set mute all\n");
 		g_print("==================================================================\n");
 		g_print("	Audio route APIs\n");
 		g_print("==================================================================\n");
@@ -231,6 +272,21 @@ static void displaymenu()
 		g_print("Q : Add device info. changed callback \t");
 		g_print("W : Remove device info. changed callback \n");
 		g_print("==================================================================\n");
+#ifdef USE_FOCUS
+		g_print("	Focus APIs\n");
+		g_print("==================================================================\n");
+		g_print("DS : signal subscribe for stream info\t");
+		g_print("DU : signal unsubscribe for stream info\n");
+		g_print("SS : Send signal for stream info\n");
+		g_print("GU : Get Focus id\n");
+		g_print("SF : Set Focus Callback\t");
+		g_print("UF : Unset Focus Callback\n");
+		g_print("AF : Acquire Focus\t");
+		g_print("RF : Release Focus\n");
+		g_print("WS : Set Focus Watch Callback\t");
+		g_print("WU : Unset Focus Watch Callback\n");
+		g_print("==================================================================\n");
+#endif
 		g_print("d : Input Directory \t");
 		g_print("f : Input File name \t");
 		g_print("x : Exit Program \n");
@@ -354,20 +410,312 @@ static void __mm_sound_active_device_changed_cb (mm_sound_device_in device_in, m
 			device_in, __get_capture_device_str(device_in), device_out, __get_playback_device_str(device_out));
 }
 
+static void __mm_sound_signal_cb1 (mm_sound_signal_name_t signal, int value, void *user_data)
+{
+	int _value = 0;
+	g_print ("[%s] signal[%d], value[%d], user_data[0x%x]]\n", __func__, signal, value, user_data);
+	mm_sound_get_signal_value (signal, &_value);
+	g_print (" -- get value : %d\n", _value);
+}
+
+static void __mm_sound_signal_cb2 (mm_sound_signal_name_t signal, int value, void *user_data)
+{
+	int _value = 0;
+	g_print ("[%s] signal[%d], value[%d], user_data[0x%x]]\n", __func__, signal, value, user_data);
+	mm_sound_get_signal_value (signal, &_value);
+	g_print (" -- get value : %d\n", _value);
+}
+unsigned int g_subscribe_id1 = 0;
+unsigned int g_subscribe_id2 = 0;
+
 static void interpret (char *cmd)
 {
 	int ret=0;
+	int value = 0;
 	static int handle = -1;
 	MMSoundPlayParam soundparam = {0,};
 
 	switch (g_menu_state)
 	{
 		case CURRENT_STATUS_MAINMENU:
+#ifdef USE_FOCUS
+			if(strncmp(cmd, "DS", 2) ==0) {
+				ret = mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &g_subscribe_id1, __mm_sound_signal_cb1, NULL);
+				if(ret < 0)
+					debug_log("mm_sound_subscribe_signal() failed with 0x%x\n", ret);
+				else
+					debug_log("id: %u, callback:0x%x\n", g_subscribe_id1, __mm_sound_signal_cb1);
+				ret = mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &g_subscribe_id2, __mm_sound_signal_cb2, NULL);
+				if(ret < 0)
+					debug_log("mm_sound_subscribe_signal() failed with 0x%x\n", ret);
+				else
+					debug_log("id: %u, callback:0x%x\n", g_subscribe_id2, __mm_sound_signal_cb2);
+			}
+
+			else if(strncmp(cmd, "DU", 2) ==0) {
+				mm_sound_unsubscribe_signal(g_subscribe_id1);
+				debug_log("unsubscribe_signal for id[%d]\n", g_subscribe_id1);
+				mm_sound_unsubscribe_signal(g_subscribe_id2);
+				debug_log("unsubscribe_signal for id[%d]\n", g_subscribe_id2);
+			}
+
+			else if(strncmp(cmd, "SS", 2) ==0) {
+				ret = mm_sound_send_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 1);
+				if(ret < 0)
+					debug_log("mm_sound_send_signal() failed with 0x%x\n", ret);
+				else
+					debug_log("mm_sound_send_signal for signal[%s], value[%d] is success\n", MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 1);
+				mm_sound_get_signal_value (MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &value);
+				g_print (" -- get value of RELEASE_INTERNAL_FOCUS : %d\n", value);
+				ret = mm_sound_send_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 0);
+				if(ret < 0)
+					debug_log("mm_sound_send_signal() failed with 0x%x\n", ret);
+				else
+					debug_log("mm_sound_send_signal for signal[%s], value[%d] is success\n", MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 0);
+				mm_sound_get_signal_value (MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &value);
+				g_print (" -- get value of RELEASE_INTERNAL_FOCUS : %d\n", value);
+			}
+
+			else if(strncmp(cmd, "GU", 2) ==0) {
+				int id = 0;
+				ret = mm_sound_focus_get_id(&id);
+				if(ret < 0)
+					debug_log("mm_sound_focus_get_id() failed with 0x%x\n", ret);
+				else
+					debug_log("id : %d\n", id);
+			}
+
+			else if(strncmp(cmd, "SF", 2) ==0) {
+				int ret = 0;
+				char input_string[128];
+				char flag_1, flag_2;
+				int id = 0;
+				char *stream_type = NULL;
+				const char *user_data = "this is user data";
+
+				fflush(stdin);
+				g_print ("1. Media\n");
+				g_print ("2. Alarm\n");
+				g_print ("3. Notification\n");
+				g_print ("4. Emergency\n");
+				g_print ("5. TTS\n");
+				g_print ("6. Ringtone\n");
+				g_print ("7. Call\n");
+				g_print ("8. VOIP\n");
+				g_print ("0. Voice Recognition\n");
+				g_print("> select id and stream type: (eg. 0 3)");
+
+				if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+					g_print ("### fgets return  NULL\n");
+				}
+				flag_1 = input_string[0];
+				flag_2 = input_string[2];
+
+				if(flag_1 == '0') { id = 0; }
+				else if(flag_1 == '1') { id = 1; }
+				else if(flag_1 == '2') { id = 2; }
+				else { id = 2; }
+				if(flag_2 == '1') { stream_type = "media"; }
+				else if(flag_2 == '2') { stream_type = "alarm"; }
+				else if(flag_2 == '3') { stream_type = "notification"; }
+				else if(flag_2 == '4') { stream_type = "emergency"; }
+				else if(flag_2 == '5') { stream_type = "tts"; }
+				else if(flag_2 == '6') { stream_type = "ringtone"; }
+				else if(flag_2 == '7') { stream_type = "call"; }
+				else if(flag_2 == '8') { stream_type = "voip"; }
+				else if(flag_2 == '0') { stream_type = "voice_recognition"; }
+				else { stream_type = "media"; }
+
+				ret = mm_sound_register_focus(id, stream_type, (id == 0)? focus_cb0 : focus_cb1, user_data);
+				if (ret) {
+					g_print("failed to mm_sound_register_focus(), ret[0x%x]\n", ret);
+				} else {
+					g_print("id[%d], stream_type[%s], callback fun[0x%x]\n", id, stream_type, (id == 0)? focus_cb0 : focus_cb1);
+				}
+			}
+
+			else if(strncmp(cmd, "UF", 2) ==0) {
+				int ret = 0;
+				char input_string[128];
+				char flag_1;
+				int id = 0;
+				fflush(stdin);
+				g_print("> select id:");
+				if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+					g_print ("### fgets return  NULL\n");
+				}
+				flag_1 = input_string[0];
+				if(flag_1 == '0') { id = 0; }
+				else if(flag_1 == '1') { id = 1; }
+				else if(flag_1 == '2') { id = 2; }
+				else { id = 2; }
+				ret = mm_sound_unregister_focus(id);
+				if (ret) {
+					g_print("failed to mm_sound_unregister_focus(), ret[0x%x]\n", ret);
+				}
+			}
+
+			else if(strncmp(cmd, "AF", 2) ==0) {
+				int ret = 0;
+				char input_string[128];
+				char flag_1, flag_2;
+				int id = 0;
+				mm_sound_focus_type_e type = FOCUS_FOR_PLAYBACK;
+				fflush(stdin);
+				g_print ("1. focus for playback\n");
+				g_print ("2. focus for recording\n");
+				g_print ("3. focus for both\n");
+				g_print("> select id and focus_type: (eg. 0 1)");
+				if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+					g_print ("### fgets return  NULL\n");
+				}
+				flag_1 = input_string[0];
+				flag_2 = input_string[2];
+
+				if(flag_1 == '0') { id = 0; }
+				else if(flag_1 == '1') { id = 1; }
+				else if(flag_1 == '2') { id = 2; }
+				else { id = 2; }
+
+				if(flag_2 == '1') { type = FOCUS_FOR_PLAYBACK; }
+				else if(flag_2 == '2') { type = FOCUS_FOR_CAPTURE; }
+				else { type = FOCUS_FOR_BOTH; }
+				ret = mm_sound_acquire_focus(id, type, "additional_info. for acquire");
+				if (ret) {
+					g_print("failed to mm_sound_acquire_focus(), ret[0x%x]\n", ret);
+				}
+			}
+
+			else if(strncmp(cmd, "RF", 2) ==0) {
+				int ret = 0;
+				char input_string[128];
+				char flag_1, flag_2;
+				int id = 0;
+				mm_sound_focus_type_e type = FOCUS_FOR_PLAYBACK;
+				fflush(stdin);
+				g_print ("1. focus for playback\n");
+				g_print ("2. focus for recording\n");
+				g_print ("3. focus for all\n");
+				g_print("> select id and focus_type: (eg. 0 1)");
+				if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+					g_print ("### fgets return  NULL\n");
+				}
+				flag_1 = input_string[0];
+				flag_2 = input_string[2];
+
+				if(flag_1 == '0') { id = 0; }
+				else if(flag_1 == '1') { id = 1; }
+				else if(flag_1 == '2') { id = 2; }
+				else { id = 2; }
+
+				if(flag_2 == '1') { type = FOCUS_FOR_PLAYBACK; }
+				else if(flag_2 == '2') { type = FOCUS_FOR_CAPTURE; }
+				else { type = FOCUS_FOR_BOTH; }
+				ret = mm_sound_release_focus(id, type, "additional_info. for release");
+				if (ret) {
+					g_print("failed to mm_sound_release_focus(), ret[0x%x]\n", ret);
+				}
+			}
+
+			else if(strncmp(cmd, "WS", 2) ==0) {
+				int ret = 0;
+				char input_string[128];
+				char flag_1;
+				int type = 0;
+				char *stream_type = NULL;
+				const char *user_data = "this is user data for watch";
+
+				fflush(stdin);
+				g_print ("1. playback\n");
+				g_print ("2. recording\n");
+				g_print ("3. both\n");
+				g_print("> select interest focus type:");
+
+				if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+					g_print ("### fgets return  NULL\n");
+				}
+				flag_1 = input_string[0];
+
+				if(flag_1 == '1') { type = 1; }
+				else if(flag_1 == '2') { type = 2; }
+				else if(flag_1 == '3') { type = 3; }
+				else { type = 1; }
+				ret = mm_sound_set_focus_watch_callback(type, focus_watch_cb, user_data, &g_focus_watch_index);
+				if (ret) {
+					g_print("failed to mm_sound_set_focus_watch_callback(), ret[0x%x]\n", ret);
+				} else {
+					g_print("index[%d], type[%d], callback fun[0x%x]\n", g_focus_watch_index, type, focus_watch_cb);
+				}
+			}
+
+			else if(strncmp(cmd, "WU", 2) ==0) {
+				int ret = 0;
+				ret = mm_sound_unset_focus_watch_callback(g_focus_watch_index);
+				if (ret) {
+					g_print("failed to mm_sound_unset_focus_watch_callback(), ret[0x%x]\n", ret);
+				}
+			}
+			else if(strncmp(cmd, "k", 1) == 0)
+#else
 			if(strncmp(cmd, "k", 1) == 0)
+#endif
 			{
-				ret = mm_sound_play_keysound(KEYTONE_FILE, 8);
+				ret = mm_sound_play_keysound(KEYTONE_FILE, 0);
 				if(ret < 0)
 					debug_log("keysound play failed with 0x%x\n", ret);
+			}
+			else if (strcmp(cmd, "dbus-m") == 0) {
+			    int ret = 0;
+			    int a = 3;
+			    int b = 4;
+			    int result_val = 0;
+			    g_print("dbus method test call\n");
+			    ret = mm_sound_test(a, b, &result_val);
+			    if (ret) {
+				g_print("failed to mm_sound_test(), ret[0x%x]\n", ret);
+			    } else {
+				g_print("Got answer : %d\n", result_val);
+			    }
+			} else if (strcmp(cmd, "dbus-a") == 0) {
+			    int ret = 0;
+			    int user_data = 3;
+			    g_print("dbus method test add callback\n");
+			    g_print("my testsuite pid : %u  tid : %u\n", getpid(), pthread_self());
+			    ret = mm_sound_add_test_callback(mm_sound_test_cb1, (void *)user_data);
+			    if (ret) {
+				g_print("failed to mm_sound_add_test_callback(), ret[0x%x]\n", ret);
+			    } else {
+				g_print("add test callback success\n");
+			    }
+			} else if (strcmp(cmd, "dbus-r") == 0) {
+			    int ret = 0;
+			    g_print("dbus method test remove callback\n");
+			    ret = mm_sound_remove_test_callback();
+			    if (ret) {
+				g_print("failed to mm_sound_remove_test_callback(), ret[0x%x]\n", ret);
+			    } else {
+				g_print("remove test callback success\n");
+			    }
+			}
+			else if (strncmp(cmd, "gap", 3) == 0) {
+				int ret = 0;
+				int device_in=0, device_out=0;
+				ret = mm_sound_get_audio_path(&device_in, &device_out);
+				if (ret == MM_ERROR_NONE) {
+				    g_print ("### mm_sound_get_audio_path() Success (%X,%X)\n\n", device_in, device_out);
+				} else {
+				    g_print ("### mm_sound_get_audio_path() Error : errno [%x]\n\n", ret);
+				}
+			}
+			else if (strncmp(cmd, "spa", 3) == 0) {
+				int ret = 0;
+				int device_in=1, device_out=200;
+				ret = mm_sound_set_sound_path_for_active_device(device_out, device_in);
+				if (ret == MM_ERROR_NONE) {
+				    g_print ("### mm_sound_set_sound_path_for_active_device() Success (%X,%X)\n\n", device_in, device_out);
+				} else {
+				    g_print ("### mm_sound_sspfad() Error : errno [%x]\n\n", ret);
+				}
 			}
 			else if(strncmp(cmd, "q", 1) == 0)
 			{//get media volume
@@ -530,65 +878,17 @@ static void interpret (char *cmd)
 					}
 				}
 			}
-
-			else if(strncmp(cmd, "B", 1) == 0)
-			{
-				int ret = 0;
-				char input_string[128];
-				float balance;
-
-				fflush(stdin);
-				ret = mm_sound_volume_get_balance(&balance);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_volume_get_balance Success, balance=%f\n", balance);
-				} else {
-					g_print ("### mm_sound_volume_get_balance Error = %x\n", ret);
-				}
-				g_print("> Enter new audio balance (current is %f) : ", balance);
-				if (fgets(input_string, sizeof(input_string)-1, stdin) == NULL) {
-					g_print ("### fgets return  NULL\n");
-				}
-
-				balance = atof (input_string);
-				ret = mm_sound_volume_set_balance(balance);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_volume_set_balance(%f) Success\n", balance);
-				} else {
-					g_print ("### mm_sound_volume_set_balance(%f) Error = %x\n", balance, ret);
-				}
-			}
-
-			else if(strncmp(cmd, "M", 1) == 0)
-			{
-				int ret = 0;
-				char input_string[128];
-				int muteall;
-
-				fflush(stdin);
-				ret = mm_sound_get_muteall(&muteall);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_get_muteall Success, muteall=%d\n", muteall);
-				} else {
-					g_print ("### mm_sound_get_muteall Error = %x\n", ret);
-				}
-				g_print("> Enter new muteall state (current is %d) : ", muteall);
-				if (fgets(input_string, sizeof(input_string)-1, stdin) == NULL) {
-					g_print ("### fgets return  NULL\n");
-				}
-
-				muteall = atoi (input_string);
-				ret = mm_sound_set_muteall(muteall);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_set_muteall(%d) Success\n", muteall);
-				} else {
-					g_print ("### mm_sound_set_muteall(%d) Error = %x\n", muteall, ret);
-				}
-			}
-
-			else if(strncmp(cmd, "a", 1) == 0)
+			else if(strncmp(cmd, "an", 2) == 0)
 			{
 				debug_log("volume is %d type, %d\n", g_volume_type, g_volume_value);
 				ret = mm_sound_play_sound(g_file_name, g_volume_type, mycallback ,"USERDATA", &handle);
+				if(ret < 0)
+					debug_log("mm_sound_play_sound() failed with 0x%x\n", ret);
+			}
+			else if(strncmp(cmd, "as", 2) == 0)
+			{
+				debug_log("stream %s type, %d\n", "media", g_volume_value);
+				ret = mm_sound_play_sound_with_stream_info(g_file_name, "media", -1, mycallback ,"USERDATA", &handle);
 				if(ret < 0)
 					debug_log("mm_sound_play_sound() failed with 0x%x\n", ret);
 			}
@@ -599,7 +899,7 @@ static void interpret (char *cmd)
 				if(ret < 0)
 					debug_log("mm_sound_play_sound_loud_solo() failed with 0x%x\n", ret);
 			}
-			else if(strncmp(cmd, "F", 1) == 0)
+			else if(strncmp(cmd, "FN", 2) == 0)
 			{
 				char num = 0;
 				char input_string[128] = "";
@@ -719,6 +1019,124 @@ static void interpret (char *cmd)
 					ret = mm_sound_play_tone_ex(tone, volume_type, volume, tonetime, &handle, enable_session);
 					if(ret<0)
 						debug_log ("[magpie] Play DTMF sound cannot be played ! %d\n", handle);
+				}
+			}
+			else if(strncmp(cmd, "FS", 2) == 0)
+			{
+				char num = 0;
+				char input_string[128] = "";
+				char *tok = NULL;
+				char *stream_type = NULL;
+				int tonetime=0;
+				double volume=1.0;
+				MMSoundTone_t tone = MM_SOUND_TONE_DTMF_0;
+
+				while(num != 'q') {
+					fflush(stdin);
+					g_print("enter number(0~H exit:q), stream type(media, system, ...),  volume(0.0~1.0),  time(ms):\t ");
+					if (fgets(input_string, sizeof(input_string)-1, stdin) == NULL) {
+						g_print ("### fgets return  NULL\n");
+					}
+					tok = strtok(input_string, " ");
+					if(!tok) continue;
+					if(tok[0] == 'q') {
+						break;
+					}
+					else if(tok[0] < '0' || tok[0] > '~') {
+						if(tok[0] == '*' || tok[0] == '#')
+							;
+						else
+							continue;
+					}
+					num = tok[0];
+					if(num >= '0' && num <= '9') {
+						tone = (MMSoundTone_t)(num - '0');
+					}
+					else if(num == '*') {
+						tone = MM_SOUND_TONE_DTMF_S;
+					}
+					else if(num == '#') {
+						tone =MM_SOUND_TONE_DTMF_P;
+					}
+					else if(num == 'A') {	tone = MM_SOUND_TONE_DTMF_A;	}
+					else if(num == 'B') {	tone = MM_SOUND_TONE_DTMF_B;	}
+					else if(num == 'C') {	tone = MM_SOUND_TONE_DTMF_C;	}
+					else if(num == 'D') {	tone = MM_SOUND_TONE_DTMF_D;	}
+					else if(num == 'E') {	tone = MM_SOUND_TONE_SUP_DIAL;	}
+					else if(num == 'F') {	tone = MM_SOUND_TONE_ANSI_DIAL;	}
+					else if(num == 'G') {	tone = MM_SOUND_TONE_JAPAN_DIAL;	}
+					else if(num == 'H') {	tone = MM_SOUND_TONE_SUP_BUSY;		}
+					else if(num == 'I') {		tone = MM_SOUND_TONE_ANSI_BUSY;		}
+					else if(num == 'J') {		tone = MM_SOUND_TONE_JAPAN_BUSY;		}
+					else if(num == 'K') {	tone = MM_SOUND_TONE_SUP_CONGESTION;		}
+					else if(num == 'L') {		tone = MM_SOUND_TONE_ANSI_CONGESTION;		}
+					else if(num == 'M') {	tone = MM_SOUND_TONE_SUP_RADIO_ACK;		}
+					else if(num == 'N') {	tone = MM_SOUND_TONE_JAPAN_RADIO_ACK;		}
+					else if(num == 'O') {	tone = MM_SOUND_TONE_SUP_RADIO_NOTAVAIL;	}
+					else if(num == 'P') {	tone = MM_SOUND_TONE_SUP_ERROR;		}
+					else if(num == 'Q') {	tone = MM_SOUND_TONE_SUP_CALL_WAITING;	}
+					else if(num == 'R') {	tone = MM_SOUND_TONE_ANSI_CALL_WAITING;	}
+					else if(num == 'S') {	tone = MM_SOUND_TONE_SUP_RINGTONE;		}
+					else if(num == 'T') {	tone = MM_SOUND_TONE_ANSI_RINGTONE;	}
+					else if(num == 'U') {	tone = MM_SOUND_TONE_PROP_BEEP;		}
+					else if(num == 'V') {	tone = MM_SOUND_TONE_PROP_ACK;		}
+					else if(num == 'W') {	tone = MM_SOUND_TONE_PROP_NACK;	}
+					else if(num == 'X') {	tone = MM_SOUND_TONE_PROP_PROMPT;	}
+					else if(num == 'Y') {	tone = MM_SOUND_TONE_PROP_BEEP2;	}
+					else if(num == 'Z')  {	tone =MM_SOUND_TONE_CDMA_HIGH_SLS;	}
+					else if(num == '[')  {	tone = MM_SOUND_TONE_CDMA_MED_SLS;	}
+					else if(num == ']')  {	tone = MM_SOUND_TONE_CDMA_LOW_SLS;	}
+					else if(num == '^')  {	tone =MM_SOUND_TONE_CDMA_HIGH_S_X4;	}
+					else if(num == '_')  {	tone =MM_SOUND_TONE_CDMA_MED_S_X4;	}
+					else if(num == 'a')  {	tone =MM_SOUND_TONE_CDMA_LOW_S_X4;	}
+					else if(num == 'b')  {	tone =MM_SOUND_TONE_CDMA_HIGH_PBX_L;	}
+					else if(num == 'c')  {	tone =MM_SOUND_TONE_CDMA_MED_PBX_L;	}
+					else if(num == 'd')  {	tone =MM_SOUND_TONE_CDMA_LOW_PBX_L;	}
+					else if(num == 'e')  {	tone =MM_SOUND_TONE_CDMA_HIGH_PBX_SS;	}
+					else if(num == 'f')  {	tone =MM_SOUND_TONE_CDMA_MED_PBX_SS;	}
+					else if(num == 'g')  {	tone =MM_SOUND_TONE_CDMA_LOW_PBX_SS;	}
+					else if(num == 'h')  {	tone =MM_SOUND_TONE_CDMA_HIGH_PBX_SSL;	}
+					else if(num == 'i')  {		tone =MM_SOUND_TONE_CDMA_MED_PBX_SSL;	}
+					else if(num == 'j')  {	tone =MM_SOUND_TONE_CDMA_LOW_PBX_SSL;		}
+					else if(num == 'k')  {	tone =MM_SOUND_TONE_CDMA_HIGH_PBX_SLS;	}
+					else if(num == 'l')  {		tone =MM_SOUND_TONE_CDMA_MED_PBX_SLS;	}
+					else if(num == 'm')  {	tone =MM_SOUND_TONE_CDMA_LOW_PBX_SLS;		}
+					else if(num == 'n')  {	tone =MM_SOUND_TONE_CDMA_HIGH_PBX_S_X4;	}
+					else if(num == 'o')  {	tone =MM_SOUND_TONE_CDMA_MED_PBX_S_X4;	}
+					else if(num == 'p')  {	tone =MM_SOUND_TONE_CDMA_LOW_PBX_S_X4;	}
+					else if(num == 'q')  {	tone =MM_SOUND_TONE_CDMA_ALERT_NETWORK_LITE;	}
+					else if(num == 'r')  {	tone =MM_SOUND_TONE_CDMA_ALERT_AUTOREDIAL_LITE;	}
+					else if(num == 's')  {	tone =MM_SOUND_TONE_CDMA_ONE_MIN_BEEP;	}
+					else if(num == 't')  {	tone =MM_SOUND_TONE_CDMA_KEYPAD_VOLUME_KEY_LITE;		}
+					else if(num == 'u')  {	tone =MM_SOUND_TONE_CDMA_PRESSHOLDKEY_LITE;	}
+					else if(num == 'v')  {	tone =MM_SOUND_TONE_CDMA_ALERT_INCALL_LITE;	}
+					else if(num == 'w')  {	tone =MM_SOUND_TONE_CDMA_EMERGENCY_RINGBACK;	}
+					else if(num == 'x')  {	tone =MM_SOUND_TONE_CDMA_ALERT_CALL_GUARD;	}
+					else if(num == 'y')  {	tone =MM_SOUND_TONE_CDMA_SOFT_ERROR_LITE;	}
+					else if(num == 'z')  {	tone =MM_SOUND_TONE_CDMA_CALLDROP_LITE;	}
+					else if(num == '{')  {	tone =MM_SOUND_TONE_LOW_FRE;	}
+					else if(num == '}')  {	tone =MM_SOUND_TONE_MED_FRE;	}
+					else if(num == '~')  {	tone =MM_SOUND_TONE_HIGH_FRE; }
+
+					stream_type = strtok(NULL, " ");
+
+					tok = strtok(NULL, " ");
+					if(tok)  volume = (double)atof(tok);
+
+					tok = strtok(NULL, " ");
+					if(tok)
+					{
+						tonetime = atoi(tok);
+					}
+					else
+					{
+						tonetime = MIN_TONE_PLAY_TIME;
+					}
+
+					debug_log("stream type: %s\t volume is %f\t tonetime: %d\n", stream_type, volume, tonetime);
+					ret = mm_sound_play_tone_with_stream_info(tone, stream_type, -1, volume, tonetime, &handle);
+					if(ret<0)
+						debug_log ("[magpie] Play DTMF sound with stream type cannot be played ! %d\n", handle);
 				}
 			}
 			else if (strncmp (cmd, "b",1) == 0)
@@ -926,8 +1344,7 @@ static void interpret (char *cmd)
 			} else {
 				g_print ("### mm_sound_remove_active_device_changed_callback() Error : errno [%x]\n\n", ret);
 			}
-		}
-		else if (strncmp(cmd, "{", 1) == 0) {
+		} else if (strncmp(cmd, "{", 1) == 0) {
 			int ret = 0;
 			bool connected = 0;
 			char* bt_name = NULL;
@@ -1083,7 +1500,7 @@ static void interpret (char *cmd)
 			int ret = 0;
 			mm_sound_device_flags_e flags = MM_SOUND_DEVICE_ALL_FLAG;
 			MMSoundDeviceList_t device_list;
-			int type = 0;
+			int device_type = 0;
 			int io_direction = 0;
 			int state = 0;
 			int id = 0;
@@ -1101,7 +1518,7 @@ static void interpret (char *cmd)
 					if (dret) {
 						debug_error("failed to mm_sound_get_next_device(), dret[0x%x]\n", dret);
 					} else {
-						ret = mm_sound_get_device_type(device_h, &type);
+						ret = mm_sound_get_device_type(device_h, &device_type);
 						if (ret) {
 							debug_error("failed to mm_sound_get_device_type()\n");
 						}
@@ -1121,7 +1538,7 @@ static void interpret (char *cmd)
 						if (ret) {
 							debug_error("failed to mm_sound_get_device_name()\n");
 						}
-						debug_log("*** --- [NEXT DEVICE] type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", type, id, io_direction, state, name);
+						debug_log("*** --- [NEXT DEVICE] type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", device_type, id, io_direction, state, name);
 					}
 				} while (dret == MM_ERROR_NONE);
 				do {
@@ -1130,7 +1547,7 @@ static void interpret (char *cmd)
 					if (dret) {
 						debug_error("failed to mm_sound_get_prev_device(), dret[0x%x]\n", dret);
 					} else {
-						ret = mm_sound_get_device_type(device_h, &type);
+						ret = mm_sound_get_device_type(device_h, &device_type);
 						if (ret) {
 							debug_error("failed to mm_sound_get_device_type()\n");
 						}
@@ -1150,7 +1567,7 @@ static void interpret (char *cmd)
 						if (ret) {
 							debug_error("failed to mm_sound_get_device_name()\n");
 						}
-						debug_log("*** --- [PREV DEVICE] type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", type, id, io_direction, state, name);
+						debug_log("*** --- [PREV DEVICE] type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", device_type, id, io_direction, state, name);
 					}
 				} while (dret == MM_ERROR_NONE);
 			}
@@ -1223,7 +1640,6 @@ static void interpret (char *cmd)
 				g_print("failed to mm_sound_remove_device_connected_callback(), ret[0x%x]\n", ret);
 			}
 		}
-
 		else if(strncmp(cmd, "Q", 1) ==0) {
 			int ret = 0;
 			char input_string[128];
@@ -1291,6 +1707,7 @@ static void interpret (char *cmd)
 				g_print("failed to mm_sound_remove_device_information_changed_callback(), ret[0x%x]\n", ret);
 			}
 		}
+
 		else if (strncmp(cmd, "x", 1) == 0) {
 			quit_program();
 		}
@@ -1317,50 +1734,26 @@ void volume_change_callback(volume_type_t type, unsigned int volume, void *user_
 		g_print("Volume Callback Runs :::: MEDIA VALUME %d\n", volume);
 }
 
-void muteall_change_callback(void* data)
-{
-	int  muteall;
-
-	mm_sound_get_muteall(&muteall);
-	g_print("Muteall Callback Runs :::: muteall value = %d\n", muteall);
-}
-
-void audio_route_policy_changed_callback(void* data, system_audio_route_t policy)
-{
-	int dummy = (int) data;
-	system_audio_route_t lv_policy;
-	char *str_route[SYSTEM_AUDIO_ROUTE_POLICY_MAX] = {
-			"DEFAULT","IGN_A2DP","HANDSET"
-		};
-	g_print("Audio Route Policy has changed to [%s]\n", str_route[policy]);
-	g_print("...read....current....policy...to cross check..%d\n", dummy);
-	if(0 > mm_sound_route_get_system_policy(&lv_policy)) {
-		g_print("Can not get policy...in callback function\n");
-	}
-	else {
-		g_print("...readed policy [%s]\n", str_route[lv_policy]);
-	}
-}
-
 int main(int argc, char *argv[])
 {
 	int ret = 0;
+
 	stdin_channel = g_io_channel_unix_new(0);
 	g_io_add_watch(stdin_channel, G_IO_IN, (GIOFunc)input, NULL);
 	g_loop = g_main_loop_new (NULL, 1);
 
+	MMSOUND_STRNCPY(g_file_name, POWERON_FILE, MAX_STRING_LEN);
+	g_print("\nThe input filename is '%s' \n\n",g_file_name);
+
+	/* test volume changed callback */
 	g_print("callback function addr :: %p\n", volume_change_callback);
 	g_volume_type = VOLUME_TYPE_MEDIA;
 	ret = mm_sound_volume_get_value(g_volume_type, &g_volume_value);
 	if(ret < 0) {
 		g_print("mm_sound_volume_get_value 0x%x\n", ret);
 	}
-
-	MMSOUND_STRNCPY(g_file_name, POWERON_FILE, MAX_STRING_LEN);
-	g_print("\nThe input filename is '%s' \n\n",g_file_name);
-
 	mm_sound_add_volume_changed_callback(volume_change_callback, (void*) &g_volume_type);
-	mm_sound_muteall_add_callback(muteall_change_callback);
+
 	displaymenu();
 	g_main_loop_run (g_loop);
 

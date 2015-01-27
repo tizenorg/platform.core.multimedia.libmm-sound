@@ -372,7 +372,7 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 		default:
 			break;
 	}
-	p->handle = mm_sound_pa_open(HANDLE_MODE_OUTPUT_LOW_LATENCY, &route_info, 0, param->volume_config, &ss, NULL, &size);
+	p->handle = mm_sound_pa_open(HANDLE_MODE_OUTPUT_LOW_LATENCY, &route_info, 0, param->volume_config, &ss, NULL, &size, param->stream_type, param->stream_index);
 	if(!p->handle) {
 		debug_error("[CODEC OGG] Can not open audio handle\n");
 		if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER || p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE) {

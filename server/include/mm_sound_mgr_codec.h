@@ -45,6 +45,8 @@ typedef struct {
 	int priority;
 	int handle_route;
 	bool enable_session;
+	char stream_type[MM_SOUND_STREAM_TYPE_LEN];
+	int stream_index;
 } mmsound_mgr_codec_param_t;
 
 enum
@@ -57,10 +59,12 @@ int MMSoundMgrCodecInit(const char *targetdir);
 int MMSoundMgrCodecFini(void);
 
 int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param);
+int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param_t *param);
 int MMSoundMgrCodecStop(const int slotid);
 int MMSoundMgrCodecCreate(int *slotid, const mmsound_mgr_codec_param_t *param);
 int MMSoundMgrCodecPlayWave(int slotid, const mmsound_mgr_codec_param_t *param);
 int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param);
+int MMSoundMgrCodecPlayDtmfWithStreamInfo(int *slotid, const mmsound_mgr_codec_param_t *param);
 int MMSoundMgrCodecDestroy(const int slotid);
 
 
