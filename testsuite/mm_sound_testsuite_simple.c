@@ -187,7 +187,8 @@ static void displaymenu()
 		g_print("c : play sound ex \t");
 		g_print("F : Play DTMF     \t");
 		g_print("b : Play directory\n");
-		g_print("s : Stop play     \n");
+		g_print("s : Stop play     \t");
+		g_print("m : stereo to mono\n");
 		g_print("==================================================================\n");
 		g_print("	Volume APIs\n");
 		g_print("==================================================================\n");
@@ -585,6 +586,32 @@ static void interpret (char *cmd)
 				}
 			}
 
+			else if(strncmp(cmd, "m", 1) == 0)
+			{
+				int ret = 0;
+				char input_string[128];
+				int ismono;
+
+				fflush(stdin);
+				ret = mm_sound_get_stereo_to_mono(&ismono);
+				if (ret == MM_ERROR_NONE) {
+					g_print ("### mm_sound_get_stereo_to_mono Success, ismono=%d\n", ismono);
+				} else {
+					g_print ("### mm_sound_get_stereo_to_mono Error = %x\n", ret);
+				}
+				g_print("> Enter new stereo to mono state (current is %d) : ", ismono);
+				if (fgets(input_string, sizeof(input_string)-1, stdin) == NULL) {
+					g_print ("### fgets return  NULL\n");
+				}
+
+				ismono = atoi (input_string);
+				ret = mm_sound_set_stereo_to_mono(ismono);
+				if (ret == MM_ERROR_NONE) {
+					g_print ("### mm_sound_set_stereo_to_mono(%d) Success\n", ismono);
+				} else {
+					g_print ("### mm_sound_set_stereo_to_mono(%d) Error = %x\n", ismono, ret);
+				}
+			}
 			else if(strncmp(cmd, "a", 1) == 0)
 			{
 				debug_log("volume is %d type, %d\n", g_volume_type, g_volume_value);

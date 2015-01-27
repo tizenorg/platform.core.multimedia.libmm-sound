@@ -464,7 +464,7 @@ int mm_sound_set_muteall (int muteall)
 
 	/* Check input param */
 	if (muteall < 0 || muteall > 1) {
-		debug_error("invalid muteall value [%f]\n", muteall);
+		debug_error("invalid muteall value [%d]\n", muteall);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -495,7 +495,7 @@ int mm_sound_set_stereo_to_mono (int ismono)
 
 	/* Check input param */
 	if (ismono < 0 || ismono > 1) {
-		debug_error("invalid ismono value [%f]\n", ismono);
+		debug_error("invalid ismono value [%d]\n", ismono);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
