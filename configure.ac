@@ -58,35 +58,6 @@ PKG_CHECK_MODULES(VCONF, vconf)
 AC_SUBST(VCONF_CFLAGS)
 AC_SUBST(VCONF_LIBS)
 
-AC_ARG_ENABLE(bluetooth, AC_HELP_STRING([--enable-bluetooth], [enable bluetooth client]),
-[
- case "${enableval}" in
-	 yes) SUPPORT_BT_SCO=yes ;;
-	 no)  SUPPORT_BT_SCO=no ;;
-	 *)   AC_MSG_ERROR(bad value ${enableval} for --enable-bluetooth) ;;
- esac
- ],[SUPPORT_BT_SCO=no])
-if test "x$SUPPORT_BT_SCO" = "xyes"; then
-PKG_CHECK_MODULES(BLUETOOTH, capi-network-bluetooth)
-AC_SUBST(BLUETOOTH_CFLAGS)
-AC_SUBST(BLUETOOTH_LIBS)
-fi
-AM_CONDITIONAL([SUPPORT_BT_SCO], [test "x$SUPPORT_BT_SCO" = "xyes"])
-
-AC_ARG_ENABLE(hfp, AC_HELP_STRING([--enable-hfp], [enable hfp api]),
-[
- case "${enableval}" in
-	 yes) USE_HFP=yes ;;
-	 no)  USE_HFP=no ;;
-	 *)   AC_MSG_ERROR(bad value ${enableval} for --enable-hfp) ;;
- esac
- ],[USE_HFP=no])
-if test "x$USE_HFP" = "xyes"; then
-PKG_CHECK_MODULES(BLUETOOTH_API, bluetooth-api)
-AC_SUBST(BLUETOOTH_API_CFLAGS)
-AC_SUBST(BLUETOOTH_API_LIBS)
-fi
-
 AC_ARG_ENABLE(pulse, AC_HELP_STRING([--enable-pulse], [enable pulseaudio client]),
 [
  case "${enableval}" in
@@ -119,6 +90,35 @@ AC_SUBST(TREMOLO_CFLAGS)
 AC_SUBST(TREMOLO_LIBS)
 fi
 AM_CONDITIONAL([OGG_SUPPORT], [test "x$OGG_SUPPORT" = "xyes"])
+
+dnl use security ---------------------------------------------------------------
+AC_ARG_ENABLE(security, AC_HELP_STRING([--enable-security], [using security]),
+[
+    case "${enableval}" in
+    yes) USE_SECURITY=yes ;;
+    no)  USE_SECURITY=no ;;
+    *)   AC_MSG_ERROR(bad value ${enableval} for --enable-security) ;;
+    esac
+],[USE_SECURITY=no])
+
+if test "x$USE_SECURITY" = "xyes"; then
+    PKG_CHECK_MODULES(SECURITY, security-server)
+    AC_SUBST(SECURITY_CFLAGS)
+    AC_SUBST(SECURITY_LIBS)
+fi
+AM_CONDITIONAL(USE_SECURITY, test "x$USE_SECURITY" = "xyes")
+dnl end ------------------------------------------------------------------------
+
+
+AC_ARG_ENABLE(focus, AC_HELP_STRING([--enable-focus], [enable focus feature]),
+[
+ case "${enableval}" in
+	 yes) USE_FOCUS=yes ;;
+	 no)  USE_FOCUS=no ;;
+	 *)   AC_MSG_ERROR(bad value ${enableval} for --enable-focus) ;;
+ esac
+ ],[USE_FOCUS=no])
+AM_CONDITIONAL([USE_FOCUS], [test "x$USE_FOCUS" = "xyes"])
 
 # Checks for header files.
 AC_HEADER_STDC

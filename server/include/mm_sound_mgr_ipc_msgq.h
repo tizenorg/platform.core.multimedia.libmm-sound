@@ -19,14 +19,27 @@
  *
  */
 
-#ifndef __MM_SOUND_MGR_WFD_H__
-#define __MM_SOUND_MGR_WFD_H__
+#ifndef __MM_SOUND_MGR_IPC_MSGQ_H__
+#define __MM_SOUND_MGR_IPC_MSGQ_H__
 
-#if 0
-int MMSoundMgrWfdInit(void);
-int MMSoundMgrWfdFini(void);
-#endif
+#include "../../include/mm_sound_msg.h"
+
+#define SOUND_MSG_SET(sound_msg, x_msgtype, x_handle, x_code, x_msgid) \
+do { \
+	sound_msg.msgtype = x_msgtype; \
+	sound_msg.handle = x_handle; \
+	sound_msg.code = x_code; \
+	sound_msg.msgid = x_msgid; \
+} while(0)
 
 
-#endif /* __MM_SOUND_MGR_WFD_H__ */
+int MMSoundMgrIpcMsgqInit(void);
+int MMSoundMgrIpcMsgqFini(void);
+int MMSoundMgrIpcMsgqReady(void);
+
+int _MMIpcMsgqCBSndMsg(mm_ipc_msg_t *msg);
+int _MMIpcMsgqCBRecvMsg(mm_ipc_msg_t *msg);
+int _MMIpcMsgqCBMsgEnQueueAgain(mm_ipc_msg_t *msg);
+
+#endif /* __MM_SOUND_MGR_H__ */
 

@@ -237,6 +237,8 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 	codec_param.pid = (int)param->param;
 	codec_param.handle_route = param->handle_route;
 	codec_param.codec_wave_mutex = &codec_wave_mutex;
+	codec_param.stream_index = param->stream_index;
+	strncpy(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
 	pthread_mutex_lock(&g_slot_mutex);
 #ifdef DEBUG_DETAIL
 	debug_msg("After Slot_mutex LOCK\n");
@@ -283,9 +285,6 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 
 	/* Codec id WAV or MP3 */
 	g_slots[*slotid].pluginid = count;
-	g_slots[*slotid].callback = param->callback;
-	g_slots[*slotid].msgcallback = param->msgcallback;
-	g_slots[*slotid].msgdata = param->msgdata;
 	g_slots[*slotid].param    = param->param;		/* This arg is used callback data */
 	g_slots[*slotid].session_type = param->session_type;
 	g_slots[*slotid].session_options = param->session_options;
@@ -344,6 +343,93 @@ cleanup:
 	return err;
 }
 
+int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param_t *param)
+{
+	int count = 0;
+	mmsound_codec_info_t info;
+	mmsound_codec_param_t codec_param;
+	int err = MM_ERROR_NONE;
+	int errorcode = 0;
+
+#ifdef DEBUG_DETAIL
+	debug_enter("\n");
+#endif
+
+	for (count = 0; g_plugins[count].GetSupportTypes; count++) {
+		/* Find codec */
+		if (g_plugins[count].Parse(param->source, &info) == MM_ERROR_NONE)
+			break;
+	}
+
+	/*The count num means codec type WAV, MP3 */
+	debug_msg("Repeat[%d] Volume[%f] plugin_codec[%d]\n", param->repeat_count, param->volume, count);
+
+	if (g_plugins[count].GetSupportTypes == NULL) {	/* Codec not found */
+		debug_error("unsupported file type %d\n", count);
+		err = MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
+		goto cleanup;
+	}
+
+	err = _MMSoundMgrCodecGetEmptySlot(slotid);
+	if (err != MM_ERROR_NONE) {
+		debug_error("Empty g_slot is not found\n");
+		goto cleanup;
+	}
+
+	codec_param.volume_config = -1; //setting volume config to -1 since using stream info instead of volume type
+	codec_param.repeat_count = param->repeat_count;
+	codec_param.volume = param->volume;
+	codec_param.source = param->source;
+	codec_param.priority = param->priority;
+	codec_param.stop_cb = _MMSoundMgrCodecStopCallback;
+	codec_param.param = *slotid;
+	codec_param.pid = (int)param->param;
+	codec_param.handle_route = param->handle_route;
+	codec_param.codec_wave_mutex = &codec_wave_mutex;
+	codec_param.stream_index = param->stream_index;
+	strncpy(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
+	pthread_mutex_lock(&g_slot_mutex);
+#ifdef DEBUG_DETAIL
+	debug_msg("After Slot_mutex LOCK\n");
+#endif
+
+	/* Codec id WAV or MP3 */
+	g_slots[*slotid].pluginid = count;
+	g_slots[*slotid].param    = param->param;		/* This arg is used callback data */
+
+	debug_msg("Using Slotid : [%d] Slot Status : [%d]\n", *slotid, g_slots[*slotid].status);
+
+	err = g_plugins[g_slots[*slotid].pluginid].Create(&codec_param, &info, &(g_slots[*slotid].plughandle));
+	debug_msg("Created audio handle : [%d]\n", g_slots[*slotid].plughandle);
+	if (err != MM_ERROR_NONE) {
+		debug_error("Plugin create fail : 0x%08X\n", err);
+		g_slots[*slotid].status = STATUS_IDLE;
+		pthread_mutex_unlock(&g_slot_mutex);
+		debug_warning("After Slot_mutex UNLOCK\n");
+		goto cleanup;
+	}
+
+	err = g_plugins[g_slots[*slotid].pluginid].Play(g_slots[*slotid].plughandle);
+	if (err != MM_ERROR_NONE) {
+		debug_error("Fail to play : 0x%08X\n", err);
+		g_plugins[g_slots[*slotid].pluginid].Destroy(g_slots[*slotid].plughandle);
+	}
+
+	pthread_mutex_unlock(&g_slot_mutex);
+#ifdef DEBUG_DETAIL
+	debug_msg("After Slot_mutex UNLOCK\n");
+#endif
+
+cleanup:
+
+#ifdef DEBUG_DETAIL
+	debug_leave("\n");
+#endif
+
+	return err;
+
+}
+
 #define DTMF_PLUGIN_COUNT 2
 int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 {
@@ -396,6 +482,8 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 	codec_param.stop_cb = _MMSoundMgrCodecStopCallback;
 	codec_param.param = *slotid;
 	codec_param.pid = (int)param->param;
+	codec_param.stream_index = param->stream_index;
+	strncpy(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
 
 	pthread_mutex_lock(&g_slot_mutex);
 #ifdef DEBUG_DETAIL
@@ -434,7 +522,6 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 	}
 
 	g_slots[*slotid].pluginid = count;
-	g_slots[*slotid].callback = param->callback;
 	g_slots[*slotid].param    = param->param;		/* This arg is used callback data */
 	g_slots[*slotid].session_type = param->session_type;
 	g_slots[*slotid].session_options = param->session_options;
@@ -490,6 +577,102 @@ cleanup:
 	return err;
 }
 
+MMSoundMgrCodecPlayDtmfWithStreamInfo(int *slotid, const mmsound_mgr_codec_param_t *param)
+{
+	int count = 0;
+	int *codec_type;
+	mmsound_codec_info_t info;
+	mmsound_codec_param_t codec_param;
+	int err = MM_ERROR_NONE;
+	int errorcode = 0;
+
+#ifdef DEBUG_DETAIL
+	debug_enter("\n");
+#endif
+
+	for (count = 0; g_plugins[count].GetSupportTypes; count++) {
+		/* Find codec */
+		codec_type = g_plugins[count].GetSupportTypes();
+		if(codec_type && (MM_SOUND_SUPPORTED_CODEC_DTMF == codec_type[0]))
+			break;
+	}
+
+	/*The count num means codec type DTMF */
+	debug_msg("DTMF[%d] Repeat[%d] Volume[%f] plugin_codec[%d]\n", param->tone, param->repeat_count, param->volume, count);
+
+	if (g_plugins[count].GetSupportTypes == NULL) { /* Codec not found */
+		debug_error("unsupported file type %d\n", count);
+		printf("unsupported file type %d\n", count);
+		err = MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
+		goto cleanup;
+	}
+
+#ifdef DEBUG_DETAIL
+	debug_msg("Get New handle\n");
+#endif
+	codec_param.keytone = 0;
+
+	err = _MMSoundMgrCodecGetEmptySlot(slotid);
+	if(err != MM_ERROR_NONE)
+	{
+		debug_error("Empty g_slot is not found\n");
+		goto cleanup;
+	}
+
+	codec_param.tone = param->tone;
+	codec_param.priority = 0;
+	codec_param.repeat_count = param->repeat_count;
+	codec_param.volume = param->volume;
+	codec_param.stop_cb = _MMSoundMgrCodecStopCallback;
+	codec_param.param = *slotid;
+	codec_param.pid = (int)param->param;
+	codec_param.volume_config = -1; //setting volume config to -1 since using stream info instead of volume type
+	codec_param.stream_index = param->stream_index;
+	strncpy(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
+
+	pthread_mutex_lock(&g_slot_mutex);
+#ifdef DEBUG_DETAIL
+	debug_msg("After Slot_mutex LOCK\n");
+#endif
+		g_slots[*slotid].pluginid = count;
+		g_slots[*slotid].param	  = param->param;		/* This arg is used callback data */
+		g_slots[*slotid].enable_session = param->enable_session;
+
+#ifdef DEBUG_DETAIL
+		debug_msg("Using Slotid : [%d] Slot Status : [%d]\n", *slotid, g_slots[*slotid].status);
+#endif
+
+		err = g_plugins[g_slots[*slotid].pluginid].Create(&codec_param, &info, &(g_slots[*slotid].plughandle));
+		debug_msg("Created audio handle : [%d]\n", g_slots[*slotid].plughandle);
+		if (err != MM_ERROR_NONE) {
+			debug_error("Plugin create fail : 0x%08X\n", err);
+			g_slots[*slotid].status = STATUS_IDLE;
+			pthread_mutex_unlock(&g_slot_mutex);
+			debug_warning("After Slot_mutex UNLOCK\n");
+			goto cleanup;
+		}
+
+		err = g_plugins[g_slots[*slotid].pluginid].Play(g_slots[*slotid].plughandle);
+		if (err != MM_ERROR_NONE) {
+			debug_error("Fail to play : 0x%08X\n", err);
+			g_plugins[g_slots[*slotid].pluginid].Destroy(g_slots[*slotid].plughandle);
+		}
+
+		pthread_mutex_unlock(&g_slot_mutex);
+
+		debug_msg("Using Slotid : [%d] Slot Status : [%d]\n", *slotid, g_slots[*slotid].status);
+#ifdef DEBUG_DETAIL
+		debug_msg("After Slot_mutex UNLOCK\n");
+#endif
+
+	cleanup:
+#ifdef DEBUG_DETAIL
+		debug_leave("\n");
+#endif
+
+		return err;
+
+}
 
 int MMSoundMgrCodecStop(const int slotid)
 {
@@ -562,12 +745,8 @@ static int _MMSoundMgrCodecStopCallback(int param)
 		}
 	}
 
-	if (g_slots[param].msgcallback) {
-		debug_msg("[CODEC MGR] msgcallback : %p\n", g_slots[param].msgcallback);
-		debug_msg("[CODEC MGR] msg data : %p\n", g_slots[param].msgdata);
-		debug_msg("[CODEC MGR] mgr codec callback : %p\n", g_slots[param].callback);
-		g_slots[param].callback((int)g_slots[param].param, g_slots[param].msgcallback, g_slots[param].msgdata, param);		/*param means client msg_type */
-	}
+	__mm_sound_mgr_ipc_notify_play_file_end(param);
+
 	debug_msg("Client callback msg_type (instance) : [%d]\n", (int)g_slots[param].param);
 	debug_msg("Handle allocated handle : [0x%08X]\n", g_slots[param].plughandle);
 	err = g_plugins[g_slots[param].pluginid].Destroy(g_slots[param].plughandle);
@@ -733,7 +912,7 @@ static int _MMSoundMgrCodecRegisterInterface(MMSoundPluginType *plugin)
 		debug_error("Get Symbol CODEC_GET_INTERFACE_FUNC_NAME is fail : %x\n", err);
 		goto cleanup;
 	}
-	debug_msg("interface[%s] empty_slot[%d]\n", (char*)getinterface, count);
+	debug_msg("interface[%p] empty_slot[%d]\n", getinterface, count);
 
 	err = MMSoundPlugCodecCastGetInterface(getinterface)(&g_plugins[count]);
 	if (err != MM_ERROR_NONE) {

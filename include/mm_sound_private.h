@@ -141,6 +141,7 @@ typedef struct {
  */
 int mm_sound_play_sound_ex(MMSoundPlayParam *param, int *handle);
 
+int mm_sound_play_sound_with_stream_info(const char *filename, char *stream_type, int stream_id, mm_sound_stop_callback_func _completed_cb, void *data, int *handle);
 
 /**
  * This function is to play key sound.

@@ -786,7 +786,7 @@ int MMSoundPlugCodecToneCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	ss.format = PA_SAMPLE_S16LE;
 	route_info.policy = HANDLE_ROUTE_POLICY_OUT_AUTO;
 
-	toneInfo->handle = mm_sound_pa_open(HANDLE_MODE_OUTPUT, &route_info, HANDLE_PRIORITY_NORMAL, param->volume_config, &ss, NULL, &size);
+	toneInfo->handle = mm_sound_pa_open(HANDLE_MODE_OUTPUT, &route_info, HANDLE_PRIORITY_NORMAL, param->volume_config, &ss, NULL, &size, param->stream_type, param->stream_index);
 	if (!toneInfo->handle) {
 		debug_error("Device Open Error 0x%x\n", result);
 		goto Error;

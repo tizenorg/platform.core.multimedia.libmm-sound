@@ -80,7 +80,7 @@ typedef struct
 	int keytone;
 	int repeat_count;
 	int (*stop_cb)(int);
-	int cb_param;
+	int cb_param; // slotid
 	int state;
 	pthread_mutex_t mutex;
 	pthread_mutex_t *codec_wave_mutex;
@@ -94,6 +94,8 @@ typedef struct
 	MMSourceType *source;
 	char buffer[48000 / 1000 * SAMPLE_COUNT * 2 *2];//segmentation fault when above 22.05KHz stereo
 	int gain, out, in, option;
+	char stream_type[MM_SOUND_STREAM_TYPE_LEN];
+	int stream_index;
 } wave_info_t;
 
 static void _runing(void *param);
@@ -242,11 +244,11 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 #ifdef DEBUG_DETAIL
 	debug_enter("\n");
 #endif
-	debug_msg("period[%d] type[%s] ch[%d] format[%d] rate[%d] doffset[%d] priority[%d] repeat[%d] volume[%d] callback[%p] keytone[%08x] route[%d]\n",
+
+	debug_msg("period[%d] type[%s] ch[%d] format[%d] rate[%d] doffset[%d] priority[%d] repeat[%d] volume[%f] callback[%p] keytone[%08x] route[%d]\n",
 			keytone_period, (info->codec == MM_SOUND_SUPPORTED_CODEC_WAVE) ? "Wave" : "Unknown",
 			info->channels, info->format, info->samplerate, info->doffset, param->priority, param->repeat_count,
 			param->volume, param->stop_cb, param->keytone, param->handle_route);
-
 	source = param->source;
 
 	if (g_thread_pool_func == NULL) {
@@ -275,6 +277,8 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	p->cb_param = param->param;
 	p->source = source;
 	p->codec_wave_mutex = param->codec_wave_mutex;
+	p->stream_index = param->stream_index;
+	strncpy(p->stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
 	//	pthread_mutex_init(&p->mutex, NULL);
 
 	debug_msg("[CODEC WAV] transper_size : %d\n", p->transper_size);
@@ -291,10 +295,7 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	p->channels = info->channels;
 	p->samplerate = info->samplerate;
 
-	if(param->handle_route == MM_SOUND_HANDLE_ROUTE_USING_CURRENT) /* normal, solo */
-		p->handle_route = HANDLE_ROUTE_POLICY_OUT_AUTO;
-	else /* loud solo */
-		p->handle_route = HANDLE_ROUTE_POLICY_OUT_HANDSET;
+	p->handle_route = param->handle_route;
 
 	switch(info->format)
 	{
@@ -401,6 +402,8 @@ static void _runing(void *param)
 			/* MMSoundMgrPulseSetActiveDevice(route_info_device_in, route_info.device_out); */
 			break;
 		case MM_SOUND_HANDLE_ROUTE_USING_CURRENT:
+			route_info.policy = HANDLE_ROUTE_POLICY_OUT_AUTO;
+			break;
 		default:
 			break;
 	}
@@ -409,7 +412,7 @@ static void _runing(void *param)
 	ss.channels = p->channels;
 	ss.format = p->format;
 	p->period = pa_sample_size(&ss) * ((ss.rate * 25) / 1000);
-	p->handle = mm_sound_pa_open(p->mode, &route_info, p->priority, p->volume_config, &ss, NULL, &size);
+	p->handle = mm_sound_pa_open(p->mode, &route_info, p->priority, p->volume_config, &ss, NULL, &size, p->stream_type, p->stream_index);
 	if(!p->handle) {
 		debug_critical("[CODEC WAV] Can not open audio handle\n");
 		CODEC_WAVE_UNLOCK(p->codec_wave_mutex);

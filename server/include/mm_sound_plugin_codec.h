@@ -26,6 +26,8 @@
 #include <mm_source.h>
 #include <mm_types.h>
 
+#define MM_SOUND_STREAM_TYPE_LEN 64
+
 enum MMSoundSupportedCodec {
 	MM_SOUND_SUPPORTED_CODEC_INVALID = -1,	/**< Invalid codec type */
 	MM_SOUND_SUPPORTED_CODEC_WAVE,			/**< WAVE codec		*/
@@ -57,6 +59,8 @@ typedef struct {
 	int keytone;
 	MMSourceType *source;
 	int handle_route;
+	char stream_type[MM_SOUND_STREAM_TYPE_LEN];
+	int stream_index;
 	pthread_mutex_t *codec_wave_mutex;
 } mmsound_codec_param_t;
 

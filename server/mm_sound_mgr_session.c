@@ -19,6 +19,7 @@
  *
  */
 
+#if 0
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
@@ -52,8 +53,6 @@
 #define EARJACK_WITH_MIC	3
 
 #define MAX_STRING_LEN	256
-
-#define VCONF_SOUND_BURSTSHOT "memory/private/sound/burstshot"
 
 #define DEVICE_API_BLUETOOTH	"bluez"
 #define DEVICE_API_ALSA	"alsa"
@@ -550,7 +549,7 @@ static int __set_playback_route_notification (session_state_t state)
 
 	if (state == SESSION_START) {
 		/* FIXME : Need to check using vconf key with check status and policy */
-		if (_mm_sound_is_recording() || _mm_sound_is_mute_policy()) {
+		if (mm_sound_util_is_recording() || mm_sound_util_is_mute_policy()) {
 			/* Force earphone path for mute case */
 			if ((ret = __set_sound_path_to_earphone_only ()) != MM_ERROR_NONE) {
 				debug_error ("__set_sound_path_to_earphone_only() failed [%x]\n", ret);
@@ -699,25 +698,6 @@ static bool __is_recording_subsession ()
 	return is_recording;
 }
 
-static void _wait_if_burstshot_exists(void)
-{
-	int retry = 0;
-	int is_burstshot = 0;
-
-	do {
-		if (retry > 0)
-			usleep (BURST_CHECK_INTERVAL);
-		if (vconf_get_int(VCONF_SOUND_BURSTSHOT, &is_burstshot) != 0) {
-			debug_warning ("Faided to get [%s], assume no burstshot....", VCONF_SOUND_BURSTSHOT);
-			is_burstshot = 0;
-		} else {
-			debug_warning ("Is Burstshot [%d], retry...[%d/%d], interval usec = %d",
-						is_burstshot, retry, MAX_BURST_CHECK_RETRY, BURST_CHECK_INTERVAL);
-		}
-	} while (is_burstshot && retry++ < MAX_BURST_CHECK_RETRY);
-}
-
-
 static int __set_sound_path_for_current_active (bool need_broadcast, bool need_cork)
 {
 	int ret = MM_ERROR_NONE;
@@ -733,9 +713,6 @@ static int __set_sound_path_for_current_active (bool need_broadcast, bool need_c
 		return MM_ERROR_SOUND_INVALID_STATE;
 	}
 
-	/* Wait if BurstShot is ongoing */
-	_wait_if_burstshot_exists();
-
 	if (need_cork)
 		MMSoundMgrPulseSetCorkAll (true);
 
@@ -747,8 +724,8 @@ static int __set_sound_path_for_current_active (bool need_broadcast, bool need_c
     	if (in == MM_SOUND_DEVICE_IN_BT_SCO && out == MM_SOUND_DEVICE_OUT_BT_SCO) {
 		bool nrec = 0;
 		int bandwidth = MM_SOUND_BANDWIDTH_UNKNOWN;
-
-		ret = MMSoundMgrPulseGetBluetoothInfo(&nrec, &bandwidth);
+		/* Remove BT dependency */
+		/* ret = MMSoundMgrPulseGetBluetoothInfo(&nrec, &bandwidth); */
 		if(ret == MM_ERROR_NONE) {
 			g_info.bt_info.is_nrec = nrec;
 			g_info.bt_info.ag_wb = bandwidth;
@@ -791,7 +768,7 @@ static int __set_sound_path_for_current_active (bool need_broadcast, bool need_c
 			if (out == MM_SOUND_DEVICE_OUT_MIRRORING) {
 				/* mirroring option */
 			}
-			if (_mm_sound_is_mute_policy ()) {
+			if (mm_sound_util_is_mute_policy ()) {
 				/* Mute Ringtone */
 				out = MM_SOUND_DEVICE_OUT_BT_A2DP;
 			} else {
@@ -810,40 +787,12 @@ static int __set_sound_path_for_current_active (bool need_broadcast, bool need_c
 	case SESSION_VOICECALL:
 	case SESSION_VIDEOCALL:
 		if (g_info.subsession == SUBSESSION_RINGTONE) {
-#ifndef _TIZEN_PUBLIC_
-#ifndef TIZEN_MICRO
-			int vr_enabled = 0;
-#endif
-			int vr_ringtone_enabled = 0;
-#endif
 			in = MM_SOUND_DEVICE_IN_NONE;
 			/* If active device was WFD(mirroring), set option */
 			if (out == MM_SOUND_DEVICE_OUT_MIRRORING) {
 				/* mirroring option */
 			}
 
-#ifndef _TIZEN_PUBLIC_
-#ifdef TIZEN_MICRO
-			if (vconf_get_bool(VCONF_KEY_VR_RINGTONE_ENABLED, &vr_ringtone_enabled)) {
-				debug_warning("vconf_get_bool for %s failed\n", VCONF_KEY_VR_RINGTONE_ENABLED);
-			}
-
-			if (vr_ringtone_enabled) {
-				/* bargin option */
-			}
-#else
-			/* If voice control for incoming call is enabled, set capture path here for avoiding ringtone breaks */
-			if (vconf_get_bool(VCONF_KEY_VR_ENABLED, &vr_enabled)) {
-				debug_warning("vconf_get_bool for %s failed\n", VCONF_KEY_VR_ENABLED);
-			} else if (vconf_get_bool(VCONF_KEY_VR_RINGTONE_ENABLED, &vr_ringtone_enabled)) {
-				debug_warning("vconf_get_bool for %s failed\n", VCONF_KEY_VR_RINGTONE_ENABLED);
-			}
-
-			if (vr_enabled && vr_ringtone_enabled) {
-				/* bargin option */
-			}
-#endif /* TIZEN_MICRO */
-#endif /* #ifndef _TIZEN_PUBLIC_ */
 			if (_mm_sound_is_mute_policy ()) {
 				/* Mute Ringtone */
 #ifdef TIZEN_MICRO
@@ -950,7 +899,6 @@ static int __set_sound_path_for_current_active (bool need_broadcast, bool need_c
 		}		
 		MMSoundMgrPulseSetCorkAll (false);
 	}
-	MMSoundMgrPulseUpdateVolume();
 
 	/* clean up */
 	debug_fleave();
@@ -1096,6 +1044,18 @@ int  MMSoundMgrSessionSetSoundPathForActiveDevice (mm_sound_device_out playback,
 		SET_CAPTURE_ONLY_ACTIVE(capture);
 	}
 	MMSoundMgrPulseSetActiveDevice(GET_ACTIVE_CAPTURE(), GET_ACTIVE_PLAYBACK());
+
+	if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_A2DP)) {
+		MMSoundMgrPulseSetDefaultSink (DEVICE_API_BLUETOOTH, DEVICE_BUS_BLUETOOTH);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_USB_AUDIO)) {
+		MMSoundMgrPulseSetUSBDefaultSink (MM_SOUND_DEVICE_OUT_USB_AUDIO);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_MULTIMEDIA_DOCK)) {
+		MMSoundMgrPulseSetUSBDefaultSink (MM_SOUND_DEVICE_OUT_MULTIMEDIA_DOCK);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_HDMI)) {
+		MMSoundMgrPulseSetDefaultSinkByName (ALSA_SINK_HDMI);
+	} else {
+		MMSoundMgrPulseSetDefaultSink (DEVICE_API_ALSA, DEVICE_BUS_BUILTIN);
+	}
 	UNLOCK_PATH();
 
 END_SET_DEVICE:
@@ -1126,6 +1086,18 @@ static int __set_sound_path_for_active_device_nolock (mm_sound_device_out playba
 		SET_CAPTURE_ONLY_ACTIVE(capture);
 	}
 	MMSoundMgrPulseSetActiveDevice(GET_ACTIVE_CAPTURE(), GET_ACTIVE_PLAYBACK());
+
+	if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_A2DP)) {
+		MMSoundMgrPulseSetDefaultSink (DEVICE_API_BLUETOOTH, DEVICE_BUS_BLUETOOTH);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_USB_AUDIO)) {
+		MMSoundMgrPulseSetUSBDefaultSink (MM_SOUND_DEVICE_OUT_USB_AUDIO);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_MULTIMEDIA_DOCK)) {
+		MMSoundMgrPulseSetUSBDefaultSink (MM_SOUND_DEVICE_OUT_MULTIMEDIA_DOCK);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_HDMI)) {
+		MMSoundMgrPulseSetDefaultSinkByName (ALSA_SINK_HDMI);
+	} else {
+		MMSoundMgrPulseSetDefaultSink (DEVICE_API_ALSA, DEVICE_BUS_BUILTIN);
+	}
 
 END_SET_DEVICE:
 	debug_fleave();
@@ -1307,7 +1279,7 @@ static void __set_initial_active_device (void)
 	SET_AVAILABLE(MM_SOUND_DEVICE_IN_MIC);
 
 	/* Get wired status and set available status */
-	_mm_sound_get_earjack_type (&g_info.headset_type);
+	mm_sound_util_get_earjack_type (&g_info.headset_type);
 	if (g_info.headset_type > EARJACK_UNPLUGGED) {
 		SET_AVAILABLE(MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY);
 		if (g_info.headset_type == DEVICE_EARJACK_TYPE_SPK_WITH_MIC) {
@@ -1321,7 +1293,7 @@ static void __set_initial_active_device (void)
 	}
 
 	/* Get Dock status and set available status */
-	_mm_sound_get_dock_type (&dock_type);
+	mm_sound_util_get_dock_type (&dock_type);
 	if (dock_type == DOCK_DESKDOCK) {
 		SET_AVAILABLE(MM_SOUND_DEVICE_OUT_DOCK);
 	}
@@ -2586,20 +2558,13 @@ int MMSoundMgrSessionSetSubSession(subsession_t subsession, int subsession_opt)
 				need_update = true;
 			}
 			break;
-	}	if (g_info.subsession == SUBSESSION_VOICE) {
-#ifdef SUPPORT_BT_SCO
-		if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_SCO) && IS_ACTIVE(MM_SOUND_DEVICE_IN_BT_SCO)) {
-			/* Update BT info */
-			MMSoundMgrPulseUpdateBluetoothAGCodec();
-		}
-#endif
 	}
-
 	if (g_info.subsession == SUBSESSION_VOICE) {
 #ifdef SUPPORT_BT_SCO
 		if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_SCO) && IS_ACTIVE(MM_SOUND_DEVICE_IN_BT_SCO)) {
 			/* Update BT info */
-			MMSoundMgrPulseUpdateBluetoothAGCodec();
+			/* Remove BT dependency */
+			/* MMSoundMgrPulseUpdateBluetoothAGCodec(); */
 		}
 #endif
 	}
@@ -2674,11 +2639,7 @@ bool MMSoundMgrSessionGetVoiceControlState ()
 /* -------------------------------- NOISE REDUCTION --------------------------------------------*/
 static bool __is_noise_reduction_on (void)
 {
-	int noise_reduction_on = 1;
-
-	if (vconf_get_bool(VCONF_KEY_NOISE_REDUCTION, &noise_reduction_on)) {
-		debug_warning("vconf_get_bool for VCONF_KEY_NOISE_REDUCTION failed\n");
-	}
+	int noise_reduction_on = 0;
 
 	return (noise_reduction_on == 1) ? true : false;
 }
@@ -2686,11 +2647,7 @@ static bool __is_noise_reduction_on (void)
 /* -------------------------------- EXTRA VOLUME --------------------------------------------*/
 static bool __is_extra_volume_on (void)
 {
-	int extra_volume_on = 1;
-
-	if (vconf_get_bool(VCONF_KEY_EXTRA_VOLUME, &extra_volume_on )) {
-		debug_warning("vconf_get_bool for VCONF_KEY_EXTRA_VOLUME failed\n");
-	}
+	int extra_volume_on = 0;
 
 	return (extra_volume_on  == 1) ? true : false;
 }
@@ -2699,11 +2656,7 @@ static bool __is_extra_volume_on (void)
 /* -------------------------------- UPSCALING --------------------------------------------*/
 static bool __is_upscaling_needed (void)
 {
-	int is_wbamr = 1;
-
-	if (vconf_get_bool(VCONF_KEY_WBAMR, &is_wbamr)) {
-		debug_warning("vconf_get_bool for VCONF_KEY_WBAMR failed\n");
-	}
+	int is_wbamr = 0;
 
 	return (is_wbamr == 0) ? true : false;
 }
@@ -2906,4 +2859,5 @@ int MMSoundMgrSessionFini(void)
 
 	return MM_ERROR_NONE;
 }
+#endif
 

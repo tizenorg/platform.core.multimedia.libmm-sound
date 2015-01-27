@@ -142,7 +142,6 @@ static const pa_tizen_volume_type_t mm_sound_volume_type_to_pa[VOLUME_TYPE_MAX] 
 	[VOLUME_TYPE_VOIP] = PA_TIZEN_VOLUME_TYPE_VOIP,
 	[VOLUME_TYPE_VOICE] = PA_TIZEN_VOLUME_TYPE_VOICE,
 	[VOLUME_TYPE_FIXED] = PA_TIZEN_VOLUME_TYPE_FIXED,
-//	[VOLUME_TYPE_EXT_SYSTEM_JAVA] = PA_TIZEN_VOLUME_TYPE_EXT_JAVA,
 };
 
 #define PA_SIMPLE_FADE_INTERVAL_USEC						20000
@@ -206,7 +205,7 @@ gint __mm_sound_handle_comparefunc(gconstpointer a, gconstpointer b)
 }
 
 EXPORT_API
-int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_info, MMSoundHandlePriority priority, int volume_config, pa_sample_spec* ss, pa_channel_map* channel_map, int* size)
+int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_info, MMSoundHandlePriority priority, int volume_config, pa_sample_spec* ss, pa_channel_map* channel_map, int* size, char *stream_type, int stream_index)
 {
     pa_simple *s = NULL;
     pa_channel_map maps;
@@ -257,15 +256,18 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
     }
 
     /* Set volume type of stream */
-    vol_conf_type = volume_config & 0x000000FF;
-    prop_vol_type = mm_sound_volume_type_to_pa[vol_conf_type];
-    pa_proplist_setf(proplist, PA_PROP_MEDIA_TIZEN_VOLUME_TYPE, "%d", prop_vol_type);
+    if(volume_config > 0) {
+        debug_log("setting gain type");
+        vol_conf_type = volume_config & 0x000000FF;
+        prop_vol_type = mm_sound_volume_type_to_pa[vol_conf_type];
+//          pa_proplist_setf(proplist, PA_PROP_MEDIA_TIZEN_VOLUME_TYPE, "%d", prop_vol_type);
 
-    /* Set gain type of stream */
-    prop_gain_type = (volume_config >> 8) & 0x000000FF;
+        /* Set gain type of stream */
+        prop_gain_type = (volume_config >> 8) & 0x000000FF;
 
-    pa_proplist_setf(proplist, PA_PROP_MEDIA_TIZEN_GAIN_TYPE, "%d", prop_gain_type);
-
+        pa_proplist_setf(proplist, PA_PROP_MEDIA_TIZEN_GAIN_TYPE, "%d", prop_gain_type);
+    }
+#if 0
     IS_INPUT_HANDLE(handle_mode) {
         handle_inout = HANDLE_DIRECTION_IN;
 
@@ -330,10 +332,18 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
     }
     pa_proplist_sets(proplist, PA_PROP_MEDIA_POLICY, prop_policy);
 
-    if (priority) {
-        debug_msg("Set HIGH priority [%d]", priority);
-        pa_proplist_sets(proplist, PA_PROP_MEDIA_ROLE, "solo");
+#endif
+
+    if (stream_index != -1) {
+        char stream_index_s[11];
+        debug_msg("Set stream index [%d]", stream_index);
+
+        snprintf(stream_index_s, sizeof(stream_index_s)-1, "%d", stream_index);
+        debug_msg("stream_index[%d] converted to string[%s]", stream_index, stream_index_s);
+        pa_proplist_sets(proplist, PA_PROP_MEDIA_PARENT_ID, stream_index_s);
     }
+    /* Set stream type */
+    pa_proplist_sets(proplist, PA_PROP_MEDIA_ROLE, stream_type);
 
     memset(&attr, '\0', sizeof(attr));
 
@@ -441,8 +451,8 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
         samples_per_period = (ss->rate * period_time) / 1000;
         periods_per_buffer = PA_SIMPLE_PERIODS_PER_BUFFER_VOIP;
         attr.prebuf = -1;
-        attr.minreq = pa_usec_to_bytes(20*PA_USEC_PER_MSEC, &ss);
-        attr.tlength = pa_usec_to_bytes(100*PA_USEC_PER_MSEC, &ss);
+        attr.minreq = pa_usec_to_bytes(20*PA_USEC_PER_MSEC, ss);
+        attr.tlength = pa_usec_to_bytes(100*PA_USEC_PER_MSEC, ss);
         attr.maxlength = -1;
         attr.fragsize = 0;
 
@@ -809,27 +819,6 @@ static void __mm_sound_pa_success_cb(pa_context *c, int success, void *userdata)
 }
 
 EXPORT_API
-int mm_sound_pa_set_volume_by_type(const int type, const int value)
-{
-    pa_operation *o = NULL;
-
-    CHECK_VOLUME_TYPE_RANGE(type);
-    CHECK_CONNECT_TO_PULSEAUDIO();
-
-    pa_threaded_mainloop_lock(mm_sound_handle_mgr.mainloop);
-
-    o = pa_ext_policy_set_volume_level(mm_sound_handle_mgr.context, -1, type, value, __mm_sound_pa_success_cb, (void*)mm_sound_handle_mgr.mainloop);
-    WAIT_PULSEAUDIO_OPERATION(mm_sound_handle_mgr, o);
-
-    if(o)
-        pa_operation_unref(o);
-
-    pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-
-    return MM_ERROR_NONE;
-}
-
-EXPORT_API
 int mm_sound_pa_set_call_mute(const int type, const int mute, int direction)
 {
     pa_operation *o = NULL;
@@ -868,38 +857,6 @@ static void __mm_sound_pa_get_cb(pa_context *c, uint32_t value, void *userdata)
     pa_threaded_mainloop_signal(u->mainloop, 0);
 }
 
-
-EXPORT_API
-int mm_sound_pa_get_volume_max(const int type, int* step)
-{
-    get_volume_max_userdata_t userdata;
-    pa_operation *o = NULL;
-
-    CHECK_VOLUME_TYPE_RANGE(type);
-    CHECK_CONNECT_TO_PULSEAUDIO();
-
-    pa_threaded_mainloop_lock(mm_sound_handle_mgr.mainloop);
-
-    userdata.mainloop = mm_sound_handle_mgr.mainloop;
-    userdata.value = -1;
-
-    o = pa_ext_policy_get_volume_level_max(mm_sound_handle_mgr.context, type, __mm_sound_pa_get_cb, (void *)&userdata);
-    WAIT_PULSEAUDIO_OPERATION(mm_sound_handle_mgr, o);
-
-    if(userdata.value < 0) {
-        debug_error("pa_ext_policy_get_volume_level_max() failed, userdata.value(%d)", userdata.value);
-        *step = -1;
-        pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-        return MM_ERROR_SOUND_INTERNAL;
-    } else
-        pa_operation_unref(o);
-
-    *step = userdata.value;
-
-    pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-
-    return MM_ERROR_NONE;
-}
 
 EXPORT_API
 int mm_sound_pa_get_volume_level(int handle, const int type, int* level)
