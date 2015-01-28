@@ -40,6 +40,9 @@
 #include "include/mm_sound_client.h"
 #include "include/mm_sound_common.h"
 #include "include/mm_sound_device.h"
+#ifdef USE_FOCUS
+#include "include/mm_sound_focus.h"
+#endif
 
 #include <mm_session.h>
 #include <mm_session_private.h>
@@ -55,9 +58,11 @@
 #define MEMTYPE_SUPPORT_MAX (1024 * 1024) /* 1MB */
 #define MEMTYPE_TRANS_PER_MAX (128 * 1024) /* 128K */
 
-int g_msg_scsnd;	/* global msg queue id sound client snd */
-int g_msg_scrcv;	/* global msg queue id sound client rcv */
-int g_msg_sccb;		/* global msg queue id sound client callback */
+int g_msg_scsnd;     /* global msg queue id for sending msg to sound client */
+int g_msg_scrcv;     /* global msg queue id for receiving msg from sound client */
+int g_msg_sccb;      /* global msg queue id for triggering callback to sound client */
+int g_msg_scsndcb;   /* global msg queue id for triggering callback to sound client in case of synchronous API */
+int g_msg_scrcvcb;   /* global msg queue id for replying callback result from sound client in case of synchronous API */
 
 /* global variables for device list */
 static GList *g_device_list = NULL;
@@ -72,10 +77,12 @@ struct __callback_param
 };
 
 pthread_t g_thread;
+pthread_t g_thread2;
 static int g_exit_thread = 0;
 int g_thread_id = -1;
-int g_mutex_initted = -1;
-pthread_mutex_t g_thread_mutex;
+int g_thread_id2 = -1;
+pthread_mutex_t g_thread_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t g_thread_mutex2 = PTHREAD_MUTEX_INITIALIZER;
 
 static void* callbackfunc(void *param);
 
@@ -84,6 +91,8 @@ static int __MMIpcCBSndMsg(mm_ipc_msg_t *msg);
 static int __MMIpcRecvMsg(int msgtype, mm_ipc_msg_t *msg);
 static int __MMIpcSndMsg(mm_ipc_msg_t *msg);
 static int __MMIpcCBRecvMsg(int msgtype, mm_ipc_msg_t *msg);
+static int __MMIpcCBRecvMsgForReply(int msgtype, mm_ipc_msg_t *msg);
+static int __MMIpcCBSndMsgReply(mm_ipc_msg_t *msg);
 static int __MMSoundGetMsg(void);
 
 int MMSoundClientInit(void)
@@ -105,8 +114,7 @@ int MMSoundClientCallbackFini(void)
 	/* When the the callback thread is not created, do not wait destroy thread */
 	/* g_thread_id is initialized : -1 */
 	/* g_thread_id is set to 0, when the callback thread is created */
-	if (g_thread_id != -1)
-	{
+	if (g_thread_id != -1) {
 		msgsnd.sound_msg.msgtype = MM_SOUND_MSG_INF_DESTROY_CB;
 		msgsnd.sound_msg.msgid = getpid();
 		ret = __MMIpcCBSndMsg(&msgsnd);
@@ -116,12 +124,13 @@ int MMSoundClientCallbackFini(void)
 		}
 		pthread_join(g_thread, 0);
 	}
-
-	if (g_mutex_initted != -1)
-	{
-		pthread_mutex_destroy(&g_thread_mutex);
-		g_mutex_initted = -1;
+	if (g_thread_id2 != -1) {
+		pthread_join(g_thread2, 0);
 	}
+
+	pthread_mutex_destroy(&g_thread_mutex);
+	pthread_mutex_destroy(&g_thread_mutex2);
+
 	debug_fleave();
 	return MM_ERROR_NONE;
 }
@@ -392,27 +401,109 @@ static void* callbackfunc(void *param)
 	return NULL;
 }
 
+static void* callbackfunc_send_reply(void *param)
+{
+	int ret = MM_ERROR_SOUND_INTERNAL;
+	mm_ipc_msg_t *msgrcv = NULL;
+	mm_ipc_msg_t *msgret = NULL;
+	int run = 1;
+	int instance;
+#ifdef USE_FOCUS
+	struct timeval time;
+	int starttime = 0;
+	int endtime = 0;
+#endif
+
+	debug_fenter();
+
+	instance = getpid();
+	debug_msg("[Client] callback thread for [%d] is created\n", instance);
+
+	msgrcv = (mm_ipc_msg_t*)malloc(sizeof(mm_ipc_msg_t));
+	msgret = (mm_ipc_msg_t*)malloc(sizeof(mm_ipc_msg_t));
+	memset (msgret, 0, sizeof(mm_ipc_msg_t));
+	if(msgrcv == NULL || msgret == NULL) {
+		debug_error("[Client] Failed to memory allocation\n");
+		return NULL;
+	}
+
+	while(run) {
+		debug_msg("[Client] Waiting message\n");
+		ret = __MMIpcCBRecvMsgForReply(instance, msgrcv);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("[Client] Fail to receive msg in callback\n");
+			continue;
+		}
+
+		debug_msg("[Client] Receive msgtype : [%d]\n", msgrcv->sound_msg.msgtype);
+
+		switch (msgrcv->sound_msg.msgtype) {
+#ifdef USE_FOCUS
+		case MM_SOUND_MSG_INF_FOCUS_CHANGED_CB:
+			/* Set start time */
+			gettimeofday(&time, NULL);
+			starttime = time.tv_sec * 1000000 + time.tv_usec;
+			debug_warning("[Client][Focus Callback(0x%x) START][focus_type(%d), state(%d),reason(%s),info(%s)][Time:%.3f]\n",
+				msgrcv->sound_msg.callback, msgrcv->sound_msg.focus_type, msgrcv->sound_msg.changed_state, msgrcv->sound_msg.stream_type, msgrcv->sound_msg.name, starttime/1000000.);
+			if (msgrcv->sound_msg.callback) {
+				((mm_sound_focus_changed_cb)msgrcv->sound_msg.callback)(msgrcv->sound_msg.focus_type, msgrcv->sound_msg.changed_state, msgrcv->sound_msg.stream_type, msgrcv->sound_msg.name, msgrcv->sound_msg.cbdata);
+			}
+			/* Calculate endtime and display*/
+			gettimeofday(&time, NULL);
+			endtime = time.tv_sec * 1000000 + time.tv_usec;
+			debug_warning("[Client][Focus Callback END][Time:%.3f, TimeLab=%3.3f(sec)]\n", endtime/1000000., (endtime-starttime)/1000000.);
+
+			/* send reply */
+			msgret->sound_msg.msgtype = msgrcv->sound_msg.msgtype;
+			msgret->sound_msg.msgid = msgrcv->sound_msg.msgid;
+			msgret->sound_msg.handle_id = msgrcv->sound_msg.handle_id;
+			ret = __MMIpcCBSndMsgReply(msgret);
+			if (ret != MM_ERROR_NONE) {
+				debug_error("[Client] Fail to send reply msg in callback\n");
+				continue;
+			}
+			break;
+#endif
+
+		default:
+			/* Unexpected msg */
+			debug_msg("Receive wrong msg in callback func\n");
+			break;
+		}
+	}
+	if(msgrcv) {
+		free(msgrcv);
+	}
+	if(msgret) {
+		free(msgret);
+	}
+
+	debug_msg("[Client] callback [%d] is leaved\n", instance);
+	debug_fleave();
+	return NULL;
+
+}
+
 static int __mm_sound_client_get_msg_queue(void)
 {
 	int ret = MM_ERROR_NONE;
 
-	if (g_mutex_initted == -1)
-	{
-		if(pthread_mutex_init(&g_thread_mutex, NULL)) {
-			debug_error("pthread_mutex_init failed\n");
-			return MM_ERROR_SOUND_INTERNAL;
-		}
-		debug_log("[Client] mutex initialized. \n");
-		g_mutex_initted = 1;
+	if(pthread_mutex_init(&g_thread_mutex, NULL)) {
+		debug_error("pthread_mutex_init failed\n");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+	if(pthread_mutex_init(&g_thread_mutex2, NULL)) {
+		debug_error("pthread_mutex_init failed\n");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+	debug_log("[Client] mutex initialized. \n");
 
-		/* Get msg queue id */
-		ret = __MMSoundGetMsg();
-		if(ret != MM_ERROR_NONE)
-		{
-			debug_error("[Client] Fail to get message queue id. sound_server is not initialized.\n");
-			pthread_mutex_destroy(&g_thread_mutex);
-			g_mutex_initted = -1;
-		}
+	/* Get msg queue id */
+	ret = __MMSoundGetMsg();
+	if(ret != MM_ERROR_NONE) {
+		debug_error("[Client] Fail to get message queue id. sound_server is not initialized.\n");
+		pthread_mutex_destroy(&g_thread_mutex);
+		pthread_mutex_destroy(&g_thread_mutex2);
 	}
 
 	return ret;
@@ -1276,6 +1367,239 @@ cleanup:
 	return ret;
 }
 
+#ifdef USE_FOCUS
+int _mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	ret = __mm_sound_client_get_msg_queue();
+	if (ret  != MM_ERROR_NONE) {
+		return ret;
+	}
+
+	pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();
+	/* Send REQ_REGISTER_FOCUS */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_REGISTER_FOCUS;
+	msgsnd.sound_msg.msgid = instance;
+	msgsnd.sound_msg.handle_id = id;
+	msgsnd.sound_msg.callback = callback;
+	msgsnd.sound_msg.cbdata = user_data;
+	MMSOUND_STRNCPY(msgsnd.sound_msg.stream_type, stream_type, MAX_STREAM_TYPE_LEN);
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	switch (msgrcv.sound_msg.msgtype)	{
+	case MM_SOUND_MSG_RES_REGISTER_FOCUS:
+		debug_msg("[Client] Success to register focus\n");
+		if (g_thread_id2 == -1) {
+			g_thread_id2 = pthread_create(&g_thread2, NULL, callbackfunc_send_reply, NULL);
+			if (g_thread_id2 == -1) {
+				debug_error("[Client] Fail to create thread %s\n", strerror(errno));
+				ret = MM_ERROR_SOUND_INTERNAL;
+				goto cleanup;
+			}
+		}
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_error("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex2);
+
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_unregister_focus(int id)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	ret = __mm_sound_client_get_msg_queue();
+	if (ret  != MM_ERROR_NONE) {
+		return ret;
+	}
+
+	pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();
+	/* Send REQ_UNREGISTER_FOCUS */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_UNREGISTER_FOCUS;
+	msgsnd.sound_msg.msgid = instance;
+	msgsnd.sound_msg.handle_id = id;
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	switch (msgrcv.sound_msg.msgtype)	{
+	case MM_SOUND_MSG_RES_UNREGISTER_FOCUS:
+		debug_msg("[Client] Success to unregister focus\n");
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_error("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex2);
+
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	ret = __mm_sound_client_get_msg_queue();
+	if (ret  != MM_ERROR_NONE) {
+		return ret;
+	}
+
+	pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();
+	/* Send REQ_ACQUIRE_FOCUS */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_ACQUIRE_FOCUS;
+	msgsnd.sound_msg.msgid = instance;
+	msgsnd.sound_msg.handle_id = id;
+	msgsnd.sound_msg.focus_type = (int)type;
+	MMSOUND_STRNCPY(msgsnd.sound_msg.name, option, MM_SOUND_NAME_NUM);
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	switch (msgrcv.sound_msg.msgtype)	{
+	case MM_SOUND_MSG_RES_ACQUIRE_FOCUS:
+		debug_msg("[Client] Success to acquire focus\n");
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_error("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex2);
+
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char *option)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	ret = __mm_sound_client_get_msg_queue();
+	if (ret  != MM_ERROR_NONE) {
+		return ret;
+	}
+
+	pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();
+	/* Send REQ_RELEASE_FOCUS */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_RELEASE_FOCUS;
+	msgsnd.sound_msg.msgid = instance;
+	msgsnd.sound_msg.handle_id = id;
+	msgsnd.sound_msg.focus_type = (int)type;
+	MMSOUND_STRNCPY(msgsnd.sound_msg.name, option, MM_SOUND_NAME_NUM);
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	switch (msgrcv.sound_msg.msgtype)	{
+	case MM_SOUND_MSG_RES_RELEASE_FOCUS:
+		debug_msg("[Client] Success to release focus\n");
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_error("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex2);
+
+	debug_fleave();
+	return ret;
+}
+#endif
+
 int _mm_sound_client_is_route_available(mm_sound_route route, bool *is_available)
 {
 	mm_ipc_msg_t msgrcv = {0,};
@@ -2029,6 +2353,27 @@ static int __MMIpcCBRecvMsg(int msgtype, mm_ipc_msg_t *msg)
 	return MM_ERROR_NONE;
 }
 
+static int __MMIpcCBSndMsgReply(mm_ipc_msg_t *msg)
+{
+	/* rcv message */
+	msg->msg_type = msg->sound_msg.msgid;
+	if (msgsnd(g_msg_scsndcb, msg, DSIZE, 0)== -1) {
+		debug_error("[Client] Fail to callback send message msgid : [%d], [%d][%s]", g_msg_scsndcb, errno, strerror(errno));
+		return MM_ERROR_COMMON_UNKNOWN;
+	}
+	return MM_ERROR_NONE;
+}
+
+static int __MMIpcCBRecvMsgForReply(int msgtype, mm_ipc_msg_t *msg)
+{
+	/* rcv message */
+	if(msgrcv(g_msg_scrcvcb, msg, DSIZE, msgtype, 0) == -1) {
+		debug_error("[Client] Fail to callback receive message msgid : [%d], [%d][%s]", g_msg_scrcvcb, errno, strerror(errno));
+		return MM_ERROR_COMMON_UNKNOWN;
+	}
+	return MM_ERROR_NONE;
+}
+
 #define MAX_RCV_RETRY 20000
 
 static int __MMIpcRecvMsg(int msgtype, mm_ipc_msg_t *msg)
@@ -2113,8 +2458,10 @@ static int __MMSoundGetMsg(void)
 	g_msg_scsnd = msgget(ftok(KEY_BASE_PATH, RCV_MSG), 0666);
 	g_msg_scrcv = msgget(ftok(KEY_BASE_PATH, SND_MSG), 0666);
 	g_msg_sccb = msgget(ftok(KEY_BASE_PATH, CB_MSG), 0666);
+	g_msg_scsndcb = msgget(ftok(KEY_BASE_PATH, RCV_CB_MSG), 0666);
+	g_msg_scrcvcb = msgget(ftok(KEY_BASE_PATH, SND_CB_MSG), 0666);
 
-	if ((g_msg_scsnd == -1 || g_msg_scrcv == -1 || g_msg_sccb == -1) != MM_ERROR_NONE) {
+	if ((g_msg_scsnd == -1 || g_msg_scrcv == -1 || g_msg_sccb == -1 || g_msg_scsndcb == -1 || g_msg_scrcvcb == -1) != MM_ERROR_NONE) {
 		if (errno == EACCES) {
 			debug_warning("Require ROOT permission.\n");
 		} else if (errno == ENOMEM) {
@@ -2129,18 +2476,21 @@ static int __MMSoundGetMsg(void)
 			g_msg_scsnd = msgget(ftok(KEY_BASE_PATH, RCV_MSG), 0666);
 			g_msg_scrcv = msgget(ftok(KEY_BASE_PATH, SND_MSG), 0666);
 			g_msg_sccb = msgget(ftok(KEY_BASE_PATH, CB_MSG), 0666);
-			if ((g_msg_scsnd == -1 || g_msg_scrcv == -1 || g_msg_sccb == -1) != MM_ERROR_NONE) {
+			g_msg_scsndcb = msgget(ftok(KEY_BASE_PATH, RCV_CB_MSG), 0666);
+			g_msg_scrcvcb = msgget(ftok(KEY_BASE_PATH, SND_CB_MSG), 0666);
+			if ((g_msg_scsnd == -1 || g_msg_scrcv == -1 || g_msg_sccb == -1 || g_msg_scsndcb == -1 || g_msg_scrcvcb == -1) != MM_ERROR_NONE) {
 				debug_error("Fail to GET msgid by retrying %d times\n", i+1);
 			} else
 				break;
 		}
-		if ((g_msg_scsnd == -1 || g_msg_scrcv == -1 || g_msg_sccb == -1) != MM_ERROR_NONE) {
+		if ((g_msg_scsnd == -1 || g_msg_scrcv == -1 || g_msg_sccb == -1 || g_msg_scsndcb == -1 || g_msg_scrcvcb == -1) != MM_ERROR_NONE) {
 			debug_error("Fail to GET msgid finally, just return internal error.\n");
 			return MM_ERROR_SOUND_INTERNAL;
 		}
 	}
 
-	debug_log("Get msg queue id from server : snd[%d], rcv[%d], cb[%d]\n", g_msg_scsnd, g_msg_scrcv, g_msg_sccb);
+	debug_log("Get msg queue id from server : snd[%d], rcv[%d], cb[%d], snd_cb[%d], rcv_cb[%d]\n",
+			g_msg_scsnd, g_msg_scrcv, g_msg_sccb, g_msg_scsndcb, g_msg_scrcvcb);
 
 	debug_fleave();
 	return MM_ERROR_NONE;

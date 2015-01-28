@@ -39,6 +39,9 @@
 #include "include/mm_sound_thread_pool.h"
 #include "include/mm_sound_mgr_codec.h"
 #include "include/mm_sound_mgr_device.h"
+#ifdef USE_FOCUS
+#include "include/mm_sound_mgr_focus.h"
+#endif
 #include <mm_error.h>
 #include <mm_debug.h>
 
@@ -62,6 +65,9 @@
 int g_rcvid;
 int g_sndid;
 int g_cbid;
+int g_snd_cbid;
+int g_rcv_cbid;
+
 static pthread_mutex_t g_msg_snd_cb_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -92,6 +98,12 @@ static int __mm_sound_mgr_ipc_add_device_connected_cb(mm_ipc_msg_t *msg);
 static int __mm_sound_mgr_ipc_remove_device_connected_cb(mm_ipc_msg_t *msg);
 static int __mm_sound_mgr_ipc_add_device_info_changed_cb(mm_ipc_msg_t *msg);
 static int __mm_sound_mgr_ipc_remove_device_info_changed_cb(mm_ipc_msg_t *msg);
+#ifdef USE_FOCUS
+static int __mm_sound_mgr_ipc_create_focus_node(mm_ipc_msg_t *msg);
+static int __mm_sound_mgr_ipc_destroy_focus_node(mm_ipc_msg_t *msg);
+static int __mm_sound_mgr_ipc_acquire_focus(mm_ipc_msg_t *msg);
+static int __mm_sound_mgr_ipc_release_focus(mm_ipc_msg_t *msg);
+#endif
 
 
 int MMSoundMgrIpcInit(void)
@@ -103,8 +115,9 @@ int MMSoundMgrIpcInit(void)
 	g_rcvid = msgget(ftok(KEY_BASE_PATH, RCV_MSG), IPC_CREAT |0666);
 	g_sndid = msgget(ftok(KEY_BASE_PATH, SND_MSG), IPC_CREAT |0666);
 	g_cbid = msgget(ftok(KEY_BASE_PATH, CB_MSG), IPC_CREAT |0666);
-
-	if ((g_rcvid == -1 || g_sndid == -1 || g_cbid == -1) != MM_ERROR_NONE) {
+	g_snd_cbid = msgget(ftok(KEY_BASE_PATH, SND_CB_MSG), IPC_CREAT |0666);
+	g_rcv_cbid = msgget(ftok(KEY_BASE_PATH, RCV_CB_MSG), IPC_CREAT |0666);
+	if ((g_rcvid == -1 || g_sndid == -1 || g_cbid == -1 || g_snd_cbid == -1 || g_rcv_cbid == -1) != MM_ERROR_NONE) {
 		if(errno == EACCES) {
 			printf("Require ROOT permission.\n");
 		} else if(errno == EEXIST) {
@@ -119,7 +132,7 @@ int MMSoundMgrIpcInit(void)
 		return MM_ERROR_SOUND_INTERNAL;
 	}			
 
-	debug_msg("Created server msg queue id : rcv[%d], snd[%d], cb[%d]\n", g_rcvid, g_sndid, g_cbid );
+	debug_msg("Created server msg queue id : rcv[%d], snd[%d], cb[%d], snd_cb[%d], rcv_cb[%d]\n", g_rcvid, g_sndid, g_cbid, g_snd_cbid, g_rcv_cbid);
 
 	g_type_init();
 
@@ -135,11 +148,11 @@ int MMSoundMgrIpcFini(void)
 int MMSoundMgrIpcReady(void)
 {
 	int ret = MM_ERROR_NONE;
-	int err1, err2, err3;
+	int err1, err2, err3, err4, err5;
 	mm_ipc_msg_t msg = {0,};
 	mm_ipc_msg_t resp  = {0,};
 
-	debug_msg("Created server msg queue id : rcv[%d], snd[%d], cb[%d]\n", g_rcvid, g_sndid, g_cbid );
+	debug_msg("Created server msg queue id : rcv[%d], snd[%d], cb[%d], snd_cb[%d], rcv_cb[%d]\n", g_rcvid, g_sndid, g_cbid, g_snd_cbid, g_rcv_cbid);
 
 	/* Ready to recive message */
 	while(1) {
@@ -182,6 +195,12 @@ int MMSoundMgrIpcReady(void)
 		case MM_SOUND_MSG_REQ_REMOVE_DEVICE_CONNECTED_CB:
 		case MM_SOUND_MSG_REQ_ADD_DEVICE_INFO_CHANGED_CB:
 		case MM_SOUND_MSG_REQ_REMOVE_DEVICE_INFO_CHANGED_CB:
+#ifdef USE_FOCUS
+		case MM_SOUND_MSG_REQ_REGISTER_FOCUS:
+		case MM_SOUND_MSG_REQ_UNREGISTER_FOCUS:
+		case MM_SOUND_MSG_REQ_ACQUIRE_FOCUS:
+		case MM_SOUND_MSG_REQ_RELEASE_FOCUS:
+#endif
 			{
 				/* Create msg to queue : this will be freed inside thread function after use */
 				mm_ipc_msg_t* msg_to_queue = malloc (sizeof(mm_ipc_msg_t));
@@ -223,8 +242,10 @@ int MMSoundMgrIpcReady(void)
 	err1 = msgctl(g_rcvid, IPC_RMID, NULL);
 	err2 = msgctl(g_sndid, IPC_RMID, NULL);
 	err3 = msgctl(g_cbid, IPC_RMID, NULL);
-	
-	if (err1 == -1 ||err2 == -1 ||err3 ==-1) {
+	err4 = msgctl(g_snd_cbid, IPC_RMID, NULL);
+	err4 = msgctl(g_rcv_cbid, IPC_RMID, NULL);
+
+	if (err1 == -1 ||err2 == -1 ||err3 == -1 ||err4 == -1 ||err5 == -1) {
 		debug_error("Base message node destroy fail");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
@@ -518,6 +539,53 @@ static void _MMSoundMgrRun(void *data)
 			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_REMOVE_DEVICE_INFO_CHANGED_CB, 0, MM_ERROR_NONE, instance);
 		}
 		break;
+
+#ifdef USE_FOCUS
+	case MM_SOUND_MSG_REQ_REGISTER_FOCUS:
+		debug_msg("==================== Recv REQ_REGISTER_FOCUS msg from pid(%d) ====================\n", instance);
+		ret = __mm_sound_mgr_ipc_create_focus_node(msg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to REQ_REGISTER_FOCUS.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_REGISTER_FOCUS, 0, MM_ERROR_NONE, instance);
+		}
+		break;
+
+	case MM_SOUND_MSG_REQ_UNREGISTER_FOCUS:
+		debug_msg("==================== Recv REQ_UNREGISTER_FOCUS msg from pid(%d) ====================\n", instance);
+		ret = __mm_sound_mgr_ipc_destroy_focus_node(msg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to REQ_DESTROY_FOCUS_NODE.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_UNREGISTER_FOCUS, 0, MM_ERROR_NONE, instance);
+		}
+		break;
+
+	case MM_SOUND_MSG_REQ_ACQUIRE_FOCUS:
+		debug_msg("==================== Recv REQ_ACQUIRE_FOCUS msg from pid(%d) ====================\n", instance);
+		ret = __mm_sound_mgr_ipc_acquire_focus(msg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to REQ_ACQUIRE_FOCUS.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ACQUIRE_FOCUS, 0, MM_ERROR_NONE, instance);
+		}
+		break;
+
+	case MM_SOUND_MSG_REQ_RELEASE_FOCUS:
+		debug_msg("==================== Recv REQ_RELEASE_FOCUS msg from pid(%d) ====================\n", instance);
+		ret = __mm_sound_mgr_ipc_release_focus(msg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to REQ_RELEASE_FOCUS.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_RELEASE_FOCUS, 0, MM_ERROR_NONE, instance);
+		}
+		break;
+
+#endif
 
 	default:
 		/* Response error unknown operation */;
@@ -1096,6 +1164,72 @@ static int __mm_sound_mgr_ipc_remove_device_info_changed_cb(mm_ipc_msg_t *msg)
 	return ret;
 }
 
+#ifdef USE_FOCUS
+static int __mm_sound_mgr_ipc_create_focus_node(mm_ipc_msg_t *msg)
+{
+	_mm_sound_mgr_focus_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+	param.pid = msg->sound_msg.msgid;
+	param.handle_id = msg->sound_msg.handle_id;
+	param.callback = msg->sound_msg.callback;
+	param.cbdata = msg->sound_msg.cbdata;
+	memcpy(param.stream_type, msg->sound_msg.stream_type, MAX_STREAM_TYPE_LEN);
+
+	ret = _mm_sound_mgr_focus_create_node(&param);
+
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_destroy_focus_node(mm_ipc_msg_t *msg)
+{
+	_mm_sound_mgr_focus_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+	param.pid = msg->sound_msg.msgid;
+	param.handle_id = msg->sound_msg.handle_id;
+
+	ret = _mm_sound_mgr_focus_destroy_node(&param);
+
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_acquire_focus(mm_ipc_msg_t *msg)
+{
+	_mm_sound_mgr_focus_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+	param.pid = msg->sound_msg.msgid;
+	param.handle_id = msg->sound_msg.handle_id;
+	param.request_type = msg->sound_msg.focus_type;
+	memcpy(param.stream_type, msg->sound_msg.stream_type, MAX_STREAM_TYPE_LEN);
+	memcpy(param.option, msg->sound_msg.name, MM_SOUND_NAME_NUM);
+
+	ret = _mm_sound_mgr_focus_request_acquire(&param);
+
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_release_focus(mm_ipc_msg_t *msg)
+{
+	_mm_sound_mgr_focus_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+	param.pid = msg->sound_msg.msgid;
+	param.handle_id = msg->sound_msg.handle_id;
+	param.request_type = msg->sound_msg.focus_type;
+	memcpy(param.option, msg->sound_msg.name, MM_SOUND_NAME_NUM);
+
+	ret = _mm_sound_mgr_focus_request_release(&param);
+
+	return ret;
+}
+#endif
+
 int __mm_sound_mgr_ipc_freeze_send (char* command, int pid)
 {
 	GError *err = NULL;
@@ -1202,14 +1336,18 @@ int _MMIpcCBSndMsg(mm_ipc_msg_t *msg)
 {
 	/* rcv message */
 	int try_again = 0;
+	int cbid = g_cbid;
 
 	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_msg_snd_cb_mutex, MM_ERROR_SOUND_INTERNAL);
 	msg->msg_type = msg->sound_msg.msgid;
-	debug_log("Send CB message type (for client) : [%ld]\n",msg->msg_type);
+	if (msg->wait_for_reply == true)
+		cbid = g_snd_cbid;
+	else
+		cbid = g_cbid;
 	/* message queue is full ,we try to send it again*/
 	while(try_again <= 10) {
-		if (msgsnd(g_cbid, msg, DSIZE, IPC_NOWAIT) == -1)
-		{
+		debug_log("Send CB message type (for client) : [%ld], snd_msg_queue[%d]\n",msg->msg_type, cbid);
+		if (msgsnd(cbid, msg, DSIZE, IPC_NOWAIT) == -1) {
 			if (errno == EACCES) {
 				debug_warning("Not acces.\n");
 			} else if (errno == EAGAIN) {
@@ -1223,7 +1361,7 @@ int _MMIpcCBSndMsg(mm_ipc_msg_t *msg)
 					continue;
 				}
 				/* message queue is full ,it need to clear the queue */
-				while( msgrcv(g_cbid, &msgdata, DSIZE, 0, IPC_NOWAIT) != -1 ) {
+				while( msgrcv(cbid, &msgdata, DSIZE, 0, IPC_NOWAIT) != -1 ) {
 					debug_warning("msg queue is full ,remove msgtype:[%d] from the queue",msgdata.sound_msg.msgtype);
 				}
 				try_again++;
@@ -1247,4 +1385,87 @@ int _MMIpcCBSndMsg(mm_ipc_msg_t *msg)
 	return MM_ERROR_NONE;
 }
 
+int _MMIpcCBMsgEnQueueAgain(mm_ipc_msg_t *msg)
+{
+	/* rcv message */
+	int try_again = 0;
+	int cbid = g_rcv_cbid;
 
+	debug_log("Send CB message type (for client) : [%ld]\n",msg->msg_type);
+	/* message queue is full ,we try to send it again*/
+	while(try_again <= 10) {
+		if (msgsnd(cbid, msg, DSIZE, IPC_NOWAIT) == -1) {
+			if (errno == EACCES) {
+				debug_warning("Not acces.\n");
+			} else if (errno == EAGAIN) {
+				mm_ipc_msg_t msgdata = {0,};
+				debug_warning("Blocked process [msgflag & IPC_NOWAIT != 0]\n");
+				/* wait 10 msec ,then it will try again */
+				usleep(10000);
+				/*  it will try 5 times, after 5 times ,if it still fail ,then it will clear the message queue */
+				if (try_again <= 5) {
+					try_again ++;
+					continue;
+				}
+				/* message queue is full ,it need to clear the queue */
+				while( msgrcv(cbid, &msgdata, DSIZE, 0, IPC_NOWAIT) != -1 ) {
+					debug_warning("msg queue is full ,remove msgtype:[%d] from the queue",msgdata.sound_msg.msgtype);
+				}
+				try_again++;
+				continue;
+			} else if (errno == EIDRM) {
+				debug_warning("Removed msgid from system\n");
+			} else if (errno == EINTR) {
+				debug_warning("Iterrrupted by singnal\n");
+			} else if (errno == EINVAL) {
+				debug_warning("Invalid msgid or msgtype < 1 or out of data size \n");
+			}
+			debug_critical("Fail to callback send message msg queue : [%d] \n", g_cbid);
+			return MM_ERROR_SOUND_INTERNAL;
+		} else {
+			break;
+		}
+	}
+
+	return MM_ERROR_NONE;
+}
+
+#define MAX_WAIT_MSEC 2000
+int _MMIpcCBRecvMsg(mm_ipc_msg_t *msg)
+{
+	int err = ERR_ASM_ERROR_NONE;
+	int count = 0;
+	do {
+		/* rcv message */
+		if(msgrcv(g_rcv_cbid, msg, DSIZE, 0, IPC_NOWAIT) == -1) {
+			if(errno == ENOMSG) {
+				usleep(1000); /* 1 msec. */
+				count++;
+			} else {
+				if(errno == E2BIG) {
+				debug_warning("Not acces.\n");
+				} else if(errno == EACCES) {
+					debug_warning("Access denied\n");
+				} else if(errno == ENOMSG) {
+					debug_warning("Blocked process [msgflag & IPC_NOWAIT != 0]\n");
+				} else if(errno == EIDRM) {
+					debug_warning("Removed msgid from system\n");
+				} else if(errno == EINTR) {
+					debug_warning("Iterrrupted by singnal\n");
+				} else if(errno == EINVAL) {
+					debug_warning("Invalid msgid \n");
+				}
+				debug_warning("Fail to recive msg queue : [%d] \n", g_rcv_cbid);
+				return MM_ERROR_COMMON_UNKNOWN;
+			}
+		} else {
+			debug_log(" _MMIpcCBRecvMsg() success, after %d loops\n", count);
+			break;
+		}
+	} while (count <= MAX_WAIT_MSEC);
+	if (count > MAX_WAIT_MSEC) {
+		err = ERR_ASM_MSG_QUEUE_RCV_ERROR;
+		debug_error(" msgrcv failed with error %d after %d seconds \n", errno, MAX_WAIT_MSEC/1000);
+	}
+	return err;
+}

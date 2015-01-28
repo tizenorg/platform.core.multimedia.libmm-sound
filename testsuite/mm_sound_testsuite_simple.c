@@ -29,6 +29,9 @@
 #define MAX_PATH_LEN		1024
 #define MIN_TONE_PLAY_TIME 300
 #include "../include/mm_sound.h"
+#ifdef USE_FOCUS
+#include "../include/mm_sound_focus.h"
+#endif
 #include "../include/mm_sound_common.h"
 #include "../include/mm_sound_private.h"
 #include "../include/mm_sound_pa_client.h"
@@ -158,6 +161,28 @@ void device_info_changed_cb (MMSoundDevice_t device_h, int changed_info_type, vo
 	}
 	debug_log("*** --- type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", type, id, io_direction, state, name);
 }
+#ifdef USE_FOCUS
+void focus_cb0 (mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
+{
+	char *_state = NULL;
+	if (state == FOCUS_IS_RELEASED)
+		_state = "RELEASED";
+	else
+		_state = "ACQUIRED";
+	debug_log("*** focus_cb0 is called, focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
+			type, _state, reason_for_change, additional_info, user_data);
+}
+void focus_cb1 (mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
+{
+	char *_state = NULL;
+	if (state == FOCUS_IS_RELEASED)
+		_state = "RELEASED";
+	else
+		_state = "ACQUIRED";
+	debug_log("*** focus_cb1 is called, focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
+			type, _state, reason_for_change, additional_info, user_data);
+}
+#endif
 void quit_program()
 {
 	g_main_loop_quit(g_loop);
@@ -232,6 +257,15 @@ static void displaymenu()
 		g_print("Q : Add device info. changed callback \t");
 		g_print("W : Remove device info. changed callback \n");
 		g_print("==================================================================\n");
+#ifdef USE_FOCUS
+		g_print("	Focus APIs\n");
+		g_print("==================================================================\n");
+		g_print("SF : Set Focus Callback\t");
+		g_print("UF : Unset Focus Callback\n");
+		g_print("EF : Acquire Focus\t");
+		g_print("RF : Release Focus\n");
+		g_print("==================================================================\n");
+#endif
 		g_print("d : Input Directory \t");
 		g_print("f : Input File name \t");
 		g_print("x : Exit Program \n");
@@ -1318,6 +1352,142 @@ static void interpret (char *cmd)
 				g_print("failed to mm_sound_remove_device_information_changed_callback(), ret[0x%x]\n", ret);
 			}
 		}
+#ifdef USE_FOCUS
+		else if(strncmp(cmd, "SF", 2) ==0) {
+			int ret = 0;
+			char input_string[128];
+			char flag_1, flag_2;
+			int id = 0;
+			char *stream_type = NULL;
+			const char *user_data = "this is user data";
+
+			fflush(stdin);
+			g_print ("1. Media playback\n");
+			g_print ("2. Media recording\n");
+			g_print ("3. Alarm\n");
+			g_print ("4. Notification\n");
+			g_print ("5. Emergency\n");
+			g_print ("6. TTS\n");
+			g_print ("7. Ringtone\n");
+			g_print ("8. Call\n");
+			g_print ("9. VOIP\n");
+			g_print ("0. Voice Recognition\n");
+			g_print("> select id and stream type: (eg. 0 3)");
+
+			if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+				g_print ("### fgets return  NULL\n");
+			}
+			flag_1 = input_string[0];
+			flag_2 = input_string[2];
+
+			if(flag_1 == '0') { id = 0; }
+			else if(flag_1 == '1') { id = 1; }
+			else if(flag_1 == '2') { id = 2; }
+			else { id = 2; }
+			if(flag_2 == '1') { stream_type = "media_playback"; }
+			else if(flag_2 == '2') { stream_type = "media_recording"; }
+			else if(flag_2 == '3') { stream_type = "alarm"; }
+			else if(flag_2 == '4') { stream_type = "notification"; }
+			else if(flag_2 == '5') { stream_type = "emergency"; }
+			else if(flag_2 == '6') { stream_type = "tts"; }
+			else if(flag_2 == '7') { stream_type = "ringtone"; }
+			else if(flag_2 == '8') { stream_type = "call"; }
+			else if(flag_2 == '9') { stream_type = "voip"; }
+			else if(flag_2 == '0') { stream_type = "voice_recognition"; }
+			else { stream_type = "media_playback"; }
+
+			ret = mm_sound_register_focus(id, stream_type, (id == 0)? focus_cb0 : focus_cb1, user_data);
+			if (ret) {
+				g_print("failed to mm_sound_register_focus(), ret[0x%x]\n", ret);
+			} else {
+				g_print("id[%d], stream_type[%s], callback fun[0x%x]\n", id, stream_type, (id == 0)? focus_cb0 : focus_cb1);
+			}
+		}
+
+		else if(strncmp(cmd, "UF", 2) ==0) {
+			int ret = 0;
+			char input_string[128];
+			char flag_1;
+			int id = 0;
+			fflush(stdin);
+			g_print("> select id:");
+			if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+				g_print ("### fgets return  NULL\n");
+			}
+			flag_1 = input_string[0];
+			if(flag_1 == '0') { id = 0; }
+			else if(flag_1 == '1') { id = 1; }
+			else if(flag_1 == '2') { id = 2; }
+			else { id = 2; }
+			ret = mm_sound_unregister_focus(id);
+			if (ret) {
+				g_print("failed to mm_sound_unregister_focus(), ret[0x%x]\n", ret);
+			}
+		}
+
+		else if(strncmp(cmd, "EF", 2) ==0) {
+			int ret = 0;
+			char input_string[128];
+			char flag_1, flag_2;
+			int id = 0;
+			mm_sound_focus_type_e type = FOCUS_FOR_PLAYBACK;
+			fflush(stdin);
+			g_print ("1. focus for playback\n");
+			g_print ("2. focus for recording\n");
+			g_print ("3. focus for both\n");
+			g_print("> select id and focus_type: (eg. 0 1)");
+			if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+				g_print ("### fgets return  NULL\n");
+			}
+			flag_1 = input_string[0];
+			flag_2 = input_string[2];
+
+			if(flag_1 == '0') { id = 0; }
+			else if(flag_1 == '1') { id = 1; }
+			else if(flag_1 == '2') { id = 2; }
+			else { id = 2; }
+
+			if(flag_2 == '1') { type = FOCUS_FOR_PLAYBACK; }
+			else if(flag_2 == '2') { type = FOCUS_FOR_CAPTURE; }
+			else { type = FOCUS_FOR_BOTH; }
+			ret = mm_sound_acquire_focus(id, type, "additional_info. for acquire");
+			if (ret) {
+				g_print("failed to mm_sound_acquire_focus(), ret[0x%x]\n", ret);
+			}
+		}
+
+		else if(strncmp(cmd, "RF", 2) ==0) {
+			int ret = 0;
+			char input_string[128];
+			char flag_1, flag_2;
+			int id = 0;
+			mm_sound_focus_type_e type = FOCUS_FOR_PLAYBACK;
+			fflush(stdin);
+			g_print ("1. focus for playback\n");
+			g_print ("2. focus for recording\n");
+			g_print ("3. focus for all\n");
+			g_print("> select id and focus_type: (eg. 0 1)");
+			if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+				g_print ("### fgets return  NULL\n");
+			}
+			flag_1 = input_string[0];
+			flag_2 = input_string[2];
+
+			if(flag_1 == '0') { id = 0; }
+			else if(flag_1 == '1') { id = 1; }
+			else if(flag_1 == '2') { id = 2; }
+			else { id = 2; }
+
+			if(flag_2 == '1') { type = FOCUS_FOR_PLAYBACK; }
+			else if(flag_2 == '2') { type = FOCUS_FOR_CAPTURE; }
+			else { type = FOCUS_FOR_BOTH; }
+			ret = mm_sound_release_focus(id, type, "additional_info. for release");
+			if (ret) {
+				g_print("failed to mm_sound_release_focus(), ret[0x%x]\n", ret);
+			}
+		}
+#endif
+
 		else if (strncmp(cmd, "x", 1) == 0) {
 			quit_program();
 		}

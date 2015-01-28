@@ -66,7 +66,7 @@
 #define HIBERNATION_SOUND_CHECK_PATH	"/tmp/hibernation/sound_ready"
 #define USE_SYSTEM_SERVER_PROCESS_MONITORING
 
-#define	ASM_CHECK_INTERVAL	10000
+#define VCONFKEY_CHECK_INTERVAL	10000
 
 #define MAX_PLUGIN_DIR_PATH_LEN	256
 
@@ -116,19 +116,19 @@ gpointer event_loop_thread(gpointer data)
 	return NULL;
 }
 
-static void __wait_for_asm_ready ()
+static void __wait_for_vconfkey_ready (const char *keyname)
 {
 	int retry_count = 0;
-	int asm_ready = 0;
-	while (!asm_ready) {
-		debug_msg("Checking ASM ready....[%d]\n", retry_count++);
-		if (vconf_get_int(ASM_READY_KEY, &asm_ready)) {
-			debug_warning("vconf_get_int for ASM_READY_KEY (%s) failed\n", ASM_READY_KEY);
+	int vconf_ready = 0;
+	while (!vconf_ready) {
+		debug_msg("Checking the vconf key[%s] ready....[%d]\n", keyname, retry_count++);
+		if (vconf_get_int(keyname, &vconf_ready)) {
+			debug_warning("vconf_get_int for vconf key[%s] failed\n", keyname);
 		}
-		usleep (ASM_CHECK_INTERVAL);
+		usleep (VCONFKEY_CHECK_INTERVAL);
 	}
-	debug_msg("ASM is now ready...clear the key!!!\n");
-	vconf_set_int(ASM_READY_KEY, 0);
+	debug_msg("vconf key[%s] is now ready...clear the key!!!\n", keyname);
+	vconf_set_int(keyname, 0);
 }
 
 static int _handle_power_off ()
@@ -267,8 +267,11 @@ int main(int argc, char **argv)
 		pulse_handle = MMSoundMgrPulseInit();
 		MMSoundMgrASMInit();
 		/* Wait for ASM Ready */
-		__wait_for_asm_ready();
+		__wait_for_vconfkey_ready(ASM_READY_KEY);
 		debug_warning("sound_server [%d] asm ready...now, initialize devices!!!\n", getpid());
+#ifdef USE_FOCUS
+		MMSoundMgrFocusInit();
+#endif
 
 		_mm_sound_mgr_device_init();
 		MMSoundMgrHeadsetInit();
@@ -316,6 +319,9 @@ int main(int argc, char **argv)
 		MMSoundMgrHeadsetFini();
 		MMSoundMgrSessionFini();
 		_mm_sound_mgr_device_fini();
+#ifdef USE_FOCUS
+		MMSoundMgrFocusFini();
+#endif
 		MMSoundMgrASMFini();
 		MMSoundMgrPulseFini(pulse_handle);
 #ifdef USE_HIBERNATION

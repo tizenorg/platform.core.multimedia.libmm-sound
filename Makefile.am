@@ -18,6 +18,9 @@ libmmfsound_la_SOURCES = mm_sound.c \
 			mm_sound_pcm.c \
 			mm_sound_pa_client.c \
 			mm_sound_pcm_async.c
+if USE_FOCUS
+libmmfsound_la_SOURCES += mm_sound_focus.c
+endif
 
 libmmfsound_la_DEPENDENCIES = common/libmmfsoundcommon.la
 

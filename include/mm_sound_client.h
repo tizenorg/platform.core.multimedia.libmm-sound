@@ -24,6 +24,9 @@
 
 #include "mm_sound_private.h"
 #include "mm_sound_device.h"
+#ifdef USE_FOCUS
+#include "mm_sound_focus.h"
+#endif
 
 //#define MEMTYPE_TRANS_PER_MAX (1024 * 1024) /* 1MB */
 
@@ -48,6 +51,12 @@ int _mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_de
 int _mm_sound_client_remove_device_connected_callback(void);
 int _mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data);
 int _mm_sound_client_remove_device_info_changed_callback(void);
+#ifdef USE_FOCUS
+int _mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
+int _mm_sound_client_unregister_focus(int id);
+int _mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option);
+int _mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char *option);
+#endif
 
 #ifdef PULSE_CLIENT
 int MMSoundClientIsBtA2dpOn (bool *connected, char** bt_name);

@@ -22,6 +22,8 @@
 #ifndef __MM_SOUND_COMMON_H__
 #define __MM_SOUND_COMMON_H__
 
+#include <errno.h>
+
 ///////////////////////////////////
 ////     MMSOUND VOLUME APIs
 ///////////////////////////////////

@@ -67,9 +67,9 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 %endif
 
 %ifarch %{arm}
-	CFLAGS="%{optflags} -fvisibility=hidden -D_TIZEN_PUBLIC_ -DMM_DEBUG_FLAG -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\"" ;export CFLAGS
+	CFLAGS="%{optflags} -fvisibility=hidden -D_TIZEN_PUBLIC_ -DUSE_FOCUS -DMM_DEBUG_FLAG -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\"" ;export CFLAGS
 %else
-	CFLAGS="%{optflags} -fvisibility=hidden -D_TIZEN_PUBLIC_ -DMM_DEBUG_FLAG -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\"" ;export CFLAGS
+	CFLAGS="%{optflags} -fvisibility=hidden -D_TIZEN_PUBLIC_ -DUSE_FOCUS -DMM_DEBUG_FLAG -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\"" ;export CFLAGS
 %endif
 
 %if "%{?tizen_profile_name}" == "wearable"
@@ -89,9 +89,9 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
        --disable-bluetooth \
 %endif
 %ifarch %{arm}
-	--prefix=/usr --enable-pulse
+	--prefix=/usr --enable-pulse --enable-focus
 %else
-	--prefix=/usr --enable-pulse
+	--prefix=/usr --enable-pulse --enable-focus
 %endif
 
 make %{?_smp_mflags}

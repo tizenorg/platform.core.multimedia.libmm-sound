@@ -41,6 +41,8 @@ int MMSoundMgrIpcFini(void);
 int MMSoundMgrIpcReady(void);
 
 int _MMIpcCBSndMsg(mm_ipc_msg_t *msg);
+int _MMIpcCBRecvMsg(mm_ipc_msg_t *msg);
+int _MMIpcCBMsgEnQueueAgain(mm_ipc_msg_t *msg);
 int __mm_sound_mgr_ipc_freeze_send (char* command, int pid);
 
 #endif /* __MM_SOUND_MGR_H__ */

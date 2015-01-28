@@ -120,6 +120,16 @@ AC_SUBST(TREMOLO_LIBS)
 fi
 AM_CONDITIONAL([OGG_SUPPORT], [test "x$OGG_SUPPORT" = "xyes"])
 
+AC_ARG_ENABLE(focus, AC_HELP_STRING([--enable-focus], [enable focus feature]),
+[
+ case "${enableval}" in
+	 yes) USE_FOCUS=yes ;;
+	 no)  USE_FOCUS=no ;;
+	 *)   AC_MSG_ERROR(bad value ${enableval} for --enable-focus) ;;
+ esac
+ ],[USE_FOCUS=no])
+AM_CONDITIONAL([USE_FOCUS], [test "x$USE_FOCUS" = "xyes"])
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h memory.h stdlib.h string.h sys/time.h unistd.h errno.h sys/types.h sys/stat.h])
