@@ -51,9 +51,9 @@ int mm_sound_unregister_focus(int id);
 int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info);
 int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info);
 
-typedef void (*mm_sound_focus_watch_cb) (mm_sound_focus_type_e focus_type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data);
-int mm_sound_set_focus_watch_callback(mm_sound_focus_watch_cb callback, void *user_data);
-int mm_sound_unset_focus_watch_callback();
+typedef void (*mm_sound_focus_changed_watch_cb) (mm_sound_focus_type_e focus_type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data);
+int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data);
+int mm_sound_unset_focus_watch_callback(void);
 
 #ifdef __cplusplus
 }

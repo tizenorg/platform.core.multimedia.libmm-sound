@@ -27,12 +27,10 @@
 #include "../include/mm_sound_stream.h"
 #include "../include/mm_ipc.h"
 
-#define NUM_OF_STREAM_TYPE 2
-
 typedef enum
 {
-	FOCUS_COMMAND_PAUSE,
-	FOCUS_COMMAND_RESUME,
+	FOCUS_COMMAND_RELEASE,
+	FOCUS_COMMAND_ACQUIRE,
 } focus_command_e;
 
 typedef enum
@@ -70,9 +68,10 @@ typedef struct {
 	int pid;
 	int handle_id;
 	int priority;
+	bool is_for_watch;
 	char stream_type[MAX_STREAM_TYPE_LEN];
 	focus_status_e status;
-	_focus_taken_by_id_t taken_by_id[NUM_OF_STREAM_TYPE];
+	_focus_taken_by_id_t taken_by_id[NUM_OF_STREAM_IO_TYPE];
 	void *callback;
 	void *cbdata;
 } focus_node_t;

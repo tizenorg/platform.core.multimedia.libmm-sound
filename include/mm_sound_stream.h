@@ -47,13 +47,9 @@
 #define STREAM_TYPE_VOIP              "voip"
 #define STREAM_TYPE_VOICE_RECOGNITION "voice_recognition"
 #define STREAM_TYPE_RADIO             "radio"
+#define STREAM_TYPE_NUM               11   /* those information will be moved to HAL */
 
-typedef enum
-{
-	STREAM_FOR_PLAYBACK = 1, /**< Stream for playback */
-	STREAM_FOR_CAPTURE,      /**< Stream for capture */
-	STREAM_FOR_BOTH,         /**< Stream for both playback and capture */
-} stream_io_e;
+#define NUM_OF_STREAM_IO_TYPE         2    /* playback / capture */
 
 #ifdef __cplusplus
 }

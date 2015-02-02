@@ -125,3 +125,42 @@ int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char 
 
 	return ret;
 }
+
+EXPORT_API
+int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (callback == NULL) {
+		debug_error("argument is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = _mm_sound_client_set_focus_watch_callback(focus_type, callback, user_data);
+	if (ret) {
+		debug_error("Could not set focus watch callback, ret[0x%x]\n", ret);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_unset_focus_watch_callback(void)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	ret = _mm_sound_client_unset_focus_watch_callback();
+	if (ret) {
+		debug_error("Could not unset focus watch callback, ret = %x\n", ret);
+	}
+
+	debug_fleave();
+
+	return ret;
+}

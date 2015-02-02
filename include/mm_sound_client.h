@@ -56,6 +56,8 @@ int _mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_fo
 int _mm_sound_client_unregister_focus(int id);
 int _mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option);
 int _mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char *option);
+int _mm_sound_client_set_focus_watch_callback(mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, void* user_data);
+int _mm_sound_client_unset_focus_watch_callback(void);
 #endif
 
 #ifdef PULSE_CLIENT

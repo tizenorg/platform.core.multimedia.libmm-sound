@@ -103,6 +103,8 @@ static int __mm_sound_mgr_ipc_create_focus_node(mm_ipc_msg_t *msg);
 static int __mm_sound_mgr_ipc_destroy_focus_node(mm_ipc_msg_t *msg);
 static int __mm_sound_mgr_ipc_acquire_focus(mm_ipc_msg_t *msg);
 static int __mm_sound_mgr_ipc_release_focus(mm_ipc_msg_t *msg);
+static int __mm_sound_mgr_ipc_set_focus_watch_cb(mm_ipc_msg_t *msg);
+static int __mm_sound_mgr_ipc_unset_focus_watch_cb(mm_ipc_msg_t *msg);
 #endif
 
 
@@ -200,6 +202,8 @@ int MMSoundMgrIpcReady(void)
 		case MM_SOUND_MSG_REQ_UNREGISTER_FOCUS:
 		case MM_SOUND_MSG_REQ_ACQUIRE_FOCUS:
 		case MM_SOUND_MSG_REQ_RELEASE_FOCUS:
+		case MM_SOUND_MSG_REQ_SET_FOCUS_WATCH_CB:
+		case MM_SOUND_MSG_REQ_UNSET_FOCUS_WATCH_CB:
 #endif
 			{
 				/* Create msg to queue : this will be freed inside thread function after use */
@@ -585,6 +589,27 @@ static void _MMSoundMgrRun(void *data)
 		}
 		break;
 
+	case MM_SOUND_MSG_REQ_SET_FOCUS_WATCH_CB:
+		debug_msg("==================== Recv REQ_SET_FOCUS_WATCH_CB msg from pid(%d) ====================\n", instance);
+		ret = __mm_sound_mgr_ipc_set_focus_watch_cb(msg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to REQ_SET_FOCUS_WATCH_CB.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_SET_FOCUS_WATCH_CB, 0, MM_ERROR_NONE, instance);
+		}
+		break;
+
+	case MM_SOUND_MSG_REQ_UNSET_FOCUS_WATCH_CB:
+		debug_msg("==================== Recv REQ_UNSET_FOCUS_WATCH_CB msg from pid(%d) ====================\n", instance);
+		ret = __mm_sound_mgr_ipc_unset_focus_watch_cb(msg);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Error to REQ_UNSET_FOCUS_WATCH_CB.\n");
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_ERROR, -1, ret, instance);
+		} else {
+			SOUND_MSG_SET(respmsg.sound_msg, MM_SOUND_MSG_RES_UNSET_FOCUS_WATCH_CB, 0, MM_ERROR_NONE, instance);
+		}
+		break;
 #endif
 
 	default:
@@ -1205,7 +1230,6 @@ static int __mm_sound_mgr_ipc_acquire_focus(mm_ipc_msg_t *msg)
 	param.pid = msg->sound_msg.msgid;
 	param.handle_id = msg->sound_msg.handle_id;
 	param.request_type = msg->sound_msg.focus_type;
-	memcpy(param.stream_type, msg->sound_msg.stream_type, MAX_STREAM_TYPE_LEN);
 	memcpy(param.option, msg->sound_msg.name, MM_SOUND_NAME_NUM);
 
 	ret = _mm_sound_mgr_focus_request_acquire(&param);
@@ -1225,6 +1249,35 @@ static int __mm_sound_mgr_ipc_release_focus(mm_ipc_msg_t *msg)
 	memcpy(param.option, msg->sound_msg.name, MM_SOUND_NAME_NUM);
 
 	ret = _mm_sound_mgr_focus_request_release(&param);
+
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_set_focus_watch_cb(mm_ipc_msg_t *msg)
+{
+	_mm_sound_mgr_focus_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+	param.pid = msg->sound_msg.msgid;
+	param.request_type = msg->sound_msg.focus_type;
+	param.callback = msg->sound_msg.callback;
+	param.cbdata = msg->sound_msg.cbdata;
+
+	ret = _mm_sound_mgr_focus_set_watch_cb(&param);
+
+	return ret;
+}
+
+static int __mm_sound_mgr_ipc_unset_focus_watch_cb(mm_ipc_msg_t *msg)
+{
+	_mm_sound_mgr_focus_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+	param.pid = msg->sound_msg.msgid;
+
+	ret = _mm_sound_mgr_focus_unset_watch_cb(&param);
 
 	return ret;
 }

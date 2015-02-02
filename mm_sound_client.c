@@ -463,6 +463,30 @@ static void* callbackfunc_send_reply(void *param)
 				continue;
 			}
 			break;
+
+		case MM_SOUND_MSG_INF_FOCUS_WATCH_CB:
+			/* Set start time */
+			gettimeofday(&time, NULL);
+			starttime = time.tv_sec * 1000000 + time.tv_usec;
+			debug_warning("[Client][Focus Watch Callback(0x%x) START][focus_type(%d),state(%d),reason(%s),info(%s)][Time:%.3f]\n",
+				msgrcv->sound_msg.callback, msgrcv->sound_msg.focus_type, msgrcv->sound_msg.changed_state, msgrcv->sound_msg.stream_type, msgrcv->sound_msg.name, starttime/1000000.);
+			if (msgrcv->sound_msg.callback) {
+				((mm_sound_focus_changed_cb)msgrcv->sound_msg.callback)(msgrcv->sound_msg.focus_type, msgrcv->sound_msg.changed_state, msgrcv->sound_msg.stream_type, msgrcv->sound_msg.name, msgrcv->sound_msg.cbdata);
+			}
+			/* Calculate endtime and display*/
+			gettimeofday(&time, NULL);
+			endtime = time.tv_sec * 1000000 + time.tv_usec;
+			debug_warning("[Client][Focus Watch Callback END][Time:%.3f, TimeLab=%3.3f(sec)]\n", endtime/1000000., (endtime-starttime)/1000000.);
+
+			/* send reply */
+			msgret->sound_msg.msgtype = msgrcv->sound_msg.msgtype;
+			msgret->sound_msg.msgid = msgrcv->sound_msg.msgid;
+			ret = __MMIpcCBSndMsgReply(msgret);
+			if (ret != MM_ERROR_NONE) {
+				debug_error("[Client] Fail to send reply msg in callback\n");
+				continue;
+			}
+			break;
 #endif
 
 		default:
@@ -1579,6 +1603,123 @@ int _mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const cha
 	switch (msgrcv.sound_msg.msgtype)	{
 	case MM_SOUND_MSG_RES_RELEASE_FOCUS:
 		debug_msg("[Client] Success to release focus\n");
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_error("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex2);
+
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void* user_data)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	ret = __mm_sound_client_get_msg_queue();
+	if (ret  != MM_ERROR_NONE) {
+		return ret;
+	}
+
+	pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();
+	/* Send REQ_SET_FOCUS_WATCH_CB */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_SET_FOCUS_WATCH_CB;
+	msgsnd.sound_msg.msgid = instance;
+	msgsnd.sound_msg.focus_type = focus_type;
+	msgsnd.sound_msg.callback = callback;
+	msgsnd.sound_msg.cbdata = user_data;
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	switch (msgrcv.sound_msg.msgtype)	{
+	case MM_SOUND_MSG_RES_SET_FOCUS_WATCH_CB:
+		debug_msg("[Client] Success to set focus watch callback\n");
+		if (g_thread_id2 == -1) {
+			g_thread_id2 = pthread_create(&g_thread2, NULL, callbackfunc_send_reply, NULL);
+			if (g_thread_id2 == -1) {
+				debug_error("[Client] Fail to create thread %s\n", strerror(errno));
+				ret = MM_ERROR_SOUND_INTERNAL;
+				goto cleanup;
+			}
+		}
+		break;
+	case MM_SOUND_MSG_RES_ERROR:
+		debug_error("[Client] Error occurred \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	default:
+		debug_error("[Client] Unexpected state with communication \n");
+		ret = msgrcv.sound_msg.code;
+		goto cleanup;
+		break;
+	}
+
+cleanup:
+	pthread_mutex_unlock(&g_thread_mutex2);
+
+	debug_fleave();
+	return ret;
+}
+
+int _mm_sound_client_unset_focus_watch_callback(void)
+{
+	mm_ipc_msg_t msgrcv = {0,};
+	mm_ipc_msg_t msgsnd = {0,};
+	int ret = MM_ERROR_NONE;
+	int instance;
+
+	debug_fenter();
+
+	ret = __mm_sound_client_get_msg_queue();
+	if (ret  != MM_ERROR_NONE) {
+		return ret;
+	}
+
+	pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();
+	/* Send REQ_UNREGISTER_FOCUS */
+	msgsnd.sound_msg.msgtype = MM_SOUND_MSG_REQ_UNSET_FOCUS_WATCH_CB;
+	msgsnd.sound_msg.msgid = instance;
+
+	if (__MMIpcSndMsg(&msgsnd) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	/* Recieve */
+	if (__MMIpcRecvMsg(instance, &msgrcv) != MM_ERROR_NONE) {
+		goto cleanup;
+	}
+
+	switch (msgrcv.sound_msg.msgtype)	{
+	case MM_SOUND_MSG_RES_UNSET_FOCUS_WATCH_CB:
+		debug_msg("[Client] Success to unset focus watch callback\n");
 		break;
 	case MM_SOUND_MSG_RES_ERROR:
 		debug_error("[Client] Error occurred \n");
