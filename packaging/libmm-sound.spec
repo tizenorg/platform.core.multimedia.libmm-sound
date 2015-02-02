@@ -62,7 +62,7 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 
 %if "%{?tizen_profile_name}" == "wearable"
 %define tizen_audio_feature_hfp 1
-%else if
+%else
 %define tizen_audio_feature_hfp 0
 %endif
 
@@ -74,9 +74,6 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 
 %if "%{?tizen_profile_name}" == "wearable"
 	CFLAGS+=" -DTIZEN_MICRO";export CFLAGS
-%else
-%if "%{?tizen_profile_name}" == "mobile"
-%endif
 %endif
 
 ./autogen.sh
