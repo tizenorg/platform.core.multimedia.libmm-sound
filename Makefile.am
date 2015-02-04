@@ -10,7 +10,8 @@ includelibmmfsounddir = $(includedir)/mmf
 includelibmmfsound_HEADERS = include/mm_sound.h \
 							include/mm_sound_private.h \
 							include/mm_sound_pa_client.h \
-							include/mm_sound_pcm_async.h
+							include/mm_sound_pcm_async.h \
+							include/mm_sound_focus.h
 
 libmmfsound_la_SOURCES = mm_sound.c \
 			mm_sound_client.c \
