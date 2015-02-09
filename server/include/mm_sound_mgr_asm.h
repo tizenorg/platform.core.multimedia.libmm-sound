@@ -28,6 +28,35 @@
 int MMSoundMgrASMInit(void);
 int MMSoundMgrASMFini(void);
 
+int _mm_sound_mgr_asm_register_sound(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+                                     int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state);
+int _mm_sound_mgr_asm_unregister_sound(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource);
+int _mm_sound_mgr_asm_register_watcher(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+                                       int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state);
+int _mm_sound_mgr_asm_unregister_watcher(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource);
+int _mm_sound_mgr_asm_get_mystate(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+                                  int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_state);
+int _mm_sound_mgr_asm_set_state(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+				int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state, int *snd_error_code);
+int _mm_sound_mgr_asm_get_state(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+				int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_state);
+int _mm_sound_mgr_asm_set_subsession(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+                                     int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id);
+int _mm_sound_mgr_asm_get_subsession(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+                                     int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command);
+int _mm_sound_mgr_asm_set_subevent(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+                                   int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state);
+int _mm_sound_mgr_asm_get_subevent(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+                                   int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command);
+int _mm_sound_mgr_asm_set_session_option(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+                                         int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_error_code);
+int _mm_sound_mgr_asm_get_session_option(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+                                         int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_option_flag);
+int _mm_sound_mgr_asm_reset_resume_tag(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+                                       int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state);
+int _mm_sound_mgr_asm_dump(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource);
+int _mm_sound_mgr_asm_emergent_exit(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state);
+
 int __asm_process_message (void *asm_rcv_msg, void *asm_ret_msg);
 
 

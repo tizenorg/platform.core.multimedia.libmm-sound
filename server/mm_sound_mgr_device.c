@@ -184,61 +184,6 @@ FINISH:
 	return ret;
 }
 
-int _mm_sound_mgr_device_set_active_route(const _mm_sound_mgr_device_param_t *param)
-{
-	mm_sound_route route = param->route;
-	mm_sound_device_in device_in = MM_SOUND_DEVICE_IN_NONE;
-	mm_sound_device_out device_out = MM_SOUND_DEVICE_OUT_NONE;
-	bool is_available = 0;
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-
-	_mm_sound_get_devices_from_route(route, &device_in, &device_out);
-	/* check specific route is available */
-	ret = _mm_sound_mgr_device_is_route_available(param, &is_available);
-	if ((ret != MM_ERROR_NONE) || (!is_available)) {
-
-	}
-
-	ret = MMSoundMgrSessionSetDeviceActive(device_out, device_in, param->need_broadcast);
-
-	debug_fleave();
-	return ret;
-}
-
-int _mm_sound_mgr_device_set_active_route_auto(void)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-
-	ret = MMSoundMgrSessionSetDeviceActiveAuto();
-	if (ret != MM_ERROR_NONE) {
-		debug_error("fail to _mm_sound_mgr_device_set_active_route_auto.\n");
-	} else {
-		debug_msg ("success : _mm_sound_mgr_device_set_active_route_auto\n");
-	}
-
-	debug_fleave();
-	return ret;
-}
-int _mm_sound_mgr_device_get_active_device(const _mm_sound_mgr_device_param_t *param, mm_sound_device_in *device_in, mm_sound_device_out *device_out)
-{
-	int ret = MM_ERROR_NONE;
-
-#ifdef DEBUG_DETAIL
-	debug_fenter();
-#endif
-
-	ret = MMSoundMgrSessionGetDeviceActive(device_out, device_in);
-
-#ifdef DEBUG_DETAIL
-	debug_fleave();
-#endif
-	return ret;
-}
-
 int _mm_sound_mgr_device_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
 {
 	int ret = MM_ERROR_NONE;
@@ -252,89 +197,6 @@ int _mm_sound_mgr_device_get_audio_path(mm_sound_device_in *device_in, mm_sound_
 #ifdef DEBUG_DETAIL
 	debug_fleave();
 #endif
-	return ret;
-}
-
-int _mm_sound_mgr_device_add_active_device_callback(const _mm_sound_mgr_device_param_t *param)
-{
-	int ret = MM_ERROR_NONE;
-	GList *list = NULL;
-	_mm_sound_mgr_device_param_t *cb_param = NULL;
-	bool is_already_set = FALSE;
-
-#ifdef DEBUG_DETAIL
-	debug_fenter();
-#endif
-
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_active_device_cb_mutex, MM_ERROR_SOUND_INTERNAL);
-
-	for (list = g_active_device_cb_list; list != NULL; list = list->next) {
-		cb_param = (_mm_sound_mgr_device_param_t *)list->data;
-		if ((cb_param) && (cb_param->pid == param->pid) && (!strcmp(cb_param->name, param->name))) {
-			cb_param->callback = param->callback;
-			cb_param->cbdata = param->cbdata;
-			is_already_set = TRUE;
-			break;
-		}
-	}
-
-	if (!is_already_set) {
-		cb_param = g_malloc(sizeof(_mm_sound_mgr_device_param_t));
-		memcpy(cb_param, param, sizeof(_mm_sound_mgr_device_param_t));
-		g_active_device_cb_list = g_list_append(g_active_device_cb_list, cb_param);
-		if (g_active_device_cb_list) {
-			debug_log("active device cb registered for pid [%d]", cb_param->pid);
-		} else {
-			debug_error("g_list_append failed\n");
-			ret = MM_ERROR_SOUND_INTERNAL;
-			goto FINISH;
-		}
-
-		__mm_sound_mgr_ipc_freeze_send (FREEZE_COMMAND_EXCLUDE, param->pid);
-	}
-
-FINISH:
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_active_device_cb_mutex);
-#ifdef DEBUG_DETAIL
-	debug_fleave();
-#endif
-	return ret;
-}
-
-int _mm_sound_mgr_device_remove_active_device_callback(const _mm_sound_mgr_device_param_t *param)
-{
-	int ret = MM_ERROR_NONE;
-	GList *list = NULL;
-	bool is_same_pid_exists = false;
-	_mm_sound_mgr_device_param_t *cb_param = NULL;
-
-	debug_fenter();
-
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_active_device_cb_mutex, MM_ERROR_SOUND_INTERNAL);
-
-	for (list = g_active_device_cb_list; list != NULL; list = list->next) {
-		cb_param = (_mm_sound_mgr_device_param_t *)list->data;
-		if ((cb_param) && (cb_param->pid == param->pid) && (!strcmp(cb_param->name, param->name))) {
-			g_active_device_cb_list = g_list_remove(g_active_device_cb_list, cb_param);
-			g_free(cb_param);
-			break;
-		}
-	}
-
-	/* Check for PID still exists in the list, if not include freeze */
-	for (list = g_active_device_cb_list; list != NULL; list = list->next) {
-		cb_param = (_mm_sound_mgr_device_param_t *)list->data;
-		if ((cb_param) && (cb_param->pid == param->pid)) {
-			is_same_pid_exists = true;
-			break;
-		}
-	}
-	if (!is_same_pid_exists) {
-		__mm_sound_mgr_ipc_freeze_send (FREEZE_COMMAND_INCLUDE, param->pid);
-	}
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_active_device_cb_mutex);
-
-	debug_fleave();
 	return ret;
 }
 
@@ -448,18 +310,125 @@ int __mm_sound_mgr_device_check_process(int pid)
 	return exist;
 }
 
-int _mm_sound_mgr_device_get_current_connected_dev_list(const _mm_sound_mgr_device_param_t *param, GList **device_list)
+
+static int __mm_sound_mgr_device_check_flags_to_append (int device_flags, mm_sound_device_t *device_h, bool *is_good_to_append)
+{
+	bool need_to_append = false;
+	int need_to_check_for_io_direction = device_flags & DEVICE_IO_DIRECTION_FLAGS;
+	int need_to_check_for_state = device_flags & DEVICE_STATE_FLAGS;
+	int need_to_check_for_type = device_flags & DEVICE_TYPE_FLAGS;
+
+	debug_warning("device_h[0x%x], device_flags[0x%x], need_to_check(io_direction[0x%x],state[0x%x],type[0x%x])\n",
+			device_h, device_flags, need_to_check_for_io_direction, need_to_check_for_state, need_to_check_for_type);
+
+	if(!device_h) {
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+	if (device_flags == DEVICE_ALL_FLAG) {
+		*is_good_to_append = true;
+		return MM_ERROR_NONE;
+	}
+
+	if (need_to_check_for_io_direction) {
+		if ((device_h->io_direction == DEVICE_IO_DIRECTION_IN) && (device_flags & DEVICE_IO_DIRECTION_IN_FLAG)) {
+			need_to_append = true;
+		} else if ((device_h->io_direction == DEVICE_IO_DIRECTION_OUT) && (device_flags & DEVICE_IO_DIRECTION_OUT_FLAG)) {
+			need_to_append = true;
+		} else if ((device_h->io_direction == DEVICE_IO_DIRECTION_BOTH) && (device_flags & DEVICE_IO_DIRECTION_BOTH_FLAG)) {
+			need_to_append = true;
+		}
+		if (need_to_append) {
+			if (!need_to_check_for_state && !need_to_check_for_type) {
+				*is_good_to_append = true;
+				return MM_ERROR_NONE;
+			}
+		} else {
+			*is_good_to_append = false;
+			return MM_ERROR_NONE;
+		}
+	}
+	if (need_to_check_for_state) {
+		need_to_append = false;
+		if ((device_h->state == DEVICE_STATE_DEACTIVATED) && (device_flags & DEVICE_STATE_DEACTIVATED_FLAG)) {
+			need_to_append = true;
+		} else if ((device_h->state == DEVICE_STATE_ACTIVATED) && (device_flags & DEVICE_STATE_ACTIVATED_FLAG)) {
+			need_to_append = true;
+		}
+		if (need_to_append) {
+			if (!need_to_check_for_type) {
+				*is_good_to_append = true;
+				return MM_ERROR_NONE;
+			}
+		} else {
+			*is_good_to_append = false;
+			return MM_ERROR_NONE;
+		}
+	}
+	if (need_to_check_for_type) {
+		need_to_append = false;
+		bool is_internal_device = IS_INTERNAL_DEVICE(device_h->type);
+		if (is_internal_device && (device_flags & DEVICE_TYPE_INTERNAL_FLAG)) {
+			need_to_append = true;
+		} else if (!is_internal_device && (device_flags & DEVICE_TYPE_EXTERNAL_FLAG)) {
+			need_to_append = true;
+		}
+		if (need_to_append) {
+			*is_good_to_append = true;
+			return MM_ERROR_NONE;
+		} else {
+			*is_good_to_append = false;
+			return MM_ERROR_NONE;
+		}
+	}
+	return MM_ERROR_NONE;
+}
+
+//int _mm_sound_mgr_device_get_current_connected_dev_list(const _mm_sound_mgr_device_param_t *param, GList **device_list)
+int _mm_sound_mgr_device_get_current_connected_dev_list(int device_flags, mm_sound_device_t **device_list, int *dev_num)
 {
 	int ret = MM_ERROR_NONE;
-	mm_sound_device_t *device_node = NULL;
+	int _dev_num = 0, dev_idx = 0;
+	int dev_list_match_quary[MAX_SUPPORT_DEVICE_NUM] = {0,};
+	mm_sound_device_t *device_node = NULL, *_device_node = NULL;
+	GList *list = NULL;
+	bool is_good_to_append = FALSE;
+
 
 #ifdef DEBUG_DETAIL
 	debug_fenter();
 #endif
+	_mm_sound_mgr_device_connected_dev_list_dump();
+
+	if (!device_list || !dev_num) {
+		debug_error("Parameter Null");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
 	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_connected_device_list_mutex, MM_ERROR_SOUND_INTERNAL);
 
-	*device_list = g_connected_device_list;
 	debug_msg("address of g_connected_device_list[0x%x]", g_connected_device_list);
+
+	for (list = g_connected_device_list; list != NULL; list = list->next) {
+		_device_node = (mm_sound_device_t *)list->data;
+		if (_device_node) {
+			__mm_sound_mgr_device_check_flags_to_append(device_flags, _device_node, &is_good_to_append);
+			if (is_good_to_append) {
+				dev_list_match_quary[dev_idx++] = _dev_num;
+			}
+			_dev_num++;
+		}
+	}
+
+	*device_list = g_malloc(sizeof(mm_sound_device_t)*dev_idx);
+	*dev_num = dev_idx;
+	dev_idx = 0;
+
+	for (_dev_num =0, list = g_connected_device_list; list != NULL; _dev_num++, list = list->next) {
+		_device_node = (mm_sound_device_t *)list->data;
+		if (_device_node && dev_list_match_quary[dev_idx] == _dev_num) {
+			memcpy(*device_list + dev_idx, _device_node, sizeof(mm_sound_device_t));
+			dev_idx++;
+		}
+	}
 
 FINISH:
 	MMSOUND_LEAVE_CRITICAL_SECTION(&g_connected_device_list_mutex);
@@ -647,16 +616,6 @@ int _mm_sound_mgr_device_remove_info_changed_callback(const _mm_sound_mgr_device
 	} \
 }while(0)
 
-static void _clear_available_cb_list_func (_mm_sound_mgr_device_param_t * cb_param, gpointer user_data)
-{
-	CLEAR_DEAD_CB_LIST(g_available_route_cb_list);
-}
-
-static void _clear_active_cb_list_func (_mm_sound_mgr_device_param_t * cb_param, gpointer user_data)
-{
-	CLEAR_DEAD_CB_LIST(g_active_device_cb_list);
-}
-
 static void _clear_volume_cb_list_func (_mm_sound_mgr_device_param_t * cb_param, gpointer user_data)
 {
 	CLEAR_DEAD_CB_LIST(g_volume_cb_list);
@@ -697,25 +656,7 @@ static int _mm_sound_mgr_device_volume_callback(keynode_t* node, void* data)
 	}
 
 	/* Update list for dead process */
-	g_list_foreach (g_volume_cb_list, (GFunc)_clear_volume_cb_list_func, NULL);
-
-	for (list = g_volume_cb_list; list != NULL; list = list->next) {
-		cb_param = (_mm_sound_mgr_device_param_t *)list->data;
-		if ((cb_param) && (cb_param->callback)) {
-			memset(&msg, 0, sizeof(mm_ipc_msg_t));
-			SOUND_MSG_SET(msg.sound_msg, MM_SOUND_MSG_INF_VOLUME_CB, 0, MM_ERROR_NONE, cb_param->pid);
-			msg.sound_msg.type = type;
-			msg.sound_msg.val = value;
-			msg.sound_msg.callback = cb_param->callback;
-			msg.sound_msg.cbdata = cb_param->cbdata;
-
-			ret = _MMIpcCBSndMsg(&msg);
-			if (ret != MM_ERROR_NONE) {
-				debug_error("Fail to send callback message (%x)\n", ret);
-				goto FINISH;
-			}
-		}
-	}
+	__mm_sound_mgr_ipc_notify_volume_changed(type, value);
 
 FINISH:
 	MMSOUND_LEAVE_CRITICAL_SECTION(&g_volume_cb_mutex);
@@ -727,105 +668,6 @@ FINISH:
 int _mm_sound_mgr_device_active_device_callback(mm_sound_device_in device_in, mm_sound_device_out device_out)
 {
 	int ret = MM_ERROR_NONE;
-	GList *list = NULL;
-	_mm_sound_mgr_device_param_t *cb_param = NULL;
-	mm_ipc_msg_t msg;
-
-	debug_fenter();
-
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_active_device_cb_mutex, MM_ERROR_SOUND_INTERNAL);
-
-	/* Update list for dead process */
-	 g_list_foreach (g_active_device_cb_list, (GFunc)_clear_active_cb_list_func, NULL);
-
-	for (list = g_active_device_cb_list; list != NULL; list = list->next) {
-		cb_param = (_mm_sound_mgr_device_param_t *)list->data;
-		if ((cb_param) && (cb_param->callback)) {
-			memset(&msg, 0, sizeof(mm_ipc_msg_t));
-			SOUND_MSG_SET(msg.sound_msg, MM_SOUND_MSG_INF_ACTIVE_DEVICE_CB, 0, MM_ERROR_NONE, cb_param->pid);
-			msg.sound_msg.device_in = device_in;
-			msg.sound_msg.device_out = device_out;
-			msg.sound_msg.callback = cb_param->callback;
-			msg.sound_msg.cbdata = cb_param->cbdata;
-
-			ret = _MMIpcCBSndMsg(&msg);
-			if (ret != MM_ERROR_NONE) {
-				debug_error("Fail to send callback message (%x)\n", ret);
-				goto FINISH;
-			}
-		}
-	}
-FINISH:
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_active_device_cb_mutex);
-
-	debug_fleave();
-	return ret;
-}
-
-int _mm_sound_mgr_device_add_available_route_callback(const _mm_sound_mgr_device_param_t *param)
-{
-	int ret = MM_ERROR_NONE;
-	GList *list = NULL;
-	_mm_sound_mgr_device_param_t *cb_param = NULL;
-	bool is_already_set = FALSE;
-
-	debug_fenter();
-
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_available_route_cb_mutex, MM_ERROR_SOUND_INTERNAL);
-
-	for (list = g_available_route_cb_list; list != NULL; list = list->next) {
-		cb_param = (_mm_sound_mgr_device_param_t *)list->data;
-		if ((cb_param) && (cb_param->pid == param->pid)) {
-			cb_param->callback = param->callback;
-			cb_param->cbdata = param->cbdata;
-			is_already_set = TRUE;
-			break;
-		}
-	}
-	if (!is_already_set) {
-		cb_param = g_malloc(sizeof(_mm_sound_mgr_device_param_t));
-		memcpy(cb_param, param, sizeof(_mm_sound_mgr_device_param_t));
-		g_available_route_cb_list = g_list_append(g_available_route_cb_list, cb_param);
-		if (g_available_route_cb_list) {
-			debug_log("available route cb registered for pid [%d]", cb_param->pid);
-		} else {
-			debug_error("g_list_append failed\n");
-			ret = MM_ERROR_SOUND_INTERNAL;
-			goto FINISH;
-		}
-
-		__mm_sound_mgr_ipc_freeze_send (FREEZE_COMMAND_EXCLUDE, param->pid);
-	}
-FINISH:
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_available_route_cb_mutex);
-
-	debug_fleave();
-	return ret;
-}
-
-int _mm_sound_mgr_device_remove_available_route_callback(const _mm_sound_mgr_device_param_t *param)
-{
-	int ret = MM_ERROR_NONE;
-	GList *list = NULL;
-	_mm_sound_mgr_device_param_t *cb_param = NULL;
-
-	debug_fenter();
-
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_available_route_cb_mutex, MM_ERROR_SOUND_INTERNAL);
-
-	for (list = g_available_route_cb_list; list != NULL; list = list->next) {
-		cb_param = (_mm_sound_mgr_device_param_t *)list->data;
-		if ((cb_param) && (cb_param->pid == param->pid)) {
-			g_available_route_cb_list = g_list_remove(g_available_route_cb_list, cb_param);
-			__mm_sound_mgr_ipc_freeze_send (FREEZE_COMMAND_INCLUDE, param->pid);
-			g_free(cb_param);
-			break;
-		}
-	}
-
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_available_route_cb_mutex);
-
-	debug_fleave();
 	return ret;
 }
 
@@ -843,83 +685,6 @@ int _mm_sound_mgr_device_set_sound_path_for_active_device(mm_sound_device_out pl
 int _mm_sound_mgr_device_available_device_callback(mm_sound_device_in device_in, mm_sound_device_out device_out, bool available)
 {
 	int ret = MM_ERROR_NONE;
-	_mm_sound_mgr_device_param_t *cb_param = NULL;
-	mm_ipc_msg_t msg;
-	int route_list_count = 0;
-	int route_index = 0;
-	int available_count = 0;
-	mm_sound_route *route_list = NULL;
-	GList *list = NULL;
-
-	debug_fenter();
-
-	memset (&msg, 0, sizeof(mm_ipc_msg_t));
-
-	route_list_count = _mm_sound_get_valid_route_list(&route_list);
-	debug_log("in=[%x], out=[%x], route_list_count = [%d], available = [%d]", device_in, device_out, route_list_count, available);
-	for (route_index = 0; route_index < route_list_count; route_index++) {
-		mm_sound_device_in route_device_in = MM_SOUND_DEVICE_IN_NONE;
-		mm_sound_device_out route_device_out = MM_SOUND_DEVICE_OUT_NONE;
-		bool is_changed = 0;
-
-		_mm_sound_get_devices_from_route(route_list[route_index], &route_device_in, &route_device_out);
-
-		if ((device_in != MM_SOUND_DEVICE_IN_NONE) && (device_in == route_device_in)) {
-			/* device(in&out) changed together & they can be combined as this route */
-			if ((device_out != MM_SOUND_DEVICE_OUT_NONE) && (device_out == route_device_out)) {
-				is_changed = 1;
-			/* device(in) changed & this route has device(in) only */
-			} else if (route_device_out == MM_SOUND_DEVICE_OUT_NONE) {
-				is_changed = 1;
-			/* device(in) changed & this route have device(in&out), we need to check availability of output device of this route */
-			} else {
-				MMSoundMgrSessionIsDeviceAvailableNoLock(route_device_out, MM_SOUND_DEVICE_IN_NONE, &is_changed);
-			}
-		}
-		if ((is_changed == 0) && (device_out != MM_SOUND_DEVICE_OUT_NONE) && (device_out == route_device_out)) {
-			/* device(out) changed & this route has device(out) only */
-			if (route_device_in == MM_SOUND_DEVICE_IN_NONE) {
-				is_changed = 1;
-			/* device(out) changed & this route have device(in&out), we need to check availability of input device of this route */
-			} else {
-				MMSoundMgrSessionIsDeviceAvailableNoLock(MM_SOUND_DEVICE_OUT_NONE, route_device_in, &is_changed);
-			}
-		}
-		/* add route to avaiable route list */
-		if (is_changed) {
-			if (available_count >= (sizeof(msg.sound_msg.route_list) / sizeof(int))) {
-				debug_error("Cannot add available route, list is full\n");
-				return MM_ERROR_SOUND_INTERNAL;
-			}
-			debug_log("route_index [%d] is added to route_list [%d]", route_index, available_count);
-			msg.sound_msg.route_list[available_count++] = route_list[route_index];
-		}
-	}
-
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_available_route_cb_mutex, MM_ERROR_SOUND_INTERNAL);
-
-	/* Update list for dead process */
-	g_list_foreach (g_available_route_cb_list, (GFunc)_clear_available_cb_list_func, NULL);
-
-	for (list = g_available_route_cb_list; list != NULL; list = list->next) {
-		cb_param = (_mm_sound_mgr_device_param_t *)list->data;
-		if ((cb_param) && (cb_param->callback)) {
-			SOUND_MSG_SET(msg.sound_msg, MM_SOUND_MSG_INF_AVAILABLE_ROUTE_CB, 0, MM_ERROR_NONE, cb_param->pid);
-			msg.sound_msg.is_available = available;
-			msg.sound_msg.callback = cb_param->callback;
-			msg.sound_msg.cbdata = cb_param->cbdata;
-
-			ret = _MMIpcCBSndMsg(&msg);
-			if (ret != MM_ERROR_NONE) {
-				debug_error("Fail to send callback message\n");
-				goto FINISH;
-			}
-		}
-	}
-FINISH:
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_available_route_cb_mutex);
-
-	debug_fleave();
 	return ret;
 }
 
@@ -1162,46 +927,10 @@ int _mm_sound_mgr_device_connected_callback(mm_sound_device_t *device_h, bool is
 	bool is_good_to_go = true;
 
 	debug_fenter();
+	// need to check this in client
+//	ret = __mm_sound_mgr_device_check_flags_to_trigger (cb_param->device_flags, device_h, &is_good_to_go);
 
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_device_connected_cb_mutex, MM_ERROR_SOUND_INTERNAL);
-
-	/* Update list for dead process */
-	 g_list_foreach (g_device_connected_cb_list, (GFunc)_clear_device_connected_cb_list_func, NULL);
-
-	for (list = g_device_connected_cb_list; list != NULL; list = list->next) {
-		cb_param = (_mm_sound_mgr_device_param_t *)list->data;
-		if (!cb_param) {
-			continue;
-		}
-		/* check flags */
-		ret = __mm_sound_mgr_device_check_flags_to_trigger (cb_param->device_flags, device_h, &is_good_to_go);
-		if (!ret && is_good_to_go) {
-			if (cb_param->callback) {
-				memset(&msg, 0, sizeof(mm_ipc_msg_t));
-				SOUND_MSG_SET(msg.sound_msg, MM_SOUND_MSG_INF_DEVICE_CONNECTED_CB, 0, MM_ERROR_NONE, cb_param->pid);
-				//msg.sound_msg.device_handle = device_h;
-				memcpy (&(msg.sound_msg.device_handle), device_h, sizeof(mm_sound_device_t));
-				msg.sound_msg.is_connected = is_connected;
-				msg.sound_msg.callback = cb_param->callback;
-				msg.sound_msg.cbdata = cb_param->cbdata;
-
-				ret = _MMIpcCBSndMsg(&msg);
-				if (ret != MM_ERROR_NONE) {
-					debug_error("Fail to send callback message (%x)\n", ret);
-					goto FINISH;
-				}
-			}
-		} else {
-			if (ret) {
-				debug_error("failed to __mm_sound_mgr_device_check_flags_to_trigger(), ret[0x%x], is_good_to_go[%d]\n", ret, is_good_to_go);
-			} else {
-				debug_warning("No need to trigger the callback, is_good_to_go[%d]\n", ret, is_good_to_go);
-			}
-		}
-	}
-
-FINISH:
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_device_connected_cb_mutex);
+	__mm_sound_mgr_ipc_notify_device_connected (device_h, is_connected);
 
 	debug_fleave();
 	return ret;
@@ -1217,40 +946,9 @@ int _mm_sound_mgr_device_info_changed_callback(mm_sound_device_t *device_h, int 
 
 	debug_fenter();
 
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_device_info_changed_cb_mutex, MM_ERROR_SOUND_INTERNAL);
-
-	/* Update list for dead process */
-	 g_list_foreach (g_device_info_changed_cb_list, (GFunc)_clear_device_info_changed_cb_list_func, NULL);
-
-	for (list = g_device_info_changed_cb_list; list != NULL; list = list->next) {
-		cb_param = (_mm_sound_mgr_device_param_t *)list->data;
-		if (!cb_param) {
-			continue;
-		}
-		/* check flags */
-		ret = __mm_sound_mgr_device_check_flags_to_trigger (cb_param->device_flags, device_h, &is_good_to_go);
-		if (!ret && is_good_to_go) {
-			if (cb_param->callback) {
-				memset(&msg, 0, sizeof(mm_ipc_msg_t));
-				SOUND_MSG_SET(msg.sound_msg, MM_SOUND_MSG_INF_DEVICE_INFO_CHANGED_CB, 0, MM_ERROR_NONE, cb_param->pid);
-				memcpy (&(msg.sound_msg.device_handle), device_h, sizeof(mm_sound_device_t));
-				msg.sound_msg.changed_device_info_type = changed_info_type;
-				msg.sound_msg.callback = cb_param->callback;
-				msg.sound_msg.cbdata = cb_param->cbdata;
-
-				ret = _MMIpcCBSndMsg(&msg);
-				if (ret != MM_ERROR_NONE) {
-					debug_error("Fail to send callback message (%x)\n", ret);
-					goto FINISH;
-				}
-			}
-		} else {
-			debug_error("failed to __mm_sound_mgr_device_check_flags_to_trigger(), ret[0x%x], is_good_to_go[%d]\n", ret, is_good_to_go);
-		}
-	}
-
-FINISH:
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_device_info_changed_cb_mutex);
+	// need to check this in client
+	// ret = __mm_sound_mgr_device_check_flags_to_trigger (cb_param->device_flags, device_h, &is_good_to_go);
+	__mm_sound_mgr_ipc_notify_device_info_changed (device_h, changed_info_type);
 
 	debug_fleave();
 	return ret;

@@ -3,6 +3,7 @@ SUBDIRS = plugin
 bin_PROGRAMS = sound_server
 sound_server_SOURCES = mm_sound_mgr_codec.c \
 						mm_sound_mgr_ipc.c \
+						mm_sound_mgr_ipc_dbus.c \
 						mm_sound_mgr_pulse.c \
 						mm_sound_mgr_asm.c \
 						mm_sound_mgr_device.c \

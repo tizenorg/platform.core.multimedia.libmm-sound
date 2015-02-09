@@ -39,7 +39,7 @@ int MMSoundMgrPulseHandleRegisterAudioBalance (void* pinfo);
 int MMSoundMgrPulseHandleRegisterBluetoothStatus (void* pinfo);
 int MMSoundMgrPulseHandleRegisterSurroundSoundStatus(void *pinfo);
 
-int MMSoundMgrPulseHandleIsBtA2DPOnReq (mm_ipc_msg_t *msg, int (*sendfunc)(mm_ipc_msg_t*));
+int MMSoundMgrPulseHandleIsBtA2DPOnReq (bool* is_bt_on, char** bt_name);
 void MMSoundMgrPulseGetInitialBTStatus (bool *a2dp, bool *sco);
 int MMSoundMgrPulseGetBluetoothInfo(bool* is_nrec, int* bandwidth);
 

@@ -99,6 +99,11 @@ void test_callback(void *data, int id)
 	debug_log("test_callback is called\n");
 	test_callback_done = 1;
 }
+void mm_sound_test_cb1(int a, void *user_data)
+{
+	debug_log("dbus test user callback called: param(%d), userdata(%d)\n", a, (int)user_data);
+	g_print("my callback pid : %u  tid : %u\n", getpid(), pthread_self());
+}
 void device_connected_cb (MMSoundDevice_t device_h, bool is_connected, void *user_data)
 {
 	int ret = 0;
@@ -590,6 +595,59 @@ static void interpret (char *cmd)
 				ret = mm_sound_play_keysound(KEYTONE_FILE, 8);
 				if(ret < 0)
 					debug_log("keysound play failed with 0x%x\n", ret);
+			}
+			else if (strcmp(cmd, "dbus-m") == 0) {
+			    int ret = 0;
+			    int a = 3;
+			    int b = 4;
+			    int result_val = 0;
+			    g_print("dbus method test call\n");
+			    ret = mm_sound_test(a, b, &result_val);
+			    if (ret) {
+				g_print("failed to mm_sound_test(), ret[0x%x]\n", ret);
+			    } else {
+				g_print("Got answer : %d\n", result_val);
+			    }
+			} else if (strcmp(cmd, "dbus-a") == 0) {
+			    int ret = 0;
+			    int user_data = 3;
+			    g_print("dbus method test add callback\n");
+			    g_print("my testsuite pid : %u  tid : %u\n", getpid(), pthread_self());
+			    ret = mm_sound_add_test_callback(mm_sound_test_cb1, (void *)user_data);
+			    if (ret) {
+				g_print("failed to mm_sound_add_test_callback(), ret[0x%x]\n", ret);
+			    } else {
+				g_print("add test callback success\n");
+			    }
+			} else if (strcmp(cmd, "dbus-r") == 0) {
+			    int ret = 0;
+			    g_print("dbus method test remove callback\n");
+			    ret = mm_sound_remove_test_callback();
+			    if (ret) {
+				g_print("failed to mm_sound_remove_test_callback(), ret[0x%x]\n", ret);
+			    } else {
+				g_print("remove test callback success\n");
+			    }
+			}
+			else if (strncmp(cmd, "gap", 3) == 0) {
+				int ret = 0;
+				int device_in=0, device_out=0;
+				ret = mm_sound_get_audio_path(&device_in, &device_out);
+				if (ret == MM_ERROR_NONE) {
+				    g_print ("### mm_sound_get_audio_path() Success (%X,%X)\n\n", device_in, device_out);
+				} else {
+				    g_print ("### mm_sound_get_audio_path() Error : errno [%x]\n\n", ret);
+				}
+			}
+			else if (strncmp(cmd, "spa", 3) == 0) {
+				int ret = 0;
+				int device_in=1, device_out=200;
+				ret = mm_sound_set_sound_path_for_active_device(device_out, device_in);
+				if (ret == MM_ERROR_NONE) {
+				    g_print ("### mm_sound_set_sound_path_for_active_device() Success (%X,%X)\n\n", device_in, device_out);
+				} else {
+				    g_print ("### mm_sound_sspfad() Error : errno [%x]\n\n", ret);
+				}
 			}
 			else if(strncmp(cmd, "q", 1) == 0)
 			{//get media volume
@@ -1174,8 +1232,7 @@ static void interpret (char *cmd)
 			} else {
 				g_print ("### mm_sound_remove_active_device_changed_callback() Error : errno [%x]\n\n", ret);
 			}
-		}
-		else if (strncmp(cmd, "{", 1) == 0) {
+		} else if (strncmp(cmd, "{", 1) == 0) {
 			int ret = 0;
 			bool connected = 0;
 			char* bt_name = NULL;
@@ -1471,7 +1528,6 @@ static void interpret (char *cmd)
 				g_print("failed to mm_sound_remove_device_connected_callback(), ret[0x%x]\n", ret);
 			}
 		}
-
 		else if(strncmp(cmd, "Q", 1) ==0) {
 			int ret = 0;
 			char input_string[128];

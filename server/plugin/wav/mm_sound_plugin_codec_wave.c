@@ -80,7 +80,7 @@ typedef struct
 	int keytone;
 	int repeat_count;
 	int (*stop_cb)(int);
-	int cb_param;
+	int cb_param; // slotid
 	int state;
 	pthread_mutex_t mutex;
 	pthread_mutex_t *codec_wave_mutex;
@@ -242,11 +242,11 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 #ifdef DEBUG_DETAIL
 	debug_enter("\n");
 #endif
+
 	debug_msg("period[%d] type[%s] ch[%d] format[%d] rate[%d] doffset[%d] priority[%d] repeat[%d] volume[%d] callback[%p] keytone[%08x] route[%d]\n",
 			keytone_period, (info->codec == MM_SOUND_SUPPORTED_CODEC_WAVE) ? "Wave" : "Unknown",
 			info->channels, info->format, info->samplerate, info->doffset, param->priority, param->repeat_count,
 			param->volume, param->stop_cb, param->keytone, param->handle_route);
-
 	source = param->source;
 
 	if (g_thread_pool_func == NULL) {

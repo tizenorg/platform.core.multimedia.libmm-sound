@@ -1549,44 +1549,6 @@ void __asm_change_need_resume_list(int instance_id, int handle, ASM_resume_state
 	}
 }
 
-void __asm_create_message_queue()
-{
-	asm_rcv_msgid = msgget((key_t)2014, 0666 | IPC_CREAT);
-	asm_snd_msgid = msgget((key_t)4102, 0666 | IPC_CREAT);
-	asm_cb_msgid = msgget((key_t)4103, 0666 | IPC_CREAT);
-
-	if (asm_snd_msgid == -1 || asm_rcv_msgid == -1 || asm_cb_msgid == -1) {
-		debug_error(" msgget failed with error(%d,%s) \n", errno, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-}
-
-void __asm_snd_message(ASM_msg_asm_to_lib_t *asm_snd_msg)
-{
-	if (msgsnd(asm_snd_msgid, (void *)asm_snd_msg, sizeof(asm_snd_msg->data), 0) == -1) {
-		debug_error(" msgsnd failed with error %d\n", errno);
-		exit(EXIT_FAILURE);
-	} else {
-		debug_warning(" success : handle(%d), pid(%d), result_state(%s), result_command(%s), source_request(%s)",
-			asm_snd_msg->data.alloc_handle, asm_snd_msg->instance_id,
-			ASM_sound_state_str[asm_snd_msg->data.result_sound_state],
-			ASM_sound_command_str[asm_snd_msg->data.result_sound_command],
-			ASM_sound_request_str[asm_snd_msg->data.source_request_id]);
-		asm_snd_msg->data.result_sound_state = ASM_STATE_NONE;
-		asm_snd_msg->data.result_sound_command = ASM_COMMAND_NONE;
-	}
-}
-
-void __asm_rcv_message(ASM_msg_lib_to_asm_t *asm_rcv_msg)
-{
-	if (msgrcv(asm_rcv_msgid, (void *)asm_rcv_msg, sizeof(asm_rcv_msg->data), 0, 0) == -1) {
-		debug_error(" msgrcv failed with error %d\n", errno);
-		exit(EXIT_FAILURE);
-	} else {
-		debug_log(" success");
-	}
-}
-
 void __asm_get_empty_handle(int instance_id, int *handle)
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
@@ -2899,6 +2861,399 @@ ERROR_CASE:
 	return ret;
 }
 
+int _mm_sound_mgr_asm_register_sound(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					    int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_unregister_sound(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_register_watcher(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					      int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_unregister_watcher(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_get_mystate(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					 int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_get_state(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+				       int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_set_state(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+				       int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state, int *snd_error_code)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+	*snd_error_code = asm_snd_gvariant.data.error_code;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_set_subsession(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					    int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_get_subsession(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					    int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_set_subevent(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					  int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_sound_state = asm_snd_gvariant.data.result_sound_state;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_get_subevent(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					  int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_set_session_option(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+						int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_error_code)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_error_code = asm_snd_gvariant.data.error_code;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_get_session_option(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+						int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_option_flag)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_option_flag = asm_snd_gvariant.data.error_code;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_reset_resume_tag(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource,
+					      int *snd_pid, int *snd_alloc_handle, int *snd_cmd_handle, int *snd_request_id, int *snd_sound_command, int *snd_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	*snd_pid = asm_snd_gvariant.instance_id;
+	*snd_alloc_handle = asm_snd_gvariant.data.alloc_handle;
+	*snd_cmd_handle = asm_snd_gvariant.data.cmd_handle;
+	*snd_request_id = asm_snd_gvariant.data.source_request_id;
+	*snd_sound_command = asm_snd_gvariant.data.result_sound_command;
+	*snd_sound_state = asm_snd_gvariant.data.error_code;
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_dump(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state, int rcv_resource)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+	asm_rcv_gvariant.data.system_resource = rcv_resource;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	return ret;
+
+}
+
+int _mm_sound_mgr_asm_emergent_exit(int rcv_pid, int rcv_handle, int rcv_sound_event, int rcv_request_id, int rcv_sound_state)
+{
+	ASM_msg_lib_to_asm_t asm_rcv_gvariant;
+	ASM_msg_asm_to_lib_t asm_snd_gvariant;
+	int ret = MM_ERROR_NONE;
+
+	asm_rcv_gvariant.instance_id = rcv_pid;
+	asm_rcv_gvariant.data.handle = rcv_handle;
+	asm_rcv_gvariant.data.sound_event = rcv_sound_event;
+	asm_rcv_gvariant.data.request_id = rcv_request_id;
+	asm_rcv_gvariant.data.sound_state = rcv_sound_state;
+
+	ret = __asm_process_message(&asm_rcv_gvariant, &asm_snd_gvariant);
+
+	return ret;
+
+}
 
 int __asm_process_message (void *rcv_msg, void *ret_msg)
 {
@@ -2954,9 +3309,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		__asm_get_empty_handle(rcv_instance_id, &rcv_sound_handle);
 		if (rcv_sound_handle == ASM_HANDLE_INIT_VAL) {
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, ASM_HANDLE_INIT_VAL, ASM_HANDLE_INIT_VAL, rcv_request_id);
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 		} else {
 			asm_compare_result_t compare_result = __asm_compare_priority_matrix(&asm_snd_msg, asm_ret_msg,
 									rcv_instance_id, rcv_sound_handle, rcv_request_id, rcv_sound_event, rcv_sound_state, rcv_resource);
@@ -2969,9 +3321,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 				}
 			}
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 			ASM_DO_WATCH_CALLBACK_FROM_RESULT(compare_result);
 		}
 
@@ -3013,18 +3362,12 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 				__asm_change_state_list(rcv_instance_id, rcv_sound_handle, rcv_sound_state, rcv_resource);
 				asm_snd_msg.data.result_sound_command = ASM_COMMAND_NONE;
 				asm_snd_msg.data.result_sound_state = rcv_sound_state;
-				if (asm_ret_msg == NULL && rcv_sound_state == ASM_STATE_PLAYING) {
-					__asm_snd_message(&asm_snd_msg);
-				}
 			} else if (_mm_sound_is_mute_policy() && (ASM_EVENT_NOTIFY == rcv_sound_event)) {
 				/*do not play notify sound in mute profile.*/
 				asm_snd_msg.data.result_sound_command = ASM_COMMAND_STOP;
 				asm_snd_msg.data.result_sound_state   = ASM_STATE_STOP;
 				asm_snd_msg.data.error_code           = ERR_ASM_POLICY_CANNOT_PLAY_BY_PROFILE;
 				__asm_change_state_list(rcv_instance_id, rcv_sound_handle, ASM_STATE_STOP, rcv_resource);
-				if (asm_ret_msg == NULL) {
-					__asm_snd_message(&asm_snd_msg);
-				}
 				__temp_print_list("Set State (Not Play)");
 				break;
 			} else {
@@ -3039,9 +3382,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 					if (ret) {
 						debug_error (" failed to __asm_change_session(), error(0x%x)", ret);
 					}
-				}
-				if (asm_ret_msg == NULL && rcv_sound_state == ASM_STATE_PLAYING) {
-					__asm_snd_message(&asm_snd_msg);
 				}
 
 				ASM_DO_WATCH_CALLBACK_FROM_RESULT(compare_result);
@@ -3102,9 +3442,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 			asm_snd_msg.data.source_request_id = rcv_request_id;
 		}
 		ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
-		}
 		break;
 	}
 
@@ -3112,9 +3449,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		__check_dead_process();
 		ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
 		asm_snd_msg.data.result_sound_state = __asm_find_process_status(rcv_instance_id);
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
-		}
 		break;
 
 	case ASM_REQUEST_DUMP:
@@ -3274,9 +3608,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 
 			/* Return result msg */
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 		}
 		break;
 
@@ -3295,9 +3626,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 			/* Return result msg */
 			asm_snd_msg.data.result_sound_command = subsession;
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 		}
 		break;
 
@@ -3352,9 +3680,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 					debug_error (" failed to __asm_change_session(), error(0x%x)", ret);
 				}
 			}
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 		}
 
 		__temp_print_list("Set Sub-event");
@@ -3366,9 +3691,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		/* Return result msg */
 		asm_instance_h = __asm_find_list(rcv_sound_handle);
 		asm_snd_msg.data.result_sound_command = (asm_instance_h ? asm_instance_h->sound_sub_event : ASM_SUB_EVENT_NONE);
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
-		}
 		break;
 
 	case ASM_REQUEST_SET_SESSION_OPTIONS:
@@ -3397,9 +3719,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		}
 
 		ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
-		}
 		break;
 	}
 
@@ -3410,9 +3729,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		asm_snd_msg.data.option_flags = (asm_instance_h ? asm_instance_h->option_flags : 0);
 		if (!asm_instance_h) {
 			asm_snd_msg.data.result_sound_command = ASM_COMMAND_STOP;
-		}
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
 		}
 		break;
 
@@ -3467,16 +3783,10 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		__asm_get_empty_handle(rcv_instance_id, &rcv_sound_handle);
 		if (rcv_sound_handle == ASM_HANDLE_INIT_VAL) {
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, ASM_HANDLE_INIT_VAL, ASM_HANDLE_INIT_VAL, rcv_request_id);
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 		} else {
 			ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
 			asm_snd_msg.data.result_sound_command = ASM_COMMAND_PLAY;
 			asm_snd_msg.data.result_sound_state = rcv_sound_state;
-			if (asm_ret_msg == NULL) {
-				__asm_snd_message(&asm_snd_msg);
-			}
 			__asm_register_list(rcv_instance_id, rcv_sound_handle, rcv_sound_event, rcv_sound_state, 0, true);
 		}
 		break;
@@ -3499,9 +3809,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		ASM_SND_MSG_SET_DEFAULT(asm_snd_msg, rcv_instance_id, rcv_sound_handle, rcv_sound_handle, rcv_request_id);
 		asm_snd_msg.data.result_sound_command = ASM_COMMAND_PLAY;
 		asm_snd_msg.data.result_sound_state = rcv_sound_state;
-		if (asm_ret_msg == NULL) {
-			__asm_snd_message(&asm_snd_msg);
-		}
 		break;
 	}
 
@@ -3516,32 +3823,14 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 	pthread_mutex_unlock(&g_mutex_asm);
 	debug_log (" ===================================================================== End (UNLOCKED) ");
 
-	return 0;
+	return ret;
 }
 
 void __asm_main_run (void* param)
 {
-	ASM_msg_lib_to_asm_t asm_rcv_msg;
+	//ASM_msg_lib_to_asm_t asm_rcv_msg;
 
 	signal(SIGPIPE, SIG_IGN);
-
-	/* Init Msg Queue */
-	__asm_create_message_queue();
-
-	int temp_msgctl_id1 = msgctl(asm_snd_msgid, IPC_RMID, 0);
-	int temp_msgctl_id2 = msgctl(asm_rcv_msgid, IPC_RMID, 0);
-	int temp_msgctl_id3 = msgctl(asm_cb_msgid, IPC_RMID, 0);
-
-	if (temp_msgctl_id1 == -1 || temp_msgctl_id2 == -1 || temp_msgctl_id3 == -1) {
-		debug_error(" msgctl failed with error(%d,%s) \n", errno, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-	//-------------------------------------------------------------------
-	/*
-		This is unnessasry finaly, but nessasary during implement.
-	*/
-	/* FIXME: Do we need to do this again ? */
-	__asm_create_message_queue();
 
 	/*
 	 * Init Vconf
@@ -3556,21 +3845,6 @@ void __asm_main_run (void* param)
 	/* Set READY flag */
 	if (vconf_set_int(ASM_READY_KEY, 1)) {
 		debug_error(" vconf_set_int fail\n");
-	}
-
-	/* Msg Loop */
-	while (true) {
-		debug_log(" asm_Server is waiting message(%d)!!!\n", asm_is_send_msg_to_cb);
-		if (asm_is_send_msg_to_cb)
-			continue;
-
-		/* Receive Msg */
-		__asm_rcv_message(&asm_rcv_msg);
-
-		/* Do msg handling */
-		__asm_process_message (&asm_rcv_msg, NULL);
-
-		/* TODO : Error Handling */
 	}
 }
 

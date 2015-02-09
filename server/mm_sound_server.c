@@ -47,6 +47,7 @@
 #include "include/mm_sound_mgr_run.h"
 #include "include/mm_sound_mgr_codec.h"
 #include "include/mm_sound_mgr_ipc.h"
+#include "include/mm_sound_mgr_ipc_dbus.h"
 #include "include/mm_sound_mgr_pulse.h"
 #include "include/mm_sound_mgr_asm.h"
 #include "include/mm_sound_mgr_session.h"
@@ -106,14 +107,13 @@ GMainLoop *g_mainloop;
 
 void* pulse_handle;
 
-gpointer event_loop_thread(gpointer data)
+void mainloop_run()
 {
 	g_mainloop = g_main_loop_new(NULL, TRUE);
 	if(g_mainloop == NULL) {
 		debug_error("g_main_loop_new() failed\n");
 	}
 	g_main_loop_run(g_mainloop);
-	return NULL;
 }
 
 static void __wait_for_vconfkey_ready (const char *keyname)
@@ -249,20 +249,12 @@ int main(int argc, char **argv)
 	sigaction(SIGTERM, &action, &sigterm_action);
 	sigaction(SIGSYS, &action, &sigsys_action);
 
-	if (!g_thread_supported ())
-		g_thread_init (NULL);
-
-	if(NULL == g_thread_create(event_loop_thread, NULL, FALSE, NULL)) {
-		fprintf(stderr,"event loop thread create failed\n");
-		return 3;
-	}
-
 	if (serveropt.startserver || serveropt.printlist) {
 		MMSoundThreadPoolInit();
 		MMSoundMgrRunInit(serveropt.plugdir);
 		MMSoundMgrCodecInit(serveropt.plugdir);
-		if (!serveropt.testmode)
-			MMSoundMgrIpcInit();
+
+		MMSoundMgrDbusInit();
 
 		pulse_handle = MMSoundMgrPulseInit();
 		MMSoundMgrASMInit();
@@ -299,16 +291,15 @@ int main(int argc, char **argv)
 			debug_msg ("Ready to play booting sound!!!!");
 		}
 		/* Start Ipc mgr */
-		MMSoundMgrIpcReady();
+
+		mainloop_run();
 	}
 
 	debug_warning("sound_server [%d] terminating \n", getpid());
 
 	if (serveropt.startserver || serveropt.printlist) {
 		MMSoundMgrRunStopAll();
-		if (!serveropt.testmode)
-			MMSoundMgrIpcFini();
-
+		MMSoundMgrDbusFini();
 		MMSoundMgrCodecFini();
 		MMSoundMgrRunFini();
 		MMSoundThreadPoolFini();

@@ -38,12 +38,103 @@ do { \
 
 int MMSoundMgrIpcInit(void);
 int MMSoundMgrIpcFini(void);
-int MMSoundMgrIpcReady(void);
 
+/* Msg processing */
+int _MMSoundMgrIpcPlayFile(char* filename, int tone, int repeat, int volume, int volume_config,
+			   int priority, int session_type, int session_options, int client_pid, int keytone,  int handle_route,
+			   bool enable_session, int *codechandle);
+//int _MMSoundMgrIpcStop(mm_ipc_msg_t *msg);
+int _MMSoundMgrIpcStop(int handle);
+//int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg);
+int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
+			   int session_type, int session_options, int client_pid,
+			   bool enable_session, int *codechandle);
+/*
+int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg);
+int __mm_sound_mgr_ipc_is_route_available(mm_ipc_msg_t *msg, bool *is_available);
+int __mm_sound_mgr_ipc_foreach_available_route_cb(mm_ipc_msg_t *msg);
+int __mm_sound_mgr_ipc_set_active_route(mm_ipc_msg_t *msg);
+int __mm_sound_mgr_ipc_set_active_route_auto(void);
+int __mm_sound_mgr_ipc_get_active_device(mm_ipc_msg_t *msg, mm_sound_device_in *device_in, mm_sound_device_out *device_out);
+int __mm_sound_mgr_ipc_add_active_device_changed_cb(mm_ipc_msg_t *msg);
+int __mm_sound_mgr_ipc_remove_active_device_changed_cb(mm_ipc_msg_t *msg);
+int __mm_sound_mgr_ipc_add_available_device_changed_cb(mm_ipc_msg_t *msg);
+int __mm_sound_mgr_ipc_remove_available_device_changed_cb(mm_ipc_msg_t *msg);
+*/
+int __mm_sound_mgr_ipc_set_sound_path_for_active_device(mm_sound_device_in _device_in, mm_sound_device_out _device_out);
+int __mm_sound_mgr_ipc_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
+//int __mm_sound_mgr_ipc_get_current_connected_device_list(mm_ipc_msg_t *msg, GList **device_list, int *total_num);
+int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_sound_device_t **device_list, int *total_num);
+#ifdef USE_FOCUS
+//int __mm_sound_mgr_ipc_create_focus_node(mm_ipc_msg_t *msg);
+int __mm_sound_mgr_ipc_register_focus(int client_pid, int handle_id, char* stream_type);
+//int __mm_sound_mgr_ipc_destroy_focus_node(mm_ipc_msg_t *msg);
+int __mm_sound_mgr_ipc_unregister_focus(int pid, int handle_id);
+
+int __mm_sound_mgr_ipc_acquire_focus(int pid, int handle_id, int focus_type, const char* name );
+
+int __mm_sound_mgr_ipc_release_focus(int pid, int handle_id, int focus_type, const char* name);
+//int __mm_sound_mgr_ipc_set_focus_watch_cb(mm_ipc_msg_t *msg);
+int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type);
+//int __mm_sound_mgr_ipc_unset_focus_watch_cb(mm_ipc_msg_t *msg);
+int __mm_sound_mgr_ipc_unwatch_focus(int pid);
+#endif
+
+
+int __mm_sound_mgr_ipc_asm_register_sound(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					  int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
+					  int* request_id_r, int* sound_cmd_r, int* sound_state_r );
+int __mm_sound_mgr_ipc_asm_unregister_sound(int pid, int handle, int sound_event, int request_id, int sound_state, int resource);
+int __mm_sound_mgr_ipc_asm_register_watcher(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
+					    int* request_id_r, int* sound_cmd_r, int* sound_state_r );
+int __mm_sound_mgr_ipc_asm_unregister_watcher(int pid, int handle, int sound_event, int request_id, int sound_state, int resource);
+int __mm_sound_mgr_ipc_asm_get_mystate(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
+					    int* request_id_r, int* sound_state_r );
+int __mm_sound_mgr_ipc_asm_set_state(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
+					    int* request_id_r, int* sound_command_r, int* sound_state_r , int* error_code_r);
+int __mm_sound_mgr_ipc_asm_get_state(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
+					    int* request_id_r, int* sound_state_r );
+int __mm_sound_mgr_ipc_asm_set_subsession(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r, int* request_id_r);
+int __mm_sound_mgr_ipc_asm_get_subsession(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r, int* request_id_r, int* sound_command_r);
+
+int __mm_sound_mgr_ipc_asm_set_subevent(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
+					    int* request_id_r, int* sound_cmd_r, int* sound_state_r );
+int __mm_sound_mgr_ipc_asm_get_subevent(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
+					    int* request_id_r, int* sound_cmd_r);
+int __mm_sound_mgr_ipc_asm_set_session_option(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
+					    int* request_id_r, int* sound_cmd_r, int* error_code_r );
+int __mm_sound_mgr_ipc_asm_get_session_option(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
+					    int* request_id_r, int* sound_cmd_r, int* option_flag_r );
+int __mm_sound_mgr_ipc_asm_reset_resume_tag(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
+					    int* request_id_r, int* sound_cmd_r, int* sound_state_r );
+int __mm_sound_mgr_ipc_asm_dump(int pid, int handle, int sound_event, int request_id, int sound_state, int resource);
+int __mm_sound_mgr_ipc_asm_emergent_exit(int pid, int handle, int sound_event, int request_id, int sound_state);
+
+
+/* send signal : mgr_xxx -> mgr_ipc_dbus */
 int _MMIpcCBSndMsg(mm_ipc_msg_t *msg);
 int _MMIpcCBRecvMsg(mm_ipc_msg_t *msg);
 int _MMIpcCBMsgEnQueueAgain(mm_ipc_msg_t *msg);
+
 int __mm_sound_mgr_ipc_freeze_send (char* command, int pid);
+
+int __mm_sound_mgr_ipc_notify_play_file_end (int handle);
+int __mm_sound_mgr_ipc_notify_device_connected (mm_sound_device_t *device, bool is_connected);
+int __mm_sound_mgr_ipc_notify_device_info_changed (mm_sound_device_t *device, int changed_device_info_type);
+int __mm_sound_mgr_ipc_notify_volume_changed(unsigned int vol_type, unsigned int value);
+int __mm_sound_mgr_ipc_notify_active_device_changed(int device_in, int device_out);
+int __mm_sound_mgr_ipc_notify_available_device_changed(int device_in, int device_out, int available);
 
 #endif /* __MM_SOUND_MGR_H__ */
 

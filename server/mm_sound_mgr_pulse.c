@@ -1632,34 +1632,22 @@ int MMSoundMgrPulseGetBluetoothInfo(bool* is_nrec, int* bandwidth)
 #endif /* SUPPORT_BT_SCO_DETECT */
 
 /* -------------------------------- MGR MAIN --------------------------------------------*/
-
-int MMSoundMgrPulseHandleIsBtA2DPOnReq (mm_ipc_msg_t *msg, int (*sendfunc)(mm_ipc_msg_t*))
+int MMSoundMgrPulseHandleIsBtA2DPOnReq (bool* is_bt_on, char** bt_name)
 {
 	int ret = 0;
-	mm_ipc_msg_t respmsg = {0,};
-	char* bt_name;
-	bool is_bt_on = false;
+	char* _bt_name;
+	bool _is_bt_on = false;
+
 	pthread_mutex_lock(&g_mutex);
-
-	debug_enter("msg = %p, sendfunc = %p\n", msg, sendfunc);
-
-	bt_name = MMSoundMgrSessionGetBtA2DPName();
-	if (bt_name && strlen(bt_name) > 0) {
-		is_bt_on = true;
+	_bt_name = MMSoundMgrSessionGetBtA2DPName();
+	if (_bt_name && strlen(_bt_name) > 0) {
+		_is_bt_on = true;
 	}
 
-	debug_log ("is_bt_on = [%d], name = [%s]\n", is_bt_on, bt_name);
+	debug_log ("is_bt_on = [%d], name = [%s]\n", _is_bt_on, _bt_name);
 
-	SOUND_MSG_SET(respmsg.sound_msg,
-				MM_SOUND_MSG_RES_IS_BT_A2DP_ON, msg->sound_msg.handle, is_bt_on, msg->sound_msg.msgid);
-	MMSOUND_STRNCPY(respmsg.sound_msg.filename, bt_name, FILE_PATH);
-
-	/* Send Response */
-	ret = sendfunc (&respmsg);
-	if (ret != MM_ERROR_NONE) {
-		/* TODO : Error Handling */
-		debug_error ("sendfunc failed....ret = [%x]\n", ret);
-	}
+	*is_bt_on = _is_bt_on;
+	*bt_name = strdup(_bt_name);
 
 	pthread_mutex_unlock(&g_mutex);
 

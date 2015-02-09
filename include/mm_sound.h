@@ -2679,6 +2679,13 @@ int mm_sound_set_sound_path_for_active_device(mm_sound_device_out device_out, mm
 
 int mm_sound_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
+
+
+typedef void (*mm_sound_test_cb) (int a, void *user_data);
+int mm_sound_test(int a, int b, int* get);
+int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data);
+int mm_sound_remove_test_callback(void);
+
 /**
 	@}
  */

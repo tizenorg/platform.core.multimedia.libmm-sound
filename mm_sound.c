@@ -1028,6 +1028,62 @@ int mm_sound_set_sound_path_for_active_device(mm_sound_device_out device_out, mm
 	return ret;
 }
 
+
+EXPORT_API
+int mm_sound_test(int a, int b, int* getv)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_log("mm_sound_test enter");
+	if (!getv) {
+		debug_error("argu null");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+	ret = _mm_sound_client_test(a, b, getv);
+	if (ret < 0) {
+		debug_error("Can not mm sound test, ret = %x\n", ret);
+	}
+	debug_log("mm_sound_test leave");
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_log("mm_sound_add_test_callback enter");
+	if (!func) {
+		debug_error("argument is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = _mm_sound_client_add_test_callback(func, user_data);
+	if (ret < 0) {
+		debug_error("Can not add test callback, ret = %x\n", ret);
+	}
+	debug_log("mm_sound_add_test_callback leave");
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_remove_test_callback(void)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_log("mm_sound_remove_test_callback enter");
+	ret = _mm_sound_client_remove_test_callback();
+	if (ret < 0) {
+		debug_error("Can not remove test callback, ret = %x\n", ret);
+	}
+	debug_log("mm_sound_remove_test_callback leave");
+
+	return ret;
+}
+
+
 __attribute__ ((destructor))
 void __mmfsnd_finalize(void)
 {
@@ -1037,5 +1093,6 @@ void __mmfsnd_finalize(void)
 __attribute__ ((constructor))
 void __mmfsnd_initialize(void)
 {
+	MMSoundClientInit();
 	/* Will be Fixed */
 }
