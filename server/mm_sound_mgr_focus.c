@@ -81,11 +81,13 @@ int __mm_sound_mgr_focus_get_priority_from_stream_type(int *priority, const char
 			*priority = 6;
 		} else if (!strncmp(STREAM_TYPE_NOTIFICATION, stream_type, MAX_STREAM_TYPE_LEN)) {
 			*priority = 5;
-		} else if (!strncmp(STREAM_TYPE_MEDIA_PLAYBACK, stream_type, MAX_STREAM_TYPE_LEN) ||
-			!strncmp(STREAM_TYPE_MEDIA_RECORDING, stream_type, MAX_STREAM_TYPE_LEN) ||
-			!strncmp(STREAM_TYPE_RADIO, stream_type, MAX_STREAM_TYPE_LEN) ||
-			!strncmp(STREAM_TYPE_TTS, stream_type, MAX_STREAM_TYPE_LEN) ||
+		} else if (!strncmp(STREAM_TYPE_TTS, stream_type, MAX_STREAM_TYPE_LEN) ||
 			!strncmp(STREAM_TYPE_VOICE_RECOGNITION, stream_type, MAX_STREAM_TYPE_LEN)) {
+			*priority = 3;
+		} else if (!strncmp(STREAM_TYPE_MEDIA, stream_type, MAX_STREAM_TYPE_LEN) ||
+			!strncmp(STREAM_TYPE_RADIO, stream_type, MAX_STREAM_TYPE_LEN)) {
+			*priority = 2;
+		} else if (!strncmp(STREAM_TYPE_SYSTEM, stream_type, MAX_STREAM_TYPE_LEN)) {
 			*priority = 1;
 		} else {
 			ret = MM_ERROR_INVALID_ARGUMENT;
@@ -395,6 +397,7 @@ int _mm_sound_mgr_focus_destroy_node (const _mm_sound_mgr_focus_param_t *param)
 	int ret = MM_ERROR_SOUND_INTERNAL;
 	GList *list = NULL;
 	focus_node_t *node = NULL;
+	int i = 0;
 
 	debug_fenter();
 
@@ -417,6 +420,15 @@ int _mm_sound_mgr_focus_destroy_node (const _mm_sound_mgr_focus_param_t *param)
 		debug_error("could not find any node of pid[%d]/handle_id[%d]\n", param->pid, param->handle_id);
 		ret = MM_ERROR_INVALID_ARGUMENT;
 		goto FINISH;
+	}
+	for (list = g_focus_node_list; list != NULL; list = list->next) {
+		node = (focus_node_t *)list->data;
+		for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+			if (node && (node->taken_by_id[i].pid == param->pid && node->taken_by_id[i].handle_id == param->handle_id)) {
+				node->taken_by_id[i].pid = 0;
+				node->taken_by_id[i].handle_id = 0;
+			}
+		}
 	}
 	__mm_sound_mgr_focus_list_dump();
 FINISH:

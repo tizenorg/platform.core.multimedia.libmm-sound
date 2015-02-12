@@ -162,25 +162,25 @@ void device_info_changed_cb (MMSoundDevice_t device_h, int changed_info_type, vo
 	debug_log("*** --- type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", type, id, io_direction, state, name);
 }
 #ifdef USE_FOCUS
-void focus_cb0 (mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
+void focus_cb0 (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
 {
 	char *_state = NULL;
 	if (state == FOCUS_IS_RELEASED)
 		_state = "RELEASED";
 	else
 		_state = "ACQUIRED";
-	debug_log("*** focus_cb0 is called, focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
-			type, _state, reason_for_change, additional_info, user_data);
+	debug_log("*** focus_cb0 is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
+			index, type, _state, reason_for_change, additional_info, user_data);
 }
-void focus_cb1 (mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
+void focus_cb1 (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
 {
 	char *_state = NULL;
 	if (state == FOCUS_IS_RELEASED)
 		_state = "RELEASED";
 	else
 		_state = "ACQUIRED";
-	debug_log("*** focus_cb1 is called, focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
-			type, _state, reason_for_change, additional_info, user_data);
+	debug_log("*** focus_cb1 is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
+			index, type, _state, reason_for_change, additional_info, user_data);
 }
 void focus_watch_cb (mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
 {
@@ -420,15 +420,14 @@ static void interpret (char *cmd)
 				const char *user_data = "this is user data";
 
 				fflush(stdin);
-				g_print ("1. Media playback\n");
-				g_print ("2. Media recording\n");
-				g_print ("3. Alarm\n");
-				g_print ("4. Notification\n");
-				g_print ("5. Emergency\n");
-				g_print ("6. TTS\n");
-				g_print ("7. Ringtone\n");
-				g_print ("8. Call\n");
-				g_print ("9. VOIP\n");
+				g_print ("1. Media\n");
+				g_print ("2. Alarm\n");
+				g_print ("3. Notification\n");
+				g_print ("4. Emergency\n");
+				g_print ("5. TTS\n");
+				g_print ("6. Ringtone\n");
+				g_print ("7. Call\n");
+				g_print ("8. VOIP\n");
 				g_print ("0. Voice Recognition\n");
 				g_print("> select id and stream type: (eg. 0 3)");
 
@@ -442,17 +441,16 @@ static void interpret (char *cmd)
 				else if(flag_1 == '1') { id = 1; }
 				else if(flag_1 == '2') { id = 2; }
 				else { id = 2; }
-				if(flag_2 == '1') { stream_type = "media_playback"; }
-				else if(flag_2 == '2') { stream_type = "media_recording"; }
-				else if(flag_2 == '3') { stream_type = "alarm"; }
-				else if(flag_2 == '4') { stream_type = "notification"; }
-				else if(flag_2 == '5') { stream_type = "emergency"; }
-				else if(flag_2 == '6') { stream_type = "tts"; }
-				else if(flag_2 == '7') { stream_type = "ringtone"; }
-				else if(flag_2 == '8') { stream_type = "call"; }
-				else if(flag_2 == '9') { stream_type = "voip"; }
+				if(flag_2 == '1') { stream_type = "media"; }
+				else if(flag_2 == '2') { stream_type = "alarm"; }
+				else if(flag_2 == '3') { stream_type = "notification"; }
+				else if(flag_2 == '4') { stream_type = "emergency"; }
+				else if(flag_2 == '5') { stream_type = "tts"; }
+				else if(flag_2 == '6') { stream_type = "ringtone"; }
+				else if(flag_2 == '7') { stream_type = "call"; }
+				else if(flag_2 == '8') { stream_type = "voip"; }
 				else if(flag_2 == '0') { stream_type = "voice_recognition"; }
-				else { stream_type = "media_playback"; }
+				else { stream_type = "media"; }
 
 				ret = mm_sound_register_focus(id, stream_type, (id == 0)? focus_cb0 : focus_cb1, user_data);
 				if (ret) {

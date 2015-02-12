@@ -443,10 +443,10 @@ static void* callbackfunc_send_reply(void *param)
 			/* Set start time */
 			gettimeofday(&time, NULL);
 			starttime = time.tv_sec * 1000000 + time.tv_usec;
-			debug_warning("[Client][Focus Callback(0x%x) START][focus_type(%d), state(%d),reason(%s),info(%s)][Time:%.3f]\n",
-				msgrcv->sound_msg.callback, msgrcv->sound_msg.focus_type, msgrcv->sound_msg.changed_state, msgrcv->sound_msg.stream_type, msgrcv->sound_msg.name, starttime/1000000.);
+			debug_warning("[Client][Focus Callback(0x%x) START][handle_id(%d),focus_type(%d), state(%d),reason(%s),info(%s)][Time:%.3f]\n",
+				msgrcv->sound_msg.callback, msgrcv->sound_msg.handle_id, msgrcv->sound_msg.focus_type, msgrcv->sound_msg.changed_state, msgrcv->sound_msg.stream_type, msgrcv->sound_msg.name, starttime/1000000.);
 			if (msgrcv->sound_msg.callback) {
-				((mm_sound_focus_changed_cb)msgrcv->sound_msg.callback)(msgrcv->sound_msg.focus_type, msgrcv->sound_msg.changed_state, msgrcv->sound_msg.stream_type, msgrcv->sound_msg.name, msgrcv->sound_msg.cbdata);
+				((mm_sound_focus_changed_cb)msgrcv->sound_msg.callback)(msgrcv->sound_msg.handle_id, msgrcv->sound_msg.focus_type, msgrcv->sound_msg.changed_state, msgrcv->sound_msg.stream_type, msgrcv->sound_msg.name, msgrcv->sound_msg.cbdata);
 			}
 			/* Calculate endtime and display*/
 			gettimeofday(&time, NULL);
@@ -471,7 +471,7 @@ static void* callbackfunc_send_reply(void *param)
 			debug_warning("[Client][Focus Watch Callback(0x%x) START][focus_type(%d),state(%d),reason(%s),info(%s)][Time:%.3f]\n",
 				msgrcv->sound_msg.callback, msgrcv->sound_msg.focus_type, msgrcv->sound_msg.changed_state, msgrcv->sound_msg.stream_type, msgrcv->sound_msg.name, starttime/1000000.);
 			if (msgrcv->sound_msg.callback) {
-				((mm_sound_focus_changed_cb)msgrcv->sound_msg.callback)(msgrcv->sound_msg.focus_type, msgrcv->sound_msg.changed_state, msgrcv->sound_msg.stream_type, msgrcv->sound_msg.name, msgrcv->sound_msg.cbdata);
+				((mm_sound_focus_changed_watch_cb)msgrcv->sound_msg.callback)(msgrcv->sound_msg.focus_type, msgrcv->sound_msg.changed_state, msgrcv->sound_msg.stream_type, msgrcv->sound_msg.name, msgrcv->sound_msg.cbdata);
 			}
 			/* Calculate endtime and display*/
 			gettimeofday(&time, NULL);

@@ -36,8 +36,8 @@
 
 #define MAX_STREAM_TYPE_LEN 64
 
-#define STREAM_TYPE_MEDIA_PLAYBACK    "media_playback"
-#define STREAM_TYPE_MEDIA_RECORDING   "media_recording"
+#define STREAM_TYPE_MEDIA             "media"
+#define STREAM_TYPE_SYSTEM            "system"
 #define STREAM_TYPE_ALARM             "alarm"
 #define STREAM_TYPE_NOTIFICATION      "notification"
 #define STREAM_TYPE_EMERGENCY         "emergency"
@@ -47,7 +47,7 @@
 #define STREAM_TYPE_VOIP              "voip"
 #define STREAM_TYPE_VOICE_RECOGNITION "voice_recognition"
 #define STREAM_TYPE_RADIO             "radio"
-#define STREAM_TYPE_NUM               11   /* those information will be moved to HAL */
+#define STREAM_TYPE_LOOPBACK          "loopback"
 
 #define NUM_OF_STREAM_IO_TYPE         2    /* playback / capture */
 
