@@ -58,35 +58,6 @@ PKG_CHECK_MODULES(VCONF, vconf)
 AC_SUBST(VCONF_CFLAGS)
 AC_SUBST(VCONF_LIBS)
 
-AC_ARG_ENABLE(bluetooth, AC_HELP_STRING([--enable-bluetooth], [enable bluetooth client]),
-[
- case "${enableval}" in
-	 yes) SUPPORT_BT_SCO=yes ;;
-	 no)  SUPPORT_BT_SCO=no ;;
-	 *)   AC_MSG_ERROR(bad value ${enableval} for --enable-bluetooth) ;;
- esac
- ],[SUPPORT_BT_SCO=no])
-if test "x$SUPPORT_BT_SCO" = "xyes"; then
-PKG_CHECK_MODULES(BLUETOOTH, capi-network-bluetooth)
-AC_SUBST(BLUETOOTH_CFLAGS)
-AC_SUBST(BLUETOOTH_LIBS)
-fi
-AM_CONDITIONAL([SUPPORT_BT_SCO], [test "x$SUPPORT_BT_SCO" = "xyes"])
-
-AC_ARG_ENABLE(hfp, AC_HELP_STRING([--enable-hfp], [enable hfp api]),
-[
- case "${enableval}" in
-	 yes) USE_HFP=yes ;;
-	 no)  USE_HFP=no ;;
-	 *)   AC_MSG_ERROR(bad value ${enableval} for --enable-hfp) ;;
- esac
- ],[USE_HFP=no])
-if test "x$USE_HFP" = "xyes"; then
-PKG_CHECK_MODULES(BLUETOOTH_API, bluetooth-api)
-AC_SUBST(BLUETOOTH_API_CFLAGS)
-AC_SUBST(BLUETOOTH_API_LIBS)
-fi
-
 AC_ARG_ENABLE(pulse, AC_HELP_STRING([--enable-pulse], [enable pulseaudio client]),
 [
  case "${enableval}" in

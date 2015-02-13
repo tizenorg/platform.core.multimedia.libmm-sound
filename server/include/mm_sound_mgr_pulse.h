@@ -43,10 +43,6 @@ int MMSoundMgrPulseHandleIsBtA2DPOnReq (mm_ipc_msg_t *msg, int (*sendfunc)(mm_ip
 void MMSoundMgrPulseGetInitialBTStatus (bool *a2dp, bool *sco);
 int MMSoundMgrPulseGetBluetoothInfo(bool* is_nrec, int* bandwidth);
 
-void MMSoundMgrPulseUpdateBluetoothAGCodec (void);
-bool MMSoundMgrPulseBTSCONRECStatus(void);
-bool MMSoundMgrPulseBTSCOWBStatus(void);
-
 void MMSoundMgrPulseSetSession(session_t session, session_state_t state);
 void MMSoundMgrPulseSetSubsession(subsession_t subsession, int subsession_opt);
 void MMSoundMgrPulseSetActiveDevice(mm_sound_device_in device_in, mm_sound_device_out device_out);

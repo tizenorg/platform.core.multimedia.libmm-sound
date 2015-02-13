@@ -21,8 +21,6 @@ BuildRequires: pkgconfig(libpulse)
 BuildRequires: pkgconfig(iniparser)
 %ifarch %{arm}
 %endif
-%if "%{?tizen_profile_name}" == "wearable"
-%endif
 BuildRequires: pkgconfig(libtremolo)
 
 %description
@@ -58,13 +56,6 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 
 %build
 %define tizen_audio_feature_ogg_enable 1
-%define tizen_audio_feature_bluetooth_enable 1
-
-%if "%{?tizen_profile_name}" == "wearable"
-%define tizen_audio_feature_hfp 1
-%else
-%define tizen_audio_feature_hfp 0
-%endif
 
 %ifarch %{arm}
 	CFLAGS="%{optflags} -fvisibility=hidden -D_TIZEN_PUBLIC_ -DUSE_FOCUS -DMM_DEBUG_FLAG -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\"" ;export CFLAGS
@@ -78,14 +69,8 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 
 ./autogen.sh
 %configure \
-%if 0%{?tizen_audio_feature_hfp}
-       --enable-hfp \
-%endif
 %if 0%{?tizen_audio_feature_ogg_enable}
        --enable-ogg \
-%endif
-%if 0%{?tizen_audio_feature_bluetooth_enable}
-       --disable-bluetooth \
 %endif
 %ifarch %{arm}
 	--prefix=/usr --enable-pulse --enable-focus

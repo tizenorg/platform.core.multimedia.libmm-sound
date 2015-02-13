@@ -747,8 +747,8 @@ static int __set_sound_path_for_current_active (bool need_broadcast, bool need_c
     	if (in == MM_SOUND_DEVICE_IN_BT_SCO && out == MM_SOUND_DEVICE_OUT_BT_SCO) {
 		bool nrec = 0;
 		int bandwidth = MM_SOUND_BANDWIDTH_UNKNOWN;
-
-		ret = MMSoundMgrPulseGetBluetoothInfo(&nrec, &bandwidth);
+		/* Remove BT dependency */
+		/* ret = MMSoundMgrPulseGetBluetoothInfo(&nrec, &bandwidth); */
 		if(ret == MM_ERROR_NONE) {
 			g_info.bt_info.is_nrec = nrec;
 			g_info.bt_info.ag_wb = bandwidth;
@@ -2590,7 +2590,8 @@ int MMSoundMgrSessionSetSubSession(subsession_t subsession, int subsession_opt)
 #ifdef SUPPORT_BT_SCO
 		if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_SCO) && IS_ACTIVE(MM_SOUND_DEVICE_IN_BT_SCO)) {
 			/* Update BT info */
-			MMSoundMgrPulseUpdateBluetoothAGCodec();
+			/* Remove BT dependency */
+			/* MMSoundMgrPulseUpdateBluetoothAGCodec(); */
 		}
 #endif
 	}
@@ -2599,7 +2600,8 @@ int MMSoundMgrSessionSetSubSession(subsession_t subsession, int subsession_opt)
 #ifdef SUPPORT_BT_SCO
 		if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_SCO) && IS_ACTIVE(MM_SOUND_DEVICE_IN_BT_SCO)) {
 			/* Update BT info */
-			MMSoundMgrPulseUpdateBluetoothAGCodec();
+			/* Remove BT dependency */
+			/* MMSoundMgrPulseUpdateBluetoothAGCodec(); */
 		}
 #endif
 	}
