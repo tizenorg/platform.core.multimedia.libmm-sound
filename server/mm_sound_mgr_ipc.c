@@ -283,7 +283,7 @@ int __mm_sound_mgr_ipc_register_focus(int client_pid, int handle_id, char* strea
 //	param.cbdata = msg->sound_msg.cbdata;
 	memcpy(param.stream_type, stream_type, MAX_STREAM_TYPE_LEN);
 
-	ret = _mm_sound_mgr_focus_create_node(&param);
+	ret = mm_sound_mgr_focus_create_node(&param);
 
 	return ret;
 }
@@ -299,7 +299,7 @@ int __mm_sound_mgr_ipc_unregister_focus(int pid, int handle_id)
 	param.pid = pid;
 	param.handle_id = handle_id;
 
-	ret = _mm_sound_mgr_focus_destroy_node(&param);
+	ret = mm_sound_mgr_focus_destroy_node(&param);
 
 	return ret;
 }
@@ -315,7 +315,7 @@ int __mm_sound_mgr_ipc_acquire_focus(int pid, int handle_id, int focus_type, con
 	param.handle_id = handle_id;
 	param.request_type = focus_type;
 	memcpy(param.option, name, MM_SOUND_NAME_NUM);
-	ret = _mm_sound_mgr_focus_request_acquire(&param);
+	ret = mm_sound_mgr_focus_request_acquire(&param);
 
 	return ret;
 }
@@ -332,7 +332,7 @@ int __mm_sound_mgr_ipc_release_focus(int pid, int handle_id, int focus_type, con
 	param.request_type = focus_type;
 	memcpy(param.option, name, MM_SOUND_NAME_NUM);
 
-	ret = _mm_sound_mgr_focus_request_release(&param);
+	ret = mm_sound_mgr_focus_request_release(&param);
 
 	return ret;
 }
@@ -349,7 +349,7 @@ int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type)
 //	param.callback = msg->sound_msg.callback;
 //	param.cbdata = msg->sound_msg.cbdata;
 
-	ret = _mm_sound_mgr_focus_set_watch_cb(&param);
+	ret = mm_sound_mgr_focus_set_watch_cb(&param);
 
 	return ret;
 }
@@ -363,7 +363,7 @@ int __mm_sound_mgr_ipc_unwatch_focus(int pid)
 	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
 	param.pid = pid;
 
-	ret = _mm_sound_mgr_focus_unset_watch_cb(&param);
+	ret = mm_sound_mgr_focus_unset_watch_cb(&param);
 
 	return ret;
 }

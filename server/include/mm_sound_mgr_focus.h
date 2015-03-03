@@ -78,10 +78,12 @@ typedef struct {
 
 int MMSoundMgrFocusInit(void);
 int MMSoundMgrFocusFini(void);
-int _mm_sound_mgr_focus_create_node (const _mm_sound_mgr_focus_param_t *param);
-int _mm_sound_mgr_focus_destroy_node (const _mm_sound_mgr_focus_param_t *param);
-int _mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param);
-int _mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param);
+int mm_sound_mgr_focus_create_node (const _mm_sound_mgr_focus_param_t *param);
+int mm_sound_mgr_focus_destroy_node (const _mm_sound_mgr_focus_param_t *param);
+int mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param);
+int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param);
+int mm_sound_mgr_focus_set_watch_cb (const _mm_sound_mgr_focus_param_t *param);
+int mm_sound_mgr_focus_unset_watch_cb (const _mm_sound_mgr_focus_param_t *param);
 
 
 #endif /* __MM_SOUND_MGR_FOCUS_H__ */
