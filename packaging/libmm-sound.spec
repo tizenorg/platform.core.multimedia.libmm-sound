@@ -58,9 +58,9 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 %define tizen_audio_feature_ogg_enable 1
 
 %ifarch %{arm}
-	CFLAGS="%{optflags} -fvisibility=hidden -D_TIZEN_PUBLIC_ -DUSE_FOCUS -DMM_DEBUG_FLAG -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\"" ;export CFLAGS
+	CFLAGS="%{optflags} -fvisibility=hidden -DSUPPORT_CONTAINER -D_TIZEN_PUBLIC_ -DUSE_FOCUS -DMM_DEBUG_FLAG -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\"" ;export CFLAGS
 %else
-	CFLAGS="%{optflags} -fvisibility=hidden -D_TIZEN_PUBLIC_ -DUSE_FOCUS -DMM_DEBUG_FLAG -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\"" ;export CFLAGS
+	CFLAGS="%{optflags} -fvisibility=hidden -DSUPPORT_CONTAINER -D_TIZEN_PUBLIC_ -DUSE_FOCUS -DMM_DEBUG_FLAG -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\"" ;export CFLAGS
 %endif
 
 %if "%{?tizen_profile_name}" == "wearable"

@@ -69,7 +69,6 @@ pthread_mutex_t g_mutex_asm = PTHREAD_MUTEX_INITIALIZER;
 #include <string.h>
 #include <errno.h>
 
-
 #define USE_SYSTEM_SERVER_PROCESS_MONITORING
 
 #define ROW_NUM_OF_SUB_EVENT		12 /* it should be exactly same with number of ASM_CASE_SUB_EVENT in ASM_sound_case table */
@@ -152,6 +151,14 @@ typedef struct asm_subsession_option
 	ASM_resource_t resource;
 } asm_subsession_option_t;
 
+#ifdef SUPPORT_CONTAINER
+typedef struct container_info
+{
+	int pid;
+	char name[64];
+} container_info_t;
+#endif
+
 typedef struct _list
 {
 	int					instance_id;              /* pid */
@@ -168,6 +175,11 @@ typedef struct _list
 	unsigned short			monitor_active;
 	unsigned short			monitor_dirty;
 	bool					is_registered_for_watching;
+
+#ifdef SUPPORT_CONTAINER
+	container_info_t		container;
+#endif
+
 	struct _list 			*next;
 } asm_instance_list_t;
 
@@ -396,7 +408,7 @@ subsession_t g_camcorder_ex_subsession = SUBSESSION_NUM;
 
 #define MAX_WATCH_CALLBACK_CALCUL_NUM 128
 
-void ___select_sleep(int secs)
+static void ___select_sleep(int secs)
 {
 	struct timeval timeout;
 	timeout.tv_sec = (secs < 1 || secs > 10) ? 3 : secs;
@@ -405,7 +417,7 @@ void ___select_sleep(int secs)
 	return;
 }
 
-int __get_adv_event_idx_for_subtable(ASM_sound_events_t sound_event, int *index)
+static int __get_adv_event_idx_for_subtable(ASM_sound_events_t sound_event, int *index)
 {
 	int ret = MM_ERROR_NONE;
 	if (!index) {
@@ -432,7 +444,7 @@ int __get_adv_event_idx_for_subtable(ASM_sound_events_t sound_event, int *index)
 	return ret;
 }
 
-int __get_sub_case_table_idx(ASM_sound_events_t sound_event, int *index)
+static int __get_sub_case_table_idx(ASM_sound_events_t sound_event, int *index)
 {
 	int ret = MM_ERROR_NONE;
 	if (!index) {
@@ -476,7 +488,7 @@ int __get_sub_case_table_idx(ASM_sound_events_t sound_event, int *index)
 	return ret;
 }
 
-gboolean __is_media_session (ASM_sound_events_t sound_event)
+static gboolean __is_media_session (ASM_sound_events_t sound_event)
 {
 	gboolean result = FALSE;
 	switch (sound_event) {
@@ -494,7 +506,8 @@ gboolean __is_media_session (ASM_sound_events_t sound_event)
 	return result;
 }
 
-ASM_event_sources_t __mapping_sound_event_to_event_src(ASM_sound_events_t sound_event, ASM_resource_t resource, ASM_sound_cases_t sound_case)
+static ASM_event_sources_t __mapping_sound_event_to_event_src(ASM_sound_events_t sound_event,
+														ASM_resource_t resource, ASM_sound_cases_t sound_case)
 {
 	ASM_event_sources_t event_src = ASM_EVENT_SOURCE_MEDIA;
 
@@ -538,7 +551,7 @@ ASM_event_sources_t __mapping_sound_event_to_event_src(ASM_sound_events_t sound_
 	return event_src;
 }
 
-ASM_event_sources_t __convert_eventsrc_interrupted_to_completed(ASM_event_sources_t eventsrc)
+static ASM_event_sources_t __convert_eventsrc_interrupted_to_completed(ASM_event_sources_t eventsrc)
 {
 	ASM_event_sources_t completed_eventsrc = ASM_EVENT_SOURCE_MEDIA;
 
@@ -563,7 +576,7 @@ ASM_event_sources_t __convert_eventsrc_interrupted_to_completed(ASM_event_source
 	return completed_eventsrc;
 }
 
-gboolean __is_valid_session_options(ASM_sound_events_t sound_event, int option_flags, int *error_code)
+static gboolean __is_valid_session_options(ASM_sound_events_t sound_event, int option_flags, int *error_code)
 {
 	gboolean result = true;
 	*error_code = ERR_ASM_ERROR_NONE;
@@ -587,7 +600,8 @@ gboolean __is_valid_session_options(ASM_sound_events_t sound_event, int option_f
 	return result;
 }
 
-gboolean __is_need_resume (ASM_sound_events_t incoming_sound_event, ASM_resource_t incoming_resource, ASM_sound_events_t current_sound_event, int current_handle)
+static gboolean __is_need_resume (ASM_sound_events_t incoming_sound_event, ASM_resource_t incoming_resource,
+								ASM_sound_events_t current_sound_event, int current_handle)
 {
 	gboolean result = FALSE;
 	switch (incoming_sound_event) {
@@ -652,7 +666,7 @@ gboolean __is_session_using_media_volume (ASM_sound_events_t sound_event)
 	return result;
 }
 
-gboolean __find_clean_monitor_handle(int instance_id, int *handle)
+static gboolean __find_clean_monitor_handle(int instance_id, int *handle)
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 	int lhandle = ASM_HANDLE_INIT_VAL;
@@ -676,7 +690,7 @@ gboolean __find_clean_monitor_handle(int instance_id, int *handle)
 	}
 }
 
-void __update_monitor_active(int instance_id)
+static void __update_monitor_active(int instance_id)
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 	asm_instance_list_t *monitor_list = NULL;
@@ -710,7 +724,7 @@ void __update_monitor_active(int instance_id)
 	monitor_list->monitor_active = active;
 }
 
-void __set_all_monitor_clean()
+static void __set_all_monitor_clean()
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 
@@ -722,7 +736,7 @@ void __set_all_monitor_clean()
 	}
 }
 
-void __set_monitor_dirty(int instance_id)
+static void __set_monitor_dirty(int instance_id)
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 
@@ -735,11 +749,66 @@ void __set_monitor_dirty(int instance_id)
 	}
 }
 
+#ifdef SUPPORT_CONTAINER
+static void __set_container_data(int handle, const char* container_name, int container_pid)
+{
+	asm_instance_list_t *temp_list = head_list_ptr;
+
+	while (temp_list != NULL) {
+		if (temp_list->sound_handle == handle) {
+			debug_error("Set container [%s][%d] to handle[%d] instanceID[%d]", container_name, container_pid,
+					handle, temp_list->instance_id);
+			strcpy (temp_list->container.name, container_name);
+			temp_list->container.pid = container_pid;
+			break;
+		}
+		temp_list = temp_list->next;
+	}
+}
+
+static container_info_t* __get_container_info(int instance_id)
+{
+	asm_instance_list_t *temp_list = head_list_ptr;
+
+	while (temp_list != NULL) {
+		if (temp_list->instance_id == instance_id) {
+			return &temp_list->container;
+		}
+		temp_list = temp_list->next;
+	}
+}
+
+#endif /* SUPPORT_CONTAINER */
+
+static char* __get_asm_pipe_path(int instance_id, int handle, const char* postfix)
+{
+	char* path = NULL;
+
+#ifdef SUPPORT_CONTAINER
+	container_info_t* container_info = __get_container_info(instance_id);
+
+	if (instance_id == container_info->pid) {
+		debug_error ("This might be in the HOST(%s)[%d], let's form normal path",
+					container_info->name, instance_id);
+		path = g_strdup_printf("/tmp/ASM.%d.%d", instance_id, handle);
+	} else {
+		path = g_strdup_printf("/var/lib/lxc/%s/rootfs/tmp/ASM.%d.%d",
+								container_info->name, container_info->pid, handle);
+	}
+#else
+	path = g_strdup_printf("/tmp/ASM.%d.%d", instance_id, handle);
+#endif
+	if (path && postfix)
+		strcat(path, postfix);
+
+	return path;
+}
+
 /* callback without retcb */
 void __do_callback_wo_retcb(int instance_id,int handle,int command)
 {
 	int fd_ASM = -1, cur_handle = 0;
-	char *filename = g_strdup_printf("/tmp/ASM.%d.%d", instance_id, handle);
+	char *filename = __get_asm_pipe_path(instance_id, handle, NULL);
 
 	if ((fd_ASM = open(filename,O_WRONLY|O_NONBLOCK)) < 0) {
 		debug_log("[CallCB] %s open error",filename);
@@ -785,7 +854,7 @@ int __do_callback(int instance_id, int handle, int command, ASM_event_sources_t 
 	 * Open callback cmd pipe
 	 *
 	 **************************************/
-	filename = g_strdup_printf("/tmp/ASM.%d.%d", instance_id, handle);
+	filename = __get_asm_pipe_path(instance_id, handle, NULL);
 	if ((fd_ASM = open(filename, O_WRONLY|O_NONBLOCK)) < 0) {
 		debug_error("[CallCB] %s open error\n", filename);
 		goto fail;
@@ -797,7 +866,7 @@ int __do_callback(int instance_id, int handle, int command, ASM_event_sources_t 
 	 * before writing callback cmd to pipe
 	 *
 	 ******************************************/
-	filename2 = g_strdup_printf("/tmp/ASM.%d.%dr", instance_id, handle);
+	filename2 = __get_asm_pipe_path(instance_id, handle, "r");
 	if ((fd=open(filename2,O_RDONLY|O_NONBLOCK))== -1) {
 		char str_error[256];
 		strerror_r (errno, str_error, sizeof(str_error));
@@ -974,7 +1043,7 @@ int __do_watch_callback(ASM_sound_events_t sound_event, ASM_sound_states_t updat
 		 * Open callback cmd pipe
 		 *
 		 **************************************/
-		filename = g_strdup_printf("/tmp/ASM.%d.%d", instance_id_list[num], handle_list[num]);
+		filename = __get_asm_pipe_path(instance_id_list[num], handle_list[num], NULL);
 		if ((fd_ASM = open(filename, O_WRONLY|O_NONBLOCK)) < 0) {
 			debug_error("[CallCB] %s open error\n", filename);
 			goto fail;
@@ -986,7 +1055,7 @@ int __do_watch_callback(ASM_sound_events_t sound_event, ASM_sound_states_t updat
 		 * before writing callback cmd to pipe
 		 *
 		 ******************************************/
-		filename2 = g_strdup_printf("/tmp/ASM.%d.%dr", instance_id_list[num], handle_list[num]);
+		filename2 = __get_asm_pipe_path(instance_id_list[num], handle_list[num], "r");
 		if ((fd=open(filename2,O_RDONLY|O_NONBLOCK))== -1) {
 			char str_error[256];
 			strerror_r (errno, str_error, sizeof(str_error));
@@ -1111,6 +1180,29 @@ void __temp_print_list(char * msg)
 	}
 	while (temp_list != NULL) {
 		if (!temp_list->is_registered_for_watching) {
+#ifdef SUPPORT_CONTAINER
+			if (!ASM_IS_ADVANCED_ASM_EVENT(temp_list->sound_event)) {
+				debug_msg(" List[%02d] ( %10s, %5d(%5d), %2d, %-22s, %-15s, %9s checked by%5d/%d, 0x%04x, 0x%04x)\n" , i,
+												temp_list->container.name,
+												temp_list->instance_id, temp_list->container.pid, temp_list->sound_handle,
+												ASM_sound_event_str[temp_list->sound_event],
+												ASM_sound_state_str[temp_list->sound_state],
+												ASM_sound_resume_str[temp_list->need_resume],
+												temp_list->paused_by_id.pid,
+												temp_list->paused_by_id.sound_handle,
+												temp_list->mm_resource,
+												temp_list->option_flags);
+			} else {
+				debug_msg(" List[%02d] ( %10s, %5d(%5d), %2d, %-22s, %-15s, %-15s, 0x%04x)\n", i,
+												temp_list->container.name,
+												temp_list->instance_id, temp_list->container.pid,
+												temp_list->sound_handle,
+												ASM_sound_event_str[temp_list->sound_event],
+												ASM_sound_state_str[temp_list->sound_state],
+												ASM_sound_sub_event_str[temp_list->sound_sub_event],
+												temp_list->mm_resource);
+			}
+#else
 			if (!ASM_IS_ADVANCED_ASM_EVENT(temp_list->sound_event)) {
 				debug_msg(" List[%02d] ( %5d, %2d, %-22s, %-15s, %9s checked by%5d/%d, 0x%04x, 0x%04x)\n" , i,
 												temp_list->instance_id, temp_list->sound_handle,
@@ -1130,6 +1222,7 @@ void __temp_print_list(char * msg)
 												ASM_sound_sub_event_str[temp_list->sound_sub_event],
 												temp_list->mm_resource);
 			}
+#endif
 			i++;
 		}
 		temp_list = temp_list->next;
@@ -1138,10 +1231,18 @@ void __temp_print_list(char * msg)
 	debug_log(" listed below are requests for watching session\n");
 	while (temp_list != NULL) {
 		if (temp_list->is_registered_for_watching) {
+#ifdef SUPPORT_CONTAINER
+			debug_msg(" List[%02d] ( %10s, %5d(%5d), %2d, %-22s, %-15s, %5s)\n", i, temp_list->container.name,
+												temp_list->instance_id, temp_list->container.pid, temp_list->sound_handle,
+												ASM_sound_event_str[temp_list->sound_event],
+												ASM_sound_state_str[temp_list->sound_state],
+												"WATCHING");
+#else
 			debug_msg(" List[%02d] ( %5d, %2d, %-22s, %-15s, %5s)\n", i, temp_list->instance_id, temp_list->sound_handle,
 												ASM_sound_event_str[temp_list->sound_event],
 												ASM_sound_state_str[temp_list->sound_state],
 												"WATCHING");
+#endif
 			i++;
 		}
 		temp_list = temp_list->next;
@@ -1208,6 +1309,12 @@ asm_instance_list_t* __asm_register_list(int instance_id, int handle, ASM_sound_
 	temp_list->monitor_active = 0;
 	temp_list->monitor_dirty = 0;
 	temp_list->is_registered_for_watching = is_requested_for_watching;
+#ifdef SUPPORT_CONTAINER
+	memset (&temp_list->container, 0, sizeof (container_info_t));
+	strcpy (temp_list->container.name, "NONAME");
+	temp_list->container.pid = instance_id;
+#endif
+
 	temp_list->next = head_list_ptr;
 	head_list_ptr = temp_list;
 	if (tail_list_ptr == NULL) {
@@ -1269,6 +1376,7 @@ gboolean ___is_pid_exist(int pid)
 	if (pid > 999999 || pid < 2)
 		return FALSE;
 	gchar *tmp = g_malloc0(25);
+
 	g_sprintf(tmp, "/proc/%d", pid);
 	if (access(tmp, R_OK)==0) {
 		g_free(tmp);
@@ -1339,7 +1447,7 @@ void __reset_resume_check(int instance_id, int handle)
 	}
 }
 
-void __emergent_exit(int exit_pid)
+static void __emergent_exit(int exit_pid)
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 	int handle = ASM_HANDLE_INIT_VAL;
@@ -1348,13 +1456,10 @@ void __emergent_exit(int exit_pid)
 	while (temp_list != NULL) {
 		if (temp_list->instance_id == exit_pid) {
 			handle = temp_list->sound_handle;
-
-			instance_id = __asm_unregister_list(handle);
-
-			if (instance_id != -1) {
+			if (temp_list->instance_id != -1) {
 				char str_error[256];
-				char* filename = g_strdup_printf("/tmp/ASM.%d.%d", instance_id, handle);
-				char* filename2 = g_strdup_printf("/tmp/ASM.%d.%dr", instance_id, handle);
+				char* filename = __get_asm_pipe_path(temp_list->instance_id, handle, NULL);
+				char* filename2 = __get_asm_pipe_path(temp_list->instance_id, handle, "r");
 				if (!remove(filename)) {
 					debug_log(" remove %s success\n", filename);
 				} else {
@@ -1372,6 +1477,7 @@ void __emergent_exit(int exit_pid)
 				g_free(filename);
 				g_free(filename2);
 			}
+			instance_id = __asm_unregister_list(handle);
 			temp_list = head_list_ptr;
 		} else {
 			temp_list = temp_list->next;
@@ -3254,6 +3360,14 @@ int _mm_sound_mgr_asm_emergent_exit(int rcv_pid, int rcv_handle, int rcv_sound_e
 	return ret;
 
 }
+
+#ifdef SUPPORT_CONTAINER
+void _mm_sound_mgr_asm_update_container_data(int handle, const char* container_name, int container_pid)
+{
+	__set_container_data(handle, container_name, container_pid);
+	__temp_print_list(NULL);
+}
+#endif
 
 int __asm_process_message (void *rcv_msg, void *ret_msg)
 {

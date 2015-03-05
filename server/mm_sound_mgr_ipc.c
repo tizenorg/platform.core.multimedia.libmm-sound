@@ -371,12 +371,18 @@ int __mm_sound_mgr_ipc_unwatch_focus(int pid)
 
 /************************************** ASM ***************************************/
 int __mm_sound_mgr_ipc_asm_register_sound(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+#ifdef SUPPORT_CONTAINER
+						const char* container_name, int container_pid,
+#endif
 					  int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
 					  int* request_id_r, int* sound_command_r, int* sound_state_r )
 {
 	int ret = MM_ERROR_NONE;
 	ret = _mm_sound_mgr_asm_register_sound(pid, handle, sound_event, request_id, sound_state, resource,
 						      pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_command_r, sound_state_r);
+#ifdef SUPPORT_CONTAINER
+	_mm_sound_mgr_asm_update_container_data(*alloc_handle_r, container_name, container_pid);
+#endif
 	return ret;
 }
 
@@ -388,12 +394,18 @@ int __mm_sound_mgr_ipc_asm_unregister_sound(int pid, int handle, int sound_event
 }
 
 int __mm_sound_mgr_ipc_asm_register_watcher(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+#ifdef SUPPORT_CONTAINER
+						const char* container_name, int container_pid,
+#endif
 					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
 					    int* request_id_r, int* sound_command_r, int* sound_state_r )
 {
 	int ret = MM_ERROR_NONE;
 	ret = _mm_sound_mgr_asm_register_watcher(pid, handle, sound_event, request_id, sound_state, resource,
 						  pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_command_r, sound_state_r);
+#ifdef SUPPORT_CONTAINER
+	_mm_sound_mgr_asm_update_container_data(*alloc_handle_r, container_name, container_pid);
+#endif
 
 	return ret;
 }

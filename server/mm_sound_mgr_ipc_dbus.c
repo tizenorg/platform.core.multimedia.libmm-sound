@@ -84,6 +84,9 @@
   "      <arg type='i' name='device_out' direction='out'/>"
   "    </method>"
   "    <method name='ASMRegisterSound'>"
+#ifdef SUPPORT_CONTAINER
+  "      <arg name='container' type='s' direction='in'/>"
+#endif
   "      <arg name='rcv_pid' type='i' direction='in'/>"
   "      <arg name='rcv_handle' type='i' direction='in'/>"
   "      <arg name='rcv_sound_event' type='i' direction='in'/>"
@@ -106,6 +109,9 @@
   "      <arg name='rcv_resource' type='i' direction='in'/>"
   "    </method>"
   "    <method name='ASMRegisterWatcher'>"
+#ifdef SUPPORT_CONTAINER
+  "      <arg name='container' type='s' direction='in'/>"
+#endif
   "      <arg name='rcv_pid' type='i' direction='in'/>"
   "      <arg name='rcv_handle' type='i' direction='in'/>"
   "      <arg name='rcv_sound_event' type='i' direction='in'/>"
@@ -624,6 +630,31 @@ static int mm_sound_mgr_ipc_dbus_send_signal(int signal_type, GVariant *paramete
 	return ret;
 }
 
+static int _get_sender_pid(GDBusMethodInvocation* invocation)
+{
+	GVariant* value;
+	guint pid;
+	const gchar* sender;
+	GDBusConnection * connection = NULL;
+	GError* err = NULL;
+
+	connection = g_dbus_method_invocation_get_connection(invocation);
+	sender = g_dbus_method_invocation_get_sender(invocation);
+
+	debug_error ("connection = %p, sender = %s", connection, sender);
+
+	value = g_dbus_connection_call_sync (connection, "org.freedesktop.DBus", "/org/freedesktop/DBus",
+										"org.freedesktop.DBus", "GetConnectionUnixProcessID",
+										g_variant_new("(s)", sender, NULL), NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &err);
+	if (value) {
+		g_variant_get(value, "(u)", &pid);
+		debug_error ("Sender PID = [%d]", pid);
+	} else {
+		debug_error ("err code = %d, err msg = %s", err->code, err->message);
+	}
+	return pid;
+}
+
 
 static void handle_method_test(GDBusMethodInvocation* invocation)
 {
@@ -685,7 +716,7 @@ static void handle_method_play_file_start(GDBusMethodInvocation* invocation)
 	    goto send_reply;
 	}
 	ret = _MMSoundMgrIpcPlayFile(filename, tone, repeat, volume, vol_config, priority,
-				     session_type, session_option, pid, keytone, handle_route, enable_session, &slotid);
+				session_type, session_option, _get_sender_pid(invocation), keytone, handle_route, enable_session, &slotid);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -718,7 +749,7 @@ static void handle_method_play_dtmf(GDBusMethodInvocation* invocation)
 	g_variant_get(params, "(iiiiiiib)", &tone, &repeat, &volume,
 		      &vol_config, &session_type, &session_option, &pid, &enable_session);
 	ret = _MMSoundMgrIpcPlayDTMF(tone, repeat, volume, vol_config,
-				     session_type, session_option, pid, enable_session, &slotid);
+				     session_type, session_option, _get_sender_pid(invocation), enable_session, &slotid);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1053,13 +1084,16 @@ send_reply:
 
 /*********************** ASM METHODS ****************************/
 // TODO : Too many arguments..
-
 static void handle_method_asm_register_sound(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int pid = 0, handle = 0, sound_event = 0, request_id = 0, sound_state = 0, resource = 0;
 	int pid_r = 0, alloc_handle_r = 0, cmd_handle_r = 0, request_id_r = 0, sound_command_r = 0, sound_state_r = 0;
 	GVariant *params = NULL;
+#ifdef SUPPORT_CONTAINER
+	int container_pid = -1;
+	const char* container = NULL;
+#endif
 
 	debug_fenter();
 	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
@@ -1067,10 +1101,16 @@ static void handle_method_asm_register_sound(GDBusMethodInvocation* invocation)
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto send_reply;
 	}
-
+#ifdef SUPPORT_CONTAINER
+	g_variant_get(params, "(siiiiii)", &container, &container_pid, &handle, &sound_event, &request_id, &sound_state, &resource);
+#else
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_register_sound(pid, handle, sound_event, request_id, sound_state, resource,
-						      &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
+#endif
+	ret = __mm_sound_mgr_ipc_asm_register_sound(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
+#ifdef SUPPORT_CONTAINER
+					container, container_pid,
+#endif
+					&pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1100,7 +1140,7 @@ static void handle_method_asm_unregister_sound(GDBusMethodInvocation* invocation
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_unregister_sound(pid, handle, sound_event, request_id, sound_state, resource);
+	ret = __mm_sound_mgr_ipc_asm_unregister_sound(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1120,6 +1160,10 @@ static void handle_method_asm_register_watcher(GDBusMethodInvocation* invocation
 	int pid = 0, handle = 0, sound_event = 0, request_id = 0, sound_state = 0, resource = 0;
 	int pid_r = 0, alloc_handle_r = 0, cmd_handle_r = 0, request_id_r = 0, sound_command_r = 0, sound_state_r = 0;
 	GVariant *params = NULL;
+#ifdef SUPPORT_CONTAINER
+	int container_pid = -1;
+	const char* container = NULL;
+#endif
 
 	debug_fenter();
 
@@ -1129,9 +1173,16 @@ static void handle_method_asm_register_watcher(GDBusMethodInvocation* invocation
 		goto send_reply;
 	}
 
+#ifdef SUPPORT_CONTAINER
+	g_variant_get(params, "(siiiiii)", &container, &container_pid, &handle, &sound_event, &request_id, &sound_state, &resource);
+#else
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_register_watcher(pid, handle, sound_event, request_id, sound_state, resource,
-						      &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
+#endif
+	ret = __mm_sound_mgr_ipc_asm_register_watcher(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
+#ifdef SUPPORT_CONTAINER
+					container, container_pid,
+#endif
+					&pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1161,7 +1212,7 @@ static void handle_method_asm_unregister_watcher(GDBusMethodInvocation* invocati
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_unregister_watcher(pid, handle, sound_event, request_id, sound_state, resource);
+	ret = __mm_sound_mgr_ipc_asm_unregister_watcher(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1191,7 +1242,7 @@ static void handle_method_asm_get_mystate(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_get_mystate(pid, handle, sound_event, request_id, sound_state, resource,
+	ret = __mm_sound_mgr_ipc_asm_get_mystate(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
 						      &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_state_r);
 
 send_reply:
@@ -1223,7 +1274,7 @@ static void handle_method_asm_set_state(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_set_state(pid, handle, sound_event, request_id, sound_state, resource,
+	ret = __mm_sound_mgr_ipc_asm_set_state(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
 						      &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r, &error_code_r);
 
 send_reply:
@@ -1287,7 +1338,7 @@ static void handle_method_asm_set_subsession(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_set_subsession(pid, handle, sound_event, request_id, sound_state, resource,
+	ret = __mm_sound_mgr_ipc_asm_set_subsession(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
 						      &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r);
 
 send_reply:
@@ -1319,7 +1370,7 @@ static void handle_method_asm_get_subsession(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_get_subsession(pid, handle, sound_event, request_id, sound_state, resource,
+	ret = __mm_sound_mgr_ipc_asm_get_subsession(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
 						      &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r);
 
 send_reply:
@@ -1351,7 +1402,7 @@ static void handle_method_asm_set_subevent(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_set_subevent(pid, handle, sound_event, request_id, sound_state, resource,
+	ret = __mm_sound_mgr_ipc_asm_set_subevent(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
 						   &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
 
 send_reply:
@@ -1383,7 +1434,7 @@ static void handle_method_asm_get_subevent(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_get_subevent(pid, handle, sound_event, request_id, sound_state, resource,
+	ret = __mm_sound_mgr_ipc_asm_get_subevent(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
 						   &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r);
 
 send_reply:
@@ -1415,7 +1466,7 @@ static void handle_method_asm_set_session_option(GDBusMethodInvocation* invocati
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_set_session_option(pid, handle, sound_event, request_id, sound_state, resource,
+	ret = __mm_sound_mgr_ipc_asm_set_session_option(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
 						&pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &error_code_r);
 
 send_reply:
@@ -1447,7 +1498,7 @@ static void handle_method_asm_get_session_option(GDBusMethodInvocation* invocati
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_get_session_option(pid, handle, sound_event, request_id, sound_state, resource,
+	ret = __mm_sound_mgr_ipc_asm_get_session_option(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
 					     &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &option_flag_r);
 
 send_reply:
@@ -1479,7 +1530,7 @@ static void handle_method_asm_reset_resume_tag(GDBusMethodInvocation* invocation
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_reset_resume_tag(pid, handle, sound_event, request_id, sound_state, resource,
+	ret = __mm_sound_mgr_ipc_asm_reset_resume_tag(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
 					  &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
 
 send_reply:
@@ -1511,7 +1562,7 @@ static void handle_method_asm_dump(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-	ret = __mm_sound_mgr_ipc_asm_dump(pid, handle, sound_event, request_id, sound_state, resource);
+	ret = __mm_sound_mgr_ipc_asm_dump(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1524,6 +1575,7 @@ send_reply:
 
 	debug_fleave();
 }
+
 /****************************************************************/
 
 

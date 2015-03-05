@@ -59,6 +59,9 @@ int _mm_sound_mgr_asm_emergent_exit(int rcv_pid, int rcv_handle, int rcv_sound_e
 
 int __asm_process_message (void *asm_rcv_msg, void *asm_ret_msg);
 
+#ifdef SUPPORT_CONTAINER
+void _mm_sound_mgr_asm_update_container_data(int instance_id, const char* container_name, int container_pid);
+#endif
 
 #endif /* __MM_SOUND_MGR_ASM_H__ */
 

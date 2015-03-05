@@ -79,13 +79,17 @@ int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type);
 //int __mm_sound_mgr_ipc_unset_focus_watch_cb(mm_ipc_msg_t *msg);
 int __mm_sound_mgr_ipc_unwatch_focus(int pid);
 #endif
-
-
 int __mm_sound_mgr_ipc_asm_register_sound(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+#ifdef SUPPORT_CONTAINER
+						const char* container_name, int container_pid,
+#endif
 					  int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
-					  int* request_id_r, int* sound_cmd_r, int* sound_state_r );
+					  int* request_id_r, int* sound_command_r, int* sound_state_r );
 int __mm_sound_mgr_ipc_asm_unregister_sound(int pid, int handle, int sound_event, int request_id, int sound_state, int resource);
 int __mm_sound_mgr_ipc_asm_register_watcher(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
+#ifdef SUPPORT_CONTAINER
+						const char* container_name, int container_pid,
+#endif
 					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
 					    int* request_id_r, int* sound_cmd_r, int* sound_state_r );
 int __mm_sound_mgr_ipc_asm_unregister_watcher(int pid, int handle, int sound_event, int request_id, int sound_state, int resource);
