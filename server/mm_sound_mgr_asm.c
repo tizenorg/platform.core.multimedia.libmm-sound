@@ -756,9 +756,10 @@ static void __set_container_data(int handle, const char* container_name, int con
 
 	while (temp_list != NULL) {
 		if (temp_list->sound_handle == handle) {
-			debug_error("Set container [%s][%d] to handle[%d] instanceID[%d]", container_name, container_pid,
-					handle, temp_list->instance_id);
-			strcpy (temp_list->container.name, container_name);
+			debug_error("Set container [%s][%d] to handle[%d] instanceID[%d]",
+						container_name, container_pid, handle, temp_list->instance_id);
+			if (container_name)
+				strcpy (temp_list->container.name, container_name);
 			temp_list->container.pid = container_pid;
 			break;
 		}
@@ -777,7 +778,6 @@ static container_info_t* __get_container_info(int instance_id)
 		temp_list = temp_list->next;
 	}
 }
-
 #endif /* SUPPORT_CONTAINER */
 
 static char* __get_asm_pipe_path(int instance_id, int handle, const char* postfix)

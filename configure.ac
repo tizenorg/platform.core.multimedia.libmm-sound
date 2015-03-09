@@ -91,6 +91,25 @@ AC_SUBST(TREMOLO_LIBS)
 fi
 AM_CONDITIONAL([OGG_SUPPORT], [test "x$OGG_SUPPORT" = "xyes"])
 
+dnl use security ---------------------------------------------------------------
+AC_ARG_ENABLE(security, AC_HELP_STRING([--enable-security], [using security]),
+[
+    case "${enableval}" in
+    yes) USE_SECURITY=yes ;;
+    no)  USE_SECURITY=no ;;
+    *)   AC_MSG_ERROR(bad value ${enableval} for --enable-security) ;;
+    esac
+],[USE_SECURITY=no])
+
+if test "x$USE_SECURITY" = "xyes"; then
+    PKG_CHECK_MODULES(SECURITY, security-server)
+    AC_SUBST(SECURITY_CFLAGS)
+    AC_SUBST(SECURITY_LIBS)
+fi
+AM_CONDITIONAL(USE_SECURITY, test "x$USE_SECURITY" = "xyes")
+dnl end ------------------------------------------------------------------------
+
+
 AC_ARG_ENABLE(focus, AC_HELP_STRING([--enable-focus], [enable focus feature]),
 [
  case "${enableval}" in

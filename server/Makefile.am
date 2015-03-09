@@ -48,6 +48,11 @@ sound_server_CFLAGS += -DPULSE_CLIENT $(PA_CFLAGS) $(PASIMPLE_CFLAGS)
 sound_server_LDADD += $(PA_LIBS) $(PASIMPLE_CFLAGS)
 endif
 
+if USE_SECURITY
+sound_server_CFLAGS += $(SECURITY_CFLAGS) -DUSE_SECURITY
+sound_server_LDADD += $(SECURITY_LIBS)
+endif
+
 if USE_FOCUS
 sound_server_SOURCES += mm_sound_mgr_focus.c
 endif

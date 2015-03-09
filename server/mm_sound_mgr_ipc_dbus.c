@@ -12,6 +12,10 @@
 #include <gio/gio.h>
 #include <glib.h>
 
+#ifdef USE_SECURITY
+#include <security-server.h>
+#define COOKIE_SIZE 20
+#endif
 
 #include "include/mm_sound_mgr_ipc_dbus.h"
 #include "include/mm_sound_mgr_ipc.h"
@@ -85,7 +89,11 @@
   "    </method>"
   "    <method name='ASMRegisterSound'>"
 #ifdef SUPPORT_CONTAINER
+#ifdef USE_SECURITY
+  "      <arg name='container' type='ay' direction='in'/>"
+#else
   "      <arg name='container' type='s' direction='in'/>"
+#endif
 #endif
   "      <arg name='rcv_pid' type='i' direction='in'/>"
   "      <arg name='rcv_handle' type='i' direction='in'/>"
@@ -110,7 +118,11 @@
   "    </method>"
   "    <method name='ASMRegisterWatcher'>"
 #ifdef SUPPORT_CONTAINER
+#ifdef USE_SECURITY
+  "      <arg name='container' type='ay' direction='in'/>"
+#else
   "      <arg name='container' type='s' direction='in'/>"
+#endif
 #endif
   "      <arg name='rcv_pid' type='i' direction='in'/>"
   "      <arg name='rcv_handle' type='i' direction='in'/>"
@@ -1083,6 +1095,34 @@ send_reply:
 }
 
 /*********************** ASM METHODS ****************************/
+
+#ifdef SUPPORT_CONTAINER
+#ifdef USE_SECURITY
+static char* _get_container_from_cookie(GVariant* cookie_data)
+{
+	char* container = NULL;
+	int cookie_len = 0;
+	char* cookie = NULL;
+	int ret = 0;
+
+	cookie_len = g_variant_get_size(cookie_data);
+	if (cookie_len != COOKIE_SIZE) {
+		debug_error ("cookie_len = [%d]", cookie_len);
+		return NULL;
+	}
+
+	ret = security_server_get_zone_by_cookie(g_variant_get_data(cookie_data), &container);
+	if (ret == SECURITY_SERVER_API_SUCCESS) {
+		debug_error ("success!!!! zone = [%s]", container);
+	} else {
+		debug_error ("failed!!!! ret = [%d]", ret);
+	}
+
+	return container;
+}
+#endif /* USE_SECURITY */
+#endif /* SUPPORT_CONTAINER */
+
 // TODO : Too many arguments..
 static void handle_method_asm_register_sound(GDBusMethodInvocation* invocation)
 {
@@ -1092,25 +1132,38 @@ static void handle_method_asm_register_sound(GDBusMethodInvocation* invocation)
 	GVariant *params = NULL;
 #ifdef SUPPORT_CONTAINER
 	int container_pid = -1;
-	const char* container = NULL;
-#endif
+	char* container = NULL;
+#ifdef USE_SECURITY
+	GVariant* cookie_data;
+#endif /* USE_SECURITY */
+#endif /* SUPPORT_CONTAINER */
 
 	debug_fenter();
+
 	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
 		debug_error("Parameter for Method is NULL");
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto send_reply;
 	}
+
 #ifdef SUPPORT_CONTAINER
-	g_variant_get(params, "(siiiiii)", &container, &container_pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-#else
-	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-#endif
+#ifdef USE_SECURITY
+	g_variant_get(params, "(@ayiiiiii)", &cookie_data, &container_pid, &handle, &sound_event, &request_id, &sound_state, &resource);
+	container = _get_container_from_cookie(cookie_data);
 	ret = __mm_sound_mgr_ipc_asm_register_sound(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
-#ifdef SUPPORT_CONTAINER
-					container, container_pid,
-#endif
+					container, container_pid, &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
+	if (container)
+		free(container);
+#else /* USE_SECURITY */
+	g_variant_get(params, "(siiiiii)", &container, &container_pid, &handle, &sound_event, &request_id, &sound_state, &resource);
+	ret = __mm_sound_mgr_ipc_asm_register_sound(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
+					container, container_pid, &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
+#endif /* USE_SECURITY */
+#else /* SUPPORT_CONTAINER */
+	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
+	ret = __mm_sound_mgr_ipc_asm_register_sound(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
 					&pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
+#endif /* SUPPORT_CONTAINER */
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1162,8 +1215,11 @@ static void handle_method_asm_register_watcher(GDBusMethodInvocation* invocation
 	GVariant *params = NULL;
 #ifdef SUPPORT_CONTAINER
 	int container_pid = -1;
-	const char* container = NULL;
-#endif
+	char* container = NULL;
+#ifdef USE_SECURITY
+	GVariant* cookie_data;
+#endif /* USE_SECURITY */
+#endif /* SUPPORT_CONTAINER */
 
 	debug_fenter();
 
@@ -1174,15 +1230,23 @@ static void handle_method_asm_register_watcher(GDBusMethodInvocation* invocation
 	}
 
 #ifdef SUPPORT_CONTAINER
-	g_variant_get(params, "(siiiiii)", &container, &container_pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-#else
-	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
-#endif
+#ifdef USE_SECURITY
+	g_variant_get(params, "(@ayiiiiii)", &cookie_data, &container_pid, &handle, &sound_event, &request_id, &sound_state, &resource);
+	container = _get_container_from_cookie(cookie_data);
 	ret = __mm_sound_mgr_ipc_asm_register_watcher(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
-#ifdef SUPPORT_CONTAINER
-					container, container_pid,
-#endif
-					&pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
+						container, container_pid, &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
+	if (container)
+		free(container);
+#else /* USE_SECURITY */
+	g_variant_get(params, "(siiiiii)", &container, &container_pid, &handle, &sound_event, &request_id, &sound_state, &resource);
+	ret = __mm_sound_mgr_ipc_asm_register_watcher(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
+					container, container_pid, &pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
+#endif /* USE_SECURITY */
+#else /* SUPPORT_CONTAINER */
+	g_variant_get(params, "(iiiiii)", &pid, &handle, &sound_event, &request_id, &sound_state, &resource);
+	ret = __mm_sound_mgr_ipc_asm_register_watcher(_get_sender_pid(invocation), handle, sound_event, request_id, sound_state, resource,
+			&pid_r, &alloc_handle_r, &cmd_handle_r, &request_id_r, &sound_command_r, &sound_state_r);
+#endif /* SUPPORT_CONTAINER */
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {

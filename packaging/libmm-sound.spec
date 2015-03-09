@@ -73,9 +73,9 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
        --enable-ogg \
 %endif
 %ifarch %{arm}
-	--prefix=/usr --enable-pulse --enable-focus
+	--prefix=/usr --enable-pulse --enable-focus --disable-security
 %else
-	--prefix=/usr --enable-pulse --enable-focus
+	--prefix=/usr --enable-pulse --enable-focus --disable-security
 %endif
 
 make %{?_smp_mflags}
