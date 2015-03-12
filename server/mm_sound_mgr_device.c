@@ -388,7 +388,7 @@ int _mm_sound_mgr_device_get_current_connected_dev_list(int device_flags, mm_sou
 {
 	int ret = MM_ERROR_NONE;
 	int _dev_num = 0, dev_idx = 0;
-	int dev_list_match_quary[MAX_SUPPORT_DEVICE_NUM] = {0,};
+	int dev_list_match_quary[MAX_SUPPORT_DEVICE_NUM] = {-1,};
 	mm_sound_device_t *device_node = NULL, *_device_node = NULL;
 	GList *list = NULL;
 	bool is_good_to_append = FALSE;
@@ -407,14 +407,14 @@ int _mm_sound_mgr_device_get_current_connected_dev_list(int device_flags, mm_sou
 
 	debug_msg("address of g_connected_device_list[0x%x]", g_connected_device_list);
 
-	for (list = g_connected_device_list; list != NULL; list = list->next) {
+	for (_dev_num = 0, list = g_connected_device_list; list != NULL; _dev_num++, list = list->next) {
 		_device_node = (mm_sound_device_t *)list->data;
 		if (_device_node) {
 			__mm_sound_mgr_device_check_flags_to_append(device_flags, _device_node, &is_good_to_append);
 			if (is_good_to_append) {
+				debug_warning("[DEBUG] is_good_to_append true : %d", dev_idx);
 				dev_list_match_quary[dev_idx++] = _dev_num;
 			}
-			_dev_num++;
 		}
 	}
 

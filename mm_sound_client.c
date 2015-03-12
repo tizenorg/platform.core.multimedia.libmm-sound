@@ -564,7 +564,7 @@ int _mm_sound_client_get_current_connected_device_list(int device_flags, mm_soun
 	}
 	if (!g_device_list_t.list) {
 		debug_error("Got device list null");
-		ret = MM_ERROR_SOUND_INTERNAL;
+		ret = MM_ERROR_SOUND_NO_DATA;
 		goto failed;
 	}
 //		g_device_list_t.list = g_device_list;
