@@ -673,11 +673,11 @@ send_reply:
 
 static void handle_method_play_file_start(GDBusMethodInvocation* invocation)
 {
-	char* filename = NULL;
-	int ret = MM_ERROR_NONE, slotid = 0;
-	int tone = 0, repeat = 0, volume = 0, vol_config = 0, priority = 0;
-	int session_type = 0, session_option = 0, pid = 0, keytone = 0, handle_route =0;
-	bool enable_session = 0;
+	gchar* filename = NULL;
+	gint32 ret = MM_ERROR_NONE, slotid = 0;
+	gint32 tone = 0, repeat = 0, volume = 0, vol_config = 0, priority = 0;
+	gint32 session_type = 0, session_option = 0, pid = 0, keytone = 0, handle_route =0;
+	gboolean enable_session = 0;
 	GVariant *params = NULL;
 
 	debug_fenter();
@@ -690,6 +690,11 @@ static void handle_method_play_file_start(GDBusMethodInvocation* invocation)
 
 	g_variant_get(params, "(siiiiiiiiiib)", &filename, &tone, &repeat, &volume,
 		      &vol_config, &priority, &session_type, &session_option, &pid, &keytone, &handle_route, &enable_session);
+	if (!filename) {
+	    debug_error("filename null");
+	    ret = MM_ERROR_SOUND_INTERNAL;
+	    goto send_reply;
+	}
 	ret = _MMSoundMgrIpcPlayFile(filename, tone, repeat, volume, vol_config, priority,
 				     session_type, session_option, pid, keytone, handle_route, enable_session, &slotid);
 
