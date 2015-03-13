@@ -715,7 +715,7 @@ static void handle_method_play_dtmf(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE, slotid = 0;
 	int tone = 0, repeat = 0, volume = 0, vol_config = 0, session_type = 0, session_option = 0, pid = 0;
-	bool enable_session = 0;
+	gboolean enable_session = 0;
 	GVariant *params = NULL;
 
 	debug_fenter();
@@ -774,8 +774,8 @@ send_reply:
 static void handle_method_get_bt_a2dp_status(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
-	bool is_bt_on = FALSE;
-	char* bt_name = NULL;
+	gboolean is_bt_on = FALSE;
+	gchar* bt_name = NULL;
 
 	debug_fenter();
 
@@ -1726,7 +1726,7 @@ error:
 	return -1;
 }
 
-int __mm_sound_mgr_ipc_dbus_notify_device_connected (mm_sound_device_t *device, bool is_connected)
+int __mm_sound_mgr_ipc_dbus_notify_device_connected (mm_sound_device_t *device, gboolean is_connected)
 {
 	int ret = MM_ERROR_NONE;
 	GVariantBuilder builder;

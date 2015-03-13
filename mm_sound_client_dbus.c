@@ -373,7 +373,7 @@ static void __MMDbusSignalCB (GDBusConnection  *connection,
 	} else if (user_cb->sig_type == SOUND_SERVER_SIGNAL_DEVICE_CONNECTED) {
 		mm_sound_device_t device_h;
 		const char* name = NULL;
-		bool is_connected = FALSE;
+		gboolean is_connected = FALSE;
 
 		g_variant_get(params, "((iiii&s)b)", &device_h.id, &device_h.type, &device_h.io_direction,
 					&device_h.state, &name, &is_connected);
@@ -649,8 +649,8 @@ int MMSoundClientDbusIsBtA2dpOn (bool *connected, char** bt_name)
 {
 	int ret = MM_ERROR_NONE;
 	GVariant* result = NULL;
-	bool _connected;
-	char* _bt_name = NULL;
+	gboolean _connected;
+	gchar* _bt_name = NULL;
 
 	debug_fenter();
 
@@ -661,10 +661,9 @@ int MMSoundClientDbusIsBtA2dpOn (bool *connected, char** bt_name)
 
 	*connected = _connected;
 	if (_connected)
-		bt_name = _bt_name;
+		*bt_name = _bt_name;
 	else
-		bt_name = NULL;
-
+		*bt_name = NULL;
 cleanup:
 	if (result)
 		g_variant_unref(result);
@@ -733,6 +732,7 @@ int MMSoundClientDbusPlayTone(int tone, int repeat, int volume, int volume_confi
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
 	GVariant* params = NULL, *result = NULL;
+	gboolean _enable_session = enable_session;
 
 	if (!codechandle) {
 		debug_error("Param for play is null");
@@ -742,7 +742,7 @@ int MMSoundClientDbusPlayTone(int tone, int repeat, int volume, int volume_confi
 	debug_fenter();
 
 	params = g_variant_new("(iiiiiiib)", tone, repeat, volume,
-		      volume_config, session_type, session_options, client_pid , enable_session);
+		      volume_config, session_type, session_options, client_pid , _enable_session);
 	if (params) {
 		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_PLAY_DTMF, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus play tone failed");
@@ -778,6 +778,7 @@ int MMSoundClientDbusPlaySound(char* filename, int tone, int repeat, int volume,
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
 	GVariant* params = NULL, *result = NULL;
+	gboolean _enable_session = enable_session;
 
 	if (!filename || !codechandle) {
 		debug_error("Param for play is null");
@@ -787,7 +788,7 @@ int MMSoundClientDbusPlaySound(char* filename, int tone, int repeat, int volume,
 	debug_fenter();
 
 	params = g_variant_new("(siiiiiiiiiib)", filename, tone, repeat, volume,
-		      volume_config, priority, session_type, session_options, client_pid, keytone, handle_route, enable_session);
+		      volume_config, priority, session_type, session_options, client_pid, keytone, handle_route, _enable_session);
 	if (params) {
 		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_PLAY_FILE_START, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus play file failed");

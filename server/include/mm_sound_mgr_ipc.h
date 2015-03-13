@@ -42,13 +42,13 @@ int MMSoundMgrIpcFini(void);
 /* Msg processing */
 int _MMSoundMgrIpcPlayFile(char* filename, int tone, int repeat, int volume, int volume_config,
 			   int priority, int session_type, int session_options, int client_pid, int keytone,  int handle_route,
-			   bool enable_session, int *codechandle);
+			   gboolean enable_session, int *codechandle);
 //int _MMSoundMgrIpcStop(mm_ipc_msg_t *msg);
 int _MMSoundMgrIpcStop(int handle);
 //int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg);
 int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 			   int session_type, int session_options, int client_pid,
-			   bool enable_session, int *codechandle);
+			   gboolean enable_session, int *codechandle);
 /*
 int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg);
 int __mm_sound_mgr_ipc_is_route_available(mm_ipc_msg_t *msg, bool *is_available);
@@ -130,7 +130,7 @@ int _MMIpcCBMsgEnQueueAgain(mm_ipc_msg_t *msg);
 int __mm_sound_mgr_ipc_freeze_send (char* command, int pid);
 
 int __mm_sound_mgr_ipc_notify_play_file_end (int handle);
-int __mm_sound_mgr_ipc_notify_device_connected (mm_sound_device_t *device, bool is_connected);
+int __mm_sound_mgr_ipc_notify_device_connected (mm_sound_device_t *device, gboolean is_connected);
 int __mm_sound_mgr_ipc_notify_device_info_changed (mm_sound_device_t *device, int changed_device_info_type);
 int __mm_sound_mgr_ipc_notify_volume_changed(unsigned int vol_type, unsigned int value);
 int __mm_sound_mgr_ipc_notify_active_device_changed(int device_in, int device_out);

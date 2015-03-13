@@ -67,7 +67,7 @@
 // except msgid
 int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int volume_config,
 			   int priority, int session_type, int session_options, int client_pid, int keytone, int handle_route,
-			   bool enable_session, int *codechandle)
+			   gboolean enable_session, int *codechandle)
 {
 	mmsound_mgr_codec_param_t param = {0,};
 	MMSourceType *source = NULL;
@@ -176,7 +176,7 @@ int _MMSoundMgrIpcStop(int handle)
 
 int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 			   int session_type, int session_options, int client_pid,
-			   bool enable_session, int *codechandle)
+			   gboolean enable_session, int *codechandle)
 {
 	mmsound_mgr_codec_param_t param = {0,};
 	int ret = MM_ERROR_NONE;
@@ -542,7 +542,7 @@ int __mm_sound_mgr_ipc_notify_play_file_end (int handle)
 	return __mm_sound_mgr_ipc_dbus_notify_play_file_end(handle);
 }
 
-int __mm_sound_mgr_ipc_notify_device_connected (mm_sound_device_t *device, bool is_connected)
+int __mm_sound_mgr_ipc_notify_device_connected (mm_sound_device_t *device, gboolean is_connected)
 {
 	return __mm_sound_mgr_ipc_dbus_notify_device_connected(device, is_connected);
 }
