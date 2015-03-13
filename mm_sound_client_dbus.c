@@ -1,5 +1,10 @@
 #include <gio/gio.h>
 #include <glib.h>
+#include <poll.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include <mm_error.h>
 #include <mm_debug.h>
@@ -19,12 +24,52 @@
 #define DBUS_NAME_MAX                   32
 #define DBUS_SIGNATURE_MAX              32
 
+#define FOCUS_HANDLE_MAX 256
+#define FOCUS_HANDLE_INIT_VAL -1
+
+#define CONFIG_ENABLE_RETCB
+
+
+
 struct user_callback {
 	int sig_type;
 	void *cb;
 	void *userdata;
 	int mask;
 };
+
+typedef gboolean (*focus_gLoopPollHandler_t)(gpointer d);
+
+GThread *g_focus_thread;
+GMainLoop *g_focus_loop;
+
+
+typedef struct
+{
+	int focus_tid;
+	int handle;
+	int focus_fd;
+	GSourceFuncs* g_src_funcs;
+	GPollFD* g_poll_fd;
+	GSource* focus_src;
+	bool is_used;
+	GMutex* focus_lock;
+	mm_sound_focus_changed_cb focus_callback;
+	mm_sound_focus_changed_watch_cb watch_callback;
+	void* user_data;
+}FOCUS_sound_info_t;
+
+typedef struct {
+	int pid;
+	int handle;
+	int type;
+	int state;
+	char stream_type [MAX_STREAM_TYPE_LEN];
+	char name [MM_SOUND_NAME_NUM];
+}focus_cb_data_lib;
+
+
+FOCUS_sound_info_t FOCUS_sound_handle[FOCUS_HANDLE_MAX];
 
 guint dbus_subs_ids[SOUND_SERVER_SIGNAL_MAX];
 GQuark mm_sound_error_quark;
@@ -949,23 +994,649 @@ int _mm_sound_client_dbus_set_sound_path_for_active_device(mm_sound_device_out d
 }
 
 #ifdef USE_FOCUS
+
+gpointer __focus_thread_func(gpointer data)
+{
+	debug_log(">>> thread func..ID of this thread(%u)\n", (unsigned int)pthread_self());
+	g_main_loop_run(g_focus_loop);
+	debug_log("<<< quit thread func..\n");
+	return NULL;
+}
+
+gboolean __focus_fd_check(GSource * source)
+{
+	GSList *fd_list;
+	GPollFD *temp;
+
+	if (!source) {
+		debug_error("GSource is null");
+		return FALSE;
+	}
+	fd_list = source->poll_fds;
+	if (!fd_list) {
+		debug_error("fd_list is null");
+		return FALSE;
+	}
+	do {
+		temp = (GPollFD*)fd_list->data;
+		if (!temp) {
+			debug_error("fd_list->data is null");
+			return FALSE;
+		}
+		if (temp->revents & (POLLIN | POLLPRI)) {
+			return TRUE;
+		}
+		fd_list = fd_list->next;
+	} while (fd_list);
+
+	return FALSE; /* there is no change in any fd state */
+}
+
+gboolean __focus_fd_prepare(GSource *source, gint *timeout)
+{
+	return FALSE;
+}
+
+gboolean __focus_fd_dispatch(GSource *source,	GSourceFunc callback, gpointer user_data)
+{
+	callback(user_data);
+	return TRUE;
+}
+
+
+int __focus_find_index_by_handle(int handle)
+{
+	int i = 0;
+	for(i = 0; i< FOCUS_HANDLE_MAX; i++) {
+		if (handle == FOCUS_sound_handle[i].handle) {
+			//debug_msg("found index(%d) for handle(%d)", i, handle);
+			if (handle == FOCUS_HANDLE_INIT_VAL) {
+				return -1;
+			}
+			return i;
+		}
+	}
+	return -1;
+}
+
+int __focus_find_index_by_watch(int pid)
+{
+	int i = 0;
+	for(i = 0; i< FOCUS_HANDLE_MAX; i++) {
+		if (pid == FOCUS_sound_handle[i].focus_tid && FOCUS_sound_handle[i].watch_callback) {
+			//debug_msg("found index(%d) for handle(%d)", i, handle);
+			return i;
+		}
+	}
+	debug_msg("can not find watch callback index with given pid[%d]", pid);
+	return -1;
+}
+
+bool focus_callback_handler(gpointer d)
+{
+	GPollFD *data = (GPollFD*)d;
+	int count;
+	int tid = 0;
+	int focus_index = 0;
+	focus_cb_data_lib cb_data;
+	debug_log(">>> focus_callback_handler()..ID of this thread(%u)\n", (unsigned int)pthread_self());
+
+	memset(&cb_data, 0, sizeof(focus_cb_data_lib));
+
+	if (!data) {
+		debug_error("GPollFd is null");
+		return FALSE;
+	}
+	if (data->revents & (POLLIN | POLLPRI)) {
+		int changed_state = -1;
+
+		count = read(data->fd, &cb_data, sizeof(cb_data));
+		if (count < 0){
+			char str_error[256];
+			strerror_r(errno, str_error, sizeof(str_error));
+			debug_error("GpollFD read fail, errno=%d(%s)",errno, str_error);
+			return FALSE;
+		}
+		changed_state = cb_data.state;
+		focus_index = __focus_find_index_by_handle(cb_data.handle);
+		if (focus_index == -1) {
+			debug_error("Can not find index");
+			return FALSE;
+		}
+
+		if (FOCUS_sound_handle[focus_index].focus_lock) {
+			g_mutex_lock(FOCUS_sound_handle[focus_index].focus_lock);
+		}
+
+		tid = FOCUS_sound_handle[focus_index].focus_tid;
+
+		if (changed_state != -1) {
+			debug_error("Got and start CB : TID(%d), handle(%d), type(%d), state(%d,(DEACTIVATED(0)/ACTIVATED(1)), trigger(%s)", tid, cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type);
+			if (FOCUS_sound_handle[focus_index].focus_callback== NULL) {
+					debug_error("callback is null..");
+			}
+			debug_error("[CALLBACK(%p) START]",FOCUS_sound_handle[focus_index].focus_callback);
+			(FOCUS_sound_handle[focus_index].focus_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, FOCUS_sound_handle[focus_index].user_data);
+			debug_error("[CALLBACK END]");
+		}
+#ifdef CONFIG_ENABLE_RETCB
+
+				int rett = 0;
+				int tmpfd = -1;
+				int buf = 0;
+				char *filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", FOCUS_sound_handle[focus_index].focus_tid, cb_data.handle);
+				tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
+				if (tmpfd < 0) {
+					char str_error[256];
+					strerror_r(errno, str_error, sizeof(str_error));
+					debug_error("[RETCB][Failed(May Server Close First)]tid(%d) fd(%d) %s errno=%d(%s)\n", tid, tmpfd, filename2, errno, str_error);
+					g_free(filename2);
+					if (FOCUS_sound_handle[focus_index].focus_lock) {
+						g_mutex_unlock(FOCUS_sound_handle[focus_index].focus_lock);
+					}
+					return FALSE;
+				}
+				buf = cb_data.handle;
+				rett = write(tmpfd, &buf, sizeof(buf));
+				close(tmpfd);
+				g_free(filename2);
+				debug_msg("[RETCB] tid(%d) finishing CB (write=%d)\n", tid, rett);
+#endif
+	}
+
+
+	if (FOCUS_sound_handle[focus_index].focus_lock) {
+		g_mutex_unlock(FOCUS_sound_handle[focus_index].focus_lock);
+	}
+
+	return TRUE;
+}
+
+gboolean focus_watch_callback_handler( gpointer d)
+{
+	GPollFD *data = (GPollFD*)d;
+	int count;
+	int tid = 0;
+	int focus_index = 0;
+	focus_cb_data_lib cb_data;
+
+	debug_fenter();
+
+	memset(&cb_data, 0, sizeof(focus_cb_data_lib));
+
+	if (!data) {
+		debug_error("GPollFd is null");
+		return FALSE;
+	}
+	if (data->revents & (POLLIN | POLLPRI)) {
+		count = read(data->fd, &cb_data, sizeof(cb_data));
+		if (count < 0){
+			char str_error[256];
+			strerror_r(errno, str_error, sizeof(str_error));
+			debug_error("GpollFD read fail, errno=%d(%s)",errno, str_error);
+			return FALSE;
+		}
+
+		focus_index = __focus_find_index_by_handle(cb_data.handle);
+		if (focus_index == -1) {
+			debug_error("Can not find index");
+			return FALSE;
+		}
+
+		if (FOCUS_sound_handle[focus_index].focus_lock) {
+			g_mutex_lock(FOCUS_sound_handle[focus_index].focus_lock);
+		}
+
+		tid = FOCUS_sound_handle[focus_index].focus_tid;
+
+		debug_error("Got and start CB : TID(%d), handle(%d), type(%d), state(%d,(DEACTIVATED(0)/ACTIVATED(1)), trigger(%s)", tid, cb_data.handle,  cb_data.type, cb_data.state, cb_data.stream_type);
+
+		if (FOCUS_sound_handle[focus_index].watch_callback == NULL) {
+			debug_msg("callback is null..");
+			if (FOCUS_sound_handle[focus_index].focus_lock) {
+				g_mutex_unlock(FOCUS_sound_handle[focus_index].focus_lock);
+			}
+			return FALSE;
+		}
+
+		debug_msg("[CALLBACK(%p) START]",FOCUS_sound_handle[focus_index].watch_callback);
+		(FOCUS_sound_handle[focus_index].watch_callback)(cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, FOCUS_sound_handle[focus_index].user_data);
+		debug_msg("[CALLBACK END]");
+
+#ifdef CONFIG_ENABLE_RETCB
+
+			int rett = 0;
+			int tmpfd = -1;
+			int buf = -1;
+			char *filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", FOCUS_sound_handle[focus_index].focus_tid);
+			tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
+			if (tmpfd < 0) {
+				char str_error[256];
+				strerror_r(errno, str_error, sizeof(str_error));
+				debug_error("[RETCB][Failed(May Server Close First)]tid(%d) fd(%d) %s errno=%d(%s)\n", tid, tmpfd, filename2, errno, str_error);
+				g_free(filename2);
+				if (FOCUS_sound_handle[focus_index].focus_lock) {
+					g_mutex_unlock(FOCUS_sound_handle[focus_index].focus_lock);
+				}
+				return FALSE;
+			}
+			buf = cb_data.handle;
+			rett = write(tmpfd, &buf, sizeof(buf));
+			close(tmpfd);
+			g_free(filename2);
+			debug_msg("[RETCB] tid(%d) finishing CB (fprintf=%d)\n", tid, rett);
+
+#endif
+
+	}
+	debug_fleave();
+
+	if (FOCUS_sound_handle[focus_index].focus_lock) {
+		g_mutex_unlock(FOCUS_sound_handle[focus_index].focus_lock);
+	}
+
+	return TRUE;
+}
+
+void __focus_open_callback(int index, bool is_for_watching)
+{
+	mode_t pre_mask;
+	char *filename;
+
+	debug_fenter();
+
+	if (is_for_watching) {
+		filename = g_strdup_printf("/tmp/FOCUS.%d.wch", FOCUS_sound_handle[index].focus_tid);
+	} else {
+		filename = g_strdup_printf("/tmp/FOCUS.%d.%d", FOCUS_sound_handle[index].focus_tid, FOCUS_sound_handle[index].handle);
+	}
+	pre_mask = umask(0);
+	if (mknod(filename, S_IFIFO|0666, 0)) {
+		debug_error("mknod() failure, errno(%d)", errno);
+	}
+	umask(pre_mask);
+	FOCUS_sound_handle[index].focus_fd = open( filename, O_RDWR|O_NONBLOCK);
+	if (FOCUS_sound_handle[index].focus_fd == -1) {
+		debug_error("Open fail : index(%d), file open error(%d)", index, errno);
+	} else {
+		debug_log("Open sucess : index(%d), filename(%s), fd(%d)", index, filename, FOCUS_sound_handle[index].focus_fd);
+	}
+	g_free(filename);
+	filename = NULL;
+
+#ifdef CONFIG_ENABLE_RETCB
+	char *filename2;
+
+	if (is_for_watching) {
+		filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", FOCUS_sound_handle[index].focus_tid);
+	} else {
+		filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", FOCUS_sound_handle[index].focus_tid, FOCUS_sound_handle[index].handle);
+	}
+	pre_mask = umask(0);
+	if (mknod(filename2, S_IFIFO | 0666, 0)) {
+		debug_error("mknod() failure, errno(%d)", errno);
+	}
+	umask(pre_mask);
+	g_free(filename2);
+	filename2 = NULL;
+#endif
+debug_fleave();
+
+}
+
+void __focus_close_callback(int index, bool is_for_watching)
+{
+	debug_fenter();
+
+	if (FOCUS_sound_handle[index].focus_fd < 0) {
+		debug_error("%Close fail : fd error.");
+	} else {
+		char *filename;
+		if (is_for_watching) {
+			filename = g_strdup_printf("/tmp/FOCUS.%d.wch", FOCUS_sound_handle[index].focus_tid);
+		} else {
+			filename = g_strdup_printf("/tmp/FOCUS.%d.%d", FOCUS_sound_handle[index].focus_tid, FOCUS_sound_handle[index].handle);
+		}
+		close(FOCUS_sound_handle[index].focus_fd);
+		if (remove(filename)) {
+			debug_error("remove() failure, filename(%s), errno(%d)", filename, errno);
+		}
+		debug_log("%Close Sucess : index(%d), filename(%s)", index, filename);
+		g_free(filename);
+		filename = NULL;
+	}
+
+#ifdef CONFIG_ENABLE_RETCB
+	char *filename2;
+
+	if (is_for_watching) {
+		filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", FOCUS_sound_handle[index].focus_tid);
+	} else {
+		filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", FOCUS_sound_handle[index].focus_tid, FOCUS_sound_handle[index].handle);
+	}
+
+	/* Defensive code - wait until callback timeout although callback is removed */
+	int buf = MM_ERROR_NONE; //no need to specify cb result to server, just notice if the client got the callback properly or not
+	int tmpfd = -1;
+
+	tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
+	if (tmpfd < 0) {
+		char str_error[256];
+		strerror_r(errno, str_error, sizeof(str_error));
+		debug_warning("could not open file(%s) (may server close it first), tid(%d) fd(%d) %s errno=%d(%s)",
+			filename2, FOCUS_sound_handle[index].focus_tid, tmpfd, filename2, errno, str_error);
+	} else {
+		debug_msg("write MM_ERROR_NONE(tid:%d) for waiting server", FOCUS_sound_handle[index].focus_tid);
+		write(tmpfd, &buf, sizeof(buf));
+		close(tmpfd);
+	}
+
+	if (remove(filename2)) {
+		debug_error("remove() failure, filename(%s), errno(%d)", filename2, errno);
+	}
+	g_free(filename2);
+	filename2 = NULL;
+#endif
+
+}
+
+bool __focus_add_sound_callback(int index, int fd, gushort events, focus_gLoopPollHandler_t p_gloop_poll_handler )
+{
+	GSource* g_src = NULL;
+	GSourceFuncs *g_src_funcs = NULL;		/* handler function */
+	guint gsource_handle;
+	GPollFD *g_poll_fd = NULL;			/* file descriptor */
+
+	debug_fenter();
+
+	FOCUS_sound_handle[index].focus_lock = g_mutex_new();
+	if (!FOCUS_sound_handle[index].focus_lock) {
+		debug_error("failed to g_mutex_new() for index(%d)", index);
+		return false;
+	}
+
+	/* 1. make GSource Object */
+	g_src_funcs = (GSourceFuncs *)g_malloc(sizeof(GSourceFuncs));
+	if (!g_src_funcs) {
+		debug_error("g_malloc failed on g_src_funcs");
+		return false;
+	}
+
+	g_src_funcs->prepare = __focus_fd_prepare;
+	g_src_funcs->check = __focus_fd_check;
+	g_src_funcs->dispatch = __focus_fd_dispatch;
+	g_src_funcs->finalize = NULL;
+	g_src = g_source_new(g_src_funcs, sizeof(GSource));
+	if (!g_src) {
+		debug_error("g_malloc failed on m_readfd");
+		return false;
+	}
+	FOCUS_sound_handle[index].focus_src = g_src;
+	FOCUS_sound_handle[index].g_src_funcs = g_src_funcs;
+
+	/* 2. add file description which used in g_loop() */
+	g_poll_fd = (GPollFD *)g_malloc(sizeof(GPollFD));
+	if (!g_poll_fd) {
+		debug_error("g_malloc failed on g_poll_fd");
+		return false;
+	}
+	g_poll_fd->fd = fd;
+	g_poll_fd->events = events;
+	FOCUS_sound_handle[index].g_poll_fd = g_poll_fd;
+
+	/* 3. combine g_source object and file descriptor */
+	g_source_add_poll(g_src, g_poll_fd);
+	gsource_handle = g_source_attach(g_src, g_main_loop_get_context(g_focus_loop));
+	if (!gsource_handle) {
+		debug_error(" Failed to attach the source to context");
+		return false;
+	}
+	//g_source_unref(g_src);
+
+	/* 4. set callback */
+	g_source_set_callback(g_src, p_gloop_poll_handler,(gpointer)g_poll_fd, NULL);
+
+	debug_log(" g_malloc:g_src_funcs(%#X),g_poll_fd(%#X)  g_source_add_poll:g_src_id(%d)  g_source_set_callback:errno(%d)",
+				g_src_funcs, g_poll_fd, gsource_handle, errno);
+
+	debug_fleave();
+	return true;
+
+
+}
+
+bool __focus_remove_sound_callback(int index, gushort events)
+{
+	bool ret = true;
+	gboolean gret = TRUE;
+
+	debug_fenter();
+
+	if (FOCUS_sound_handle[index].focus_lock) {
+		g_mutex_free(FOCUS_sound_handle[index].focus_lock);
+		FOCUS_sound_handle[index].focus_lock = NULL;
+	}
+
+	GSourceFunc *g_src_funcs = FOCUS_sound_handle[index].g_src_funcs;
+	GPollFD *g_poll_fd = FOCUS_sound_handle[index].g_poll_fd;	/* store file descriptor */
+	if (!g_poll_fd) {
+		debug_error("g_poll_fd is null..");
+		ret = false;
+		goto init_handle;
+	}
+	g_poll_fd->fd = FOCUS_sound_handle[index].focus_fd;
+	g_poll_fd->events = events;
+
+	if (!FOCUS_sound_handle[index].focus_src) {
+		debug_error("FOCUS_sound_handle[%d].focus_src is null..", index);
+		goto init_handle;
+	}
+	debug_log(" g_source_remove_poll : fd(%d), event(%x), errno(%d)", g_poll_fd->fd, g_poll_fd->events, errno);
+	g_source_remove_poll(FOCUS_sound_handle[index].focus_src, g_poll_fd);
+
+init_handle:
+
+	if (FOCUS_sound_handle[index].focus_src) {
+		g_source_destroy(FOCUS_sound_handle[index].focus_src);
+		if (!g_source_is_destroyed (FOCUS_sound_handle[index].focus_src)) {
+			debug_warning(" failed to g_source_destroy(), asm_src(0x%p)", FOCUS_sound_handle[index].focus_src);
+		}
+	}
+	debug_log(" g_free : g_src_funcs(%#X), g_poll_fd(%#X)", g_src_funcs, g_poll_fd);
+
+	if (g_src_funcs) {
+		g_free(g_src_funcs);
+		g_src_funcs = NULL;
+	}
+	if (g_poll_fd) {
+		g_free(g_poll_fd);
+		g_poll_fd = NULL;
+	}
+
+	FOCUS_sound_handle[index].g_src_funcs = NULL;
+	FOCUS_sound_handle[index].g_poll_fd = NULL;
+	FOCUS_sound_handle[index].focus_src = NULL;
+	FOCUS_sound_handle[index].focus_callback = NULL;
+	FOCUS_sound_handle[index].watch_callback = NULL;
+
+	debug_fleave();
+	return ret;
+}
+
+
+void __focus_add_callback(int index, bool is_for_watching)
+{
+	debug_fenter();
+	if (!is_for_watching) {
+		if (!__focus_add_sound_callback(index, FOCUS_sound_handle[index].focus_fd, (gushort)POLLIN | POLLPRI, focus_callback_handler)) {
+			debug_error("failed to __ASM_add_sound_callback(asm_callback_handler)");
+			//return false;
+		}
+	} else { // need to check if it's necessary
+		if (!__focus_add_sound_callback(index, FOCUS_sound_handle[index].focus_fd, (gushort)POLLIN | POLLPRI, focus_watch_callback_handler)) {
+			debug_error("failed to __ASM_add_sound_callback(watch_callback_handler)");
+			//return false;
+		}
+	}
+	debug_fleave();
+}
+
+void __focus_remove_callback(int index)
+{
+	debug_fenter();
+	if (!__focus_remove_sound_callback(index, (gushort)POLLIN | POLLPRI)) {
+		debug_error("failed to __focus_remove_sound_callback()");
+		//return false;
+	}
+	debug_fleave();
+}
+
+void __focus_init_callback(int index, bool is_for_watching)
+{
+	debug_fenter();
+	__focus_open_callback(index, is_for_watching);
+	__focus_add_callback(index, is_for_watching);
+	debug_fleave();
+}
+
+void __focus_destroy_callback(int index, bool is_for_watching)
+{
+	debug_fenter();
+	__focus_remove_callback(index);
+	__focus_close_callback(index, is_for_watching);
+	debug_fleave();
+}
+
 int _mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
+	int instance;
+	int index = 0;
+	GVariant* params = NULL, *result = NULL;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+
+//	pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();
+
+	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
+		if (FOCUS_sound_handle[index].is_used == false) {
+			FOCUS_sound_handle[index].is_used = true;
+			break;
+		}
+	}
+
+	FOCUS_sound_handle[index].focus_tid = instance;
+	FOCUS_sound_handle[index].handle = id;
+	FOCUS_sound_handle[index].focus_callback = callback;
+	FOCUS_sound_handle[index].user_data = user_data;
+
+	params = g_variant_new("(iis)", instance, id, stream_type);
+	if (params) {
+		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_REGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus reguster focus failed");
+			goto cleanup;
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+	}
+
+	if (ret == MM_ERROR_NONE) {
+		debug_msg("[Client] Success to register focus\n");
+		if (!g_focus_thread) {
+			GMainContext* focus_context = g_main_context_new ();
+			g_focus_loop = g_main_loop_new (focus_context, FALSE);
+			g_main_context_unref(focus_context);
+			g_focus_thread = g_thread_create(__focus_thread_func, NULL, TRUE, NULL);
+			if (g_focus_thread == NULL) {
+				debug_error ("could not create thread..");
+				g_main_loop_unref(g_focus_loop);
+				FOCUS_sound_handle[index].is_used = false;
+				ret = MM_ERROR_SOUND_INTERNAL;
+				goto cleanup;
+			}
+		}
+	} else {
+		g_variant_get(result, "(i)",  &ret);
+		debug_error("[Client] Error occurred : %d \n",ret);
+		FOCUS_sound_handle[index].is_used = false;
+		goto cleanup;
+	}
+
+	__focus_init_callback(index, false);
+
+cleanup:
+	//pthread_mutex_unlock(&g_thread_mutex2);
+	if (result) {
+		g_variant_unref(result);
+	}
+
 	debug_fleave();
 
 	return ret;
+
 }
 
 int _mm_sound_client_dbus_unregister_focus(int id)
 {
 	int ret = MM_ERROR_NONE;
+	int instance;
+	int index = -1;
+	GVariant* params = NULL, *result = NULL;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+
+	//pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();
+	index = __focus_find_index_by_handle(id);
+
+	if (FOCUS_sound_handle[index].focus_lock) {
+		if (!g_mutex_trylock(FOCUS_sound_handle[index].focus_lock)) {
+			debug_warning("maybe focus_callback is being called, try one more time..");
+			usleep(2500000); // 2.5 sec
+			if (g_mutex_trylock(FOCUS_sound_handle[index].focus_lock)) {
+				debug_msg("finally got asm_lock");
+			}
+		}
+	}
+
+	params = g_variant_new("(ii)", instance, id);
+	if (params) {
+		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_UNREGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus reguster focus failed");
+			goto cleanup;
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+	}
+
+	if (ret == MM_ERROR_NONE) {
+		debug_msg("[Client] Success to unregister focus\n");
+	} else {
+		g_variant_get(result, "(i)",  &ret);
+		debug_error("[Client] Error occurred : %d \n",ret);
+		goto cleanup;
+	}
+
+
+cleanup:
+	//pthread_mutex_unlock(&g_thread_mutex2);
+	if (FOCUS_sound_handle[index].focus_lock) {
+		g_mutex_unlock(FOCUS_sound_handle[index].focus_lock);
+	}
+
+	__focus_destroy_callback(index, false);
+	FOCUS_sound_handle[index].focus_fd = 0;
+	FOCUS_sound_handle[index].focus_tid = 0;
+	FOCUS_sound_handle[index].handle = 0;
+	FOCUS_sound_handle[index].is_used = false;
+
+	if (result) {
+		g_variant_unref(result);
+	}
+
 	debug_fleave();
 
 	return ret;
@@ -974,31 +1645,148 @@ int _mm_sound_client_dbus_unregister_focus(int id)
 int _mm_sound_client_dbus_acquire_focus(int id, mm_sound_focus_type_e type, const char *option)
 {
 	int ret = MM_ERROR_NONE;
+	int instance;
+	GVariant* params = NULL, *result = NULL;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
 
+	//pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();
+
+	params = g_variant_new("(iiis)", instance, id, type, option);
+	if (params) {
+		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_ACQUIRE_FOCUS, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus reguster focus failed");
+			goto cleanup;
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+	}
+
+	if (ret == MM_ERROR_NONE) {
+		debug_msg("[Client] Success to acquire focus\n");
+	} else {
+		g_variant_get(result, "(i)",  &ret);
+		debug_error("[Client] Error occurred : %d \n",ret);
+	}
+
+cleanup:
+	//pthread_mutex_unlock(&g_thread_mutex2);
+
+	if (result) {
+		g_variant_unref(result);
+	}
+
+	debug_fleave();
 	return ret;
 }
 
 int _mm_sound_client_dbus_release_focus(int id, mm_sound_focus_type_e type, const char *option)
 {
 	int ret = MM_ERROR_NONE;
+	int instance;
+	GVariant* params = NULL, *result = NULL;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
 
+	//pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();;
+
+	params = g_variant_new("(iiis)", instance, id, type, option);
+	if (params) {
+		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_RELEASE_FOCUS, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus reguster focus failed");
+			goto cleanup;
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+	}
+
+	if (ret == MM_ERROR_NONE) {
+		debug_msg("[Client] Success to release focus\n");
+	} else {
+		g_variant_get(result, "(i)",  &ret);
+		debug_error("[Client] Error occurred : %d \n",ret);
+	}
+
+cleanup:
+	//pthread_mutex_unlock(&g_thread_mutex2);
+
+	if (result) {
+		g_variant_unref(result);
+	}
+
+	debug_fleave();
 	return ret;
 }
 
 int _mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
+	int instance;
+	int index = 0;
+	GVariant* params = NULL, *result = NULL;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+
+	//pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();
+
+	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
+		if (FOCUS_sound_handle[index].is_used == false) {
+			FOCUS_sound_handle[index].is_used = true;
+			break;
+		}
+	}
+
+	FOCUS_sound_handle[index].focus_tid = instance;
+	FOCUS_sound_handle[index].handle = index;
+	FOCUS_sound_handle[index].watch_callback = callback;
+	FOCUS_sound_handle[index].user_data = user_data;
+
+	params = g_variant_new("(ii)", instance, type);
+	if (params) {
+		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_WATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus reguster focus failed");
+			goto cleanup;
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+	}
+
+	if (ret == MM_ERROR_NONE) {
+		debug_msg("[Client] Success to watch focus");
+		if (!g_focus_thread) {
+			GMainContext* focus_context = g_main_context_new ();
+			g_focus_loop = g_main_loop_new (focus_context, FALSE);
+			g_main_context_unref(focus_context);
+			g_focus_thread = g_thread_create(__focus_thread_func, NULL, TRUE, NULL);
+			if (g_focus_thread == NULL) {
+				debug_error ("could not create thread..");
+				g_main_loop_unref(g_focus_loop);
+				FOCUS_sound_handle[index].is_used = false;
+				ret = MM_ERROR_SOUND_INTERNAL;
+				goto cleanup;
+			}
+		}
+	} else {
+		g_variant_get(result, "(i)",  &ret);
+		debug_error("[Client] Error occurred : %d",ret);
+		goto cleanup;
+	}
+
+	__focus_init_callback(index, true);
+
+cleanup:
+	//pthread_mutex_unlock(&g_thread_mutex2);
+
+	if (result) {
+		g_variant_unref(result);
+	}
+
 	debug_fleave();
 
 	return ret;
@@ -1007,9 +1795,54 @@ int _mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, m
 int _mm_sound_client_dbus_unset_focus_watch_callback(void)
 {
 	int ret = MM_ERROR_NONE;
+	int instance;
+	int index = -1;
+	GVariant* params = NULL, *result = NULL;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+
+	//pthread_mutex_lock(&g_thread_mutex2);
+
+	instance = getpid();
+	index = __focus_find_index_by_watch(instance);
+
+	if (FOCUS_sound_handle[index].focus_lock) {
+		g_mutex_lock(FOCUS_sound_handle[index].focus_lock);
+	}
+
+	params = g_variant_new("(i)", instance);
+	if (params) {
+		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_UNWATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus reguster focus failed");
+			goto cleanup;
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+	}
+
+	if (ret == MM_ERROR_NONE) {
+		debug_msg("[Client] Success to unwatch focus\n");
+	} else {
+		g_variant_get(result, "(i)",  &ret);
+		debug_error("[Client] Error occurred : %d \n",ret);
+	}
+
+cleanup:
+	//pthread_mutex_unlock(&g_thread_mutex2);
+
+	if (FOCUS_sound_handle[index].focus_lock) {
+		g_mutex_unlock(FOCUS_sound_handle[index].focus_lock);
+	}
+	__focus_destroy_callback(index, true);
+	FOCUS_sound_handle[index].focus_fd = 0;
+	FOCUS_sound_handle[index].focus_tid = 0;
+	FOCUS_sound_handle[index].handle = 0;
+	FOCUS_sound_handle[index].is_used = false;
+
+	if (result) {
+		g_variant_unref(result);
+	}
+
 	debug_fleave();
 
 	return ret;
@@ -1044,6 +1877,15 @@ int MMSoundClientDbusFini(void)
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
+
+	if (g_focus_thread) {
+		g_main_loop_quit(g_focus_loop);
+		g_thread_join(g_focus_thread);
+		debug_log("after thread join");
+		g_main_loop_unref(g_focus_loop);
+		g_focus_thread = NULL;
+	}
+
 	debug_fleave();
 
 	return ret;

@@ -29,10 +29,13 @@
 #include <mm_error.h>
 #include <mm_debug.h>
 #include <glib.h>
+#include <poll.h>
+#include <fcntl.h>
 
 #include "include/mm_sound_mgr_ipc.h"
 #include "../include/mm_sound_utils.h"
 #include <sys/time.h>
+#include <sys/stat.h>
 
 static GList *g_focus_node_list = NULL;
 static pthread_mutex_t g_focus_node_list_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -44,6 +47,15 @@ static const char* focus_status_str[] =
 	"C ACTIVATED",
 	"B ACTIVATED",
 };
+
+typedef struct {
+	int pid;
+	int handle;
+	int type;
+	int state;
+	char stream_type [MAX_STREAM_TYPE_LEN];
+	char name [MM_SOUND_NAME_NUM];
+}focus_cb_data;
 
 #define CLEAR_DEAD_NODE_LIST(x)  do { \
 	debug_warning ("list = %p, node = %p, pid=[%d]", x, node, (node)? node->pid : -1); \
@@ -124,15 +136,24 @@ static int _mm_sound_mgr_focus_get_priority_from_stream_type(int *priority, cons
 static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_command_e command,
 												focus_node_t *my_node, _mm_sound_mgr_focus_param_t *param)
 {
-	int ret = MM_ERROR_NONE;
-	GList *list = NULL;
-	focus_node_t *node = NULL;
-	mm_ipc_msg_t msg;
-	mm_ipc_msg_t rcv_msg;
+	char *filename = NULL;
+	char *filename2 = NULL;
 	struct timeval time;
 	int starttime = 0;
 	int endtime = 0;
+	int fd_FOCUS_R = -1;
+	int fd_FOCUS = -1;
+	int ret = -1;
+	struct pollfd pfd;
+	int pret = 0;
+	int pollingTimeout = 2500; /* NOTE : This is temporary code, because of Deadlock issues. If you fix that issue, remove this comment */
+
+	GList *list = NULL;
+	focus_node_t *node = NULL;
+	//mm_ipc_msg_t msg;
 	int i = 0;
+
+	focus_cb_data cb_data;
 
 	debug_fenter();
 
@@ -142,87 +163,162 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 			/* skip my own */
 		} else {
 			if (node->is_for_watch && (node->status & focus_type)) {
-				memset(&msg, 0, sizeof(mm_ipc_msg_t));
-				memset(&rcv_msg, 0, sizeof(mm_ipc_msg_t));
-				SOUND_MSG_SET(msg.sound_msg, MM_SOUND_MSG_INF_FOCUS_WATCH_CB, 0, MM_ERROR_NONE, node->pid);
-				msg.sound_msg.callback = node->callback;
-				msg.sound_msg.cbdata = node->cbdata;
-				msg.sound_msg.focus_type = focus_type & node->status;
-				msg.sound_msg.changed_state = (command == FOCUS_COMMAND_ACQUIRE) ? !FOCUS_STATUS_DEACTIVATED : FOCUS_STATUS_DEACTIVATED;
-				MMSOUND_STRNCPY(msg.sound_msg.stream_type, my_node->stream_type, MAX_STREAM_TYPE_LEN);
-				MMSOUND_STRNCPY(msg.sound_msg.name, param->option, MM_SOUND_NAME_NUM);
-				msg.wait_for_reply = true;
+				memset(&cb_data, 0, sizeof(focus_cb_data));
+				cb_data.pid = node->pid;
+				cb_data.handle = node->handle_id;
+				cb_data.type = focus_type & node->status;
+				cb_data.state = (command == FOCUS_COMMAND_ACQUIRE) ? !FOCUS_STATUS_DEACTIVATED : FOCUS_STATUS_DEACTIVATED;
+				MMSOUND_STRNCPY(cb_data.stream_type, my_node->stream_type, MAX_STREAM_TYPE_LEN);
+				MMSOUND_STRNCPY(cb_data.name, param->option, MM_SOUND_NAME_NUM);
 
 				/* Set start time */
 				gettimeofday(&time, NULL);
 				starttime = time.tv_sec * 1000000 + time.tv_usec;
-				debug_msg("Before sending msg for [pid(%d),cb(0x%x)], StartTime:%.3f\n", node->pid, node->callback, starttime/1000000.);
-				ret = _MMIpcCBSndMsg(&msg);
-				if (ret != MM_ERROR_NONE) {
-					debug_error("Fail to send callback message for pid[%d], ret[0x%x]\n", node->pid, ret);
-					goto FINISH;
+
+				/**************************************
+				 *
+				 * Open callback cmd pipe
+				 *
+				 **************************************/
+				filename = g_strdup_printf("/tmp/FOCUS.%d.wch", cb_data.pid);
+				if ((fd_FOCUS = open(filename, O_WRONLY|O_NONBLOCK)) < 0) {
+					debug_error("[CallCB] %s open error\n", filename);
+					goto fail;
 				}
-				/* wait for return msg */
-				/* if rev msg(pid) is not valid, enqueue again */
-				do {
-					ret = _MMIpcCBRecvMsg(&rcv_msg);
-					if (ret != MM_ERROR_NONE) {
-						debug_warning("Failed to receive callback message, ret[0x%x]. Need to check the pid[%d] why it got blocked!!!\n", ret, node->pid);
-						break;
-					} else {
-						if (rcv_msg.sound_msg.msgtype == MM_SOUND_MSG_INF_FOCUS_WATCH_CB &&	rcv_msg.sound_msg.msgid == node->pid ) {
-							/* Set end time */
-							gettimeofday(&time, NULL);
-							endtime = time.tv_sec * 1000000 + time.tv_usec;
-							debug_msg("Success to receiving callback message for pid[%d], msgtype[%d], EndTime:%.3f\n", rcv_msg.sound_msg.msgid, rcv_msg.sound_msg.msgtype, endtime/1000000.);
-							break;
-						} else {
-							/* enqueue again */
-							debug_error("It is not a reply message for pid[%d], msgtype[%d], enqueue this message again\n", rcv_msg.sound_msg.msgid, rcv_msg.sound_msg.msgtype);
-							ret = _MMIpcCBMsgEnQueueAgain(&rcv_msg);
-							if (ret != MM_ERROR_NONE) {
-								debug_error("Fail to enqueue the reply message for pid[%d], ret[0x%x]\n", rcv_msg.sound_msg.msgid, ret);
-								goto FINISH;
-							}
-						}
+
+				/******************************************
+				 *
+				 * Open callback result pipe
+				 * before writing callback cmd to pipe
+				 *
+				 ******************************************/
+				filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", cb_data.pid);
+				if ((fd_FOCUS_R=open(filename2,O_RDONLY|O_NONBLOCK))== -1) {
+					char str_error[256];
+					strerror_r (errno, str_error, sizeof(str_error));
+					debug_error("[RETCB] Fail to open fifo (%s)\n", str_error);
+					goto fail;
+				}
+				debug_log(" open return cb %s\n", filename2);
+
+
+				/*******************************************
+				 * Write Callback msg
+				 *******************************************/
+				if (write(fd_FOCUS, &cb_data ,sizeof(cb_data)) < 0) {
+					debug_error("[CallCB] %s fprintf error\n", filename);
+					goto fail;
+				}
+				debug_log("after fprintf");
+				/**************************************
+				 *
+				 * Close callback cmd pipe
+				 *
+				 **************************************/
+				if (fd_FOCUS != -1) {
+					close(fd_FOCUS);
+					fd_FOCUS = -1;
+				}
+				g_free(filename);
+				filename = NULL;
+
+				pfd.fd = fd_FOCUS_R;
+				pfd.events = POLLIN;
+
+				/*********************************************
+				 *
+				 * Wait callback result msg
+				 *
+				 ********************************************/
+				debug_error("[RETCB]wait callback(tid=%d, cmd=%d, timeout=%d)\n", cb_data.pid, command, pollingTimeout);
+				pret = poll(&pfd, 1, pollingTimeout); //timeout 7sec
+				if (pret < 0) {
+					debug_error("[RETCB]poll failed (%d)\n", pret);
+					goto fail;
+				}
+				if (pfd.revents & POLLIN) {
+					if (read(fd_FOCUS_R, &ret, sizeof(ret)) == -1) {
+						debug_error("fscanf error\n");
+						goto fail;
 					}
-				} while(1);
+				}
+				g_free(filename2);
+				filename2 = NULL;
+
+				/* Calculate endtime and display*/
+				gettimeofday(&time, NULL);
+				endtime = time.tv_sec * 1000000 + time.tv_usec;
+				debug_error("[RETCB] ASM_CB_END cbtimelab=%3.3f(second), timeout=%d(milli second) (reciever=%d) Return value = (handle_id=%d)\n", ((endtime-starttime)/1000000.), pollingTimeout, cb_data.pid, ret);
+
+				/**************************************
+				 *
+				 * Close callback result pipe
+				 *
+				 **************************************/
+				if (fd_FOCUS_R != -1) {
+					close(fd_FOCUS_R);
+					fd_FOCUS_R = -1;
+				}
+
 			}
 		}
 	}
 
-FINISH:
-	debug_fleave();
-	return ret;
+	return MM_ERROR_NONE;
+
+fail:
+	if (filename) {
+		g_free (filename);
+		filename = NULL;
+	}
+	if (filename2) {
+		g_free (filename2);
+		filename2 = NULL;
+	}
+	if (fd_FOCUS != -1) {
+		close(fd_FOCUS);
+		fd_FOCUS = -1;
+	}
+	if (fd_FOCUS_R != -1) {
+		close (fd_FOCUS_R);
+		fd_FOCUS_R = -1;
+	}
+
+	return -1;
 }
 
-static int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victim_node,
-							_mm_sound_mgr_focus_param_t *assaulter_param, const char *assaulter_stream_type)
+int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victim_node, _mm_sound_mgr_focus_param_t *assaulter_param, const char *assaulter_stream_type)
 {
-	int ret = MM_ERROR_NONE;
-	mm_ipc_msg_t msg;
-	mm_ipc_msg_t rcv_msg;
+	char *filename = NULL;
+	char *filename2 = NULL;
 	struct timeval time;
 	int starttime = 0;
 	int endtime = 0;
+	int fd_FOCUS_R = -1;
+	int fd_FOCUS = -1;
+	int ret = -1;
+	struct pollfd pfd;
+	int pret = 0;
+	int pollingTimeout = 2500; /* NOTE : This is temporary code, because of Deadlock issues. If you fix that issue, remove this comment */
+
 	int i = 0;
 	int flag_for_focus_type = 0;
 	int flag_for_taken_index = 0;
 	int taken_pid = 0;
 	int taken_hid = 0;
+	//mm_ipc_msg_t msg;
 
-	debug_fenter();
+	focus_cb_data cb_data;
 
-	memset(&msg, 0, sizeof(mm_ipc_msg_t));
-	memset(&rcv_msg, 0, sizeof(mm_ipc_msg_t));
-	SOUND_MSG_SET(msg.sound_msg, MM_SOUND_MSG_INF_FOCUS_CHANGED_CB, 0, MM_ERROR_NONE, victim_node->pid);
-	msg.sound_msg.callback = victim_node->callback;
-	msg.sound_msg.cbdata = victim_node->cbdata;
-	msg.sound_msg.handle_id = victim_node->handle_id;
+	debug_error(" __mm_sound_mgr_focus_do_callback_ for pid(%d) handle(%d)\n", victim_node->pid, victim_node->handle_id);
+
+	memset(&cb_data, 0, sizeof(focus_cb_data));
+	cb_data.pid= victim_node->pid;
+	cb_data.handle= victim_node->handle_id;
 	if (command == FOCUS_COMMAND_RELEASE) {
 		/* client will lost the acquired focus */
-		msg.sound_msg.focus_type = assaulter_param->request_type & victim_node->status;
-		msg.sound_msg.changed_state = FOCUS_STATUS_DEACTIVATED;
+		cb_data.type= assaulter_param->request_type & victim_node->status;
+		cb_data.state= FOCUS_STATUS_DEACTIVATED;
 	} else {
 		/* client will gain the lost focus */
 		for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
@@ -230,62 +326,117 @@ static int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t
 				flag_for_focus_type |= i+1; /* playback:1, capture:2 */
 			}
 		}
-		msg.sound_msg.focus_type = flag_for_focus_type;
-		msg.sound_msg.changed_state = !FOCUS_STATUS_DEACTIVATED;
+		cb_data.type= flag_for_focus_type;
+		cb_data.state= !FOCUS_STATUS_DEACTIVATED;
 	}
-	MMSOUND_STRNCPY(msg.sound_msg.stream_type, assaulter_stream_type, MAX_STREAM_TYPE_LEN);
-	MMSOUND_STRNCPY(msg.sound_msg.name, assaulter_param->option, MM_SOUND_NAME_NUM);
-	msg.wait_for_reply = true;
+	MMSOUND_STRNCPY(cb_data.stream_type, assaulter_stream_type, MAX_STREAM_TYPE_LEN);
+	MMSOUND_STRNCPY(cb_data.name, assaulter_param->option, MM_SOUND_NAME_NUM);
 
 	/* Set start time */
 	gettimeofday(&time, NULL);
 	starttime = time.tv_sec * 1000000 + time.tv_usec;
-	debug_msg("Before sending msg for [pid(%d),hid(%d),cb(0x%x)], StartTime:%.3f\n", victim_node->pid, victim_node->handle_id, victim_node->callback, starttime/1000000.);
-	ret = _MMIpcCBSndMsg(&msg);
-	if (ret != MM_ERROR_NONE) {
-		debug_error("Fail to send callback message for pid[%d], handle_id[%d], ret[0x%x]\n", victim_node->pid, victim_node->handle_id, ret);
-		goto FINISH;
-	}
-	/* wait for return msg */
-	/* if rev msg(pid/hid) is not valid, enqueue again */
-	do {
-		ret = _MMIpcCBRecvMsg(&rcv_msg);
-		if (ret != MM_ERROR_NONE) {
-			debug_warning("Failed to receive callback message, ret[0x%x]. Need to check the pid[%d]/handle_id[%d] why it got blocked!!!\n", ret, victim_node->pid, victim_node->handle_id);
-			break;
-		} else {
-			if (rcv_msg.sound_msg.msgtype == MM_SOUND_MSG_INF_FOCUS_CHANGED_CB &&
-				rcv_msg.sound_msg.msgid == victim_node->pid && rcv_msg.sound_msg.handle_id == victim_node->handle_id) {
-				/* Set end time */
-				gettimeofday(&time, NULL);
-				endtime = time.tv_sec * 1000000 + time.tv_usec;
-				debug_msg("Success to receiving callback message for pid[%d], handle_id[%d], msgtype[%d], EndTime:%.3f\n",
-						rcv_msg.sound_msg.msgid, rcv_msg.sound_msg.handle_id, rcv_msg.sound_msg.msgtype, endtime/1000000.);
-				break;
-			} else {
-				/* enqueue again */
-				debug_error("It is not a reply message for pid[%d], handle_id[%d], msgtype[%d], enqueue this message again\n",
-						rcv_msg.sound_msg.msgid, rcv_msg.sound_msg.handle_id, rcv_msg.sound_msg.msgtype);
-				ret = _MMIpcCBMsgEnQueueAgain(&rcv_msg);
-				if (ret != MM_ERROR_NONE) {
-					debug_error("Fail to enqueue the reply message for pid[%d], handle_id[%d], ret[0x%x]\n", rcv_msg.sound_msg.msgid, rcv_msg.sound_msg.handle_id, ret);
-					goto FINISH;
-				}
-			}
-		}
-	} while(1);
 
-	/* update victim node */
+	/**************************************
+	 *
+	 * Open callback cmd pipe
+	 *
+	 **************************************/
+	filename = g_strdup_printf("/tmp/FOCUS.%d.%d", cb_data.pid, cb_data.handle);
+	if ((fd_FOCUS = open(filename, O_WRONLY|O_NONBLOCK)) < 0) {
+		debug_error("[CallCB] %s open error\n", filename);
+		goto fail;
+	}
+
+	/******************************************
+	 *
+	 * Open callback result pipe
+	 * before writing callback cmd to pipe
+	 *
+	 ******************************************/
+	filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", cb_data.pid, cb_data.handle);
+	if ((fd_FOCUS_R=open(filename2,O_RDONLY|O_NONBLOCK))== -1) {
+		char str_error[256];
+		strerror_r (errno, str_error, sizeof(str_error));
+		debug_error("[RETCB] Fail to open fifo (%s)\n", str_error);
+		goto fail;
+	}
+	debug_log(" open return cb %s\n", filename2);
+
+
+	/*******************************************
+	 * Write Callback msg
+	 *******************************************/
+	if (write(fd_FOCUS, &cb_data, sizeof(cb_data)) < 0) {
+		debug_error("[CallCB] %s write error\n", filename);
+		goto fail;
+	}
+	/**************************************
+	 *
+	 * Close callback cmd pipe
+	 *
+	 **************************************/
+	if (fd_FOCUS != -1) {
+		close(fd_FOCUS);
+		fd_FOCUS = -1;
+	}
+	g_free(filename);
+	filename = NULL;
+
+	pfd.fd = fd_FOCUS_R;
+	pfd.events = POLLIN;
+
+	/*********************************************
+	 *
+	 * Wait callback result msg
+	 *
+	 ********************************************/
+	debug_error("[RETCB]wait callback(tid=%d, handle=%d, cmd=%d, timeout=%d)\n",cb_data.pid, cb_data.handle, command, pollingTimeout);
+	pret = poll(&pfd, 1, pollingTimeout); //timeout 7sec
+	if (pret < 0) {
+		debug_error("[RETCB]poll failed (%d)\n", pret);
+		goto fail;
+	}
+	if (pfd.revents & POLLIN) {
+		if (read(fd_FOCUS_R, &ret, sizeof(ret)) == -1) {
+			debug_error("read error\n");
+			goto fail;
+		}
+	}
+	g_free(filename2);
+	filename2 = NULL;
+
+	/* Calculate endtime and display*/
+	gettimeofday(&time, NULL);
+	endtime = time.tv_sec * 1000000 + time.tv_usec;
+	debug_error("[RETCB] ASM_CB_END cbtimelab=%3.3f(second), timeout=%d(milli second) (reciever=%d) Return value = (handle_id=%d)\n", ((endtime-starttime)/1000000.), pollingTimeout, cb_data.pid, ret);
+
+	/**************************************
+	 *
+	 * Close callback result pipe
+	 *
+	 **************************************/
+	if (fd_FOCUS_R != -1) {
+		close(fd_FOCUS_R);
+		fd_FOCUS_R = -1;
+	}
+//	debug_log("[RETCB] Return value 0x%x\n", buf);
+
+
+/* update victim node */
 	taken_pid = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->pid : 0;
 	taken_hid = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->handle_id : 0;
 	flag_for_taken_index = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->request_type & victim_node->status : assaulter_param->request_type;
 	for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
 		if (flag_for_taken_index & (i+1)) {
+			if (command == FOCUS_COMMAND_ACQUIRE && victim_node->taken_by_id[i].pid != assaulter_param->pid && victim_node->taken_by_id[i].handle_id != assaulter_param->handle_id) {
+				//skip
+				continue;
+			}
 			victim_node->taken_by_id[i].pid = taken_pid;
 			victim_node->taken_by_id[i].handle_id = taken_hid;
 		}
 	}
-	if(ret == MM_ERROR_NONE) {
+	if(ret == victim_node->handle_id) { // return from client is sucess, ret will be its handle_id
 		victim_node->status = (command == FOCUS_COMMAND_RELEASE) ? (victim_node->status &= ~(assaulter_param->request_type)) : (victim_node->status |= flag_for_focus_type);
 	} else {
 		victim_node->status = FOCUS_STATUS_DEACTIVATED;
@@ -294,9 +445,28 @@ static int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t
 	if (strncmp(assaulter_stream_type, victim_node->stream_type, MAX_STREAM_TYPE_LEN))
 		_mm_sound_mgr_focus_do_watch_callback((focus_type_e)assaulter_param->request_type, command, victim_node, assaulter_param);
 
-FINISH:
-	debug_fleave();
-	return ret;
+
+	return MM_ERROR_NONE;
+
+fail:
+	if (filename) {
+		g_free (filename);
+		filename = NULL;
+	}
+	if (filename2) {
+		g_free (filename2);
+		filename2 = NULL;
+	}
+	if (fd_FOCUS != -1) {
+		close(fd_FOCUS);
+		fd_FOCUS = -1;
+	}
+	if (fd_FOCUS_R != -1) {
+		close (fd_FOCUS_R);
+		fd_FOCUS_R = -1;
+	}
+
+	return -1;
 }
 
 static int _mm_sound_mgr_focus_list_dump ()
