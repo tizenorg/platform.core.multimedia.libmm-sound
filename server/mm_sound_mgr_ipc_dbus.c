@@ -26,6 +26,9 @@
 #define PROC_DBUS_INTERFACE 	"org.tizen.resourced.process"
 #define PROC_DBUS_METHOD 	"ProcExclude"
 
+#define OBJECT_ASM "/org/tizen/asm"
+#define INTERFACE_ASM "org.tizen.asm"
+
 #define MM_SOUND_ERROR mm_sound_error_quark()
 
 /* Introspection data for the service we are exporting */
@@ -267,13 +270,6 @@
   "      <arg name='rcv_sound_state' type='i' direction='in'/>"
   "      <arg name='rcv_resource' type='i' direction='in'/>"
   "    </method>"
-  "    <method name='ASMEmergentExit'>"
-  "      <arg name='rcv_pid' type='i' direction='in'/>"
-  "      <arg name='rcv_handle' type='i' direction='in'/>"
-  "      <arg name='rcv_sound_event' type='i' direction='in'/>"
-  "      <arg name='rcv_request_id' type='i' direction='in'/>"
-  "      <arg name='rcv_sound_state' type='i' direction='in'/>"
-  "    </method>"
   "  </interface>"
   "</node>";
 GDBusConnection* conn_g;
@@ -322,7 +318,6 @@ static void handle_method_asm_set_session_option(GDBusMethodInvocation* invocati
 static void handle_method_asm_get_session_option(GDBusMethodInvocation* invocation);
 static void handle_method_asm_reset_resume_tag(GDBusMethodInvocation* invocation);
 static void handle_method_asm_dump(GDBusMethodInvocation* invocation);
-static void handle_method_asm_emergent_exit(GDBusMethodInvocation* invocation);
 
 /* Currently , Just using method's name and handler */
 /* TODO : generate introspection xml automatically, with these value include argument and reply */
@@ -502,12 +497,6 @@ struct mm_sound_dbus_method methods[SOUND_SERVER_METHOD_MAX] = {
 			.name = "ASMDump",
 		},
 		.handler = handle_method_asm_dump
-	},
-	[SOUND_SERVER_METHOD_ASM_EMERGENT_EXIT] = {
-		.info = {
-			.name = "ASMEmergentExit",
-		},
-		.handler = handle_method_asm_emergent_exit
 	},
 };
 
@@ -1535,37 +1524,6 @@ send_reply:
 
 	debug_fleave();
 }
-
-static void handle_method_asm_emergent_exit(GDBusMethodInvocation* invocation)
-{
-
-	int ret = MM_ERROR_NONE;
-	int pid = 0, handle = 0, sound_event = 0, request_id = 0, sound_state = 0;
-	GVariant *params = NULL;
-
-	debug_fenter();
-
-	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
-	     debug_error("Parameter for Method is NULL");
-	     ret = MM_ERROR_SOUND_INTERNAL;
-	     goto send_reply;
-	}
-
-	g_variant_get(params, "(iiiii)", &pid, &handle, &sound_event, &request_id, &sound_state);
-	ret = __mm_sound_mgr_ipc_asm_emergent_exit(pid, handle, sound_event, request_id, sound_state);
-
-send_reply:
-	if (ret == MM_ERROR_NONE) {
-	     debug_error("ASM emergent exit success");
-	     g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
-	} else {
-	     debug_error("ASM emergent exit failed, ret : 0x%X", ret);
-	     g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM emergent failed");
-	}
-
-	debug_fleave();
-}
-
 /****************************************************************/
 
 
@@ -1626,9 +1584,61 @@ static const GDBusInterfaceVTable interface_vtable =
 	handle_set_property
 };
 
+static void handle_signal_asm_emergent_exit(GVariant* params, gpointer user_data)
+{
+	int ret = MM_ERROR_NONE;
+	int pid = 0, handle = 0, sound_event = 0, request_id = 0, sound_state = 0;
+
+	debug_fenter();
+
+	if (!params) {
+		debug_error("Invalid Parameters");
+		return;
+	}
+
+	g_variant_get(params, "(iiiii)", &pid, &handle, &sound_event, &request_id, &sound_state);
+	ret = __mm_sound_mgr_ipc_asm_emergent_exit(pid, handle, sound_event, request_id, sound_state);
+
+	if (ret == MM_ERROR_NONE)
+		debug_error("ASM emergent exit, successfully handled");
+	else
+		debug_error("ASM emergent exit, handle failed, ret : 0x%X", ret);
+
+	debug_fleave();
+}
+
+static void handle_signal(GDBusConnection  *connection,
+                                     const gchar      *sender_name,
+                                     const gchar      *object_path,
+                                     const gchar      *interface_name,
+                                     const gchar      *signal_name,
+                                     GVariant         *params,
+                                     gpointer          user_data)
+{
+	if (!object_path || !interface_name || !signal_name) {
+		debug_error("Invalid Parameters");
+		return;
+	}
+
+	debug_log("Got Signal : Object '%s, Interface '%s', Signal '%s'", object_path, interface_name, signal_name);
+
+	if (!g_strcmp0(object_path, OBJECT_ASM)) {
+		if (!g_strcmp0(interface_name, INTERFACE_ASM) && !g_strcmp0(signal_name, "EmergentExit")) {
+			debug_log("handle signal '%s.%s'", interface_name, signal_name);
+			handle_signal_asm_emergent_exit(params, user_data);
+		} else {
+			debug_log("Unknown Signal '%s.%s'", interface_name, signal_name);
+		}
+	} else {
+		debug_log("Unknown Object '%s'", object_path);
+	}
+}
+
+
 static void on_bus_acquired(GDBusConnection *connection, const gchar *name, gpointer user_data)
 {
 	guint reg_id;
+	guint subs_id;
 	debug_log("Bus Acquired (%s)", name);
 
 	conn_g = connection;
@@ -1642,6 +1652,14 @@ static void on_bus_acquired(GDBusConnection *connection, const gchar *name, gpoi
 	if (!reg_id) {
 		debug_error("Register object(%s) failed", OBJECT_SOUND_SERVER);
 		return ;
+	}
+
+	subs_id = g_dbus_connection_signal_subscribe(connection, NULL, INTERFACE_ASM, "EmergentExit", OBJECT_ASM, \
+			 NULL, G_DBUS_SIGNAL_FLAGS_NONE, handle_signal, NULL, NULL );
+
+	if (!subs_id) {
+		debug_error ("g_dbus_connection_signal_subscribe() failed ");
+		return;
 	}
 }
 
