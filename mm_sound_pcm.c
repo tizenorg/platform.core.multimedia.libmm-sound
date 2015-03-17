@@ -96,10 +96,10 @@ typedef struct {
 static int _pcm_sound_start (MMSoundPcmHandle_t handle);
 static int _pcm_sound_stop_internal (MMSoundPcmHandle_t handle);
 static int _pcm_sound_stop(MMSoundPcmHandle_t handle);
-static void __sound_pcm_send_message (mm_sound_pcm_t *pcmHandle, int message, int code);
+static void _sound_pcm_send_message (mm_sound_pcm_t *pcmHandle, int message, int code);
 static int _pcm_sound_ignore_session (MMSoundPcmHandle_t handle, MMSound_session_type_e type);
 
-static char* __get_channel_str(MMSoundPcmChannel_t channel)
+static char* _get_channel_str(MMSoundPcmChannel_t channel)
 {
 	if (channel == MMSOUND_PCM_MONO)
 		return "Mono";
@@ -109,7 +109,7 @@ static char* __get_channel_str(MMSoundPcmChannel_t channel)
 		return "Unknown";
 }
 
-static char* __get_format_str(MMSoundPcmFormat_t format)
+static char* _get_format_str(MMSoundPcmFormat_t format)
 {
 	if (format == MMSOUND_PCM_S16_LE)
 		return "S16LE";
@@ -237,7 +237,7 @@ static bool _check_skip_session_type_for_capture(mm_sound_pcm_t *pcmHandle, mm_s
 	return ret;
 }
 
-static void __sound_pcm_send_message (mm_sound_pcm_t *pcmHandle, int message, int code)
+static void _sound_pcm_send_message (mm_sound_pcm_t *pcmHandle, int message, int code)
 {
 	int ret = 0;
 	if (pcmHandle->msg_cb) {
@@ -290,7 +290,7 @@ static ASM_cb_result_t sound_pcm_asm_callback(int handle, ASM_event_sources_t ev
 	}
 
 	/* execute user callback if callback available */
-	__sound_pcm_send_message (pcmHandle, message, event_src);
+	_sound_pcm_send_message (pcmHandle, message, event_src);
 
 	return cb_res;
 }
@@ -489,7 +489,7 @@ int mm_sound_pcm_capture_open_ex(MMSoundPcmHandle_t *handle, const unsigned int 
 	route_info.policy = HANDLE_ROUTE_POLICY_DEFAULT;
 
 	debug_warning ("enter : rate=[%d Hz], channel=[%x][%s], format=[%x][%s], source_type=[%x]\n",
-				rate, channel, __get_channel_str(channel), format, __get_format_str(format), source_type);
+				rate, channel, _get_channel_str(channel), format, _get_format_str(format), source_type);
 
 	if (rate < _MIN_SYSTEM_SAMPLERATE || rate > _MAX_SYSTEM_SAMPLERATE) {
 		debug_error("unsupported sample rate %u", rate);
@@ -922,7 +922,7 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 	pa_sample_spec ss;
 
 	debug_warning ("enter : rate=[%d], channel=[%x][%s], format=[%x][%s], volconf=[%d], event=[%d]\n",
-			rate, channel, __get_channel_str(channel), format, __get_format_str(format), volume_config, asm_event);
+			rate, channel, _get_channel_str(channel), format, _get_format_str(format), volume_config, asm_event);
 
 	/* Check input param */
 	if (volume_type < 0 || volume_type >= VOLUME_TYPE_MAX) {

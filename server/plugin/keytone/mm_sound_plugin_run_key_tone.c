@@ -215,7 +215,7 @@ static bool __is_mute_sound ()
 	int setting_touch_sound = true;
 
 	/* 1. Check if recording is in progress */
-	if (_mm_sound_is_recording()) {
+	if (mm_sound_util_is_recording()) {
 		debug_log ("During Recording....MUTE!!!");
 		return true;
 	}

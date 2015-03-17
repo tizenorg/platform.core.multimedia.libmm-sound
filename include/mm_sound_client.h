@@ -30,44 +30,42 @@
 
 //#define MEMTYPE_TRANS_PER_MAX (1024 * 1024) /* 1MB */
 
-int MMSoundClientInit(void);
-int MMSoundClientCallbackFini(void);
-int MMSoundClientPlayTone(int number, int volume_config, double volume, int time, int *handle, bool enable_session);
-int MMSoundClientPlaySound(MMSoundPlayParam *param, int tone, int keytone, int *handle);
-int MMSoundClientStopSound(int handle);
-int _mm_sound_client_is_route_available(mm_sound_route route, bool *is_available);
-int _mm_sound_client_foreach_available_route_cb(mm_sound_available_route_cb, void *user_data);
-int _mm_sound_client_set_active_route(mm_sound_route route, bool need_broadcast);
-int _mm_sound_client_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
-int _mm_sound_client_add_active_device_changed_callback(const char *name, mm_sound_active_device_changed_cb func, void* user_data);
-int _mm_sound_client_remove_active_device_changed_callback(const char *name);
-int _mm_sound_client_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void* user_data);
-int _mm_sound_client_remove_available_route_changed_callback(void);
-int _mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data);
-int _mm_sound_client_remove_volume_changed_callback(void);
-int _mm_sound_client_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in);
-int _mm_sound_client_get_current_connected_device_list(int device_flgas, mm_sound_device_list_t **device_list);
-int _mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data);
-int _mm_sound_client_remove_device_connected_callback(void);
-int _mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data);
-int _mm_sound_client_remove_device_info_changed_callback(void);
+int mm_sound_client_initialize(void);
+int mm_sound_client_finalize(void);
+int mm_sound_client_play_tone(int number, int volume_config, double volume, int time, int *handle, bool enable_session);
+int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int keytone, int *handle);
+int mm_sound_client_stop_sound(int handle);
+int mm_sound_client_is_route_available(mm_sound_route route, bool *is_available);
+int mm_sound_client_foreach_available_route_cb(mm_sound_available_route_cb, void *user_data);
+int mm_sound_client_set_active_route(mm_sound_route route, bool need_broadcast);
+int mm_sound_client_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
+int mm_sound_client_add_active_device_changed_callback(const char *name, mm_sound_active_device_changed_cb func, void* user_data);
+int mm_sound_client_remove_active_device_changed_callback(const char *name);
+int mm_sound_client_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void* user_data);
+int mm_sound_client_remove_available_route_changed_callback(void);
+int mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data);
+int mm_sound_client_remove_volume_changed_callback(void);
+int mm_sound_client_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in);
+int mm_sound_client_get_current_connected_device_list(int device_flgas, mm_sound_device_list_t **device_list);
+int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data);
+int mm_sound_client_remove_device_connected_callback(void);
+int mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data);
+int mm_sound_client_remove_device_info_changed_callback(void);
 #ifdef USE_FOCUS
-int _mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
-int _mm_sound_client_unregister_focus(int id);
-int _mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option);
-int _mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char *option);
-int _mm_sound_client_set_focus_watch_callback(mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, void* user_data);
-int _mm_sound_client_unset_focus_watch_callback(void);
+int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
+int mm_sound_client_unregister_focus(int id);
+int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option);
+int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char *option);
+int mm_sound_client_set_focus_watch_callback(mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, void* user_data);
+int mm_sound_client_unset_focus_watch_callback(void);
 #endif
 
-#ifdef PULSE_CLIENT
-int MMSoundClientIsBtA2dpOn (bool *connected, char** bt_name);
-#endif
-int _mm_sound_client_set_active_route_auto(void);
-int _mm_sound_client_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
+int mm_sound_client_is_bt_a2dp_on (bool *connected, char** bt_name);
+int mm_sound_client_set_active_route_auto(void);
+int mm_sound_client_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
-int _mm_sound_client_add_test_callback(mm_sound_test_cb func, void* user_data);
-int _mm_sound_client_remove_test_callback(void);
-int _mm_sound_client_test(int a, int b, int* get);
+int mm_sound_client_add_test_callback(mm_sound_test_cb func, void* user_data);
+int mm_sound_client_remove_test_callback(void);
+int mm_sound_client_test(int a, int b, int* get);
 
 #endif /* __MM_SOUND_CLIENT_H__ */

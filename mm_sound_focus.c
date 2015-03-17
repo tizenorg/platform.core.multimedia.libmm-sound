@@ -42,7 +42,7 @@ int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_chan
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_register_focus(id, stream_type, callback, user_data);
+	ret = mm_sound_client_register_focus(id, stream_type, callback, user_data);
 	if (ret) {
 		debug_error("Could not register focus, ret[0x%x]\n", ret);
 	}
@@ -64,7 +64,7 @@ int mm_sound_unregister_focus(int id)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_unregister_focus(id);
+	ret = mm_sound_client_unregister_focus(id);
 	if (ret) {
 		debug_error("Could not unregister focus, ret = %x\n", ret);
 	}
@@ -90,7 +90,7 @@ int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char 
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_acquire_focus(id, focus_type, additional_info);
+	ret = mm_sound_client_acquire_focus(id, focus_type, additional_info);
 	if (ret) {
 		debug_error("Could not acquire focus, ret[0x%x]\n", ret);
 	}
@@ -116,7 +116,7 @@ int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char 
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_release_focus(id, focus_type, additional_info);
+	ret = mm_sound_client_release_focus(id, focus_type, additional_info);
 	if (ret) {
 		debug_error("Could not release focus, ret[0x%x]\n", ret);
 	}
@@ -138,7 +138,7 @@ int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_set_focus_watch_callback(focus_type, callback, user_data);
+	ret = mm_sound_client_set_focus_watch_callback(focus_type, callback, user_data);
 	if (ret) {
 		debug_error("Could not set focus watch callback, ret[0x%x]\n", ret);
 	}
@@ -155,7 +155,7 @@ int mm_sound_unset_focus_watch_callback(void)
 
 	debug_fenter();
 
-	ret = _mm_sound_client_unset_focus_watch_callback();
+	ret = mm_sound_client_unset_focus_watch_callback();
 	if (ret) {
 		debug_error("Could not unset focus watch callback, ret = %x\n", ret);
 	}

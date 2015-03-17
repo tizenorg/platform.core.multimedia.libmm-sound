@@ -57,20 +57,20 @@ typedef struct {
 	volume_callback_fn	func;
 	void*				data;
 	volume_type_t		type;
-}volume_cb_param;
+} volume_cb_param;
 
 volume_cb_param g_volume_param[VOLUME_TYPE_MAX];
 
-static pthread_mutex_t _volume_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_volume_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static char *volume_type_str[VOLUME_TYPE_MAX] = { "SYSTEM", "NOTIFICATION", "ALARM", "RINGTONE", "MEDIA", "CALL", "VOIP", "VOICE", "FIXED"};
+static const char *volume_type_str[VOLUME_TYPE_MAX] = { "SYSTEM", "NOTIFICATION", "ALARM", "RINGTONE", "MEDIA", "CALL", "VOIP", "VOICE", "FIXED"};
 
-static char* __get_volume_str (volume_type_t type)
+static char* _get_volume_str (volume_type_t type)
 {
 	return (type >= VOLUME_TYPE_SYSTEM && type < VOLUME_TYPE_MAX)? volume_type_str[type] : "Unknown";
 }
 
-static int __validate_volume(volume_type_t type, int value)
+static int _validate_volume(volume_type_t type, int value)
 {
 	if (value < 0)
 		return -1;
@@ -111,20 +111,20 @@ static void volume_changed_cb(keynode_t* node, void* data)
 
 	debug_msg("%s changed callback called\n",vconf_keynode_get_name(node));
 
-	MMSOUND_ENTER_CRITICAL_SECTION( &_volume_mutex )
+	MMSOUND_ENTER_CRITICAL_SECTION( &g_volume_mutex )
 
 	if(param && (param->func != NULL)) {
 		debug_log("function 0x%x\n", param->func);
 		((volume_callback_fn)param->func)(param->data);
 	}
 
-	MMSOUND_LEAVE_CRITICAL_SECTION( &_volume_mutex )
+	MMSOUND_LEAVE_CRITICAL_SECTION( &g_volume_mutex )
 }
 
 EXPORT_API
 int mm_sound_volume_add_callback(volume_type_t type, volume_callback_fn func, void* user_data)
 {
-	debug_msg("type = (%d)%15s, func = %p, user_data = %p", type, __get_volume_str(type), func, user_data);
+	debug_msg("type = (%d)%15s, func = %p, user_data = %p", type, _get_volume_str(type), func, user_data);
 
 	/* Check input param */
 	if (type < 0 || type >= VOLUME_TYPE_MAX) {
@@ -136,36 +136,36 @@ int mm_sound_volume_add_callback(volume_type_t type, volume_callback_fn func, vo
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN( &_volume_mutex, MM_ERROR_SOUND_INTERNAL );
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN( &g_volume_mutex, MM_ERROR_SOUND_INTERNAL );
 
 	g_volume_param[type].func = func;
 	g_volume_param[type].data = user_data;
 	g_volume_param[type].type = type;
 
-	MMSOUND_LEAVE_CRITICAL_SECTION( &_volume_mutex );
+	MMSOUND_LEAVE_CRITICAL_SECTION( &g_volume_mutex );
 
-	return _mm_sound_volume_add_callback(type, volume_changed_cb, (void*)&g_volume_param[type]);
+	return mm_sound_util_volume_add_callback(type, volume_changed_cb, (void*)&g_volume_param[type]);
 }
 
 EXPORT_API
 int mm_sound_volume_remove_callback(volume_type_t type)
 {
-	debug_msg("type = (%d)%s", type, __get_volume_str(type));
+	debug_msg("type = (%d)%s", type, _get_volume_str(type));
 
 	if(type < 0 || type >=VOLUME_TYPE_MAX) {
 		debug_error("invalid argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN( &_volume_mutex, MM_ERROR_SOUND_INTERNAL );
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN( &g_volume_mutex, MM_ERROR_SOUND_INTERNAL );
 
 	g_volume_param[type].func = NULL;
 	g_volume_param[type].data = NULL;
 	g_volume_param[type].type = type;
 
-	MMSOUND_LEAVE_CRITICAL_SECTION( &_volume_mutex );
+	MMSOUND_LEAVE_CRITICAL_SECTION( &g_volume_mutex );
 
-	return _mm_sound_volume_remove_callback(type, volume_changed_cb);
+	return mm_sound_util_volume_remove_callback(type, volume_changed_cb);
 }
 
 EXPORT_API
@@ -178,7 +178,7 @@ int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* 
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_add_volume_changed_callback(func, user_data);
+	ret = mm_sound_client_add_volume_changed_callback(func, user_data);
 	if (ret < 0) {
 		debug_error("Can not add volume changed callback, ret = %x\n", ret);
 	}
@@ -191,7 +191,7 @@ int mm_sound_remove_volume_changed_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = _mm_sound_client_remove_volume_changed_callback();
+	ret = mm_sound_client_remove_volume_changed_callback();
 	if (ret < 0) {
 		debug_error("Can not remove volume changed callback, ret = %x\n", ret);
 	}
@@ -209,7 +209,7 @@ int mm_sound_muteall_add_callback(muteall_callback_fn func)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	return _mm_sound_muteall_add_callback(func);
+	return mm_sound_util_muteall_add_callback(func);
 }
 
 EXPORT_API
@@ -222,7 +222,7 @@ int mm_sound_muteall_remove_callback(muteall_callback_fn func)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	return _mm_sound_muteall_remove_callback(func);
+	return mm_sound_util_muteall_remove_callback(func);
 }
 
 EXPORT_API
@@ -252,7 +252,7 @@ int mm_sound_volume_get_step(volume_type_t type, int *step)
 		err = MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	debug_msg("type = (%d)%15s, step = %d", type, __get_volume_str(type), *step);
+	debug_msg("type = (%d)%15s, step = %d", type, _get_volume_str(type), *step);
 
 	return MM_ERROR_NONE;
 }
@@ -262,19 +262,19 @@ int mm_sound_volume_set_value(volume_type_t type, const unsigned int value)
 {
 	int ret = MM_ERROR_NONE;
 
-	debug_msg("type = (%d)%s, value = %d", type, __get_volume_str(type), value);
+	debug_msg("type = (%d)%s, value = %d", type, _get_volume_str(type), value);
 
 	/* Check input param */
-	if (0 > __validate_volume(type, (int)value)) {
+	if (0 > _validate_volume(type, (int)value)) {
 		debug_error("invalid volume type %d, value %u\n", type, value);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_volume_set_value_by_type(type, value);
+	ret = mm_sound_util_volume_set_value_by_type(type, value);
 	if (ret == MM_ERROR_NONE) {
 		/* update shared memory value */
 		int muteall;
-		_mm_sound_get_muteall(&muteall);
+		mm_sound_util_get_muteall(&muteall);
 		if(!muteall) {
 			if(MM_ERROR_NONE != mm_sound_pa_set_volume_by_type(type, (int)value)) {
 				debug_error("Can not set volume to shared memory 0x%x\n", ret);
@@ -335,9 +335,9 @@ int mm_sound_volume_get_value(volume_type_t type, unsigned int *value)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_volume_get_value_by_type(type, value);
+	ret = mm_sound_util_volume_get_value_by_type(type, value);
 
-	debug_msg("returned %s = %d", __get_volume_str(type), *value);
+	debug_msg("returned %s = %d", _get_volume_str(type), *value);
 	return ret;
 }
 
@@ -357,7 +357,7 @@ int mm_sound_volume_primary_type_set(volume_type_t type)
 		debug_error("could not set vconf for RIMARY_VOLUME_TYPE_FORCE\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
 	} else {
-		debug_msg("set primary volume type forcibly %d(%s)", type, __get_volume_str(type));
+		debug_msg("set primary volume type forcibly %d(%s)", type, _get_volume_str(type));
 	}
 
 	return ret;
@@ -421,7 +421,7 @@ int mm_sound_volume_get_current_playing_type(volume_type_t *type)
 	else
 		ret = MM_ERROR_SOUND_INTERNAL;
 
-	debug_msg("returned type = (%d)%15s, ret = 0x%x", *type, __get_volume_str(*type), ret);
+	debug_msg("returned type = (%d)%15s, ret = 0x%x", *type, _get_volume_str(*type), ret);
 
 	return ret;
 }
@@ -437,7 +437,7 @@ int mm_sound_volume_set_balance (float balance)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	return _mm_sound_volume_set_balance(balance);
+	return mm_sound_util_volume_set_balance(balance);
 }
 
 EXPORT_API
@@ -451,7 +451,7 @@ int mm_sound_volume_get_balance (float *balance)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_volume_get_balance(balance);
+	ret = mm_sound_util_volume_get_balance(balance);
 	debug_msg("returned balance = %f", *balance);
 
 	return ret;
@@ -468,7 +468,7 @@ int mm_sound_set_muteall (int muteall)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	return _mm_sound_set_muteall(muteall);
+	return mm_sound_util_set_muteall(muteall);
 }
 
 EXPORT_API
@@ -482,7 +482,7 @@ int mm_sound_get_muteall (int *muteall)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_get_muteall(muteall);
+	ret = mm_sound_util_get_muteall(muteall);
 	debug_msg("returned muteall = %d", *muteall);
 
 	return ret;
@@ -499,7 +499,7 @@ int mm_sound_set_stereo_to_mono (int ismono)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	return __mm_sound_set_stereo_to_mono(ismono);
+	return mm_sound_util_set_stereo_to_mono(ismono);
 }
 
 EXPORT_API
@@ -513,7 +513,7 @@ int mm_sound_get_stereo_to_mono (int *ismono)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = __mm_sound_get_stereo_to_mono(ismono);
+	ret = mm_sound_util_get_stereo_to_mono(ismono);
 	debug_msg("returned ismono = %d", *ismono);
 
 	return ret;
@@ -607,7 +607,7 @@ int mm_sound_play_sound_ex(MMSoundPlayParam *param, int *handle)
 	debug_warning ("play sound : priority=[%d], handle_route=[%d]\n", param->priority, param->handle_route);
 
 	/* Play sound */
-	err = MMSoundClientPlaySound(param, 0, 0, &lhandle);
+	err = mm_sound_client_play_sound(param, 0, 0, &lhandle);
 	if (err < 0) {
 		debug_error("Failed to play sound\n");
 		return err;
@@ -633,7 +633,7 @@ int mm_sound_stop_sound(int handle)
 
 	debug_warning ("enter : handle=[%p]\n", handle);
 	/* Stop sound */
-	err = MMSoundClientStopSound(handle);
+	err = mm_sound_client_stop_sound(handle);
 	if (err < 0) {
 		debug_error("Fail to stop sound\n");
 		return err;
@@ -675,7 +675,7 @@ int mm_sound_play_tone_ex (MMSoundTone_t num, int volume_config, const double vo
 
 	/* Play tone */
 	debug_msg("Call MMSoundClientPlayTone\n");
-	err = MMSoundClientPlayTone(num, volume_config, volume, duration, &lhandle, enable_session);
+	err = mm_sound_client_play_tone(num, volume_config, volume, duration, &lhandle, enable_session);
 	if (err < 0) {
 		debug_error("Failed to play sound\n");
 		return err;
@@ -700,7 +700,6 @@ int mm_sound_play_tone (MMSoundTone_t num, int volume_config, const double volum
 ///////////////////////////////////
 ////     MMSOUND ROUTING APIs
 ///////////////////////////////////
-#ifdef PULSE_CLIENT
 enum {
 	USE_PA_SINK_ALSA = 0,
 	USE_PA_SINK_A2DP,
@@ -729,7 +728,7 @@ int mm_sound_route_get_a2dp_status (bool *connected, char **bt_name)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = MMSoundClientIsBtA2dpOn (connected, bt_name);
+	ret = mm_sound_client_is_bt_a2dp_on (connected, bt_name);
 	debug_msg ("connected=[%d] bt_name[%s]\n", *connected, *bt_name);
 	if (ret < 0) {
 		debug_error("MMSoundClientIsBtA2dpOn() Failed\n");
@@ -786,8 +785,6 @@ int mm_sound_route_remove_change_callback(void)
 	return MM_ERROR_NONE;
 }
 
-#endif /* PULSE_CLIENT */
-
 EXPORT_API
 int mm_sound_system_get_capture_status(system_audio_capture_status_t *status)
 {
@@ -817,7 +814,7 @@ int mm_sound_is_route_available(mm_sound_route route, bool *is_available)
 
 	debug_warning ("enter : route=[%x], is_available=[%p]\n", route, is_available);
 
-	if (!_mm_sound_is_route_valid(route)) {
+	if (!mm_sound_util_is_route_valid(route)) {
 		debug_error("route is invalid %d\n", route);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -826,7 +823,7 @@ int mm_sound_is_route_available(mm_sound_route route, bool *is_available)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_is_route_available(route, is_available);
+	ret = mm_sound_client_is_route_available(route, is_available);
 	if (ret < 0) {
 		debug_error("Can not check given route is available, ret = %x\n", ret);
 	} else {
@@ -846,7 +843,7 @@ int mm_sound_foreach_available_route_cb(mm_sound_available_route_cb available_ro
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_foreach_available_route_cb(available_route_cb, user_data);
+	ret = mm_sound_client_foreach_available_route_cb(available_route_cb, user_data);
 	if (ret < 0) {
 		debug_error("Can not set foreach available route callback, ret = %x\n", ret);
 	}
@@ -860,12 +857,12 @@ int mm_sound_set_active_route(mm_sound_route route)
 	int ret = MM_ERROR_NONE;
 
 	debug_warning ("enter : route=[%x]\n", route);
-	if (!_mm_sound_is_route_valid(route)) {
+	if (!mm_sound_util_is_route_valid(route)) {
 		debug_error("route is invalid %d\n", route);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_set_active_route(route, true);
+	ret = mm_sound_client_set_active_route(route, true);
 	if (ret < 0) {
 		debug_error("Can not set active route, ret = %x\n", ret);
 	} else {
@@ -880,7 +877,7 @@ int mm_sound_set_active_route_auto(void)
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = _mm_sound_client_set_active_route_auto();
+	ret = mm_sound_client_set_active_route_auto();
 	if (ret < 0) {
 		debug_error("fail to set active route auto, ret = %x\n", ret);
 	} else {
@@ -896,12 +893,12 @@ int mm_sound_set_active_route_without_broadcast(mm_sound_route route)
 	int ret = MM_ERROR_NONE;
 
 	debug_warning ("enter : route=[%x]\n", route);
-	if (!_mm_sound_is_route_valid(route)) {
+	if (!mm_sound_util_is_route_valid(route)) {
 		debug_error("route is invalid %d\n", route);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_set_active_route(route, false);
+	ret = mm_sound_client_set_active_route(route, false);
 	if (ret < 0) {
 		debug_error("Can not set active route, ret = %x\n", ret);
 	} else {
@@ -921,7 +918,7 @@ int mm_sound_get_active_device(mm_sound_device_in *device_in, mm_sound_device_ou
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_get_active_device(device_in, device_out);
+	ret = mm_sound_client_get_active_device(device_in, device_out);
 	if (ret < 0) {
 		debug_error("Can not add active device callback, ret = %x\n", ret);
 	} else {
@@ -941,7 +938,7 @@ int mm_sound_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_get_audio_path(device_in, device_out);
+	ret = mm_sound_client_get_audio_path(device_in, device_out);
 	if (ret < 0) {
 		debug_error("Can not add active device callback, ret = %x\n", ret);
 	} else {
@@ -962,7 +959,7 @@ int mm_sound_add_active_device_changed_callback(const char *name, mm_sound_activ
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_add_active_device_changed_callback(name, func, user_data);
+	ret = mm_sound_client_add_active_device_changed_callback(name, func, user_data);
 	if (ret < 0) {
 		debug_error("Can not add active device changed callback, ret = %x\n", ret);
 	}
@@ -976,7 +973,7 @@ int mm_sound_remove_active_device_changed_callback(const char *name)
 	int ret = MM_ERROR_NONE;
 
 	debug_warning ("enter name %s \n", name);
-	ret = _mm_sound_client_remove_active_device_changed_callback(name);
+	ret = mm_sound_client_remove_active_device_changed_callback(name);
 	if (ret < 0) {
 		debug_error("Can not remove active device changed callback, ret = %x\n", ret);
 	}
@@ -994,7 +991,7 @@ int mm_sound_add_available_route_changed_callback(mm_sound_available_route_chang
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_add_available_route_changed_callback(func, user_data);
+	ret = mm_sound_client_add_available_route_changed_callback(func, user_data);
 	if (ret < 0) {
 		debug_error("Can not add available route changed callback, ret = %x\n", ret);
 	}
@@ -1007,7 +1004,7 @@ int mm_sound_remove_available_route_changed_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = _mm_sound_client_remove_available_route_changed_callback();
+	ret = mm_sound_client_remove_available_route_changed_callback();
 	if (ret < 0) {
 		debug_error("Can not remove available route changed callback, ret = %x\n", ret);
 	}
@@ -1020,7 +1017,7 @@ int mm_sound_set_sound_path_for_active_device(mm_sound_device_out device_out, mm
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = _mm_sound_client_set_sound_path_for_active_device(device_out, device_in);
+	ret = mm_sound_client_set_sound_path_for_active_device(device_out, device_in);
 	if (ret < 0) {
 		debug_error("Can not mm sound set sound path for active device, ret = %x\n", ret);
 	}
@@ -1039,7 +1036,7 @@ int mm_sound_test(int a, int b, int* getv)
 		debug_error("argu null");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	ret = _mm_sound_client_test(a, b, getv);
+	ret = mm_sound_client_test(a, b, getv);
 	if (ret < 0) {
 		debug_error("Can not mm sound test, ret = %x\n", ret);
 	}
@@ -1059,7 +1056,7 @@ int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = _mm_sound_client_add_test_callback(func, user_data);
+	ret = mm_sound_client_add_test_callback(func, user_data);
 	if (ret < 0) {
 		debug_error("Can not add test callback, ret = %x\n", ret);
 	}
@@ -1074,7 +1071,7 @@ int mm_sound_remove_test_callback(void)
 	int ret = MM_ERROR_NONE;
 
 	debug_log("mm_sound_remove_test_callback enter");
-	ret = _mm_sound_client_remove_test_callback();
+	ret = mm_sound_client_remove_test_callback();
 	if (ret < 0) {
 		debug_error("Can not remove test callback, ret = %x\n", ret);
 	}
@@ -1083,16 +1080,17 @@ int mm_sound_remove_test_callback(void)
 	return ret;
 }
 
-
-__attribute__ ((destructor))
-void __mmfsnd_finalize(void)
-{
-	MMSoundClientCallbackFini();
-}
-
 __attribute__ ((constructor))
-void __mmfsnd_initialize(void)
+static void _mm_sound_initialize(void)
 {
-	MMSoundClientInit();
+	mm_sound_client_initialize();
 	/* Will be Fixed */
 }
+
+__attribute__ ((destructor))
+static void _mm_sound_finalize(void)
+{
+	mm_sound_client_finalize();
+}
+
+

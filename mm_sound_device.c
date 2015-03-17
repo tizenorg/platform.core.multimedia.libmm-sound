@@ -29,9 +29,9 @@
 #include "include/mm_sound.h"
 #include "include/mm_sound_device.h"
 
-bool is_new_device_list = true;
+bool g_is_new_device_list = true;
 
-static int check_for_valid_mask (mm_sound_device_flags_e flags)
+static int _check_for_valid_mask (mm_sound_device_flags_e flags)
 {
 	int ret = MM_ERROR_NONE;
 	bool at_least_cond = false;
@@ -72,9 +72,9 @@ int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sou
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	ret = check_for_valid_mask(flags);
+	ret = _check_for_valid_mask(flags);
 	if (ret == MM_ERROR_NONE) {
-		ret = _mm_sound_client_add_device_connected_callback(flags, func, user_data);
+		ret = mm_sound_client_add_device_connected_callback(flags, func, user_data);
 		if (ret < 0) {
 			debug_error("Could not add device connected callback, ret = %x\n", ret);
 		}
@@ -88,7 +88,7 @@ int mm_sound_remove_device_connected_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = _mm_sound_client_remove_device_connected_callback();
+	ret = mm_sound_client_remove_device_connected_callback();
 	if (ret < 0) {
 		debug_error("Could not remove device connected callback, ret = %x\n", ret);
 	}
@@ -105,9 +105,9 @@ int mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e fla
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	ret = check_for_valid_mask(flags);
+	ret = _check_for_valid_mask(flags);
 	if (ret == MM_ERROR_NONE) {
-		ret = _mm_sound_client_add_device_info_changed_callback(flags, func, user_data);
+		ret = mm_sound_client_add_device_info_changed_callback(flags, func, user_data);
 		if (ret < 0) {
 			debug_error("Could not add device information changed callback, ret = %x\n", ret);
 		}
@@ -121,7 +121,7 @@ int mm_sound_remove_device_information_changed_callback()
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = _mm_sound_client_remove_device_info_changed_callback();
+	ret = mm_sound_client_remove_device_info_changed_callback();
 	if (ret < 0) {
 		debug_error("Could not remove device information changed callback, ret = %x\n", ret);
 	}
@@ -137,13 +137,13 @@ int mm_sound_get_current_device_list(mm_sound_device_flags_e flags, MMSoundDevic
 	if (!device_list) {
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	ret = check_for_valid_mask(flags);
+	ret = _check_for_valid_mask(flags);
 	if (ret == MM_ERROR_NONE) {
-		ret = _mm_sound_client_get_current_connected_device_list(flags, (mm_sound_device_list_t**)device_list);
+		ret = mm_sound_client_get_current_connected_device_list(flags, (mm_sound_device_list_t**)device_list);
 		if (ret < 0) {
 			debug_error("Could not get current connected device list, ret = %x\n", ret);
 		} else {
-			is_new_device_list = true;
+			g_is_new_device_list = true;
 		}
 	}
 
@@ -161,7 +161,7 @@ int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	device_list_t = (mm_sound_device_list_t*) device_list;
-	if (is_new_device_list) {
+	if (g_is_new_device_list) {
 		node = g_list_first(device_list_t->list);
 	} else {
 		node = g_list_next(device_list_t->list);
@@ -169,8 +169,8 @@ int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 	if (!node) {
 		ret = MM_ERROR_SOUND_NO_DATA;
 	} else {
-		if (is_new_device_list) {
-			is_new_device_list = false;
+		if (g_is_new_device_list) {
+			g_is_new_device_list = false;
 		} else {
 			device_list_t->list = node;
 		}

@@ -62,163 +62,149 @@
 static mm_sound_device_list_t g_device_list_t;
 static pthread_mutex_t g_device_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int MMSoundClientInit(void)
+int mm_sound_client_initialize(void)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
 	g_type_init();
-	MMSoundClientDbusInit();
+	mm_sound_client_dbus_initialize();
 
 	debug_fleave();
 	return ret;
 }
 
-int MMSoundClientCallbackFini(void)
+int mm_sound_client_finalize(void)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	MMSoundClientDbusFini();
+	mm_sound_client_dbus_finalize();
 
 	debug_fleave();
 	return MM_ERROR_NONE;
 }
 
-int _mm_sound_client_is_route_available(mm_sound_route route, bool *is_available)
+int mm_sound_client_is_route_available(mm_sound_route route, bool *is_available)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_is_route_available(route, is_available);
+	ret = mm_sound_client_dbus_is_route_available(route, is_available);
 
 	debug_fleave();
 	return ret;
 
 }
 
-int _mm_sound_client_foreach_available_route_cb(mm_sound_available_route_cb available_route_cb, void *user_data)
+int mm_sound_client_foreach_available_route_cb(mm_sound_available_route_cb available_route_cb, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_foreach_available_route_cb(available_route_cb, user_data);
+	ret = mm_sound_client_dbus_foreach_available_route_cb(available_route_cb, user_data);
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_set_active_route(mm_sound_route route, bool need_broadcast)
+int mm_sound_client_set_active_route(mm_sound_route route, bool need_broadcast)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_set_active_route(route, need_broadcast);
-
-	debug_fleave();
-	return ret;
-
-}
-
-int _mm_sound_client_set_active_route_auto(void)
-{
-	int ret = MM_ERROR_NONE;
-	debug_fenter();
-
-	ret = _mm_sound_client_dbus_set_active_route_auto();
+	ret = mm_sound_client_dbus_set_active_route(route, need_broadcast);
 
 	debug_fleave();
 	return ret;
 
 }
 
-int _mm_sound_client_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
+int mm_sound_client_set_active_route_auto(void)
+{
+	int ret = MM_ERROR_NONE;
+	debug_fenter();
+
+	ret = mm_sound_client_dbus_set_active_route_auto();
+
+	debug_fleave();
+	return ret;
+
+}
+
+int mm_sound_client_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
 {
 
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_get_active_device(device_in, device_out);
+	ret = mm_sound_client_dbus_get_active_device(device_in, device_out);
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_add_active_device_changed_callback(const char *name, mm_sound_active_device_changed_cb func, void* user_data)
+int mm_sound_client_add_active_device_changed_callback(const char *name, mm_sound_active_device_changed_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_add_active_device_changed_callback(name, func, user_data);
+	ret = mm_sound_client_dbus_add_active_device_changed_callback(name, func, user_data);
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_remove_active_device_changed_callback(const char *name)
+int mm_sound_client_remove_active_device_changed_callback(const char *name)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_remove_active_device_changed_callback(name);
+	ret = mm_sound_client_dbus_remove_active_device_changed_callback(name);
 
 	debug_fleave();
 	return ret;
 }
-int _mm_sound_client_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void* user_data)
+int mm_sound_client_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_add_available_route_changed_callback(func, user_data);
+	ret = mm_sound_client_dbus_add_available_route_changed_callback(func, user_data);
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_remove_available_route_changed_callback(void)
+int mm_sound_client_remove_available_route_changed_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_remove_available_route_changed_callback();
+	ret = mm_sound_client_dbus_remove_available_route_changed_callback();
 
 	debug_fleave();
 	return ret;
 }
 
-#ifdef PULSE_CLIENT
-
-int _mm_sound_client_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in)
+int mm_sound_client_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_set_sound_path_for_active_device(device_out, device_in);
+	ret = mm_sound_client_dbus_set_sound_path_for_active_device(device_out, device_in);
 
 	debug_fleave();
 	return ret;
 }
-
-#endif // PULSE_CLIENT
-
-
 
 
 /*****************************************************************************************
 			    DBUS SUPPORTED FUNCTIONS
 ******************************************************************************************/
 
-static int __mm_sound_device_check_flags_to_append (int device_flags, mm_sound_device_t *device_h, bool *is_good_to_append);
-static int __mm_sound_device_check_flags_to_trigger (int device_flags, mm_sound_device_t *device_h, bool *is_good_to_go);
-
-/**************************************************************************************/
-/**************************************************************************************/
-/**************************************************************************************/
-
-
-int MMSoundClientPlayTone(int number, int volume_config, double volume, int time, int *handle, bool enable_session)
+int mm_sound_client_play_tone(int number, int volume_config, double volume, int time, int *handle, bool enable_session)
 {
 	int ret = MM_ERROR_NONE;
 //	 int instance = -1; 	/* instance is unique to communicate with server : client message queue filter type */
@@ -250,7 +236,7 @@ int MMSoundClientPlayTone(int number, int volume_config, double volume, int time
 	 debug_msg("[Client] Input number : %d\n", number);
 	 /* Send req memory */
 
-	ret = MMSoundClientDbusPlayTone(number, time, volume, volume_config,
+	ret = mm_sound_client_dbus_play_tone(number, time, volume, volume_config,
 					session_type, session_options, getpid(), enable_session, handle );
 
 	debug_fleave();
@@ -258,7 +244,7 @@ int MMSoundClientPlayTone(int number, int volume_config, double volume, int time
 }
 
 
-int MMSoundClientPlaySound(MMSoundPlayParam *param, int tone, int keytone, int *handle)
+int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int keytone, int *handle)
 {
 	int ret = MM_ERROR_NONE;
 	int session_type = MM_SESSION_TYPE_MEDIA;
@@ -293,7 +279,7 @@ int MMSoundClientPlaySound(MMSoundPlayParam *param, int tone, int keytone, int *
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = MMSoundClientDbusPlaySound(param->filename, tone, param->loop, param->volume, param->volume_config,
+	ret = mm_sound_client_dbus_play_sound(param->filename, tone, param->loop, param->volume, param->volume_config,
 					 param->priority, session_type, session_options, getpid(), keytone, param->handle_route,
 					 !param->skip_session, handle);
 	if (ret != MM_ERROR_NONE) {
@@ -301,7 +287,7 @@ int MMSoundClientPlaySound(MMSoundPlayParam *param, int tone, int keytone, int *
 		goto failed;
 	} 
 	if (param->callback) {
-		ret = _mm_sound_client_dbus_add_play_sound_end_callback(param->callback, param->data, *handle);
+		ret = mm_sound_client_dbus_add_play_sound_end_callback(param->callback, param->data, *handle);
 		if (ret != MM_ERROR_NONE) {
 			debug_error("Add callback for play sound(%d) Failed", *handle);
 		}
@@ -313,182 +299,18 @@ failed:
 	return ret;
 }
 
-int MMSoundClientStopSound(int handle)
+int mm_sound_client_stop_sound(int handle)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = MMSoundClientDbusStopSound(handle);
+	ret = mm_sound_client_dbus_stop_sound(handle);
 
 	debug_fleave();
 	return ret;
 }
 
-static int __mm_sound_device_check_flags_to_append (int device_flags, mm_sound_device_t *device_h, bool *is_good_to_append)
-{
-	bool need_to_append = false;
-	int need_to_check_for_io_direction = device_flags & DEVICE_IO_DIRECTION_FLAGS;
-	int need_to_check_for_state = device_flags & DEVICE_STATE_FLAGS;
-	int need_to_check_for_type = device_flags & DEVICE_TYPE_FLAGS;
-
-	debug_warning("device_h[0x%x], device_flags[0x%x], need_to_check(io_direction[0x%x],state[0x%x],type[0x%x])\n",
-			device_h, device_flags, need_to_check_for_io_direction, need_to_check_for_state, need_to_check_for_type);
-
-	if(!device_h) {
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-	if (device_flags == DEVICE_ALL_FLAG) {
-		*is_good_to_append = true;
-		return MM_ERROR_NONE;
-	}
-
-	if (need_to_check_for_io_direction) {
-		if ((device_h->io_direction == DEVICE_IO_DIRECTION_IN) && (device_flags & DEVICE_IO_DIRECTION_IN_FLAG)) {
-			need_to_append = true;
-		} else if ((device_h->io_direction == DEVICE_IO_DIRECTION_OUT) && (device_flags & DEVICE_IO_DIRECTION_OUT_FLAG)) {
-			need_to_append = true;
-		} else if ((device_h->io_direction == DEVICE_IO_DIRECTION_BOTH) && (device_flags & DEVICE_IO_DIRECTION_BOTH_FLAG)) {
-			need_to_append = true;
-		}
-		if (need_to_append) {
-			if (!need_to_check_for_state && !need_to_check_for_type) {
-				*is_good_to_append = true;
-				return MM_ERROR_NONE;
-			}
-		} else {
-			*is_good_to_append = false;
-			return MM_ERROR_NONE;
-		}
-	}
-	if (need_to_check_for_state) {
-		need_to_append = false;
-		if ((device_h->state == DEVICE_STATE_DEACTIVATED) && (device_flags & DEVICE_STATE_DEACTIVATED_FLAG)) {
-			need_to_append = true;
-		} else if ((device_h->state == DEVICE_STATE_ACTIVATED) && (device_flags & DEVICE_STATE_ACTIVATED_FLAG)) {
-			need_to_append = true;
-		}
-		if (need_to_append) {
-			if (!need_to_check_for_type) {
-				*is_good_to_append = true;
-				return MM_ERROR_NONE;
-			}
-		} else {
-			*is_good_to_append = false;
-			return MM_ERROR_NONE;
-		}
-	}
-	if (need_to_check_for_type) {
-		need_to_append = false;
-		bool is_internal_device = IS_INTERNAL_DEVICE(device_h->type);
-		if (is_internal_device && (device_flags & DEVICE_TYPE_INTERNAL_FLAG)) {
-			need_to_append = true;
-		} else if (!is_internal_device && (device_flags & DEVICE_TYPE_EXTERNAL_FLAG)) {
-			need_to_append = true;
-		}
-		if (need_to_append) {
-			*is_good_to_append = true;
-			return MM_ERROR_NONE;
-		} else {
-			*is_good_to_append = false;
-			return MM_ERROR_NONE;
-		}
-	}
-	return MM_ERROR_NONE;
-}
-
-
-static int __mm_sound_device_check_flags_to_trigger (int device_flags, mm_sound_device_t *device_h, bool *is_good_to_go)
-{
-	bool need_to_go = false;
-	int need_to_check_for_io_direction = device_flags & DEVICE_IO_DIRECTION_FLAGS;
-	int need_to_check_for_state = device_flags & DEVICE_STATE_FLAGS;
-	int need_to_check_for_type = device_flags & DEVICE_TYPE_FLAGS;
-
-	debug_warning("device_h[0x%x], device_flags[0x%x], need_to_check(io_direction[0x%x],state[0x%x],type[0x%x])\n",
-			device_h, device_flags, need_to_check_for_io_direction, need_to_check_for_state, need_to_check_for_type);
-
-	if(!device_h) {
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-	if (device_flags == DEVICE_ALL_FLAG) {
-		*is_good_to_go = true;
-		return MM_ERROR_NONE;
-	}
-
-	if (need_to_check_for_io_direction) {
-		if ((device_h->io_direction == DEVICE_IO_DIRECTION_IN) && (device_flags & DEVICE_IO_DIRECTION_IN_FLAG)) {
-			need_to_go = true;
-		} else if ((device_h->io_direction == DEVICE_IO_DIRECTION_OUT) && (device_flags & DEVICE_IO_DIRECTION_OUT_FLAG)) {
-			need_to_go = true;
-		} else if ((device_h->io_direction == DEVICE_IO_DIRECTION_BOTH) && (device_flags & DEVICE_IO_DIRECTION_BOTH_FLAG)) {
-			need_to_go = true;
-		}
-		if (need_to_go) {
-			if (!need_to_check_for_state && !need_to_check_for_type) {
-				*is_good_to_go = true;
-				return MM_ERROR_NONE;
-			}
-		} else {
-			*is_good_to_go = false;
-			return MM_ERROR_NONE;
-		}
-	}
-	if (need_to_check_for_state) {
-		need_to_go = false;
-		if ((device_h->state == DEVICE_STATE_DEACTIVATED) && (device_flags & DEVICE_STATE_DEACTIVATED_FLAG)) {
-			need_to_go = true;
-		} else if ((device_h->state == DEVICE_STATE_ACTIVATED) && (device_flags & DEVICE_STATE_ACTIVATED_FLAG)) {
-			need_to_go = true;
-		}
-		if (need_to_go) {
-			if (!need_to_check_for_type) {
-				*is_good_to_go = true;
-				return MM_ERROR_NONE;
-			}
-		} else {
-			*is_good_to_go = false;
-			return MM_ERROR_NONE;
-		}
-	}
-	if (need_to_check_for_type) {
-		need_to_go = false;
-		bool is_internal_device = IS_INTERNAL_DEVICE(device_h->type);
-		if (is_internal_device && (device_flags & DEVICE_TYPE_INTERNAL_FLAG)) {
-			need_to_go = true;
-		} else if (!is_internal_device && (device_flags & DEVICE_TYPE_EXTERNAL_FLAG)) {
-			need_to_go = true;
-		}
-		if (need_to_go) {
-			*is_good_to_go = true;
-			return MM_ERROR_NONE;
-		} else {
-			*is_good_to_go = false;
-			return MM_ERROR_NONE;
-		}
-	}
-	return MM_ERROR_NONE;
-}
-
-#if 0
-static int __mm_sound_client_device_list_clear ()
-{
-	int ret = MM_ERROR_NONE;
-
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_device_list_mutex, MM_ERROR_SOUND_INTERNAL);
-
-	if (g_device_list) {
-		g_list_free_full(g_device_list, g_free);
-		g_device_list = NULL;
-	}
-
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_device_list_mutex);
-
-	return ret;
-}
-#endif
-
-
-static int __mm_sound_client_device_list_clear ()
+static int _mm_sound_client_device_list_clear ()
 {
 	int ret = MM_ERROR_NONE;
 
@@ -503,25 +325,6 @@ static int __mm_sound_client_device_list_clear ()
 
 	return ret;
 }
-
-#if 0
-static int __mm_sound_client_device_list_append_item (mm_sound_device_t *device_h)
-{
-	int ret = MM_ERROR_NONE;
-	mm_sound_device_t *device_node = g_malloc0(sizeof(mm_sound_device_t));
-	memcpy(device_node, device_h, sizeof(mm_sound_device_t));
-
-
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_device_list_mutex, MM_ERROR_SOUND_INTERNAL);
-
-	g_device_list = g_list_append(g_device_list, device_node);
-	debug_log("[Client] g_device_list[0x%x], new device_node[0x%x] is appended, type[%d], id[%d]\n", g_device_list, device_node, device_node->type, device_node->id);
-
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_device_list_mutex);
-
-	return ret;
-}
-#endif
 
 static int _mm_sound_client_device_list_dump (GList *device_list)
 {
@@ -547,18 +350,18 @@ static int _mm_sound_client_device_list_dump (GList *device_list)
 	return ret;
 }
 
-int _mm_sound_client_get_current_connected_device_list(int device_flags, mm_sound_device_list_t **device_list)
+int mm_sound_client_get_current_connected_device_list(int device_flags, mm_sound_device_list_t **device_list)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = __mm_sound_client_device_list_clear();
+	ret = _mm_sound_client_device_list_clear();
 	if (ret) {
 		debug_error("[Client] failed to __mm_sound_client_device_list_clear(), ret[0x%x]\n", ret);
 		return ret;
 	}
 
-	if((ret = _mm_sound_client_dbus_get_current_connected_device_list(device_flags, &g_device_list_t))!=MM_ERROR_NONE){
+	if((ret = mm_sound_client_dbus_get_current_connected_device_list(device_flags, &g_device_list_t))!=MM_ERROR_NONE){
 		debug_error("[Client] failed to get current connected device list with dbus, ret[0x%x]", ret);
 		goto failed;
 	}
@@ -576,97 +379,97 @@ failed:
 	return ret;
 }
 
-int _mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data)
+int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_add_device_connected_callback(device_flags, func, user_data);
+	ret = mm_sound_client_dbus_add_device_connected_callback(device_flags, func, user_data);
 
 	debug_fleave();
 	return ret;
 
 }
 
-int _mm_sound_client_remove_device_connected_callback(void)
+int mm_sound_client_remove_device_connected_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_remove_device_connected_callback();
+	ret = mm_sound_client_dbus_remove_device_connected_callback();
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data)
+int mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_add_device_info_changed_callback(device_flags, func, user_data);
+	ret = mm_sound_client_dbus_add_device_info_changed_callback(device_flags, func, user_data);
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_remove_device_info_changed_callback(void)
+int mm_sound_client_remove_device_info_changed_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret =  _mm_sound_client_dbus_remove_device_info_changed_callback();
+	ret =  mm_sound_client_dbus_remove_device_info_changed_callback();
 
 	debug_fleave();
 	return ret;
 
 }
-int MMSoundClientIsBtA2dpOn (bool *connected, char** bt_name)
+int mm_sound_client_is_bt_a2dp_on (bool *connected, char** bt_name)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = MMSoundClientDbusIsBtA2dpOn(connected, bt_name);
-
-	debug_fleave();
-	return ret;
-}
-
-
-int _mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-
-	ret = _mm_sound_client_dbus_add_volume_changed_callback(func, user_data);
-
-	debug_fleave();
-	return ret;
-}
-
-int _mm_sound_client_remove_volume_changed_callback(void)
-{
-	int ret = MM_ERROR_NONE;
-	debug_fenter();
-
-	ret = _mm_sound_client_dbus_remove_volume_changed_callback();
+	ret = mm_sound_client_dbus_is_bt_a2dp_on(connected, bt_name);
 
 	debug_fleave();
 	return ret;
 }
 
 
-int _mm_sound_client_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
+int mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_get_audio_path(device_in, device_out);
+	ret = mm_sound_client_dbus_add_volume_changed_callback(func, user_data);
+
+	debug_fleave();
+	return ret;
+}
+
+int mm_sound_client_remove_volume_changed_callback(void)
+{
+	int ret = MM_ERROR_NONE;
+	debug_fenter();
+
+	ret = mm_sound_client_dbus_remove_volume_changed_callback();
+
+	debug_fleave();
+	return ret;
+}
+
+
+int mm_sound_client_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	ret = mm_sound_client_dbus_get_audio_path(device_in, device_out);
 
 	debug_fleave();
 
@@ -675,67 +478,67 @@ int _mm_sound_client_get_audio_path(mm_sound_device_in *device_in, mm_sound_devi
 
 
 #ifdef USE_FOCUS
-int _mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
+int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_register_focus(id, stream_type, callback,  user_data);
+	ret = mm_sound_client_dbus_register_focus(id, stream_type, callback,  user_data);
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_unregister_focus(int id)
+int mm_sound_client_unregister_focus(int id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_unregister_focus(id);
+	ret = mm_sound_client_dbus_unregister_focus(id);
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option)
+int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_acquire_focus(id, type, option);
+	ret = mm_sound_client_dbus_acquire_focus(id, type, option);
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char *option)
+int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char *option)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	_mm_sound_client_dbus_release_focus(id, type, option);
+	mm_sound_client_dbus_release_focus(id, type, option);
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void* user_data)
+int mm_sound_client_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	_mm_sound_client_dbus_set_focus_watch_callback(focus_type, callback, user_data);
+	mm_sound_client_dbus_set_focus_watch_callback(focus_type, callback, user_data);
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_unset_focus_watch_callback(void)
+int mm_sound_client_unset_focus_watch_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_unset_focus_watch_callback();
+	ret = mm_sound_client_dbus_unset_focus_watch_callback();
 
 	debug_fleave();
 	return ret;
@@ -743,42 +546,40 @@ int _mm_sound_client_unset_focus_watch_callback(void)
 #endif
 
 
-int _mm_sound_client_add_test_callback(mm_sound_test_cb func, void* user_data)
+int mm_sound_client_add_test_callback(mm_sound_test_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_add_test_callback(func, user_data);
+	ret = mm_sound_client_dbus_add_test_callback(func, user_data);
 
 	debug_fleave();
 	return ret;
 }
 
-int _mm_sound_client_remove_test_callback(void)
+int mm_sound_client_remove_test_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_remove_test_callback();
+	ret = mm_sound_client_dbus_remove_test_callback();
 
 	debug_fleave();
 	return ret;
 }
 
 
-int _mm_sound_client_test(int a, int b, int* getv)
+int mm_sound_client_test(int a, int b, int* getv)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = _mm_sound_client_dbus_test(a, b, getv);
+	ret = mm_sound_client_dbus_test(a, b, getv);
 	debug_log("%d * %d -> result : %d", a, b, *getv);
 
 	debug_fleave();
 
 	return ret;
 }
-
-

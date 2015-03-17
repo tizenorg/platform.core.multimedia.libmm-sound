@@ -550,7 +550,7 @@ static int __set_playback_route_notification (session_state_t state)
 
 	if (state == SESSION_START) {
 		/* FIXME : Need to check using vconf key with check status and policy */
-		if (_mm_sound_is_recording() || _mm_sound_is_mute_policy()) {
+		if (mm_sound_util_is_recording() || mm_sound_util_is_mute_policy()) {
 			/* Force earphone path for mute case */
 			if ((ret = __set_sound_path_to_earphone_only ()) != MM_ERROR_NONE) {
 				debug_error ("__set_sound_path_to_earphone_only() failed [%x]\n", ret);
@@ -791,7 +791,7 @@ static int __set_sound_path_for_current_active (bool need_broadcast, bool need_c
 			if (out == MM_SOUND_DEVICE_OUT_MIRRORING) {
 				/* mirroring option */
 			}
-			if (_mm_sound_is_mute_policy ()) {
+			if (mm_sound_util_is_mute_policy ()) {
 				/* Mute Ringtone */
 				out = MM_SOUND_DEVICE_OUT_BT_A2DP;
 			} else {
@@ -844,7 +844,7 @@ static int __set_sound_path_for_current_active (bool need_broadcast, bool need_c
 			}
 #endif /* TIZEN_MICRO */
 #endif /* #ifndef _TIZEN_PUBLIC_ */
-			if (_mm_sound_is_mute_policy ()) {
+			if (mm_sound_util_is_mute_policy ()) {
 				/* Mute Ringtone */
 #ifdef TIZEN_MICRO
 				out = MM_SOUND_DEVICE_OUT_SPEAKER;
@@ -1307,7 +1307,7 @@ static void __set_initial_active_device (void)
 	SET_AVAILABLE(MM_SOUND_DEVICE_IN_MIC);
 
 	/* Get wired status and set available status */
-	_mm_sound_get_earjack_type (&g_info.headset_type);
+	mm_sound_util_get_earjack_type (&g_info.headset_type);
 	if (g_info.headset_type > EARJACK_UNPLUGGED) {
 		SET_AVAILABLE(MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY);
 		if (g_info.headset_type == DEVICE_EARJACK_TYPE_SPK_WITH_MIC) {
@@ -1321,7 +1321,7 @@ static void __set_initial_active_device (void)
 	}
 
 	/* Get Dock status and set available status */
-	_mm_sound_get_dock_type (&dock_type);
+	mm_sound_util_get_dock_type (&dock_type);
 	if (dock_type == DOCK_DESKDOCK) {
 		SET_AVAILABLE(MM_SOUND_DEVICE_OUT_DOCK);
 	}

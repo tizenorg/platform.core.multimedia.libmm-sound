@@ -79,7 +79,7 @@ static char *g_volume_str[VOLUME_TYPE_MAX] = {
 };
 
 EXPORT_API
-int _mm_sound_get_valid_route_list(mm_sound_route **route_list)
+int mm_sound_util_get_valid_route_list(mm_sound_route **route_list)
 {
 	*route_list = g_valid_route;
 
@@ -87,13 +87,13 @@ int _mm_sound_get_valid_route_list(mm_sound_route **route_list)
 }
 
 EXPORT_API
-bool _mm_sound_is_route_valid(mm_sound_route route)
+bool mm_sound_util_is_route_valid(mm_sound_route route)
 {
 	mm_sound_route *route_list = 0;
 	int route_index = 0;
 	int route_list_count = 0;
 
-	route_list_count = _mm_sound_get_valid_route_list(&route_list);
+	route_list_count = mm_sound_util_get_valid_route_list(&route_list);
 	for (route_index = 0; route_index < route_list_count; route_index++) {
 		if (route_list[route_index] == route)
 			return 1;
@@ -103,7 +103,7 @@ bool _mm_sound_is_route_valid(mm_sound_route route)
 }
 
 EXPORT_API
-void _mm_sound_get_devices_from_route(mm_sound_route route, mm_sound_device_in *device_in, mm_sound_device_out *device_out)
+void mm_sound_util_get_devices_from_route(mm_sound_route route, mm_sound_device_in *device_in, mm_sound_device_out *device_out)
 {
 	if (device_in && device_out) {
 		*device_in = route & 0x00FF;
@@ -112,28 +112,7 @@ void _mm_sound_get_devices_from_route(mm_sound_route route, mm_sound_device_in *
 }
 
 EXPORT_API
-bool _mm_sound_check_hibernation (const char *path)
-{
-	int fd = -1;
-	if (path == NULL) {
-		debug_error ("Path is null\n");
-		return false;
-	}
-
-	fd = open (path, O_RDONLY | O_CREAT, 0644);
-	if (fd != -1) {
-		debug_log ("Open [%s] success!!\n", path);
-	} else {
-		debug_error ("Can't create [%s] with errno [%d]\n", path, errno);
-		return false;
-	}
-
-	close (fd);
-	return true;
-}
-
-EXPORT_API
-int _mm_sound_volume_add_callback(volume_type_t type, void *func, void* user_data)
+int mm_sound_util_volume_add_callback(volume_type_t type, void *func, void* user_data)
 {
 	if (vconf_notify_key_changed(g_volume_vconf[type], func, user_data)) {
 		debug_error ("vconf_notify_key_changed failed..\n");
@@ -144,7 +123,7 @@ int _mm_sound_volume_add_callback(volume_type_t type, void *func, void* user_dat
 }
 
 EXPORT_API
-int _mm_sound_volume_remove_callback(volume_type_t type, void *func)
+int mm_sound_util_volume_remove_callback(volume_type_t type, void *func)
 {
 	if (vconf_ignore_key_changed(g_volume_vconf[type], func)) {
 		debug_error ("vconf_ignore_key_changed failed..\n");
@@ -155,29 +134,7 @@ int _mm_sound_volume_remove_callback(volume_type_t type, void *func)
 }
 
 EXPORT_API
-int _mm_sound_muteall_add_callback(void *func)
-{
-	if (vconf_notify_key_changed(VCONF_KEY_MUTE_ALL, func, NULL)) {
-		debug_error ("vconf_notify_key_changed failed..\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int _mm_sound_muteall_remove_callback(void *func)
-{
-	if (vconf_ignore_key_changed(VCONF_KEY_MUTE_ALL, func)) {
-		debug_error ("vconf_ignore_key_changed failed..\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int _mm_sound_volume_get_value_by_type(volume_type_t type, unsigned int *value)
+int mm_sound_util_volume_get_value_by_type(volume_type_t type, unsigned int *value)
 {
 	int ret = MM_ERROR_NONE;
 	int vconf_value = 0;
@@ -196,7 +153,7 @@ int _mm_sound_volume_get_value_by_type(volume_type_t type, unsigned int *value)
 }
 
 EXPORT_API
-int _mm_sound_volume_set_value_by_type(volume_type_t type, unsigned int value)
+int mm_sound_util_volume_set_value_by_type(volume_type_t type, unsigned int value)
 {
 	int ret = MM_ERROR_NONE;
 	int vconf_value = 0;
@@ -216,7 +173,7 @@ int _mm_sound_volume_set_value_by_type(volume_type_t type, unsigned int value)
 }
 
 EXPORT_API
-int _mm_sound_volume_set_balance(float balance)
+int mm_sound_util_volume_set_balance(float balance)
 {
 	/* Set balance value to VCONF */
 	if (vconf_set_dbl(VCONF_KEY_VOLUME_BALANCE, balance)) {
@@ -228,7 +185,7 @@ int _mm_sound_volume_set_balance(float balance)
 }
 
 EXPORT_API
-int _mm_sound_volume_get_balance(float *balance)
+int mm_sound_util_volume_get_balance(float *balance)
 {
 	double balance_value = 0;
 
@@ -245,7 +202,7 @@ int _mm_sound_volume_get_balance(float *balance)
 }
 
 EXPORT_API
-int _mm_sound_set_muteall(int muteall)
+int mm_sound_util_set_muteall(int muteall)
 {
 	/* Set muteall value to VCONF */
 	if (vconf_set_int(VCONF_KEY_MUTE_ALL, muteall)) {
@@ -257,7 +214,7 @@ int _mm_sound_set_muteall(int muteall)
 }
 
 EXPORT_API
-int _mm_sound_get_muteall(int *muteall)
+int mm_sound_util_get_muteall(int *muteall)
 {
 	int muteall_value = 0;
 
@@ -274,7 +231,29 @@ int _mm_sound_get_muteall(int *muteall)
 }
 
 EXPORT_API
-int __mm_sound_set_stereo_to_mono(int ismono)
+int mm_sound_util_muteall_add_callback(void *func)
+{
+	if (vconf_notify_key_changed(VCONF_KEY_MUTE_ALL, func, NULL)) {
+		debug_error ("vconf_notify_key_changed failed..\n");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	return MM_ERROR_NONE;
+}
+
+EXPORT_API
+int mm_sound_util_muteall_remove_callback(void *func)
+{
+	if (vconf_ignore_key_changed(VCONF_KEY_MUTE_ALL, func)) {
+		debug_error ("vconf_ignore_key_changed failed..\n");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	return MM_ERROR_NONE;
+}
+
+EXPORT_API
+int mm_sound_util_set_stereo_to_mono(int ismono)
 {
 	/* Set ismono value to VCONF */
 	if (vconf_set_int(VCONF_KEY_MONO_AUDIO, ismono)) {
@@ -286,7 +265,7 @@ int __mm_sound_set_stereo_to_mono(int ismono)
 }
 
 EXPORT_API
-int __mm_sound_get_stereo_to_mono(int *ismono)
+int mm_sound_util_get_stereo_to_mono(int *ismono)
 {
 	int ismono_value = 0;
 
@@ -303,7 +282,7 @@ int __mm_sound_get_stereo_to_mono(int *ismono)
 }
 
 EXPORT_API
-int _mm_sound_get_earjack_type (int *type)
+int mm_sound_util_get_earjack_type (int *type)
 {
 	int earjack_status = 0;
 
@@ -322,7 +301,7 @@ int _mm_sound_get_earjack_type (int *type)
 }
 
 EXPORT_API
-int _mm_sound_get_dock_type (int *type)
+int mm_sound_util_get_dock_type (int *type)
 {
 	int dock_status = 0;
 
@@ -341,7 +320,7 @@ int _mm_sound_get_dock_type (int *type)
 }
 
 EXPORT_API
-bool _mm_sound_is_recording (void)
+bool mm_sound_util_is_recording (void)
 {
 	int capture_status = 0;
 	bool result = false;
@@ -351,7 +330,7 @@ bool _mm_sound_is_recording (void)
 }
 
 EXPORT_API
-bool _mm_sound_is_mute_policy (void)
+bool mm_sound_util_is_mute_policy (void)
 {
 	int setting_sound_status = true;
 

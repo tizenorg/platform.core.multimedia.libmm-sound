@@ -279,10 +279,6 @@ int main(int argc, char **argv)
 		/* Start Run types */
 		MMSoundMgrRunRunAll();
 
-#ifdef USE_HIBERNATION
-		/* set hibernation check */
-		_mm_sound_check_hibernation (HIBERNATION_SOUND_CHECK_PATH);
-#endif
 		unlink(PA_READY); // remove pa_ready file after sound-server init.
 
 		if (sem_post(sem) == -1) {

@@ -55,7 +55,7 @@
 #define MAX_SUPPORT_DEVICE_NUM    256
 static char g_device_id_array[MAX_SUPPORT_DEVICE_NUM];
 
-void _mm_sound_get_devices_from_route(mm_sound_route route, mm_sound_device_in *device_in, mm_sound_device_out *device_out);
+void mm_sound_util_get_devices_from_route(mm_sound_route route, mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
 static GList *g_active_device_cb_list = NULL;
 static pthread_mutex_t g_active_device_cb_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -136,7 +136,7 @@ int _mm_sound_mgr_device_is_route_available(const _mm_sound_mgr_device_param_t *
 
 	debug_fenter();
 
-	_mm_sound_get_devices_from_route(route, &device_in, &device_out);
+	mm_sound_util_get_devices_from_route(route, &device_in, &device_out);
 
 	/* check given input & output device is available */
 	ret = MMSoundMgrSessionIsDeviceAvailable(device_out, device_in, is_available);
@@ -156,12 +156,12 @@ int _mm_sound_mgr_device_foreach_available_route_cb(mm_ipc_msg_t *msg)
 
 	debug_fenter();
 
-	route_list_count = _mm_sound_get_valid_route_list(&route_list);
+	route_list_count = mm_sound_util_get_valid_route_list(&route_list);
 	for (route_index = 0; route_index < route_list_count; route_index++) {
 		mm_sound_device_in device_in = MM_SOUND_DEVICE_IN_NONE;
 		mm_sound_device_out device_out = MM_SOUND_DEVICE_OUT_NONE;
 
-		_mm_sound_get_devices_from_route(route_list[route_index], &device_in, &device_out);
+		mm_sound_util_get_devices_from_route(route_list[route_index], &device_in, &device_out);
 		/* check input & output device of given route is available */
 		ret = MMSoundMgrSessionIsDeviceAvailable(device_out, device_in, &is_available);
 		if (ret != MM_ERROR_NONE) {

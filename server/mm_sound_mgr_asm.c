@@ -1722,7 +1722,7 @@ gboolean __need_to_compare_again(ASM_sound_events_t current_playing_event, int c
 		mm_sound_device_in device_in = MM_SOUND_DEVICE_IN_NONE;
 		bool available = false;
 
-		if (incoming_playing_event == ASM_EVENT_NOTIFY && (_mm_sound_is_recording() || _mm_sound_is_mute_policy()) ) {
+		if (incoming_playing_event == ASM_EVENT_NOTIFY && (mm_sound_util_is_recording() || mm_sound_util_is_mute_policy()) ) {
 			ret = MMSoundMgrSessionIsDeviceAvailable (device_out_wired_accessory, device_in, &available);
 			if (ret) {
 				debug_error("Failed to IsDeviceAvailable()\n");
@@ -1768,7 +1768,7 @@ gboolean __need_to_compare_again(ASM_sound_events_t current_playing_event, int c
 				}
 			}
 		} else if (current_playing_event == ASM_EVENT_ALARM && incoming_playing_event == ASM_EVENT_NOTIFY) {
-			if ((_mm_sound_is_recording() || _mm_sound_is_mute_policy())) {
+			if ((mm_sound_util_is_recording() || mm_sound_util_is_mute_policy())) {
 				debug_warning("EXCEPTION case for notification on alarm in 1PAUSE_2PLAY => go to 1PLAY_2STOP\n");
 				*sound_case = ASM_CASE_1PLAY_2STOP;
 				*blocked_reason = ERR_ASM_POLICY_CANNOT_PLAY_BY_PROFILE;
@@ -3476,7 +3476,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 				__asm_change_state_list(rcv_instance_id, rcv_sound_handle, rcv_sound_state, rcv_resource);
 				asm_snd_msg.data.result_sound_command = ASM_COMMAND_NONE;
 				asm_snd_msg.data.result_sound_state = rcv_sound_state;
-			} else if (_mm_sound_is_mute_policy() && (ASM_EVENT_NOTIFY == rcv_sound_event)) {
+			} else if (mm_sound_util_is_mute_policy() && (ASM_EVENT_NOTIFY == rcv_sound_event)) {
 				/*do not play notify sound in mute profile.*/
 				asm_snd_msg.data.result_sound_command = ASM_COMMAND_STOP;
 				asm_snd_msg.data.result_sound_state   = ASM_STATE_STOP;
