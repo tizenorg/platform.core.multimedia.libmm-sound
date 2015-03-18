@@ -428,7 +428,7 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	flag_for_taken_index = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->request_type & victim_node->status : assaulter_param->request_type;
 	for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
 		if (flag_for_taken_index & (i+1)) {
-			if (command == FOCUS_COMMAND_ACQUIRE && victim_node->taken_by_id[i].pid != assaulter_param->pid && victim_node->taken_by_id[i].handle_id != assaulter_param->handle_id) {
+			if (command == FOCUS_COMMAND_ACQUIRE && (victim_node->taken_by_id[i].pid != assaulter_param->pid || victim_node->taken_by_id[i].handle_id != assaulter_param->handle_id)) {
 				//skip
 				continue;
 			}

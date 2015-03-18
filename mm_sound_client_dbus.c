@@ -1535,7 +1535,7 @@ int _mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_sou
 	params = g_variant_new("(iis)", instance, id, stream_type);
 	if (params) {
 		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_REGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
-			debug_error("dbus reguster focus failed");
+			debug_error("dbus register focus failed");
 			goto cleanup;
 		}
 	} else {
@@ -1605,7 +1605,7 @@ int _mm_sound_client_dbus_unregister_focus(int id)
 	params = g_variant_new("(ii)", instance, id);
 	if (params) {
 		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_UNREGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
-			debug_error("dbus reguster focus failed");
+			debug_error("dbus unregister focus failed");
 			goto cleanup;
 		}
 	} else {
@@ -1657,7 +1657,7 @@ int _mm_sound_client_dbus_acquire_focus(int id, mm_sound_focus_type_e type, cons
 	params = g_variant_new("(iiis)", instance, id, type, option);
 	if (params) {
 		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_ACQUIRE_FOCUS, params, &result)) != MM_ERROR_NONE) {
-			debug_error("dbus reguster focus failed");
+			debug_error("dbus acquire focus failed");
 			goto cleanup;
 		}
 	} else {
@@ -1697,7 +1697,7 @@ int _mm_sound_client_dbus_release_focus(int id, mm_sound_focus_type_e type, cons
 	params = g_variant_new("(iiis)", instance, id, type, option);
 	if (params) {
 		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_RELEASE_FOCUS, params, &result)) != MM_ERROR_NONE) {
-			debug_error("dbus reguster focus failed");
+			debug_error("dbus release focus failed");
 			goto cleanup;
 		}
 	} else {
@@ -1750,7 +1750,7 @@ int _mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, m
 	params = g_variant_new("(ii)", instance, type);
 	if (params) {
 		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_WATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
-			debug_error("dbus reguster focus failed");
+			debug_error("dbus set watch focus failed");
 			goto cleanup;
 		}
 	} else {
@@ -1813,7 +1813,7 @@ int _mm_sound_client_dbus_unset_focus_watch_callback(void)
 	params = g_variant_new("(i)", instance);
 	if (params) {
 		if ((ret = __MMDbusCall(SOUND_SERVER_METHOD_UNWATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
-			debug_error("dbus reguster focus failed");
+			debug_error("dbus unset watch focus failed");
 			goto cleanup;
 		}
 	} else {
