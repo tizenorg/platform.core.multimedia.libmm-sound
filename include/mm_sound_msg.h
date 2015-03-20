@@ -166,6 +166,11 @@ enum {
         SOUND_SERVER_SIGNAL_MAX
 };
 
+enum {
+        PULSEAUDIO_PROP_AUDIO_BALANCE,
+        PULSEAUDIO_PROP_MAX
+};
+
 struct mm_sound_dbus_method_info{
         const char* name;
         /*
@@ -177,6 +182,10 @@ struct mm_sound_dbus_method_info{
 struct mm_sound_dbus_signal_info{
         const char* name;
         const char* argument;
+};
+
+struct pulseaudio_dbus_property_info {
+        const char* name;
 };
 
 #define DSIZE sizeof(mm_ipc_msg_t)-sizeof(long)	/* data size for rcv & snd */

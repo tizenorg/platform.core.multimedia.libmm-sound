@@ -48,7 +48,6 @@
 #include <pulse/ext-echo-cancel.h>
 
 #define SUPPORT_MONO_AUDIO
-#define SUPPORT_AUDIO_BALANCE
 #ifdef SUPPORT_BT_SCO
 #define SUPPORT_BT_SCO_DETECT
 #endif
@@ -738,110 +737,6 @@ int MMSoundMgrPulseHandleRegisterMonoAudio (void* pinfo)
 	return ret;
 }
 #endif /* SUPPORT_MONO_AUDIO */
-
-/* -------------------------------- Audio Balance --------------------------------------------*/
-#ifdef SUPPORT_AUDIO_BALANCE
-static void set_balance_cb (pa_context *c, int success, void *userdata)
-{
-	pulse_info_t *pinfo = (pulse_info_t *)userdata;
-	if (pinfo == NULL) {
-		debug_error ("pinfo is null");
-		return;
-	}
-
-	if (success) {
-		debug_msg ("[PA_CB] m[%p] c[%p] set balance success", pinfo->m, c);
-	} else {
-		debug_error("[PA_CB] m[%p] c[%p] set balance fail:%s", pinfo->m, c, pa_strerror(pa_context_errno(c)));
-	}
-	pa_threaded_mainloop_signal(pinfo->m, 0);
-}
-
-static void _balance_changed_cb(keynode_t* node, void* data)
-{
-	double balance_value;
-	pulse_info_t* pinfo = (pulse_info_t*)data;
-	pa_operation *o = NULL;
-
-	if (pinfo == NULL) {
-		debug_error ("pinfo is null");
-		return;
-	}
-
-	vconf_get_dbl(VCONF_KEY_VOLUME_BALANCE, &balance_value);
-	debug_msg ("%s changed callback called, balance value = %f\n",vconf_keynode_get_name(node), balance_value);
-
-	pa_threaded_mainloop_lock(pinfo->m);
-	CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-
-	debug_msg("[PA] pa_ext_policy_set_balance m[%p] c[%p] balance:%.2f", pinfo->m, pinfo->context, balance_value);
-	o = pa_ext_policy_set_balance (pinfo->context, &balance_value, set_balance_cb, pinfo);
-	CHECK_CONTEXT_SUCCESS_GOTO(pinfo->context, o, unlock_and_fail);
-	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-		pa_threaded_mainloop_wait(pinfo->m);
-		CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-	}
-	pa_operation_unref(o);
-
-	pa_threaded_mainloop_unlock(pinfo->m);
-	return;
-
-unlock_and_fail:
-	if (o) {
-		pa_operation_cancel(o);
-		pa_operation_unref(o);
-	}
-	pa_threaded_mainloop_unlock(pinfo->m);
-}
-
-int MMSoundMgrPulseHandleRegisterAudioBalance (void* pinfo)
-{
-	int ret = vconf_notify_key_changed(VCONF_KEY_VOLUME_BALANCE, _balance_changed_cb, pinfo);
-	debug_msg ("vconf [%s] set ret = %d\n", VCONF_KEY_VOLUME_BALANCE, ret);
-	return ret;
-}
-
-void MMSoundMgrPulseHandleResetAudioBalanceOnBoot(void* data)
-{
-	double balance_value;
-	pulse_info_t* pinfo = (pulse_info_t*)data;
-	pa_operation *o = NULL;
-
-	if (pinfo == NULL) {
-		debug_error ("pinfo is null");
-		return;
-	}
-
-	if (vconf_get_dbl(VCONF_KEY_VOLUME_BALANCE, &balance_value)) {
-		debug_error ("vconf_get_dbl(VCONF_KEY_VOLUME_BALANCE) failed..\n");
-		balance_value = 0;
-		vconf_set_dbl(VCONF_KEY_VOLUME_BALANCE, balance_value);
-	} else {
-		pa_threaded_mainloop_lock(pinfo->m);
-		CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-
-		debug_msg("[PA] pa_ext_policy_set_balance m[%p] c[%p] balance:%.2f", pinfo->m, pinfo->context, balance_value);
-		o = pa_ext_policy_set_balance (pinfo->context, &balance_value, set_balance_cb, pinfo);
-		CHECK_CONTEXT_SUCCESS_GOTO(pinfo->context, o, unlock_and_fail);
-		while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-			pa_threaded_mainloop_wait(pinfo->m);
-			CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-		}
-		pa_operation_unref(o);
-
-		pa_threaded_mainloop_unlock(pinfo->m);
-	}
-	return;
-
-unlock_and_fail:
-	if (o) {
-		pa_operation_cancel(o);
-		pa_operation_unref(o);
-	}
-	pa_threaded_mainloop_unlock(pinfo->m);
-}
-#endif /* SUPPORT_AUDIO_BALANCE */
-
 
 #ifdef SUPPORT_AUDIO_MUTEALL
 static void set_muteall_cb (pa_context *c, int success, void *userdata)
@@ -2637,10 +2532,6 @@ void* MMSoundMgrPulseInit(void)
 	pulse_info->device_type = PA_INVALID_INDEX;
 #ifdef SUPPORT_MONO_AUDIO
 	MMSoundMgrPulseHandleRegisterMonoAudio(pulse_info);
-#endif
-#ifdef SUPPORT_AUDIO_BALANCE
-	MMSoundMgrPulseHandleRegisterAudioBalance(pulse_info);
-	MMSoundMgrPulseHandleResetAudioBalanceOnBoot(pulse_info);
 #endif
 
 #ifdef SUPPORT_AUDIO_MUTEALL

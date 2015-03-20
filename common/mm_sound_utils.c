@@ -173,35 +173,6 @@ int mm_sound_util_volume_set_value_by_type(volume_type_t type, unsigned int valu
 }
 
 EXPORT_API
-int mm_sound_util_volume_set_balance(float balance)
-{
-	/* Set balance value to VCONF */
-	if (vconf_set_dbl(VCONF_KEY_VOLUME_BALANCE, balance)) {
-		debug_error ("vconf_set_dbl(%s) failed..\n", VCONF_KEY_VOLUME_BALANCE);
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int mm_sound_util_volume_get_balance(float *balance)
-{
-	double balance_value = 0;
-
-	/* Get balance value from VCONF */
-	if (vconf_get_dbl(VCONF_KEY_VOLUME_BALANCE, &balance_value)) {
-		debug_error ("vconf_get_int(%s) failed..\n", VCONF_KEY_VOLUME_BALANCE);
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	*balance = balance_value;
-	debug_log("balance get value [%s]=[%f]", VCONF_KEY_VOLUME_BALANCE, *balance);
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
 int mm_sound_util_set_muteall(int muteall)
 {
 	/* Set muteall value to VCONF */

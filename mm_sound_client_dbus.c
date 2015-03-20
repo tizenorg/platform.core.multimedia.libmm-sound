@@ -14,6 +14,9 @@
 #include "include/mm_sound_msg.h"
 #include "include/mm_sound_common.h"
 
+#define BUS_NAME_PULSEAUDIO "org.pulseaudio.Server"
+#define OBJECT_PULSEAUDIO "/org/pulseaudio/policy1"
+#define INTERFACE_PULSEAUDIO "org.PulseAudio.Ext.Policy1"
 
 #define BUS_NAME_SOUND_SERVER "org.tizen.SoundServer"
 #define OBJECT_SOUND_SERVER "/org/tizen/SoundServer1"
@@ -21,6 +24,7 @@
 
 #define INTERFACE_DBUS			"org.freedesktop.DBus.Properties"
 #define METHOD_GET			"Get"
+#define METHOD_SET			"Set"
 #define DBUS_NAME_MAX                   32
 #define DBUS_SIGNATURE_MAX              32
 
@@ -140,6 +144,11 @@ const struct mm_sound_dbus_signal_info g_sound_server_signals[SOUND_SERVER_SIGNA
 	}
 };
 
+const struct pulseaudio_dbus_property_info g_pulseaudio_properties[PULSEAUDIO_PROP_MAX] = {
+	[PULSEAUDIO_PROP_AUDIO_BALANCE] = {
+		.name = "AudioBalance",
+	},
+};
 
 /*
 static const GDBusErrorEntry mm_sound_client_error_entries[] =
@@ -207,7 +216,8 @@ static int _dbus_convert_error(GError *err)
 }
 
 
-static int _dbus_method_call(GDBusConnection* conn, const char* bus_name, const char* object, const char* intf, const char* method, GVariant* args, GVariant** result)
+static int _dbus_method_call(GDBusConnection* conn, const char* bus_name, const char* object, const char* intf,
+							const char* method, GVariant* args, GVariant** result)
 {
 	int ret = MM_ERROR_NONE;
 	GError *err = NULL;
@@ -243,10 +253,31 @@ static int _dbus_method_call(GDBusConnection* conn, const char* bus_name, const 
 	return ret;
 }
 
-
-static int _dbus_get_property(GDBusConnection *conn, const char* bus_name, const char* object_name, const char* intf_name, const char* prop, GVariant** result)
+static int _dbus_set_property(GDBusConnection* conn, const char* bus_name, const char* object, const char* intf,
+							const char* prop, GVariant* args, GVariant** result)
 {
 	int ret = MM_ERROR_NONE;
+
+	if (!conn || !object || !intf || !prop) {
+		debug_error("Invalid Argument");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	debug_log("Dbus set property with obj'%s' intf'%s' prop'%s'", object, intf, prop);
+
+	if ((ret = _dbus_method_call(conn, bus_name, object, INTERFACE_DBUS, METHOD_SET,
+								g_variant_new("(ssv)", intf, prop, args), result)) != MM_ERROR_NONE) {
+		debug_error("Dbus call for set property failed");
+	}
+
+	return ret;
+}
+
+static int _dbus_get_property(GDBusConnection *conn, const char* bus_name, const char* object_name,
+							const char* intf_name, const char* prop, GVariant** result)
+{
+	int ret = MM_ERROR_NONE;
+
 	if (!conn || !object_name || !intf_name || !prop) {
 		debug_error("Invalid Argument");
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -263,7 +294,8 @@ static int _dbus_get_property(GDBusConnection *conn, const char* bus_name, const
 	return ret;
 }
 
-static int _dbus_subscribe_signal(GDBusConnection *conn, const char* object_name, const char* intf_name, const char* signal_name,GDBusSignalCallback signal_cb, guint *subscribe_id, void* userdata)
+static int _dbus_subscribe_signal(GDBusConnection *conn, const char* object_name, const char* intf_name,
+					const char* signal_name, GDBusSignalCallback signal_cb, guint *subscribe_id, void* userdata)
 {
 	guint subs_id = 0;
 
@@ -507,6 +539,59 @@ static int _sound_server_dbus_signal_unsubscribe(int signaltype)
 		debug_error("Get Dbus Connection Error");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
+}
+
+static int _pulseaudio_dbus_set_property(int property, GVariant* args, GVariant **result)
+{
+	int ret = MM_ERROR_NONE;
+	GDBusConnection *conn = NULL;
+
+	if (property < 0 || property > PULSEAUDIO_PROP_MAX) {
+		debug_error("Invalid property [%d]", property);
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (args == NULL) {
+		debug_error("Invalid args");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
+		if((ret = _dbus_set_property(conn, BUS_NAME_PULSEAUDIO, OBJECT_PULSEAUDIO, INTERFACE_PULSEAUDIO,
+									g_pulseaudio_properties[property].name, args, result)) != MM_ERROR_NONE) {
+			debug_error("Dbus Call on Client Error");
+			return ret;
+		}
+	} else {
+		debug_error("Get Dbus Connection Error");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	return MM_ERROR_NONE;
+}
+
+static int _pulseaudio_dbus_get_property(int property, GVariant **result)
+{
+	int ret = MM_ERROR_NONE;
+	GDBusConnection *conn = NULL;
+
+	if (property < 0 || property > PULSEAUDIO_PROP_MAX) {
+		debug_error("Invalid property [%d]", property);
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
+		if((ret = _dbus_get_property(conn, BUS_NAME_PULSEAUDIO, OBJECT_PULSEAUDIO, INTERFACE_PULSEAUDIO,
+									g_pulseaudio_properties[property].name, result)) != MM_ERROR_NONE) {
+			debug_error("Dbus Call on Client Error");
+			return ret;
+		}
+	} else {
+		debug_error("Get Dbus Connection Error");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	return MM_ERROR_NONE;
 }
 
 
@@ -991,6 +1076,63 @@ int mm_sound_client_dbus_set_active_route_auto(void)
 	return ret;
 }
 
+int mm_sound_client_dbus_set_audio_balance(double audio_balance)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant *result = NULL;
+
+	debug_fenter();
+	debug_msg("audio_balance = %f", audio_balance);
+
+	if ((ret = _pulseaudio_dbus_set_property(PULSEAUDIO_PROP_AUDIO_BALANCE,
+											g_variant_new("d", audio_balance), &result)) != MM_ERROR_NONE) {
+		debug_error("dbus set audio balance property failed [%d]", ret);
+		goto cleanup;
+	}
+
+cleanup:
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+}
+
+int mm_sound_client_dbus_get_audio_balance(double *audio_balance)
+{
+	double balance;
+	int ret = MM_ERROR_NONE;
+	GVariant *result = NULL;
+
+	debug_fenter();
+
+	if (!audio_balance) {
+		debug_error("audio_balance is null");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if ((ret = _pulseaudio_dbus_get_property(PULSEAUDIO_PROP_AUDIO_BALANCE, &result)) != MM_ERROR_NONE) {
+		debug_error("dbus set audio balance property failed [%d]", ret);
+		goto cleanup;
+	}
+
+	if (result) {
+		g_variant_get(result, "(d)", &balance);
+		debug_log("Got audio balance : %f", balance);
+		*audio_balance = balance;
+	} else {
+		debug_error("reply null");
+	}
+
+cleanup:
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+}
+
+/*------------------------------------------ FOCUS --------------------------------------------------*/
 #ifdef USE_FOCUS
 
 static gpointer _focus_thread_func(gpointer data)
@@ -1847,6 +1989,7 @@ cleanup:
 }
 
 #endif /* USE_FOCUS */
+/*------------------------------------------ FOCUS --------------------------------------------------*/
 
 int mm_sound_client_dbus_initialize(void)
 {

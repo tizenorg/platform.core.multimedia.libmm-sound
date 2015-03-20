@@ -815,7 +815,7 @@ static void interpret (char *cmd)
 			{
 				int ret = 0;
 				char input_string[128];
-				float balance;
+				double balance;
 
 				fflush(stdin);
 				ret = mm_sound_volume_get_balance(&balance);

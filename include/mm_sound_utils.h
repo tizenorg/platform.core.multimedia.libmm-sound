@@ -49,8 +49,6 @@ int mm_sound_util_volume_get_value_by_type(volume_type_t type, unsigned int *val
 int mm_sound_util_volume_set_value_by_type(volume_type_t type, unsigned int value);
 int mm_sound_util_muteall_add_callback(void *func);
 int mm_sound_util_muteall_remove_callback(void *func);
-int mm_sound_util_volume_set_balance(float balance);
-int mm_sound_util_volume_get_balance(float *balance);
 int mm_sound_util_set_muteall(int muteall);
 int mm_sound_util_get_muteall(int *muteall);
 int mm_sound_util_set_stereo_to_mono(int ismono);

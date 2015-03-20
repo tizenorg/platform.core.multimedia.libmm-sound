@@ -97,11 +97,10 @@ ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/soun
 %post
 /sbin/ldconfig
 
-/usr/bin/vconftool set -t int memory/private/Sound/ASMReady 0 -g 29 -f -i
-/usr/bin/vconftool set -t double file/private/sound/volume/balance 0.0 -g 29 -f -s User
-/usr/bin/vconftool set -t int file/private/sound/volume/muteall 0 -g 29 -f -s User
-/usr/bin/vconftool set -t int memory/private/Sound/VoiceControlOn 0 -g 29 -f -i
-/usr/bin/vconftool set -t string memory/private/sound/booting "/usr/share/keysound/poweron.wav" -g 29 -f -i
+/usr/bin/vconftool set -t int memory/private/Sound/ASMReady 0 -g 29 -f -i -s system::vconf_multimedia
+/usr/bin/vconftool set -t int file/private/sound/volume/muteall 0 -g 29 -f -s system::vconf_multimedia
+/usr/bin/vconftool set -t int memory/private/Sound/VoiceControlOn 0 -g 29 -f -i -s system::vconf_multimedia
+/usr/bin/vconftool set -t string memory/private/sound/booting "/usr/share/keysound/poweron.wav" -g 29 -f -i -s system::vconf_multimedia
 #SPK REC EAR BTS BTA DOCK HDMI MIR USB MDOCK
 #/usr/bin/vconftool set -t string file/private/sound/volume/system "09090909090909090909" -g 29 -f
 #/usr/bin/vconftool set -t string file/private/sound/volume/notification "11" -g 29 -f

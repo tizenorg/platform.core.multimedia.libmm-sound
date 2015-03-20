@@ -826,9 +826,9 @@ default:
  */
 int mm_sound_volume_get_current_playing_type(volume_type_t *type);
 
-int mm_sound_volume_set_balance (float balance);
+int mm_sound_volume_set_balance (double balance);
 
-int mm_sound_volume_get_balance (float *balance);
+int mm_sound_volume_get_balance (double *balance);
 
 int mm_sound_set_muteall (int muteall);
 

@@ -427,7 +427,7 @@ int mm_sound_volume_get_current_playing_type(volume_type_t *type)
 }
 
 EXPORT_API
-int mm_sound_volume_set_balance (float balance)
+int mm_sound_volume_set_balance (double balance)
 {
 	debug_msg("balance = %f", balance);
 
@@ -437,24 +437,19 @@ int mm_sound_volume_set_balance (float balance)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	return mm_sound_util_volume_set_balance(balance);
+	return mm_sound_client_dbus_set_audio_balance(balance);
 }
 
 EXPORT_API
-int mm_sound_volume_get_balance (float *balance)
+int mm_sound_volume_get_balance (double *balance)
 {
-	int ret = MM_ERROR_NONE;
-
 	/* Check input param */
 	if (balance == NULL) {
 		debug_error("invalid argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_util_volume_get_balance(balance);
-	debug_msg("returned balance = %f", *balance);
-
-	return ret;
+	return mm_sound_client_dbus_get_audio_balance(balance);
 }
 
 EXPORT_API
