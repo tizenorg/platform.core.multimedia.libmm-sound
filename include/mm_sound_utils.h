@@ -51,8 +51,6 @@ int mm_sound_util_muteall_add_callback(void *func);
 int mm_sound_util_muteall_remove_callback(void *func);
 int mm_sound_util_set_muteall(int muteall);
 int mm_sound_util_get_muteall(int *muteall);
-int mm_sound_util_set_stereo_to_mono(int ismono);
-int mm_sound_util_get_stereo_to_mono(int *ismono);
 int mm_sound_util_get_earjack_type(int* type);
 int mm_sound_util_get_dock_type (int *type);
 

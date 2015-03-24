@@ -830,13 +830,13 @@ int mm_sound_volume_set_balance (double balance);
 
 int mm_sound_volume_get_balance (double *balance);
 
+int mm_sound_enable_mono_audio(bool enable);
+
+int mm_sound_is_mono_audio_enabled (bool *is_enabled);
+
 int mm_sound_set_muteall (int muteall);
 
 int mm_sound_get_muteall (int *muteall);
-
-int mm_sound_set_stereo_to_mono (int ismono);
-
-int mm_sound_get_stereo_to_mono (int *ismono);
 
 int mm_sound_set_call_mute(volume_type_t type, int mute);
 

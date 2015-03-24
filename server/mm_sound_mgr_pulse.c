@@ -47,7 +47,6 @@
 #include <pulse/ext-policy.h>
 #include <pulse/ext-echo-cancel.h>
 
-#define SUPPORT_MONO_AUDIO
 #ifdef SUPPORT_BT_SCO
 #define SUPPORT_BT_SCO_DETECT
 #endif
@@ -670,73 +669,6 @@ static void unload_hdmi_cb(pa_context *c, int success, void *userdata)
 
 	pa_threaded_mainloop_signal(pinfo->m, 0);
 }
-
-/* -------------------------------- MONO AUDIO --------------------------------------------*/
-#ifdef SUPPORT_MONO_AUDIO
-#define TOUCH_SOUND_PLAY_COMLETE_TIME 50000
-
-static void set_mono_cb (pa_context *c, int success, void *userdata)
-{
-	pulse_info_t *pinfo = (pulse_info_t *)userdata;
-	if (pinfo == NULL) {
-		debug_error ("pinfo is null");
-		return;
-	}
-
-	if (success) {
-		debug_msg ("[PA_CB] m[%p] c[%p] set mono success", pinfo->m, c);
-	} else {
-		debug_error("[PA_CB] m[%p] c[%p] set mono fail:%s", pinfo->m, c, pa_strerror(pa_context_errno(c)));
-	}
-	pa_threaded_mainloop_signal(pinfo->m, 0);
-}
-
-static void mono_changed_cb(keynode_t* node, void* data)
-{
-	int key_value;
-	pa_operation *o = NULL;
-	pulse_info_t* pinfo = (pulse_info_t*)data;
-
-	if (pinfo == NULL) {
-		debug_error ("pinfo is null");
-		return;
-	}
-
-	vconf_get_bool(VCONF_KEY_MONO_AUDIO, &key_value);
-	debug_msg ("%s changed callback called, key value = %d\n",vconf_keynode_get_name(node), key_value);
-	/*for make sure touch sound play complete*/
-	usleep(TOUCH_SOUND_PLAY_COMLETE_TIME);
-
-	pa_threaded_mainloop_lock(pinfo->m);
-	CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-
-	debug_msg("[PA] pa_ext_policy_set_mono m[%p] c[%p] mono:%d", pinfo->m, pinfo->context, key_value);
-	o = pa_ext_policy_set_mono (pinfo->context, key_value, set_mono_cb, pinfo);
-	CHECK_CONTEXT_SUCCESS_GOTO(pinfo->context, o, unlock_and_fail);
-	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-		pa_threaded_mainloop_wait(pinfo->m);
-		CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-	}
-	pa_operation_unref(o);
-
-	pa_threaded_mainloop_unlock(pinfo->m);
-	return;
-
-unlock_and_fail:
-	if (o) {
-		pa_operation_cancel(o);
-		pa_operation_unref(o);
-	}
-	pa_threaded_mainloop_unlock(pinfo->m);
-}
-
-int MMSoundMgrPulseHandleRegisterMonoAudio (void* pinfo)
-{
-	int ret = vconf_notify_key_changed(VCONF_KEY_MONO_AUDIO, mono_changed_cb, pinfo);
-	debug_msg ("vconf [%s] set ret = %d\n", VCONF_KEY_MONO_AUDIO, ret);
-	return ret;
-}
-#endif /* SUPPORT_MONO_AUDIO */
 
 #ifdef SUPPORT_AUDIO_MUTEALL
 static void set_muteall_cb (pa_context *c, int success, void *userdata)
@@ -2530,9 +2462,6 @@ void* MMSoundMgrPulseInit(void)
 	pulse_info->usb_idx = PA_INVALID_INDEX;
 	pulse_info->dock_idx = PA_INVALID_INDEX;
 	pulse_info->device_type = PA_INVALID_INDEX;
-#ifdef SUPPORT_MONO_AUDIO
-	MMSoundMgrPulseHandleRegisterMonoAudio(pulse_info);
-#endif
 
 #ifdef SUPPORT_AUDIO_MUTEALL
 	MMSoundMgrPulseHandleRegisterAudioMuteall(pulse_info);

@@ -484,34 +484,23 @@ int mm_sound_get_muteall (int *muteall)
 }
 
 EXPORT_API
-int mm_sound_set_stereo_to_mono (int ismono)
+int mm_sound_enable_mono_audio(bool enable)
 {
-	debug_msg("ismono = %d", ismono);
+	debug_msg("enable = %d", enable);
 
-	/* Check input param */
-	if (ismono < 0 || ismono > 1) {
-		debug_error("invalid ismono value [%d]\n", ismono);
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	return mm_sound_util_set_stereo_to_mono(ismono);
+	return mm_sound_client_dbus_enable_mono_audio(enable);
 }
 
 EXPORT_API
-int mm_sound_get_stereo_to_mono (int *ismono)
+int mm_sound_is_mono_audio_enabled (bool *is_enabled)
 {
-	int ret = MM_ERROR_NONE;
-
 	/* Check input param */
-	if (ismono == NULL) {
-		debug_error("invalid argument\n");
+	if (is_enabled == NULL) {
+		debug_error("invalid argument");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_util_get_stereo_to_mono(ismono);
-	debug_msg("returned ismono = %d", *ismono);
-
-	return ret;
+	return mm_sound_client_dbus_is_mono_audio_enabled(is_enabled);
 }
 
 

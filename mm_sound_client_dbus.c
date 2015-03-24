@@ -148,6 +148,9 @@ const struct pulseaudio_dbus_property_info g_pulseaudio_properties[PULSEAUDIO_PR
 	[PULSEAUDIO_PROP_AUDIO_BALANCE] = {
 		.name = "AudioBalance",
 	},
+	[PULSEAUDIO_PROP_MONO_AUDIO] = {
+		.name = "MonoAudio",
+	},
 };
 
 /*
@@ -1119,6 +1122,62 @@ int mm_sound_client_dbus_get_audio_balance(double *audio_balance)
 		g_variant_get(result, "(d)", &balance);
 		debug_log("Got audio balance : %f", balance);
 		*audio_balance = balance;
+	} else {
+		debug_error("reply null");
+	}
+
+cleanup:
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+}
+
+int mm_sound_client_dbus_enable_mono_audio(bool enable)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant *result = NULL;
+
+	debug_fenter();
+	debug_msg("enable = %d", enable);
+
+	if ((ret = _pulseaudio_dbus_set_property(PULSEAUDIO_PROP_MONO_AUDIO,
+											g_variant_new("b", enable), &result)) != MM_ERROR_NONE) {
+		debug_error("dbus set mono audio property failed [%d]", ret);
+		goto cleanup;
+	}
+
+cleanup:
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+}
+
+int mm_sound_client_dbus_is_mono_audio_enabled(bool *is_enabled)
+{
+	gboolean enabled;
+	int ret = MM_ERROR_NONE;
+	GVariant *result = NULL;
+
+	debug_fenter();
+
+	if (!is_enabled) {
+		debug_error("is_enabled is null");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if ((ret = _pulseaudio_dbus_get_property(PULSEAUDIO_PROP_MONO_AUDIO, &result)) != MM_ERROR_NONE) {
+		debug_error("dbus get mono audio property failed [%d]", ret);
+		goto cleanup;
+	}
+
+	if (result) {
+		g_variant_get(result, "(b)", &enabled);
+		debug_log("Got mono audio enabled : %d", enabled);
+		*is_enabled = (bool)enabled;
 	} else {
 		debug_error("reply null");
 	}

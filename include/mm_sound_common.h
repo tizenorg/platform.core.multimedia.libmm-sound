@@ -39,7 +39,6 @@
 #define VCONF_KEY_VOLUME_TYPE_ANDROID		VCONF_KEY_VOLUME_PREFIX"/fixed"
 
 #define VCONF_KEY_MUTE_ALL			        VCONF_KEY_VOLUME_PREFIX"/muteall"
-#define VCONF_KEY_MONO_AUDIO				VCONFKEY_SETAPPL_ACCESSIBILITY_MONO_AUDIO
 
 #define VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE		"memory/private/sound/PrimaryVolumetype"
 #define VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE_FORCE	"memory/private/sound/PrimaryVolumetypeForce"

@@ -869,26 +869,27 @@ static void interpret (char *cmd)
 			{
 				int ret = 0;
 				char input_string[128];
-				int ismono;
+				bool ismono = false;
 
 				fflush(stdin);
-				ret = mm_sound_get_stereo_to_mono(&ismono);
+
+				ret = mm_sound_is_mono_audio_enabled(&ismono);
 				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_get_stereo_to_mono Success, ismono=%d\n", ismono);
+					g_print ("### mm_sound_is_mono_audio_enabled() Success, ismono=%d\n", ismono);
 				} else {
-					g_print ("### mm_sound_get_stereo_to_mono Error = %x\n", ret);
+					g_print ("### mm_sound_is_mono_audio_enabled() Error = %x\n", ret);
 				}
+
 				g_print("> Enter new stereo to mono state (current is %d) : ", ismono);
 				if (fgets(input_string, sizeof(input_string)-1, stdin) == NULL) {
 					g_print ("### fgets return  NULL\n");
 				}
-
 				ismono = atoi (input_string);
-				ret = mm_sound_set_stereo_to_mono(ismono);
+				ret = mm_sound_enable_mono_audio(ismono);
 				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_set_stereo_to_mono(%d) Success\n", ismono);
+					g_print ("### mm_sound_enable_mono_audio(%d) Success\n", ismono);
 				} else {
-					g_print ("### mm_sound_set_stereo_to_mono(%d) Error = %x\n", ismono, ret);
+					g_print ("### mm_sound_enable_mono_audio(%d) Error = %x\n", ismono, ret);
 				}
 			}
 			else if(strncmp(cmd, "a", 1) == 0)

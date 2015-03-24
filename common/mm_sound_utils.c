@@ -224,35 +224,6 @@ int mm_sound_util_muteall_remove_callback(void *func)
 }
 
 EXPORT_API
-int mm_sound_util_set_stereo_to_mono(int ismono)
-{
-	/* Set ismono value to VCONF */
-	if (vconf_set_int(VCONF_KEY_MONO_AUDIO, ismono)) {
-		debug_error ("vconf_set_int(%s) failed..\n", VCONF_KEY_MONO_AUDIO);
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int mm_sound_util_get_stereo_to_mono(int *ismono)
-{
-	int ismono_value = 0;
-
-	/* Get ismono value from VCONF */
-	if (vconf_get_int(VCONF_KEY_MONO_AUDIO, &ismono_value)) {
-		debug_error ("vconf_get_int(%s) failed..\n", VCONF_KEY_MONO_AUDIO);
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	*ismono = ismono_value;
-	debug_log("ismono get value [%s]=[%d]", VCONF_KEY_MONO_AUDIO, *ismono);
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
 int mm_sound_util_get_earjack_type (int *type)
 {
 	int earjack_status = 0;

@@ -168,6 +168,7 @@ enum {
 
 enum {
         PULSEAUDIO_PROP_AUDIO_BALANCE,
+        PULSEAUDIO_PROP_MONO_AUDIO,
         PULSEAUDIO_PROP_MAX
 };
 
