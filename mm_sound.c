@@ -200,32 +200,6 @@ int mm_sound_remove_volume_changed_callback(void)
 }
 
 EXPORT_API
-int mm_sound_muteall_add_callback(muteall_callback_fn func)
-{
-	debug_msg("func = %p", func);
-
-	if (!func) {
-		debug_warning("callback function is null\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	return mm_sound_util_muteall_add_callback(func);
-}
-
-EXPORT_API
-int mm_sound_muteall_remove_callback(muteall_callback_fn func)
-{
-	debug_msg("func = %p", func);
-
-	if (!func) {
-		debug_warning("callback function is null\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	return mm_sound_util_muteall_remove_callback(func);
-}
-
-EXPORT_API
 int mm_sound_get_volume_step(volume_type_t type, int *step)
 {
 	debug_error("\n**********\n\nTHIS FUNCTION HAS DEFPRECATED\n\n \
@@ -273,6 +247,7 @@ int mm_sound_volume_set_value(volume_type_t type, const unsigned int value)
 	ret = mm_sound_util_volume_set_value_by_type(type, value);
 	if (ret == MM_ERROR_NONE) {
 		/* update shared memory value */
+#if 0 /* FIXME ..... */
 		int muteall;
 		mm_sound_util_get_muteall(&muteall);
 		if(!muteall) {
@@ -280,42 +255,8 @@ int mm_sound_volume_set_value(volume_type_t type, const unsigned int value)
 				debug_error("Can not set volume to shared memory 0x%x\n", ret);
 			}
 		}
+#endif
 	}
-
-	return ret;
-}
-
-EXPORT_API
-int mm_sound_mute_all(int muteall)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_msg("** deprecated API ** muteall = %d", muteall);
-
-	return ret;
-}
-
-
-EXPORT_API
-int mm_sound_set_call_mute(volume_type_t type, int mute)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_error("Unsupported API\n");
-
-	return ret;
-}
-
-
-EXPORT_API
-int mm_sound_get_call_mute(volume_type_t type, int *mute)
-{
-	int ret = MM_ERROR_NONE;
-
-	if(!mute)
-		return MM_ERROR_INVALID_ARGUMENT;
-
-	debug_error("Unsupported API\n");
 
 	return ret;
 }
@@ -453,34 +394,42 @@ int mm_sound_volume_get_balance (double *balance)
 }
 
 EXPORT_API
-int mm_sound_set_muteall (int muteall)
+int mm_sound_enable_mute_all(bool enable)
 {
-	debug_msg("muteall = %d", muteall);
+	debug_msg("enable = %d", enable);
 
-	/* Check input param */
-	if (muteall < 0 || muteall > 1) {
-		debug_error("invalid muteall value [%d]\n", muteall);
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	return mm_sound_util_set_muteall(muteall);
+	return mm_sound_client_dbus_enable_mute_all(enable);
 }
 
 EXPORT_API
-int mm_sound_get_muteall (int *muteall)
+int mm_sound_is_mute_all_enabled (bool *is_enabled)
 {
-	int ret = MM_ERROR_NONE;
-
 	/* Check input param */
-	if (muteall == NULL) {
-		debug_error("invalid argument\n");
+	if (is_enabled == NULL) {
+		debug_error("invalid argument");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_util_get_muteall(muteall);
-	debug_msg("returned muteall = %d", *muteall);
+	return mm_sound_client_dbus_is_mute_all_enabled(is_enabled);
+}
 
-	return ret;
+EXPORT_API
+int mm_sound_add_mute_all_callback(mm_sound_mute_all_changed_cb func, void* user_data)
+{
+	debug_msg("func = %p, userdata = %p", func, user_data);
+
+	if (!func) {
+		debug_warning("callback function is null\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	return mm_sound_client_dbus_add_mute_all_changed_callback(func, user_data);
+}
+
+EXPORT_API
+int mm_sound_remove_mute_all_callback()
+{
+	return mm_sound_client_dbus_remove_mute_all_changed_callback();
 }
 
 EXPORT_API

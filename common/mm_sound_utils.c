@@ -173,57 +173,6 @@ int mm_sound_util_volume_set_value_by_type(volume_type_t type, unsigned int valu
 }
 
 EXPORT_API
-int mm_sound_util_set_muteall(int muteall)
-{
-	/* Set muteall value to VCONF */
-	if (vconf_set_int(VCONF_KEY_MUTE_ALL, muteall)) {
-		debug_error ("vconf_set_int(%s) failed..\n", VCONF_KEY_MUTE_ALL);
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int mm_sound_util_get_muteall(int *muteall)
-{
-	int muteall_value = 0;
-
-	/* Get muteall value from VCONF */
-	if (vconf_get_int(VCONF_KEY_MUTE_ALL, &muteall_value)) {
-		debug_error ("vconf_get_int(%s) failed..\n", VCONF_KEY_MUTE_ALL);
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	*muteall = muteall_value;
-	debug_log("muteall get value [%s]=[%d]", VCONF_KEY_MUTE_ALL, *muteall);
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int mm_sound_util_muteall_add_callback(void *func)
-{
-	if (vconf_notify_key_changed(VCONF_KEY_MUTE_ALL, func, NULL)) {
-		debug_error ("vconf_notify_key_changed failed..\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int mm_sound_util_muteall_remove_callback(void *func)
-{
-	if (vconf_ignore_key_changed(VCONF_KEY_MUTE_ALL, func)) {
-		debug_error ("vconf_ignore_key_changed failed..\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
 int mm_sound_util_get_earjack_type (int *type)
 {
 	int earjack_status = 0;

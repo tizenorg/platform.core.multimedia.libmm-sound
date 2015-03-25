@@ -23,6 +23,7 @@
 #define INTERFACE_SOUND_SERVER "org.tizen.SoundServer1"
 
 #define INTERFACE_DBUS			"org.freedesktop.DBus.Properties"
+#define SIGNAL_PROP_CHANGED "PropertiesChanged"
 #define METHOD_GET			"Get"
 #define METHOD_SET			"Set"
 #define DBUS_NAME_MAX                   32
@@ -73,6 +74,7 @@ GThread *g_focus_thread;
 GMainLoop *g_focus_loop;
 focus_sound_info_t g_focus_sound_handle[FOCUS_HANDLE_MAX];
 guint g_dbus_subs_ids[SOUND_SERVER_SIGNAL_MAX];
+guint g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MAX];
 GQuark g_mm_sound_error_quark;
 
 const struct mm_sound_dbus_method_info g_sound_server_methods[SOUND_SERVER_METHOD_MAX] = {
@@ -150,6 +152,9 @@ const struct pulseaudio_dbus_property_info g_pulseaudio_properties[PULSEAUDIO_PR
 	},
 	[PULSEAUDIO_PROP_MONO_AUDIO] = {
 		.name = "MonoAudio",
+	},
+	[PULSEAUDIO_PROP_MUTE_ALL] = {
+		.name = "MuteAll",
 	},
 };
 
@@ -484,7 +489,7 @@ static void _sound_server_dbus_signal_callback (GDBusConnection  *connection,
 	}
 }
 
-static int _sound_server_dbus_signal_subscribe(int signaltype, void *cb, void *userdata, int mask)
+static int _sound_server_dbus_signal_subscribe(sound_server_signal_t signaltype, void *cb, void *userdata, int mask)
 {
 	GDBusConnection *conn = NULL;
 	guint subs_id = 0;
@@ -526,7 +531,7 @@ static int _sound_server_dbus_signal_subscribe(int signaltype, void *cb, void *u
 	return MM_ERROR_NONE;
 }
 
-static int _sound_server_dbus_signal_unsubscribe(int signaltype)
+static int _sound_server_dbus_signal_unsubscribe(sound_server_signal_t signaltype)
 {
 	GDBusConnection *conn = NULL;
 
@@ -543,7 +548,7 @@ static int _sound_server_dbus_signal_unsubscribe(int signaltype)
 	}
 }
 
-static int _pulseaudio_dbus_set_property(int property, GVariant* args, GVariant **result)
+static int _pulseaudio_dbus_set_property(pulseaudio_property_t property, GVariant* args, GVariant **result)
 {
 	int ret = MM_ERROR_NONE;
 	GDBusConnection *conn = NULL;
@@ -572,7 +577,7 @@ static int _pulseaudio_dbus_set_property(int property, GVariant* args, GVariant 
 	return MM_ERROR_NONE;
 }
 
-static int _pulseaudio_dbus_get_property(int property, GVariant **result)
+static int _pulseaudio_dbus_get_property(pulseaudio_property_t property, GVariant **result)
 {
 	int ret = MM_ERROR_NONE;
 	GDBusConnection *conn = NULL;
@@ -595,7 +600,6 @@ static int _pulseaudio_dbus_get_property(int property, GVariant **result)
 
 	return MM_ERROR_NONE;
 }
-
 
 /******************************************************************************************
 		Implementation of each dbus client code (Construct Params,..)
@@ -1188,6 +1192,171 @@ cleanup:
 
 	debug_fleave();
 	return ret;
+}
+
+int mm_sound_client_dbus_enable_mute_all(bool enable)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant *result = NULL;
+
+	debug_fenter();
+	debug_msg("enable = %d", enable);
+
+	if ((ret = _pulseaudio_dbus_set_property(PULSEAUDIO_PROP_MUTE_ALL,
+											g_variant_new("b", enable), &result)) != MM_ERROR_NONE) {
+		debug_error("dbus set mute-all property failed [%d]", ret);
+		goto cleanup;
+	}
+
+cleanup:
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+}
+
+int mm_sound_client_dbus_is_mute_all_enabled(bool *is_enabled)
+{
+	gboolean enabled;
+	int ret = MM_ERROR_NONE;
+	GVariant *result = NULL;
+
+	debug_fenter();
+
+	if (!is_enabled) {
+		debug_error("is_enabled is null");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if ((ret = _pulseaudio_dbus_get_property(PULSEAUDIO_PROP_MUTE_ALL, &result)) != MM_ERROR_NONE) {
+		debug_error("dbus get mute-all property failed [%d]", ret);
+		goto cleanup;
+	}
+
+	if (result) {
+		g_variant_get(result, "(b)", &enabled);
+		debug_log("Got mute-all enabled : %d", enabled);
+		*is_enabled = (bool)enabled;
+	} else {
+		debug_error("reply null");
+	}
+
+cleanup:
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+}
+
+static void _mute_all_signal_changed_callback (GDBusConnection  *connection,
+                                     const gchar      *sender_name,
+                                     const gchar      *object_path,
+                                     const gchar      *interface_name,
+                                     const gchar      *signal_name,
+                                     GVariant         *params,
+                                     gpointer          user_data)
+{
+	GVariantIter *iter = NULL;
+	const gchar *interface_name_for_signal;
+	GVariantIter *invalidated_iter;
+	const gchar *key;
+	GVariant *value;
+	gboolean muteall_value;
+	struct user_callback *user_cb  = (struct user_callback *)user_data;
+
+	if (!user_cb) {
+		debug_error("User callback data Null");
+		return;
+	}
+
+	if (!params) {
+		debug_error("Parameter Null");
+		return;
+	}
+
+	g_variant_get(params,"(sa{sv}as)", &interface_name_for_signal, &iter, &invalidated_iter);
+
+	debug_log("Signal(%s.%s.%s) Received , Let's call real User-Callback",
+			interface_name, signal_name, interface_name_for_signal);
+
+	while (g_variant_iter_loop (iter, "{&sv}", &key, &value)) {
+		if (g_strcmp0(key, "MuteAll") == 0) {
+			g_variant_get(value, "b", &muteall_value);
+			if (user_cb->sig_type == PULSEAUDIO_PROP_MUTE_ALL && user_cb->cb) {
+				((mm_sound_mute_all_changed_cb)(user_cb->cb))(muteall_value, user_cb->userdata);
+			}
+		}
+	}
+
+	g_variant_iter_free (iter);
+
+	/* FIXME : what about invalidated_iter?? */
+}
+
+int mm_sound_client_dbus_add_mute_all_changed_callback(mm_sound_mute_all_changed_cb func, void* user_data)
+{
+	int ret = MM_ERROR_NONE;
+	GDBusConnection *conn = NULL;
+	guint subs_id = 0;
+	struct user_callback *user_cb  = NULL;
+
+	debug_fenter();
+
+	if (g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MUTE_ALL] > 0) {
+		debug_error("Already callback exists, can't overwrite before remove callback....");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	if (!func) {
+		debug_error("Callback data Null");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM)) == NULL) {
+		debug_error("Get Dbus Connection Error");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	if (!(user_cb = g_malloc0(sizeof(struct user_callback)))) {
+		debug_error("Allocate Memory for User CB data Failed");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+	memset (user_cb, 0, sizeof(struct user_callback));
+	user_cb->sig_type = PULSEAUDIO_PROP_MUTE_ALL;
+	user_cb->cb = func;
+	user_cb->userdata = user_data;
+
+	if((ret = _dbus_subscribe_signal(conn, OBJECT_PULSEAUDIO, INTERFACE_DBUS, SIGNAL_PROP_CHANGED,
+									_mute_all_signal_changed_callback, &subs_id, user_cb)) == MM_ERROR_NONE) {
+		g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MUTE_ALL] = subs_id;
+	} else {
+		debug_error("Dbus Subscribe on Client Error");
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
+int mm_sound_client_dbus_remove_mute_all_changed_callback(void)
+{
+	GDBusConnection *conn = NULL;
+
+	debug_fenter();
+
+	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM)) == NULL) {
+		debug_error("Get Dbus Connection Error");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	_dbus_unsubscribe_signal(conn, g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MUTE_ALL]);
+	g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MUTE_ALL] = 0;
+
+	debug_fleave();
+
+	return MM_ERROR_NONE;
 }
 
 /*------------------------------------------ FOCUS --------------------------------------------------*/

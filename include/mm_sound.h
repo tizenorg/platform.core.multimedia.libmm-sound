@@ -354,13 +354,14 @@ typedef void (*mm_sound_volume_changed_cb) (volume_type_t type, unsigned int vol
 /**
  * Muteall state change callback function type.
  *
+ * @param	mute_all		[in]	current mute_all status
  * @param	user_data		[in]	Argument passed when callback has called
  *
  * @return	No return value
  * @remark	None.
  * @see		mm_sound_muteall_add_callback mm_sound_muteall_remove_callback
  */
-typedef void (*muteall_callback_fn)(void* user_data);
+typedef void (*mm_sound_mute_all_changed_cb)(bool mute_all, void* user_data);
 
 /**
  * This function is to retrieve number of volume level.
@@ -513,21 +514,18 @@ int mm_sound_remove_volume_changed_callback(void);
  *
  * @return 	This function returns MM_ERROR_NONE on success, or negative value
  *			with error code.
- * @see		muteall_callback_fn
+ * @see		mm_sound_mute_all_changed_cb
  * @code
-void _muteall_callback(void *data)
+void _muteall_callback(bool mute_all, void *data)
 {
-	int  muteall;
-
-	mm_sound_get_muteall(&muteall);
-	g_print("Muteall Callback Runs :::: muteall value = %d\n", muteall);
+	g_print("Muteall Callback Runs :::: muteall value = %d\n", mute_all);
 }
 
 int muteall_callback()
 {
 	int ret = 0;
 
-	ret = mm_sound_muteall_add_callback( _muteall_callback);
+	ret = mm_sound_add_mute_all_callback( _muteall_callback);
 
 	if ( MM_ERROR_NONE != ret)
 	{
@@ -543,7 +541,7 @@ int muteall_callback()
 
  * @endcode
  */
-int mm_sound_muteall_add_callback(muteall_callback_fn func);
+int mm_sound_add_mute_all_callback(mm_sound_mute_all_changed_cb func, void* user_data);
 
 
 /**
@@ -555,20 +553,20 @@ int mm_sound_muteall_add_callback(muteall_callback_fn func);
  *			with error code.
  * @remark	None.
  * @post	Callback function will not be called anymore.
- * @see		muteall_callback_fn
+ * @see		mm_sound_mute_all_changed_cb
  * @code
-void _muteall_callback(void *data)
+void _muteall_callback(bool mute_all, void *data)
 {
-	printf("Callback function\n");
+	g_print("Muteall Callback Runs :::: muteall value = %d\n", mute_all);
 }
 
 int muteall_callback()
 {
 	int ret = 0;
 
-	mm_sound_muteall_add_callback( _muteall_callback);
+	mm_sound_add_mute_all_callback( _muteall_callback);
 
-	ret = mm_sound_muteall_remove_callback(_muteall_callback);
+	ret = mm_sound_remove_mute_all_callback();
 	if ( MM_ERROR_NONE == ret)
 	{
 		printf("Remove callback success\n");
@@ -583,7 +581,7 @@ int muteall_callback()
 
  * @endcode
  */
-int mm_sound_muteall_remove_callback(muteall_callback_fn func);
+int mm_sound_remove_mute_all_callback();
 
 /**
  * This function is to set volume level of certain volume type.
@@ -621,25 +619,6 @@ else
  * @endcode
  */
 int mm_sound_volume_set_value(volume_type_t type, const unsigned int value);
-
-
-
-
-
-
-/**
- * This function is to set all volume type to mute or unmute.
- *
- * @param	muteall			[in]	the switch to control  mute or unmute.
- *
- * @return 	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	None.
- * @pre		None.
- * @post	None.
- */
-int mm_sound_mute_all(int muteall);
-
 
 
 /**
@@ -827,23 +806,18 @@ default:
 int mm_sound_volume_get_current_playing_type(volume_type_t *type);
 
 int mm_sound_volume_set_balance (double balance);
-
 int mm_sound_volume_get_balance (double *balance);
 
 int mm_sound_enable_mono_audio(bool enable);
-
 int mm_sound_is_mono_audio_enabled (bool *is_enabled);
 
-int mm_sound_set_muteall (int muteall);
-
-int mm_sound_get_muteall (int *muteall);
+int mm_sound_enable_mute_all(bool enable);
+int mm_sound_is_mute_all_enabled (bool *is_enabled);
 
 int mm_sound_set_call_mute(volume_type_t type, int mute);
-
 int mm_sound_get_call_mute(volume_type_t type, int *mute);
 
 int mm_sound_set_factory_loopback_test(int loopback);
-
 int mm_sound_get_factory_loopback_test(int *loopback);
 
 typedef enum {

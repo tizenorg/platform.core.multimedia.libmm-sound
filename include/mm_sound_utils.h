@@ -47,10 +47,6 @@ int mm_sound_util_volume_add_callback(volume_type_t type, void *func, void* user
 int mm_sound_util_volume_remove_callback(volume_type_t type, void *func);
 int mm_sound_util_volume_get_value_by_type(volume_type_t type, unsigned int *value);
 int mm_sound_util_volume_set_value_by_type(volume_type_t type, unsigned int value);
-int mm_sound_util_muteall_add_callback(void *func);
-int mm_sound_util_muteall_remove_callback(void *func);
-int mm_sound_util_set_muteall(int muteall);
-int mm_sound_util_get_muteall(int *muteall);
 int mm_sound_util_get_earjack_type(int* type);
 int mm_sound_util_get_dock_type (int *type);
 

@@ -50,7 +50,6 @@
 #ifdef SUPPORT_BT_SCO
 #define SUPPORT_BT_SCO_DETECT
 #endif
-#define SUPPORT_AUDIO_MUTEALL
 
 #include "include/mm_sound_mgr_pulse.h"
 #include "include/mm_sound_mgr_session.h"
@@ -669,121 +668,6 @@ static void unload_hdmi_cb(pa_context *c, int success, void *userdata)
 
 	pa_threaded_mainloop_signal(pinfo->m, 0);
 }
-
-#ifdef SUPPORT_AUDIO_MUTEALL
-static void set_muteall_cb (pa_context *c, int success, void *userdata)
-{
-	pulse_info_t *pinfo = (pulse_info_t *)userdata;
-	if (pinfo == NULL) {
-		debug_error ("pinfo is null");
-		return;
-	}
-
-	if (success) {
-		debug_msg ("[PA_CB] m[%p] c[%p] set muteall success", pinfo->m, c);
-	} else {
-		debug_error("[PA_CB] m[%p] c[%p] set muteall fail:%s", pinfo->m, c, pa_strerror(pa_context_errno(c)));
-	}
-	pa_threaded_mainloop_signal(pinfo->m, 0);
-}
-
-static void _muteall_changed_cb(keynode_t* node, void* data)
-{
-	int key_value;
-	int i;
-	pulse_info_t* pinfo = (pulse_info_t*)data;
-	pa_operation *o = NULL;
-
-	if (pinfo == NULL) {
-		debug_error ("pinfo is null\n");
-		return;
-	}
-
-	vconf_get_int(VCONF_KEY_MUTE_ALL, &key_value);
-	debug_msg ("%s changed callback called, muteall value = %d\n", vconf_keynode_get_name(node), key_value);
-
-	mm_sound_mute_all(key_value);
-
-	pa_threaded_mainloop_lock(pinfo->m);
-	CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-
-	debug_msg("[PA] pa_ext_policy_set_muteall m[%p] c[%p] muteall:%d", pinfo->m, pinfo->context, key_value);
-	o = pa_ext_policy_set_muteall (pinfo->context, key_value, set_muteall_cb, pinfo);
-	CHECK_CONTEXT_SUCCESS_GOTO(pinfo->context, o, unlock_and_fail);
-	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-		pa_threaded_mainloop_wait(pinfo->m);
-		CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-	}
-	pa_operation_unref(o);
-
-	pa_threaded_mainloop_unlock(pinfo->m);
-
-	if (!key_value) {
-		for (i =0;i<VOLUME_TYPE_MAX;i++) {
-			unsigned int vconf_value;
-			mm_sound_volume_get_value(i,&vconf_value);
-			mm_sound_volume_set_value(i,vconf_value);
-		}
-	}
-	return;
-
-unlock_and_fail:
-	if (o) {
-		pa_operation_cancel(o);
-		pa_operation_unref(o);
-	}
-	pa_threaded_mainloop_unlock(pinfo->m);
-}
-
-int MMSoundMgrPulseHandleRegisterAudioMuteall (void* pinfo)
-{
-	int ret = vconf_notify_key_changed(VCONF_KEY_MUTE_ALL, _muteall_changed_cb, pinfo);
-	debug_msg ("vconf [%s] set ret = %d\n", VCONF_KEY_MUTE_ALL, ret);
-	return ret;
-}
-
-void MMSoundMgrPulseHandleResetAudioMuteallOnBoot(void* data)
-{
-	int key_value;
-	pulse_info_t* pinfo = (pulse_info_t*)data;
-	pa_operation *o = NULL;
-
-	if (pinfo == NULL) {
-		debug_error ("pinfo is null\n");
-		return;
-	}
-
-	if (vconf_get_int(VCONF_KEY_MUTE_ALL, &key_value)) {
-		debug_error ("vconf_get_int(VCONF_KEY_MUTE_ALL) failed..\n");
-		key_value = 0;
-		vconf_set_int(VCONF_KEY_MUTE_ALL, key_value);
-	} else {
-		mm_sound_mute_all(key_value);
-
-		pa_threaded_mainloop_lock(pinfo->m);
-		CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-
-		debug_msg("[PA] pa_ext_policy_set_muteall m[%p] c[%p] muteall:%d", pinfo->m, pinfo->context, key_value);
-		o = pa_ext_policy_set_muteall (pinfo->context, key_value, set_muteall_cb, pinfo);
-		CHECK_CONTEXT_SUCCESS_GOTO(pinfo->context, o, unlock_and_fail);
-		while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-			pa_threaded_mainloop_wait(pinfo->m);
-			CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-		}
-		pa_operation_unref(o);
-
-		pa_threaded_mainloop_unlock(pinfo->m);
-	}
-	return;
-
-unlock_and_fail:
-	if (o) {
-		pa_operation_cancel(o);
-		pa_operation_unref(o);
-	}
-	pa_threaded_mainloop_unlock(pinfo->m);
-}
-#endif /* SUPPORT_AUDIO_MUTEALL */
 
 /* -------------------------------- BT SCO --------------------------------------------*/
 #ifdef SUPPORT_BT_SCO_DETECT
@@ -1740,40 +1624,6 @@ unlock_and_fail:
 	debug_leave("\n");
 }
 
-void MMSoundMgrPulseSetMuteall(int mute)
-{
-	pa_operation *o = NULL;
-
-	debug_msg("all streams are %s. pulse_info(0x%x)", mute ? "muted" : "unmuted", pulse_info);
-
-	if (pa_threaded_mainloop_in_thread(pulse_info->m)) {
-        o = pa_ext_policy_set_muteall (pulse_info->context, mute, set_muteall_cb, pulse_info);
-		pa_operation_unref(o);
-	} else {
-		pa_threaded_mainloop_lock(pulse_info->m);
-		CHECK_CONTEXT_DEAD_GOTO(pulse_info->context, muteall_and_fail);
-        o = pa_ext_policy_set_muteall (pulse_info->context, mute, set_muteall_cb, pulse_info);
-		CHECK_CONTEXT_SUCCESS_GOTO(pulse_info->context, o, muteall_and_fail);
-		while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-			pa_threaded_mainloop_wait(pulse_info->m);
-			CHECK_CONTEXT_DEAD_GOTO(pulse_info->context, muteall_and_fail);
-		}
-		pa_operation_unref(o);
-
-		pa_threaded_mainloop_unlock(pulse_info->m);
-	}
-	debug_leave("\n");
-	return;
-
-muteall_and_fail:
-	if (o) {
-		pa_operation_cancel(o);
-		pa_operation_unref(o);
-	}
-	pa_threaded_mainloop_unlock(pulse_info->m);
-	debug_leave("\n");
-}
-
 void MMSoundMgrPulseSetVoicecontrolState (bool state)
 {
 	pa_operation *o = NULL;
@@ -1810,28 +1660,34 @@ unlock_and_fail:
 	debug_leave("\n");
 }
 
-static void _poweroff_changed_cb(keynode_t* node, void* data)
+static void _recorder_changed_cb(keynode_t* node, void* data)
 {
 	int key_value;
 	pulse_info_t* pinfo = (pulse_info_t*)data;
+	session_t session = 0;
 
 	if (pinfo == NULL) {
 		debug_error ("pinfo is null\n");
 		return;
 	}
 
-	vconf_get_int(VCONFKEY_SYSMAN_POWER_OFF_STATUS, &key_value);
-	debug_msg ("%s changed callback called, poweroff value = %d\n", vconf_keynode_get_name(node), key_value);
+	vconf_get_int(VCONFKEY_RECORDER_STATE, &key_value);
+	debug_msg ("%s changed callback called, recorder state value = %d\n", vconf_keynode_get_name(node), key_value);
 
-	if (key_value >= VCONFKEY_SYSMAN_POWER_OFF_DIRECT) {
-		MMSoundMgrPulseSetMuteall(1);
+	MMSoundMgrSessionGetSession(&session);
+
+	if ((key_value == VCONFKEY_RECORDER_STATE_RECORDING || key_value == VCONFKEY_RECORDER_STATE_RECORDING_PAUSE) && session == SESSION_FMRADIO) {
+		vconf_set_int(VCONF_KEY_FMRADIO_RECORDING, 1);
+	} else {
+		vconf_set_int(VCONF_KEY_FMRADIO_RECORDING, 0);
 	}
 }
 
-int MMSoundMgrPulseHandleRegisterPowerOffMuteall(void* pinfo)
+int MMSoundMgrPulseHandleRegisterFMRadioRecording(void* pinfo)
 {
-	int ret = vconf_notify_key_changed(VCONFKEY_SYSMAN_POWER_OFF_STATUS, _poweroff_changed_cb, pinfo);
-	debug_msg ("vconf [%s] set ret = %d\n", VCONFKEY_SYSMAN_POWER_OFF_STATUS, ret);
+	int ret = vconf_notify_key_changed(VCONFKEY_RECORDER_STATE, _recorder_changed_cb, pinfo);
+	debug_msg ("vconf [%s] set ret = %d\n", VCONFKEY_RECORDER_STATE, ret);
+
 	return ret;
 }
 
@@ -2463,10 +2319,6 @@ void* MMSoundMgrPulseInit(void)
 	pulse_info->dock_idx = PA_INVALID_INDEX;
 	pulse_info->device_type = PA_INVALID_INDEX;
 
-#ifdef SUPPORT_AUDIO_MUTEALL
-	MMSoundMgrPulseHandleRegisterAudioMuteall(pulse_info);
-	MMSoundMgrPulseHandleResetAudioMuteallOnBoot(pulse_info);
-#endif
 #ifdef SUPPORT_BT_SCO
 	MMSoundMgrPulseHandleRegisterBluetoothStatus(pulse_info);
 #endif

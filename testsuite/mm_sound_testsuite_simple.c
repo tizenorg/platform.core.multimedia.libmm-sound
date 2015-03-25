@@ -842,10 +842,10 @@ static void interpret (char *cmd)
 			{
 				int ret = 0;
 				char input_string[128];
-				int muteall;
+				bool muteall;
 
 				fflush(stdin);
-				ret = mm_sound_get_muteall(&muteall);
+				ret = mm_sound_is_mute_all_enabled(&muteall);
 				if (ret == MM_ERROR_NONE) {
 					g_print ("### mm_sound_get_muteall Success, muteall=%d\n", muteall);
 				} else {
@@ -857,7 +857,7 @@ static void interpret (char *cmd)
 				}
 
 				muteall = atoi (input_string);
-				ret = mm_sound_set_muteall(muteall);
+				ret = mm_sound_enable_mute_all(muteall);
 				if (ret == MM_ERROR_NONE) {
 					g_print ("### mm_sound_set_muteall(%d) Success\n", muteall);
 				} else {
@@ -1623,12 +1623,9 @@ void volume_change_callback(volume_type_t type, unsigned int volume, void *user_
 		g_print("Volume Callback Runs :::: MEDIA VALUME %d\n", volume);
 }
 
-void muteall_change_callback(void* data)
+static void muteall_change_callback(bool mute_all, void* user_data)
 {
-	int  muteall;
-
-	mm_sound_get_muteall(&muteall);
-	g_print("Muteall Callback Runs :::: muteall value = %d\n", muteall);
+	g_print("Muteall Callback Runs :::: muteall value = %d, user_data = %p\n", mute_all, user_data);
 }
 
 void audio_route_policy_changed_callback(void* data, system_audio_route_t policy)
@@ -1651,22 +1648,26 @@ void audio_route_policy_changed_callback(void* data, system_audio_route_t policy
 int main(int argc, char *argv[])
 {
 	int ret = 0;
+
 	stdin_channel = g_io_channel_unix_new(0);
 	g_io_add_watch(stdin_channel, G_IO_IN, (GIOFunc)input, NULL);
 	g_loop = g_main_loop_new (NULL, 1);
 
+	MMSOUND_STRNCPY(g_file_name, POWERON_FILE, MAX_STRING_LEN);
+	g_print("\nThe input filename is '%s' \n\n",g_file_name);
+
+	/* test volume changed callback */
 	g_print("callback function addr :: %p\n", volume_change_callback);
 	g_volume_type = VOLUME_TYPE_MEDIA;
 	ret = mm_sound_volume_get_value(g_volume_type, &g_volume_value);
 	if(ret < 0) {
 		g_print("mm_sound_volume_get_value 0x%x\n", ret);
 	}
-
-	MMSOUND_STRNCPY(g_file_name, POWERON_FILE, MAX_STRING_LEN);
-	g_print("\nThe input filename is '%s' \n\n",g_file_name);
-
 	mm_sound_add_volume_changed_callback(volume_change_callback, (void*) &g_volume_type);
-	mm_sound_muteall_add_callback(muteall_change_callback);
+
+	/* test mute_all changed callback */
+	mm_sound_add_mute_all_callback(muteall_change_callback, 0x1234);
+
 	displaymenu();
 	g_main_loop_run (g_loop);
 

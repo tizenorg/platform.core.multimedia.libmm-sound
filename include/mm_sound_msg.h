@@ -155,7 +155,7 @@ enum {
 };
 
 
-enum {
+typedef enum sound_server_signal {
         SOUND_SERVER_SIGNAL_TEST,
         SOUND_SERVER_SIGNAL_PLAY_FILE_END,
         SOUND_SERVER_SIGNAL_VOLUME_CHANGED,
@@ -164,13 +164,14 @@ enum {
         SOUND_SERVER_SIGNAL_FOCUS_CHANGED,
         SOUND_SERVER_SIGNAL_FOCUS_WATCH,
         SOUND_SERVER_SIGNAL_MAX
-};
+} sound_server_signal_t;
 
-enum {
+typedef enum pulseaudio_property {
         PULSEAUDIO_PROP_AUDIO_BALANCE,
         PULSEAUDIO_PROP_MONO_AUDIO,
+        PULSEAUDIO_PROP_MUTE_ALL,
         PULSEAUDIO_PROP_MAX
-};
+} pulseaudio_property_t;
 
 struct mm_sound_dbus_method_info{
         const char* name;
