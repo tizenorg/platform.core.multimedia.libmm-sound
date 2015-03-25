@@ -150,7 +150,7 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 
 	GList *list = NULL;
 	focus_node_t *node = NULL;
-	//mm_ipc_msg_t msg;
+
 	int i = 0;
 
 	focus_cb_data cb_data;
@@ -231,7 +231,7 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 				 *
 				 ********************************************/
 				debug_error("[RETCB]wait callback(tid=%d, cmd=%d, timeout=%d)\n", cb_data.pid, command, pollingTimeout);
-				pret = poll(&pfd, 1, pollingTimeout); //timeout 7sec
+				pret = poll(&pfd, 1, pollingTimeout); /* timeout 7sec */
 				if (pret < 0) {
 					debug_error("[RETCB]poll failed (%d)\n", pret);
 					goto fail;
@@ -306,7 +306,6 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	int flag_for_taken_index = 0;
 	int taken_pid = 0;
 	int taken_hid = 0;
-	//mm_ipc_msg_t msg;
 
 	focus_cb_data cb_data;
 
@@ -326,8 +325,8 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 				flag_for_focus_type |= i+1; /* playback:1, capture:2 */
 			}
 		}
-		cb_data.type= flag_for_focus_type;
-		cb_data.state= !FOCUS_STATUS_DEACTIVATED;
+		cb_data.type = flag_for_focus_type & assaulter_param->request_type;
+		cb_data.state = !FOCUS_STATUS_DEACTIVATED;
 	}
 	MMSOUND_STRNCPY(cb_data.stream_type, assaulter_stream_type, MAX_STREAM_TYPE_LEN);
 	MMSOUND_STRNCPY(cb_data.name, assaulter_param->option, MM_SOUND_NAME_NUM);
@@ -391,7 +390,7 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	 *
 	 ********************************************/
 	debug_error("[RETCB]wait callback(tid=%d, handle=%d, cmd=%d, timeout=%d)\n",cb_data.pid, cb_data.handle, command, pollingTimeout);
-	pret = poll(&pfd, 1, pollingTimeout); //timeout 7sec
+	pret = poll(&pfd, 1, pollingTimeout);
 	if (pret < 0) {
 		debug_error("[RETCB]poll failed (%d)\n", pret);
 		goto fail;
@@ -419,25 +418,25 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 		close(fd_FOCUS_R);
 		fd_FOCUS_R = -1;
 	}
-//	debug_log("[RETCB] Return value 0x%x\n", buf);
+	//debug_log("[RETCB] Return value 0x%x\n", buf);
 
-
-/* update victim node */
+	/* update victim node */
 	taken_pid = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->pid : 0;
 	taken_hid = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->handle_id : 0;
 	flag_for_taken_index = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->request_type & victim_node->status : assaulter_param->request_type;
 	for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
 		if (flag_for_taken_index & (i+1)) {
 			if (command == FOCUS_COMMAND_ACQUIRE && (victim_node->taken_by_id[i].pid != assaulter_param->pid || victim_node->taken_by_id[i].handle_id != assaulter_param->handle_id)) {
-				//skip
+				/* skip */
 				continue;
 			}
 			victim_node->taken_by_id[i].pid = taken_pid;
 			victim_node->taken_by_id[i].handle_id = taken_hid;
 		}
 	}
-	if(ret == victim_node->handle_id) { // return from client is sucess, ret will be its handle_id
-		victim_node->status = (command == FOCUS_COMMAND_RELEASE) ? (victim_node->status &= ~(assaulter_param->request_type)) : (victim_node->status |= flag_for_focus_type);
+	if(ret == victim_node->handle_id) {
+		/* return from client is success, ret will be its handle_id */
+		victim_node->status = (command == FOCUS_COMMAND_RELEASE) ? (victim_node->status &= ~(cb_data.type)) : (victim_node->status |= cb_data.type);
 	} else {
 		victim_node->status = FOCUS_STATUS_DEACTIVATED;
 	}
