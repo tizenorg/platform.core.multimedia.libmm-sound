@@ -67,6 +67,91 @@ typedef struct {
 	} \
 }while(0)
 
+#ifdef SUPPORT_CONTAINER
+static void __set_container_data(int pid, int handle, const char* container_name, int container_pid)
+{
+	GList *list = NULL;
+	focus_node_t *node = NULL;
+
+	for (list = g_focus_node_list; list != NULL; list = list->next) {
+		node = (focus_node_t *)list->data;
+		if (!node->is_for_watch && node->pid == pid && node->handle_id == handle) {
+			debug_error("Set container [%s][%d] to handle[%d] instanceID[%d]",
+						container_name, container_pid, handle, node->pid);
+			if (container_name)
+				strcpy (node->container.name, container_name);
+			node->container.pid = container_pid;
+			break;
+		}
+		else if (node->is_for_watch && node->pid == pid) {
+			debug_error("Set container [%s][%d] to instanceID[%d]",
+						container_name, container_pid, pid);
+			if (container_name)
+				strcpy (node->container.name, container_name);
+			node->container.pid = container_pid;
+			break;
+		}
+	}
+}
+
+static container_info_t* __get_container_info(int instance_id)
+{
+	GList *list = NULL;
+	focus_node_t *node = NULL;
+
+	for (list = g_focus_node_list; list != NULL; list = list->next) {
+		node = (focus_node_t *)list->data;
+		if (node->pid == instance_id) {
+			return &node->container;
+		}
+	}
+}
+#endif /* SUPPORT_CONTAINER */
+
+static char* __get_focus_pipe_path(int instance_id, int handle, const char* postfix, bool is_watch)
+{
+	gchar* path = NULL;
+	gchar* path2 = NULL;
+
+#ifdef SUPPORT_CONTAINER
+	container_info_t* container_info = __get_container_info(instance_id);
+
+	if (instance_id == container_info->pid) {
+		debug_error ("This might be in the HOST(%s)[%d], let's form normal path",
+					container_info->name, instance_id);
+		if (is_watch) {
+			path = g_strdup_printf("/tmp/FOCUS.%d.wch", instance_id);
+		} else {
+			path = g_strdup_printf("/tmp/FOCUS.%d.%d", instance_id, handle);
+		}
+	} else {
+		if (is_watch) {
+			path = g_strdup_printf("/var/lib/lxc/%s/rootfs/tmp/FOCUS.%d.wch",
+									container_info->name, container_info->pid);
+		} else {
+			path = g_strdup_printf("/var/lib/lxc/%s/rootfs/tmp/FOCUS.%d.%d",
+									container_info->name, container_info->pid, handle);
+		}
+	}
+#else
+	if (is_watch) {
+		path = g_strdup_printf("/tmp/FOCUS.%d.wch", instance_id);
+	} else {
+		path = g_strdup_printf("/tmp/FOCUS.%d.%d", instance_id, handle);
+	}
+#endif
+
+	if (postfix) {
+		path2 = g_strconcat(path, postfix, NULL);
+		g_free (path);
+		path = NULL;
+		return path2;
+	}
+
+	return path;
+}
+
+
 static gboolean _is_pid_exist(int pid)
 {
 	int ret = 0;
@@ -167,8 +252,8 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 				 * Open callback cmd pipe
 				 *
 				 **************************************/
-				filename = g_strdup_printf("/tmp/FOCUS.%d.wch", cb_data.pid);
-				if ((fd_FOCUS = open(filename, O_WRONLY|O_NONBLOCK)) < 0) {
+				filename = __get_focus_pipe_path(cb_data.pid, -1, NULL, true);
+				if ((fd_FOCUS = open(filename, O_WRONLY|O_NONBLOCK)) == -1) {
 					debug_error("[CallCB] %s open error\n", filename);
 					goto fail;
 				}
@@ -179,8 +264,8 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 				 * before writing callback cmd to pipe
 				 *
 				 ******************************************/
-				filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", cb_data.pid);
-				if ((fd_FOCUS_R=open(filename2,O_RDONLY|O_NONBLOCK))== -1) {
+				 filename2 = __get_focus_pipe_path(cb_data.pid, -1, "r", true);
+				if ((fd_FOCUS_R= open(filename2,O_RDONLY|O_NONBLOCK)) == -1) {
 					char str_error[256];
 					strerror_r (errno, str_error, sizeof(str_error));
 					debug_error("[RETCB] Fail to open fifo (%s)\n", str_error);
@@ -188,15 +273,14 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 				}
 				debug_log(" open return cb %s\n", filename2);
 
-
 				/*******************************************
 				 * Write Callback msg
 				 *******************************************/
-				if (write(fd_FOCUS, &cb_data ,sizeof(cb_data)) < 0) {
+				if (write(fd_FOCUS, &cb_data ,sizeof(cb_data)) == -1) {
 					debug_error("[CallCB] %s fprintf error\n", filename);
 					goto fail;
 				}
-				debug_log("after fprintf");
+
 				/**************************************
 				 *
 				 * Close callback cmd pipe
@@ -219,6 +303,7 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 				 ********************************************/
 				debug_error("[RETCB]wait callback(tid=%d, cmd=%d, timeout=%d)\n", cb_data.pid, command, pollingTimeout);
 				pret = poll(&pfd, 1, pollingTimeout); /* timeout 7sec */
+				debug_error("after poll");
 				if (pret < 0) {
 					debug_error("[RETCB]poll failed (%d)\n", pret);
 					goto fail;
@@ -229,6 +314,7 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 						goto fail;
 					}
 				}
+
 				g_free(filename2);
 				filename2 = NULL;
 
@@ -246,11 +332,10 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 					close(fd_FOCUS_R);
 					fd_FOCUS_R = -1;
 				}
-
 			}
 		}
 	}
-
+	debug_fleave();
 	return MM_ERROR_NONE;
 
 fail:
@@ -270,7 +355,7 @@ fail:
 		close (fd_FOCUS_R);
 		fd_FOCUS_R = -1;
 	}
-
+	debug_fleave();
 	return -1;
 }
 
@@ -327,8 +412,8 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	 * Open callback cmd pipe
 	 *
 	 **************************************/
-	filename = g_strdup_printf("/tmp/FOCUS.%d.%d", cb_data.pid, cb_data.handle);
-	if ((fd_FOCUS = open(filename, O_WRONLY|O_NONBLOCK)) < 0) {
+	filename = __get_focus_pipe_path(cb_data.pid, cb_data.handle, NULL, false);
+	if ((fd_FOCUS = open(filename, O_WRONLY|O_NONBLOCK)) == -1) {
 		debug_error("[CallCB] %s open error\n", filename);
 		goto fail;
 	}
@@ -339,8 +424,8 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	 * before writing callback cmd to pipe
 	 *
 	 ******************************************/
-	filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", cb_data.pid, cb_data.handle);
-	if ((fd_FOCUS_R=open(filename2,O_RDONLY|O_NONBLOCK))== -1) {
+	filename2 = __get_focus_pipe_path(cb_data.pid, cb_data.handle, "r", false);
+	if ((fd_FOCUS_R = open(filename2,O_RDONLY|O_NONBLOCK)) == -1) {
 		char str_error[256];
 		strerror_r (errno, str_error, sizeof(str_error));
 		debug_error("[RETCB] Fail to open fifo (%s)\n", str_error);
@@ -352,7 +437,7 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	/*******************************************
 	 * Write Callback msg
 	 *******************************************/
-	if (write(fd_FOCUS, &cb_data, sizeof(cb_data)) < 0) {
+	if (write(fd_FOCUS, &cb_data, sizeof(cb_data)) == -1) {
 		debug_error("[CallCB] %s write error\n", filename);
 		goto fail;
 	}
@@ -495,12 +580,28 @@ static int _mm_sound_mgr_focus_watch_list_dump ()
 
 static void _mm_sound_mgr_focus_fill_info_from_msg (focus_node_t *node, const _mm_sound_mgr_focus_param_t *msg)
 {
+	debug_fenter();
 	node->pid = msg->pid;
 	node->handle_id = msg->handle_id;
 	node->callback = msg->callback;
 	node->cbdata = msg->cbdata;
+#ifdef SUPPORT_CONTAINER
+	memset (&node->container, 0, sizeof (container_info_t));
+	strcpy(node->container.name, "NONAME");
+	node->container.pid = msg->pid;
+#endif
+
+	debug_fleave();
 	return;
 }
+
+#ifdef SUPPORT_CONTAINER
+void _mm_sound_mgr_focus_update_container_data(int pid,int handle, const char* container_name, int container_pid)
+{
+	__set_container_data(pid, handle, container_name, container_pid);
+	//__temp_print_list(NULL);
+}
+#endif
 
 int mm_sound_mgr_focus_create_node (const _mm_sound_mgr_focus_param_t *param)
 {

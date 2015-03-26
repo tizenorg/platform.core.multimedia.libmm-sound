@@ -36,6 +36,14 @@ do { \
 #define FREEZE_COMMAND_INCLUDE	"include"
 #define FREEZE_COMMAND_WAKEUP	"wakeup"
 
+#ifdef SUPPORT_CONTAINER
+typedef struct container_info
+{
+	int pid;
+	char name[64];
+} container_info_t;
+#endif
+
 int MMSoundMgrIpcInit(void);
 int MMSoundMgrIpcFini(void);
 
@@ -67,7 +75,11 @@ int __mm_sound_mgr_ipc_get_audio_path(mm_sound_device_in *device_in, mm_sound_de
 int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_sound_device_t **device_list, int *total_num);
 #ifdef USE_FOCUS
 //int __mm_sound_mgr_ipc_create_focus_node(mm_ipc_msg_t *msg);
+#ifdef SUPPORT_CONTAINER
+int __mm_sound_mgr_ipc_register_focus(int client_pid, int handle_id, char* stream_type ,const char* container_name, int container_pid);
+#else
 int __mm_sound_mgr_ipc_register_focus(int client_pid, int handle_id, char* stream_type);
+#endif
 //int __mm_sound_mgr_ipc_destroy_focus_node(mm_ipc_msg_t *msg);
 int __mm_sound_mgr_ipc_unregister_focus(int pid, int handle_id);
 
@@ -75,7 +87,11 @@ int __mm_sound_mgr_ipc_acquire_focus(int pid, int handle_id, int focus_type, con
 
 int __mm_sound_mgr_ipc_release_focus(int pid, int handle_id, int focus_type, const char* name);
 //int __mm_sound_mgr_ipc_set_focus_watch_cb(mm_ipc_msg_t *msg);
+#ifdef SUPPORT_CONTAINER
+int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type, const char* container_name, int container_pid);
+#else
 int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type);
+#endif
 //int __mm_sound_mgr_ipc_unset_focus_watch_cb(mm_ipc_msg_t *msg);
 int __mm_sound_mgr_ipc_unwatch_focus(int pid);
 #endif

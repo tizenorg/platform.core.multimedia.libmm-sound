@@ -270,7 +270,28 @@ int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_so
 	return ret;
 }
 #ifdef USE_FOCUS
+
+#ifdef SUPPORT_CONTAINER
 // method + add callback
+int __mm_sound_mgr_ipc_register_focus(int client_pid, int handle_id, char* stream_type, const char* container_name, int container_pid)
+{
+	_mm_sound_mgr_focus_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+	param.pid = client_pid;
+	param.handle_id = handle_id;
+//	param.callback = msg->sound_msg.callback;
+//	param.cbdata = msg->sound_msg.cbdata;
+	memcpy(param.stream_type, stream_type, MAX_STREAM_TYPE_LEN);
+
+	ret = mm_sound_mgr_focus_create_node(&param);
+
+	_mm_sound_mgr_focus_update_container_data(client_pid, handle_id, container_name, container_pid);
+
+	return ret;
+}
+#else
 int __mm_sound_mgr_ipc_register_focus(int client_pid, int handle_id, char* stream_type)
 {
 	_mm_sound_mgr_focus_param_t param;
@@ -287,7 +308,7 @@ int __mm_sound_mgr_ipc_register_focus(int client_pid, int handle_id, char* strea
 
 	return ret;
 }
-
+#endif
 
 // method + remove callback
 int __mm_sound_mgr_ipc_unregister_focus(int pid, int handle_id)
@@ -337,7 +358,25 @@ int __mm_sound_mgr_ipc_release_focus(int pid, int handle_id, int focus_type, con
 	return ret;
 }
 
+#ifdef SUPPORT_CONTAINER
 // method + add callback
+int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type, const char* container_name, int container_pid)
+{
+	_mm_sound_mgr_focus_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+	param.pid = pid;
+	param.request_type = focus_type;
+//	param.callback = msg->sound_msg.callback;
+//	param.cbdata = msg->sound_msg.cbdata;
+
+	ret = mm_sound_mgr_focus_set_watch_cb(&param);
+	_mm_sound_mgr_focus_update_container_data(pid, -1, container_name, container_pid);
+
+	return ret;
+}
+#else
 int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type)
 {
 	_mm_sound_mgr_focus_param_t param;
@@ -353,6 +392,7 @@ int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type)
 
 	return ret;
 }
+#endif
 
 // method + remove callback
 int __mm_sound_mgr_ipc_unwatch_focus(int pid)

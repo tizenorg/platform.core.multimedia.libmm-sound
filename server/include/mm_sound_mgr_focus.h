@@ -26,6 +26,7 @@
 #include "../include/mm_sound_focus.h"
 #include "../include/mm_sound_stream.h"
 #include "../include/mm_ipc.h"
+#include "mm_sound_mgr_ipc.h"
 
 typedef enum
 {
@@ -74,6 +75,10 @@ typedef struct {
 	_focus_taken_by_id_t taken_by_id[NUM_OF_STREAM_IO_TYPE];
 	void *callback;
 	void *cbdata;
+
+#ifdef SUPPORT_CONTAINER
+	container_info_t container;
+#endif
 } focus_node_t;
 
 int MMSoundMgrFocusInit(void);

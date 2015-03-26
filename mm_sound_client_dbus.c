@@ -14,6 +14,11 @@
 #include "include/mm_sound_msg.h"
 #include "include/mm_sound_common.h"
 
+#ifdef USE_SECURITY
+#include <security-server.h>
+#define COOKIE_SIZE 20
+#endif
+
 #define BUS_NAME_PULSEAUDIO "org.pulseaudio.Server"
 #define OBJECT_PULSEAUDIO "/org/pulseaudio/policy1"
 #define INTERFACE_PULSEAUDIO "org.PulseAudio.Ext.Policy1"
@@ -1362,6 +1367,52 @@ int mm_sound_client_dbus_remove_mute_all_changed_callback(void)
 /*------------------------------------------ FOCUS --------------------------------------------------*/
 #ifdef USE_FOCUS
 
+#ifdef SUPPORT_CONTAINER
+#ifdef USE_SECURITY
+char* _get_cookie(int cookie_size)
+{
+	int retval = -1;
+	char* cookie = NULL;
+
+	if (security_server_get_cookie_size() != cookie_size) {
+		debug_error ("[Security] security_server_get_cookie_size() != COOKIE_SIZE(%d)\n", cookie_size);
+		return false;
+	}
+
+	cookie = (char*)malloc (cookie_size);
+
+	retval = security_server_request_cookie (cookie, cookie_size);
+	if (retval == SECURITY_SERVER_API_SUCCESS) {
+		debug_msg ("[Security] security_server_request_cookie() returns [%d]\n", retval);
+	} else {
+		debug_error ("[Security] security_server_request_cookie() returns [%d]\n", retval);
+	}
+
+	return cookie;
+}
+
+static GVariant* _get_cookie_variant ()
+{
+	int i;
+	GVariantBuilder builder;
+	char* cookie = NULL;
+
+	cookie = _get_cookie(COOKIE_SIZE);
+
+	if (cookie == NULL)
+		return NULL;
+
+	g_variant_builder_init(&builder, G_VARIANT_TYPE_ARRAY);
+	for (i = 0; i < COOKIE_SIZE; i++)
+		g_variant_builder_add(&builder, "y", cookie[i]);
+
+	free (cookie);
+	return g_variant_builder_end(&builder);
+}
+
+#endif /* USE_SECURITY */
+#endif /* SUPPORT_CONTAINER */
+
 static gpointer _focus_thread_func(gpointer data)
 {
 	debug_log(">>> thread func..ID of this thread(%u)\n", (unsigned int)pthread_self());
@@ -1544,13 +1595,14 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 			return FALSE;
 		}
 
-		focus_index = _focus_find_index_by_handle(cb_data.handle);
+		focus_index = _focus_find_index_by_watch(cb_data.pid);
 		if (focus_index == -1) {
 			debug_error("Can not find index");
 			return FALSE;
 		}
 
 		if (g_focus_sound_handle[focus_index].focus_lock) {
+			debug_error("lock focus_lock = %p",g_focus_sound_handle[focus_index].focus_lock);
 			g_mutex_lock(g_focus_sound_handle[focus_index].focus_lock);
 		}
 
@@ -1591,16 +1643,19 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 			rett = write(tmpfd, &buf, sizeof(buf));
 			close(tmpfd);
 			g_free(filename2);
-			debug_msg("[RETCB] tid(%d) finishing CB (fprintf=%d)\n", tid, rett);
+			debug_msg("[RETCB] tid(%d) finishing CB (write=%d)\n", tid, rett);
 
 #endif
 
 	}
-	debug_fleave();
 
 	if (g_focus_sound_handle[focus_index].focus_lock) {
+		debug_error("unlock focus_lock = %p",g_focus_sound_handle[focus_index].focus_lock);
 		g_mutex_unlock(g_focus_sound_handle[focus_index].focus_lock);
 	}
+
+	debug_fleave();
+
 
 	return TRUE;
 }
@@ -1880,6 +1935,9 @@ int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_soun
 	int instance;
 	int index = 0;
 	GVariant* params = NULL, *result = NULL;
+#ifdef SUPPORT_CONTAINER
+	char container[128];
+#endif
 
 	debug_fenter();
 
@@ -1899,7 +1957,20 @@ int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_soun
 	g_focus_sound_handle[index].focus_callback = callback;
 	g_focus_sound_handle[index].user_data = user_data;
 
+#ifdef SUPPORT_CONTAINER
+#ifdef USE_SECURITY
+	params = g_variant_new("(@ayiis)", _get_cookie_variant(), instance, id, stream_type);
+#else /* USE_SECURITY */
+	gethostname(container, sizeof(container));
+	debug_error("container = %s", container);
+	params = g_variant_new("(siis)", container, instance, id, stream_type);
+#endif /* USE_SECURITY */
+
+#else /* SUPPORT_CONTAINER */
 	params = g_variant_new("(iis)", instance, id, stream_type);
+
+#endif /* SUPPORT_CONTAINER */
+
 	if (params) {
 		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_REGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus register focus failed");
@@ -2095,6 +2166,9 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 	int instance;
 	int index = 0;
 	GVariant* params = NULL, *result = NULL;
+#ifdef SUPPORT_CONTAINER
+	char container[128];
+#endif
 
 	debug_fenter();
 
@@ -2114,7 +2188,21 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 	g_focus_sound_handle[index].watch_callback = callback;
 	g_focus_sound_handle[index].user_data = user_data;
 
+#ifdef SUPPORT_CONTAINER
+#ifdef USE_SECURITY
+	params = g_variant_new("(@ayii)", _get_cookie_variant(), instance, type);
+#else /* USE_SECURITY */
+	gethostname(container, sizeof(container));
+	debug_error("container = %s", container);
+	params = g_variant_new("(sii)", container, instance, type);
+#endif /* USE_SECURITY */
+
+#else /* SUPPORT_CONTAINER */
 	params = g_variant_new("(ii)", instance, type);
+
+#endif /* SUPPORT_CONTAINER */
+
+
 	if (params) {
 		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_WATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus set watch focus failed");

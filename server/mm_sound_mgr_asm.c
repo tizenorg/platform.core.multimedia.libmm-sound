@@ -151,14 +151,6 @@ typedef struct asm_subsession_option
 	ASM_resource_t resource;
 } asm_subsession_option_t;
 
-#ifdef SUPPORT_CONTAINER
-typedef struct container_info
-{
-	int pid;
-	char name[64];
-} container_info_t;
-#endif
-
 typedef struct _list
 {
 	int					instance_id;              /* pid */

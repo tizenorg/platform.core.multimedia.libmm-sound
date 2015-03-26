@@ -88,6 +88,13 @@
   "      <arg type='i' name='device_out' direction='out'/>"
   "    </method>"
   "    <method name='RegisterFocus'>"
+#ifdef SUPPORT_CONTAINER
+#ifdef USE_SECURITY
+  "      <arg name='container' type='ay' direction='in'/>"
+#else
+  "      <arg name='container' type='s' direction='in'/>"
+#endif
+#endif
   "      <arg name='pid' type='i' direction='in'/>"
   "      <arg name='handle_id' type='i' direction='in'/>"
   "      <arg name='stream_type' type='s' direction='in'/>"
@@ -109,6 +116,13 @@
   "      <arg name='name' type='s' direction='in'/>"
   "    </method>"
   "    <method name='WatchFocus'>"
+#ifdef SUPPORT_CONTAINER
+#ifdef USE_SECURITY
+	  " 	 <arg name='container' type='ay' direction='in'/>"
+#else
+	  " 	 <arg name='container' type='s' direction='in'/>"
+#endif
+#endif
   "      <arg name='pid' type='i' direction='in'/>"
   "      <arg name='focus_type' type='i' direction='in'/>"
   "    </method>"
@@ -949,6 +963,14 @@ static void handle_method_register_focus(GDBusMethodInvocation* invocation)
 	int pid = 0, handle_id = 0;
 	const char* stream_type = NULL;
 	GVariant *params = NULL;
+#ifdef SUPPORT_CONTAINER
+	int container_pid = -1;
+	char* container = NULL;
+#ifdef USE_SECURITY
+	GVariant* cookie_data;
+#endif /* USE_SECURITY */
+#endif /* SUPPORT_CONTAINER */
+
 
 	debug_fenter();
 
@@ -958,8 +980,24 @@ static void handle_method_register_focus(GDBusMethodInvocation* invocation)
 		goto send_reply;
 	}
 
+#ifdef SUPPORT_CONTAINER
+#ifdef USE_SECURITY
+	g_variant_get(params, "(@ayiis)", &cookie_data, &container_pid, &handle_id, &stream_type);
+	container = _get_container_from_cookie(cookie_data);
+	ret = __mm_sound_mgr_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, container, container_pid);
+
+	if (container)
+		free(container);
+#else /* USE_SECURITY */
+	g_variant_get(params, "(siis)", &container, &container_pid, &handle_id, &stream_type);
+	ret = __mm_sound_mgr_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, container, container_pid);
+
+#endif /* USE_SECURITY */
+#else /* SUPPORT_CONTAINER */
 	g_variant_get(params, "(iis)", &pid, &handle_id, &stream_type);
-	ret = __mm_sound_mgr_ipc_register_focus(pid, handle_id, stream_type);
+	ret = __mm_sound_mgr_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type);
+
+#endif /* SUPPORT_CONTAINER */
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1068,6 +1106,13 @@ static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 	int ret = MM_ERROR_NONE;
 	int pid = 0, focus_type = 0;
 	GVariant *params = NULL;
+#ifdef SUPPORT_CONTAINER
+	int container_pid = -1;
+	char* container = NULL;
+#ifdef USE_SECURITY
+	GVariant* cookie_data;
+#endif /* USE_SECURITY */
+#endif /* SUPPORT_CONTAINER */
 
 	debug_fenter();
 
@@ -1077,8 +1122,24 @@ static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 		goto send_reply;
 	}
 
+#ifdef SUPPORT_CONTAINER
+#ifdef USE_SECURITY
+	g_variant_get(params, "(@ayii)", &cookie_data, &container_pid, &focus_type);
+	container = _get_container_from_cookie(cookie_data);
+	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation), focus_type, container, container_pid);
+
+	if (container)
+		free(container);
+#else /* USE_SECURITY */
+	g_variant_get(params, "(sii)", &container, &container_pid, &focus_type);
+	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation), focus_type, container, container_pid);
+
+#endif /* USE_SECURITY */
+#else /* SUPPORT_CONTAINER */
 	g_variant_get(params, "(ii)", &pid, &focus_type);
-	ret = __mm_sound_mgr_ipc_watch_focus(pid, focus_type);
+	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation),focus_type);
+
+#endif /* SUPPORT_CONTAINER */
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
