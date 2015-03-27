@@ -1269,9 +1269,9 @@ void ___update_phone_status()
 		temp_list = temp_list->next;
 	}
 
-	if (vconf_set_int(SOUND_STATUS_KEY, g_sound_status_playing)) {
+	if ((error = vconf_set_int(SOUND_STATUS_KEY, g_sound_status_playing))) {
 		debug_error("[ASM_Server[Error = %d][1st try] phonestatus_set \n", error);
-		if (vconf_set_int(SOUND_STATUS_KEY, g_sound_status_playing)) {
+		if ((error = vconf_set_int(SOUND_STATUS_KEY, g_sound_status_playing))) {
 			debug_error("[Error = %d][2nd try]  phonestatus_set \n", error);
 		}
 	}
@@ -1361,32 +1361,14 @@ int __asm_unregister_list(int handle)
 }
 
 /* -------------------------
- * if PID exist return true, else return false
- */
-gboolean ___is_pid_exist(int pid)
-{
-	if (pid > 999999 || pid < 2)
-		return FALSE;
-	gchar *tmp = g_malloc0(25);
-
-	g_sprintf(tmp, "/proc/%d", pid);
-	if (access(tmp, R_OK)==0) {
-		g_free(tmp);
-		return TRUE;
-	}
-	g_free(tmp);
-	return FALSE;
-}
-
-/* -------------------------
  *
  */
-void __check_dead_process()
+static void __check_dead_process()
 {
 	asm_instance_list_t *temp_list = head_list_ptr;
 	asm_instance_list_t *temp_list_prev = head_list_ptr;
 	while (temp_list != NULL) {
-		if (!___is_pid_exist(temp_list->instance_id)) {
+		if (!mm_sound_util_is_process_alive(temp_list->instance_id)) {
 			debug_warning(" PID(%d) not exist! -> ASM_Server resource of pid(%d) will be cleared \n", temp_list->instance_id, temp_list->instance_id);
 			g_handle_info[temp_list->sound_handle].is_registered = 0;
 			g_handle_info[temp_list->sound_handle].option_flags = 0;
@@ -1409,7 +1391,7 @@ void __check_dead_process()
 			}
 		} else {
 			if (temp_list->paused_by_id.pid) {
-				if (!___is_pid_exist(temp_list->paused_by_id.pid)) {
+				if (!mm_sound_util_is_process_alive(temp_list->paused_by_id.pid)) {
 					temp_list->need_resume = ASM_NEED_NOT_RESUME;
 					temp_list->paused_by_id.pid = 0;
 					temp_list->paused_by_id.sound_handle = ASM_HANDLE_INIT_VAL;

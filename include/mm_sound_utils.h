@@ -33,6 +33,7 @@
 
 #include <mm_types.h>
 #include <mm_error.h>
+#include <unistd.h>
 
 #include "../include/mm_sound.h"
 
@@ -52,6 +53,8 @@ int mm_sound_util_get_dock_type (int *type);
 
 bool mm_sound_util_is_recording (void);
 bool mm_sound_util_is_mute_policy (void);
+
+bool mm_sound_util_is_process_alive(pid_t pid);
 
 #ifdef __cplusplus
 }

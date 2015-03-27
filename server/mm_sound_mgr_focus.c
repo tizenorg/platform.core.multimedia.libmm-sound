@@ -60,7 +60,7 @@ typedef struct {
 
 #define CLEAR_DEAD_NODE_LIST(x)  do { \
 	debug_warning ("list = %p, node = %p, pid=[%d]", x, node, (node)? node->pid : -1); \
-	if (x && node && (_is_pid_exist(node->pid) == FALSE)) { \
+	if (x && node && (mm_sound_util_is_process_alive(node->pid) == FALSE)) { \
 		debug_warning("PID:%d does not exist now! remove from device cb list\n", node->pid); \
 		g_free (node); \
 		x = g_list_remove (x, node); \
@@ -149,26 +149,6 @@ static char* __get_focus_pipe_path(int instance_id, int handle, const char* post
 	}
 
 	return path;
-}
-
-
-static gboolean _is_pid_exist(int pid)
-{
-	int ret = 0;
-	gchar tmp[25] = { 0, };
-
-	if (pid > 999999 || pid < 2) {
-		debug_error ("invalid input pid [%d]", pid);
-		return FALSE;
-	}
-
-	g_snprintf(tmp, sizeof(tmp), "/proc/%d", pid);
-	if ((ret = access(tmp, R_OK)) != 0) {
-		debug_log ("[%s] access error [%d]", ret);
-		return FALSE;
-	}
-
-	return TRUE;
 }
 
 static void _clear_focus_node_list_func (focus_node_t *node, gpointer user_data)

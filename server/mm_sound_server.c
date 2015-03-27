@@ -281,10 +281,12 @@ int main(int argc, char **argv)
 
 		unlink(PA_READY); // remove pa_ready file after sound-server init.
 
-		if (sem_post(sem) == -1) {
-			debug_error ("error sem post : %d", errno);
-		} else {
-			debug_msg ("Ready to play booting sound!!!!");
+		if (sem) {
+			if (sem_post(sem) == -1) {
+				debug_error ("error sem post : %d", errno);
+			} else {
+				debug_msg ("Ready to play booting sound!!!!");
+			}
 		}
 		/* Start Ipc mgr */
 

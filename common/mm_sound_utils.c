@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <glib.h>
 
 #include <vconf.h>
 #include <vconf-keys.h>
@@ -230,4 +231,21 @@ bool mm_sound_util_is_mute_policy (void)
 	debug_log ("[%s] setting_sound_status=%d\n", VCONFKEY_SETAPPL_SOUND_STATUS_BOOL, setting_sound_status);
 
 	return !setting_sound_status;
+}
+
+EXPORT_API
+bool mm_sound_util_is_process_alive(pid_t pid)
+{
+	gchar *tmp = NULL;
+	int ret = -1;
+
+	if (pid > 999999 || pid < 2)
+		return FALSE;
+
+	if ((tmp = g_strdup_printf("/proc/%d", pid))) {
+		ret = access(tmp, F_OK);
+		g_free(tmp);
+	}
+
+	return (ret == 0)? TRUE : FALSE;
 }
