@@ -1628,23 +1628,6 @@ static void muteall_change_callback(bool mute_all, void* user_data)
 	g_print("Muteall Callback Runs :::: muteall value = %d, user_data = %p\n", mute_all, user_data);
 }
 
-void audio_route_policy_changed_callback(void* data, system_audio_route_t policy)
-{
-	int dummy = (int) data;
-	system_audio_route_t lv_policy;
-	char *str_route[SYSTEM_AUDIO_ROUTE_POLICY_MAX] = {
-			"DEFAULT","IGN_A2DP","HANDSET"
-		};
-	g_print("Audio Route Policy has changed to [%s]\n", str_route[policy]);
-	g_print("...read....current....policy...to cross check..%d\n", dummy);
-	if(0 > mm_sound_route_get_system_policy(&lv_policy)) {
-		g_print("Can not get policy...in callback function\n");
-	}
-	else {
-		g_print("...readed policy [%s]\n", str_route[lv_policy]);
-	}
-}
-
 int main(int argc, char *argv[])
 {
 	int ret = 0;

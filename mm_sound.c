@@ -63,10 +63,12 @@ volume_cb_param g_volume_param[VOLUME_TYPE_MAX];
 
 static pthread_mutex_t g_volume_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static const char *volume_type_str[VOLUME_TYPE_MAX] = { "SYSTEM", "NOTIFICATION", "ALARM", "RINGTONE", "MEDIA", "CALL", "VOIP", "VOICE", "FIXED"};
 
 static char* _get_volume_str (volume_type_t type)
 {
+	static const char *volume_type_str[VOLUME_TYPE_MAX] =
+		{ "SYSTEM", "NOTIFICATION", "ALARM", "RINGTONE", "MEDIA", "CALL", "VOIP", "VOICE", "FIXED"};
+
 	return (type >= VOLUME_TYPE_SYSTEM && type < VOLUME_TYPE_MAX)? volume_type_str[type] : "Unknown";
 }
 
@@ -105,7 +107,7 @@ static int _validate_volume(volume_type_t type, int value)
 	return 0;
 }
 
-static void volume_changed_cb(keynode_t* node, void* data)
+static void _volume_changed_cb(keynode_t* node, void* data)
 {
 	volume_cb_param* param = (volume_cb_param*) data;
 
@@ -144,7 +146,7 @@ int mm_sound_volume_add_callback(volume_type_t type, volume_callback_fn func, vo
 
 	MMSOUND_LEAVE_CRITICAL_SECTION( &g_volume_mutex );
 
-	return mm_sound_util_volume_add_callback(type, volume_changed_cb, (void*)&g_volume_param[type]);
+	return mm_sound_util_volume_add_callback(type, _volume_changed_cb, (void*)&g_volume_param[type]);
 }
 
 EXPORT_API
@@ -165,7 +167,7 @@ int mm_sound_volume_remove_callback(volume_type_t type)
 
 	MMSOUND_LEAVE_CRITICAL_SECTION( &g_volume_mutex );
 
-	return mm_sound_util_volume_remove_callback(type, volume_changed_cb);
+	return mm_sound_util_volume_remove_callback(type, _volume_changed_cb);
 }
 
 EXPORT_API
@@ -197,14 +199,6 @@ int mm_sound_remove_volume_changed_callback(void)
 	}
 
 	return ret;
-}
-
-EXPORT_API
-int mm_sound_get_volume_step(volume_type_t type, int *step)
-{
-	debug_error("\n**********\n\nTHIS FUNCTION HAS DEFPRECATED\n\n \
-			use mm_sound_volume_get_step() instead\n\n**********\n");
-	return mm_sound_volume_get_step(type, step);
 }
 
 EXPORT_API
@@ -633,23 +627,6 @@ int mm_sound_play_tone (MMSoundTone_t num, int volume_config, const double volum
 ///////////////////////////////////
 ////     MMSOUND ROUTING APIs
 ///////////////////////////////////
-enum {
-	USE_PA_SINK_ALSA = 0,
-	USE_PA_SINK_A2DP,
-};
-EXPORT_API
-int mm_sound_route_set_system_policy (system_audio_route_t route)
-{
-	return MM_ERROR_NONE;
-}
-
-
-EXPORT_API
-int mm_sound_route_get_system_policy (system_audio_route_t *route)
-{
-	return MM_ERROR_NONE;
-}
-
 
 EXPORT_API
 int mm_sound_route_get_a2dp_status (bool *connected, char **bt_name)
@@ -669,75 +646,6 @@ int mm_sound_route_get_a2dp_status (bool *connected, char **bt_name)
 	}
 
 	return ret;
-}
-
-EXPORT_API
-int mm_sound_route_get_playing_device(system_audio_route_device_t *dev)
-{
-	mm_sound_device_in device_in = MM_SOUND_DEVICE_IN_NONE;
-	mm_sound_device_out device_out = MM_SOUND_DEVICE_OUT_NONE;
-
-	if(!dev)
-		return MM_ERROR_INVALID_ARGUMENT;
-
-	if(MM_ERROR_NONE != mm_sound_get_active_device(&device_in, &device_out)) {
-		debug_error("Can not get active device info\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	switch(device_out)
-	{
-	case MM_SOUND_DEVICE_OUT_SPEAKER:
-		*dev = SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_HANDSET;
-		break;
-	case MM_SOUND_DEVICE_OUT_BT_A2DP:
-		*dev = SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_BLUETOOTH;
-		break;
-	case MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY:
-		*dev = SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_EARPHONE;
-		break;
-	default:
-		*dev = SYSTEM_AUDIO_ROUTE_PLAYBACK_DEVICE_NONE;
-		break;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int mm_sound_route_add_change_callback(audio_route_policy_changed_callback_fn func, void *user_data)
-{
-	/* Deprecated */
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int mm_sound_route_remove_change_callback(void)
-{
-	/* Deprecated */
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int mm_sound_system_get_capture_status(system_audio_capture_status_t *status)
-{
-	int err = MM_ERROR_NONE;
-	int on_capture = 0;
-
-	if(!status) {
-		debug_error("invalid argument\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	/*  Check whether sound is capturing */
-	vconf_get_int(VCONFKEY_SOUND_CAPTURE_STATUS, &on_capture); // need to check where it is set
-
-	if(on_capture)
-		*status = SYSTEM_AUDIO_CAPTURE_ACTIVE;
-	else
-		*status = SYSTEM_AUDIO_CAPTURE_NONE;
-
-	return MM_ERROR_NONE;
 }
 
 EXPORT_API
