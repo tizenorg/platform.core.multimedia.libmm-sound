@@ -39,6 +39,7 @@
 
 static GList *g_focus_node_list = NULL;
 static pthread_mutex_t g_focus_node_list_mutex = PTHREAD_MUTEX_INITIALIZER;
+stream_list_t g_stream_list;
 
 static const char* focus_status_str[] =
 {
@@ -93,6 +94,7 @@ static void _clear_focus_node_list_func (focus_node_t *node, gpointer user_data)
 static int _mm_sound_mgr_focus_get_priority_from_stream_type(int *priority, const char *stream_type)
 {
 	int ret = MM_ERROR_NONE;
+	int i = 0;
 
 	debug_fenter();
 
@@ -100,31 +102,16 @@ static int _mm_sound_mgr_focus_get_priority_from_stream_type(int *priority, cons
 		ret = MM_ERROR_INVALID_ARGUMENT;
 		debug_error("invalid argument, priority[0x%x], stream_type[%s], ret[0x%x]\n", priority, stream_type, ret);
 	} else {
-		if (!strncmp(STREAM_TYPE_CALL, stream_type, MAX_STREAM_TYPE_LEN)) {
-			*priority = 10;
-		} else if (!strncmp(STREAM_TYPE_VOIP, stream_type, MAX_STREAM_TYPE_LEN)) {
-			*priority = 9;
-		} else if (!strncmp(STREAM_TYPE_RINGTONE, stream_type, MAX_STREAM_TYPE_LEN)) {
-			*priority = 8;
-		} else if (!strncmp(STREAM_TYPE_EMERGENCY, stream_type, MAX_STREAM_TYPE_LEN)) {
-			*priority = 7;
-		} else if (!strncmp(STREAM_TYPE_ALARM, stream_type, MAX_STREAM_TYPE_LEN)) {
-			*priority = 6;
-		} else if (!strncmp(STREAM_TYPE_NOTIFICATION, stream_type, MAX_STREAM_TYPE_LEN)) {
-			*priority = 5;
-		} else if (!strncmp(STREAM_TYPE_TTS, stream_type, MAX_STREAM_TYPE_LEN) ||
-			!strncmp(STREAM_TYPE_VOICE_RECOGNITION, stream_type, MAX_STREAM_TYPE_LEN)) {
-			*priority = 3;
-		} else if (!strncmp(STREAM_TYPE_MEDIA, stream_type, MAX_STREAM_TYPE_LEN) ||
-			!strncmp(STREAM_TYPE_RADIO, stream_type, MAX_STREAM_TYPE_LEN)) {
-			*priority = 2;
-		} else if (!strncmp(STREAM_TYPE_SYSTEM, stream_type, MAX_STREAM_TYPE_LEN)) {
-			*priority = 1;
-		} else {
+		for (i = 0; i < AVAIL_STREAMS_MAX; i++) {
+			if (!strncmp(g_stream_list.stream_types[i], stream_type, strlen(stream_type))) {
+				*priority = g_stream_list.priorities[i];
+				break;
+			}
+		}
+		if (i == AVAIL_STREAMS_MAX) {
 			ret = MM_ERROR_INVALID_ARGUMENT;
 			debug_error("not supported stream_type[%s], ret[0x%x]\n", stream_type, ret);
-		}
-		if (!(*priority)) {
+		} else {
 			debug_log("[%s] has priority of [%d]\n", stream_type, *priority);
 		}
 	}
@@ -851,16 +838,27 @@ FINISH:
 
 int MMSoundMgrFocusInit(void)
 {
+	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
+	ret = __mm_sound_mgr_ipc_dbus_get_stream_list(&g_stream_list);
+	if (ret)
+		debug_error("failed to __mm_sound_mgr_ipc_dbus_get_stream_list()\n");
 
 	debug_fleave();
-	return MM_ERROR_NONE;
+	return ret;
 }
 
 int MMSoundMgrFocusFini(void)
 {
+	int i = 0;
 	debug_fenter();
+
+	for (i = 0; i < AVAIL_STREAMS_MAX; i++) {
+		if (g_stream_list.stream_types[i]) {
+			free (g_stream_list.stream_types[i]);
+		}
+	}
 
 	debug_fleave();
 	return MM_ERROR_NONE;

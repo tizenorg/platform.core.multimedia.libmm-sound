@@ -34,6 +34,7 @@
 	extern "C" {
 #endif
 
+#include <glib.h>
 #define MAX_STREAM_TYPE_LEN 64
 
 #define STREAM_TYPE_MEDIA             "media"
@@ -50,6 +51,12 @@
 #define STREAM_TYPE_LOOPBACK          "loopback"
 
 #define NUM_OF_STREAM_IO_TYPE         2    /* playback / capture */
+
+#define AVAIL_STREAMS_MAX 32
+typedef struct _stream_list {
+	gchar *stream_types[AVAIL_STREAMS_MAX];
+	int priorities[AVAIL_STREAMS_MAX];
+} stream_list_t;
 
 #ifdef __cplusplus
 }

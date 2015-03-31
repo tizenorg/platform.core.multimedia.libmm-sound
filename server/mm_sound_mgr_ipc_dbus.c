@@ -1986,6 +1986,78 @@ int __mm_sound_mgr_ipc_dbus_notify_available_device_changed(int device_in, int d
 	return MM_ERROR_SOUND_INTERNAL;
 }
 
+#define PA_BUS_NAME                                    "org.pulseaudio.Server"
+#define PA_STREAM_MANAGER_OBJECT_PATH                  "/org/pulseaudio/Ext/StreamManager"
+#define PA_STREAM_MANAGER_INTERFACE                    "org.pulseaudio.Ext.StreamManager"
+#define PA_STREAM_MANAGER_METHOD_NAME_GET_STREAM_LIST  "GetStreamList"
+int __mm_sound_mgr_ipc_dbus_get_stream_list(stream_list_t* stream_list)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant *result = NULL;
+	GVariant *child = NULL;
+	GDBusConnection *conn = NULL;
+	GError *err = NULL;
+	int i = 0;
+
+	g_type_init();
+
+	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
+	if (!conn && err) {
+		LOGE("g_bus_get_sync() error (%s)", err->message);
+		g_error_free (err);
+		ret = MM_ERROR_SOUND_INTERNAL;
+		return ret;
+	}
+	result = g_dbus_connection_call_sync (conn,
+							PA_BUS_NAME,
+							PA_STREAM_MANAGER_OBJECT_PATH,
+							PA_STREAM_MANAGER_INTERFACE,
+							PA_STREAM_MANAGER_METHOD_NAME_GET_STREAM_LIST,
+							NULL,
+							G_VARIANT_TYPE("(vv)"),
+							G_DBUS_CALL_FLAGS_NONE,
+							2000,
+							NULL,
+							&err);
+	if (!result && err) {
+		debug_error("g_dbus_connection_call_sync() error (%s)", err->message);
+		ret = MM_ERROR_SOUND_INTERNAL;
+	} else {
+		GVariantIter iter;
+		GVariant *item = NULL;
+		child = g_variant_get_child_value(result, 0);
+		item = g_variant_get_variant(child);
+		gchar *name;
+		i = 0;
+		g_variant_iter_init(&iter, item);
+		while ((i < AVAIL_STREAMS_MAX) && g_variant_iter_loop(&iter, "&s", &name)) {
+			debug_log ("name : %s", name);
+			stream_list->stream_types[i++] = strdup(name);
+		}
+		g_variant_iter_free (&iter);
+		g_variant_unref (item);
+		g_variant_unref (child);
+
+		child = g_variant_get_child_value(result, 1);
+		item = g_variant_get_variant(child);
+		gint32 priority;
+		i = 0;
+		g_variant_iter_init(&iter, item);
+		while ((i < AVAIL_STREAMS_MAX) && g_variant_iter_loop(&iter, "i", &priority)) {
+			debug_log ("priority : %d", priority);
+			stream_list->priorities[i++] = priority;
+		}
+		g_variant_iter_free (&iter);
+		g_variant_unref (item);
+		g_variant_unref (child);
+
+		g_variant_unref(result);
+	}
+	g_object_unref(conn);
+
+	return ret;
+}
+
 int MMSoundMgrDbusInit(void)
 {
 	debug_enter();
