@@ -3,7 +3,7 @@
 
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.7.2h
+Version:    0.7.2i
 Release:    0
 Group:      Multimedia/Media Playback
 License:    Apache-2.0
@@ -23,7 +23,6 @@ BuildRequires:      pkgconfig(sysman)
 BuildRequires:      pkgconfig(glib-2.0)
 BuildRequires:      pkgconfig(vconf)
 BuildRequires:      pkgconfig(heynoti)
-BuildRequires:      pkgconfig(security-server)
 
 %description
 MMSound Package contains client lib for sound system
@@ -77,9 +76,9 @@ CFLAGS="%{optflags} -fvisibility=hidden -DMM_DEBUG_FLAG -DSEPARATE_SPEAKER_AND_W
 CFLAGS="$CFLAGS -DMURPHY"; export CFLAGS
 %endif
 %if %{with pulseaudio_samsung_policy}
-%reconfigure --prefix=/usr --enable-pulse --enable-security --enable-policy
+%reconfigure --prefix=/usr --enable-pulse --enable-policy
 %else
-%reconfigure --prefix=/usr --enable-pulse --enable-security
+%reconfigure --prefix=/usr --enable-pulse
 %endif
 %__make %{?_smp_mflags}
 
