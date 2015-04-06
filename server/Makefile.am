@@ -49,11 +49,6 @@ sound_server_CFLAGS += -DPULSE_CLIENT $(PULSE_CFLAGS)
 sound_server_LDADD += $(PULSE_LIBS)
 endif
 
-if USE_SECURITY
-sound_server_CFLAGS += $(SECURITY_CFLAGS) -DUSE_SECURITY
-sound_server_LDADD += $(SECURITY_LIBS)
-endif
-
 sound_server_DEPENDENCIES = $(srcdir)/../common/libmmfsoundcommon.la
 
 installdocksounddir = $(prefix)/share/sounds/sound-server

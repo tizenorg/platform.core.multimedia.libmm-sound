@@ -76,10 +76,6 @@ pthread_mutex_t g_mutex_asm = PTHREAD_MUTEX_INITIALIZER;
 
 #include <sysman.h>
 
-#ifdef USE_SECURITY
-#include <security-server.h>
-#endif
-
 #include <avsys-audio.h>
 
 #define USE_SYSTEM_SERVER_PROCESS_MONITORING
@@ -1550,32 +1546,6 @@ void __asm_do_all_resume_callback(ASM_event_sources_t eventsrc)
 	debug_log("[ASM_Server][%s] <<<<<<<<<< LEAVE\n", __func__);
 }
 
-#ifdef USE_SECURITY
-gboolean __asm_check_check_privilege (unsigned char* cookie)
-{
-	int asm_gid = -1;
-	int retval = 0;
-
-	/* Get ASM server group id */
-	asm_gid = security_server_get_gid("asm");
-	debug_log ("[ASM_Server][Security] asm server gid = [%d]\n", asm_gid);
-	if (asm_gid < 0) {
-		debug_error ("[ASM_Server][Security] security_server_get_gid() failed. error=[%d]\n", asm_gid);
-		return false;
-	}
-
-	/* Check privilege with valid group id */
-	retval = security_server_check_privilege((char *)cookie, asm_gid);
-	if (retval == SECURITY_SERVER_API_SUCCESS) {
-		debug_log("[ASM_Server][Security] security_server_check_privilege() returns [%d]\n", retval);
-		return true;
-	} else {
-		debug_error("[ASM_Server][Security] security_server_check_privilege() returns [%d]\n", retval);
-		return false;
-	}
-}
-#endif /* USE_SECURITY */
-
 int __asm_process_message (void *rcv_msg, void *ret_msg)
 {
 	long int rcv_instance_id;
@@ -1617,21 +1587,6 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 
 	switch (rcv_request_id) {
 	case ASM_REQUEST_REGISTER:
-#ifdef USE_SECURITY
-		/* do security check */
-		if (__asm_check_check_privilege(asm_rcv_msg->data.cookie) == 0) {
-			debug_error ("[ASM_Server][Security] __asm_check_check_privilege() failed....\n");
-			asm_snd_msg.instance_id = rcv_instance_id;
-			asm_snd_msg.data.alloc_handle = -1;
-			asm_snd_msg.data.cmd_handle = -1;
-			asm_snd_msg.data.check_privilege = 0;
-			if (asm_ret_msg == NULL)
-				__asm_snd_message(&asm_snd_msg);
-			break;
-		}
-		debug_log ("[ASM_Server][Security] __asm_check_check_privilege() success\n");
-		asm_snd_msg.data.check_privilege = 1;
-#endif /* USE_SECURITY */
 		__check_dead_process();
 
 		__asm_get_empty_handle(rcv_instance_id, &rcv_sound_handle);
