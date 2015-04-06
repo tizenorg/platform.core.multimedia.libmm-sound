@@ -26,7 +26,9 @@
 #include "../../include/mm_ipc.h"
 #include "mm_sound_mgr_session.h"
 
-void* MMSoundMgrPulseInit(void);
+typedef void (*pa_disconnect_cb)(void* user_data);
+
+void* MMSoundMgrPulseInit(pa_disconnect_cb cb, void* user_data);
 int MMSoundMgrPulseFini(void* handle);
 
 void MMSoundMgrPulseSetUSBDefaultSink (int usb_device);

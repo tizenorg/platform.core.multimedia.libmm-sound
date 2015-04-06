@@ -132,7 +132,7 @@ ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/soun
 %files
 %manifest libmm-sound.manifest
 %defattr(-,root,root,-)
-%caps(cap_chown,cap_dac_override,cap_fowner,cap_kill,cap_sys_ptrace,cap_mac_override,cap_lease=eip) %{_bindir}/sound_server
+%caps(cap_chown,cap_dac_override,cap_fowner,cap_mac_override,cap_lease=eip) %{_bindir}/sound_server
 %{_libdir}/libmmfsound.so.*
 %{_libdir}/libmmfsoundcommon.so.*
 %{_libdir}/libmmfkeysound.so.*

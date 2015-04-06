@@ -157,6 +157,19 @@ static int _handle_sound_reset ()
 	return 0;
 }
 
+static void _pa_disconnect_cb (void *user_data)
+{
+	debug_warning ("g_mainloop = %p, user_data = %p", g_mainloop, user_data);
+
+	if (pulse_handle) {
+		free(pulse_handle);
+		pulse_handle = NULL;
+	}
+
+	if (g_mainloop)
+		g_main_loop_quit(g_mainloop);
+}
+
 static sem_t* sem_create_n_wait()
 {
 	sem_t* sem = NULL;
@@ -256,7 +269,7 @@ int main(int argc, char **argv)
 
 		MMSoundMgrDbusInit();
 
-		pulse_handle = MMSoundMgrPulseInit();
+		pulse_handle = MMSoundMgrPulseInit(_pa_disconnect_cb, g_mainloop);
 		MMSoundMgrASMInit();
 		/* Wait for ASM Ready */
 		__wait_for_vconfkey_ready(ASM_READY_KEY);
@@ -321,7 +334,7 @@ int main(int argc, char **argv)
 #endif
 	}
 
-	debug_warning("sound_server [%d] exit \n", getpid());
+	debug_warning("sound_server [%d] exit ----------------- END \n", getpid());
 
 	return 0;
 }

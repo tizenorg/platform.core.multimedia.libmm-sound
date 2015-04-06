@@ -119,6 +119,9 @@ typedef struct _pulse_info
 #endif
 	pthread_t thread;
 	GAsyncQueue *queue;
+
+	pa_disconnect_cb disconnect_cb;
+	void* user_data;
 }pulse_info_t;
 
 typedef enum {
@@ -365,9 +368,13 @@ static void context_subscribe_cb (pa_context * c, pa_subscription_event_type_t t
 	}
 }
 
+#define PA_READY_CHECK_MAX_RETRY 20
+#define PA_READY_CHECK_INTERVAL_US 200000
+
 static void context_state_cb (pa_context *c, void *userdata)
 {
 	pulse_info_t *pinfo = (pulse_info_t *)userdata;
+	int left_retry = PA_READY_CHECK_MAX_RETRY;
 
 	if (pinfo == NULL) {
 		debug_error ("pinfo is null");
@@ -382,19 +389,19 @@ static void context_state_cb (pa_context *c, void *userdata)
 			break;
 		case PA_CONTEXT_FAILED:
 			{
-			    // wait for pa_ready file creation.
-			    int fd = -1;
+				// wait for pa_ready file creation.
+				debug_error("pulseaudio disconnected!! wait for pa_ready file creation");
 
-			    do {
-				fd = open(PA_READY, O_RDONLY);
-					if(fd < 0) {
-				    usleep(20000);
-					}
-			    } while(fd < 0);
-			    close(fd);
+				do {
+					if (access(PA_READY, F_OK) == 0)
+						break;
+					usleep(PA_READY_CHECK_INTERVAL_US);
+					debug_error ("waiting....[%d]", left_retry);
+				} while(left_retry--);
 
-			    debug_error("pulseaudio crash!! sound_server will be restart!!");
-			    kill(getpid(), SIGKILL);
+				debug_error("call disconnect handler [%p] to quit sound-server", pinfo->disconnect_cb);
+				if (pinfo->disconnect_cb)
+					pinfo->disconnect_cb(pinfo->user_data);
 			}
 			break;
 		case PA_CONTEXT_TERMINATED:
@@ -2302,7 +2309,7 @@ int MMSoundMgrPulseHandleRegisterBooting (void* pinfo)
 	return ret;
 }
 
-void* MMSoundMgrPulseInit(void)
+void* MMSoundMgrPulseInit(pa_disconnect_cb cb, void* user_data)
 {
 	pulse_info = (pulse_info_t*) malloc (sizeof(pulse_info_t));
 	memset (pulse_info, 0, sizeof(pulse_info_t));
@@ -2319,6 +2326,9 @@ void* MMSoundMgrPulseInit(void)
 	pulse_info->dock_idx = PA_INVALID_INDEX;
 	pulse_info->device_type = PA_INVALID_INDEX;
 
+	pulse_info->disconnect_cb = cb;
+	pulse_info->user_data = user_data;
+
 #ifdef SUPPORT_BT_SCO
 	MMSoundMgrPulseHandleRegisterBluetoothStatus(pulse_info);
 #endif
@@ -2333,6 +2343,11 @@ int MMSoundMgrPulseFini(void* handle)
 	pulse_info_t *pinfo = (pulse_info_t *)handle;
 
 	debug_enter("\n");
+
+	if (handle == NULL) {
+		debug_warning ("handle is NULL....");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
 
 	pulse_deinit(pinfo);
 #ifdef SUPPORT_BT_SCO
