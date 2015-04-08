@@ -30,10 +30,11 @@ typedef struct {
 	int repeat_count;
 	double volume;
 	int session_type;
+	int session_options;
 	int session_handle;
 	int keytone;
 	void *stopcb;
-	int (*callback)(int, void *, void *);
+	int (*callback)(int, void *, void *, int);
 	void *msgcallback;		/* Client callback function */
 	void *msgdata;			/* Client callback data */
 	void *param;
@@ -43,6 +44,7 @@ typedef struct {
 	int volume_config;
 	int priority;
 	int handle_route;
+	bool enable_session;
 } mmsound_mgr_codec_param_t;
 
 enum

@@ -24,6 +24,15 @@
 
 #include "../../include/mm_ipc.h"
 
+typedef enum
+{
+	DOCK_NONE      = 0,
+	DOCK_DESKDOCK  = 1,
+	DOCK_CARDOCK   = 2,
+	DOCK_AUDIODOCK = 7,
+	DOCK_SMARTDOCK = 8
+} DOCK_STATUS;
+
 int MMSoundMgrDockInit(void);
 int MMSoundMgrDockFini(void);
 

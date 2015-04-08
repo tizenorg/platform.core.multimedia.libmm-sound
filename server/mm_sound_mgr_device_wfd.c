@@ -38,7 +38,8 @@
 #include <mm_error.h>
 #include <mm_debug.h>
 
-#include "include/mm_sound_mgr_wfd.h"
+#include "include/mm_sound_mgr_device.h"
+#include "include/mm_sound_mgr_device_wfd.h"
 #include "include/mm_sound_mgr_session.h"
 
 /******************************* WFD Code **********************************/
@@ -58,7 +59,8 @@ static void _miracast_wfd_status_changed_cb(keynode_t* node, void* data)
 	vconf_get_bool(VCONFKEY_MIRACAST_WFD_SOURCE_STATUS, &miracast_wfd_status);
 	debug_msg ("[%s] changed callback called, status=[%d]\n", vconf_keynode_get_name(node), miracast_wfd_status);
 
-	MMSoundMgrSessionSetDeviceAvailable (DEVICE_WFD, miracast_wfd_status, 0, NULL);
+	MMSoundMgrSessionSetDeviceAvailable (DEVICE_MIRRORING, miracast_wfd_status, 0, NULL);
+	MMSoundMgrDeviceUpdateStatus (miracast_wfd_status ? DEVICE_UPDATE_STATUS_CONNECTED : DEVICE_UPDATE_STATUS_DISCONNECTED, DEVICE_TYPE_MIRRORING, DEVICE_IO_DIRECTION_OUT, DEVICE_ID_AUTO, NULL, 0, NULL);
 }
 
 static int _register_wfd_status(void)
