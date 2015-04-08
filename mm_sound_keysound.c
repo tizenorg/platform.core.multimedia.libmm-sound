@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <vconf.h>
 
 #include <sys/stat.h>
 #include <errno.h>
@@ -36,6 +37,8 @@
 #include <mm_debug.h>
 #include <mm_sound.h>
 #include <mm_sound_private.h>
+
+#include "include/mm_sound_common.h"
 
 #define KEYTONE_PATH "/tmp/keytone"		/* Keytone pipe path */
 #define FILE_FULL_PATH 1024				/* File path lenth */
@@ -52,8 +55,7 @@ int mm_sound_play_keysound(const char *filename, int volume_config)
 	int fd = -1;
 	int size = 0;
 	ipc_t data = {{0,},};
-
-	debug_fenter();
+	int capture_status = 0;
 
 	if (!filename)
 		return MM_ERROR_SOUND_INVALID_FILE;
@@ -79,21 +81,21 @@ int mm_sound_play_keysound(const char *filename, int volume_config)
 		return MM_ERROR_SOUND_FILE_NOT_FOUND;
 	}
 	data.volume_config = volume_config;
-	strncpy(data.filename, filename, FILE_FULL_PATH);
-	debug_msg("The file name [%s]\n", data.filename);
+	MMSOUND_STRNCPY(data.filename, filename, FILE_FULL_PATH);
+
+	debug_msg("filepath=[%s], volume_config=[0x%x]\n", data.filename, volume_config);
 	size = sizeof(ipc_t);
 
 	/* Write to PIPE */
 	err = write(fd, &data, size);
 	if (err < 0) {
-		debug_error("Fail to write data: %s\n", strerror(err));
+		debug_error("Fail to write data: [%s][%d]\n", strerror(errno), errno);
 		close(fd);
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 	/* Close PIPE */
 	close(fd);
 
-	debug_fleave();
 	return MM_ERROR_NONE;
 }
 

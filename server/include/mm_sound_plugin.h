@@ -19,7 +19,7 @@
  *
  */
 
- 
+
 #ifndef __MM_SOUND_PLUGIN_H__
 #define __MM_SOUND_PLUGIN_H__
 
@@ -27,7 +27,6 @@ enum {
     MM_SOUND_PLUGIN_TYPE_NONE = 0,
     MM_SOUND_PLUGIN_TYPE_CODEC,
     MM_SOUND_PLUGIN_TYPE_RUN,
-    MM_SOUND_PLUGIN_TYPE_HAL,
     MM_SOUND_PLUGIN_TYPE_LAST,
 };
 

@@ -46,8 +46,8 @@
 
  */
 
-#define MM_SOUND_VOLUME_CONFIG_TYPE(vol) (vol && 0x00FF)
-#define MM_SOUND_VOLUME_CONFIG_GAIN(vol) (vol && 0xFF00)
+#define MM_SOUND_VOLUME_CONFIG_TYPE(vol) (vol & 0x00FF)
+#define MM_SOUND_VOLUME_CONFIG_GAIN(vol) (vol & 0xFF00)
 
 enum MMSoundGainType {
 	MM_SOUND_GAIN_KEYTONE = 0,	/**< hw gain configuration for keytone play */
@@ -110,6 +110,7 @@ enum mm_sound_handle_route_t {
 
 typedef struct {
 	const char			*filename;		/**< filename to play */
+	bool				skip_session;	/**< skip session control */
 	int					volume;			/**< relative volume level */
 	int					loop;			/**< loop count */
 	mm_sound_stop_callback_func	callback;		/**< callback function when playing is terminated */
@@ -156,48 +157,11 @@ int mm_sound_play_sound_ex(MMSoundPlayParam *param, int *handle);
  */
 int mm_sound_play_keysound(const char *filename, int volume_config);
 
-
-/**
- * This function is to set sound device path.
- *
- * @param	gain		[in] sound path gain
- * @param	output		[in] sound path out device
- * @param	input		[in] sound path in device
- * @param   option      [in] Sound path option
- * 								MM_SOUND_PATH_OPTION_NONE
- * 								MM_SOUND_PATH_OPTION_AUTO_HEADSET_CONTROL
- * 								MM_SOUND_PATH_OPTION_SPEAKER_WITH_HEADSET
- *
- * @return	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark
- * @see		mm_sound_get_path
- * @since		1.0
- */
-int mm_sound_set_path(int gain, int output, int input, int option);
-
-
-/**
- * This function retreives current sound device path.
- *
- * @param	gain		[out] Sound device path
- * @param	output		[out] Sound output device on/off
- * @param	input		[out] Sound input device on/off
- * @param   option      [out] Sound path option
- * 								MM_SOUND_PATH_OPTION_NONE
- * 								MM_SOUND_PATH_OPTION_AUTO_HEADSET_CONTROL
- * 								MM_SOUND_PATH_OPTION_SPEAKER_WITH_HEADSET
- *
- * @return	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark
- * @see		mm_sound_set_path
- */
-int mm_sound_get_path(int *gain, int *output, int *input, int *option);
-
 int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int rate, MMSoundPcmChannel_t channel, MMSoundPcmFormat_t format, int volume_config, int asm_event);
 
-int mm_sound_pcm_play_open_no_session(MMSoundPcmHandle_t *handle, const unsigned int rate, MMSoundPcmChannel_t channel, MMSoundPcmFormat_t format);
+int mm_sound_boot_ready(int timeout_sec);
+
+int mm_sound_boot_play_sound(char* path);
 
 /**
 	@}

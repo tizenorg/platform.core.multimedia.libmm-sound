@@ -26,6 +26,8 @@
 #include <unistd.h>
 
 #include "mm_sound.h"
+#include "mm_sound_device.h"
+
 
 #define FILE_PATH 512
 
@@ -54,11 +56,21 @@ typedef struct
 	char filename[FILE_PATH];
 
 	/* Device */
+	mm_sound_device_t device_handle;
+	int total_device_num;
+	int device_flags;
+	bool is_connected;
+	int changed_device_info_type;
+
 	int route;
 	int device_in;
 	int device_out;
 	int is_available;
 	int route_list[MM_SOUND_ROUTE_NUM];
+
+	/* Volume */
+	int type;
+	int val;
 
 	/* Common data */
 	int handle;
@@ -68,8 +80,14 @@ typedef struct
 	int channels;
 	int volume_config;
 	int session_type;
+	int session_options;
 	int priority;
 	int handle_route;
+
+	bool enable_session;
+	bool need_broadcast;
+
+	char name[MM_SOUND_NAME_NUM];
 } mmsound_ipc_t;
 
 typedef struct

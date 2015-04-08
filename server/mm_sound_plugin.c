@@ -28,6 +28,7 @@
 #include <dirent.h>
 #include <dlfcn.h>
 
+#include "../include/mm_sound_common.h"
 #include "include/mm_sound_plugin.h"
 #include <mm_error.h>
 #include <mm_debug.h>
@@ -36,19 +37,12 @@ static char* __strcatdup(const char *str1, const char *str2);
 static int _MMSoundPluginGetList(const char *plugdir ,char ***list);
 static int _MMSoundPluginDestroyList(char **list);
 
-/* default "empty list" used in case of error */
-static MMSoundPluginType empty_plugin_list = {
-    .type = MM_SOUND_PLUGIN_TYPE_NONE,
-    .module = NULL
-};
-
 char* MMSoundPluginGetTypeName(int type)
 {
     static char *typename[] = {
         "ERROR",
         "SOUND",
         "RUN",
-        "HAL",
     };
 
     if (type < MM_SOUND_PLUGIN_TYPE_LAST && type > -1)
@@ -70,10 +64,8 @@ int MMSoundPluginScan(const char *plugindir, const int type, MMSoundPluginType *
 
     debug_msg(" Plugin dir :: %s \n", plugindir);
     err = _MMSoundPluginGetList(plugindir, &list);
-    if (err != MM_ERROR_NONE) {
-        *pluginlist = &empty_plugin_list;
+    if (err != MM_ERROR_NONE)
         return err;
-    }
 
     while((item = list[index++]) != NULL) {
         if(MMSoundPluginOpen(item, &plugin[plugin_index]) != MM_ERROR_NONE) {
@@ -115,8 +107,7 @@ int MMSoundPluginRelease(MMSoundPluginType *pluginlist)
         MMSoundPluginClose(&pluginlist[loop++]);
     }
 
-    if (pluginlist != &empty_plugin_list)
-        free (pluginlist);
+    free (pluginlist);
 
     debug_fleave ();
 
@@ -148,13 +139,11 @@ int MMSoundPluginOpen(char *file, MMSoundPluginType *plugin)
 
     debug_msg("%s is %s\n", file,
                 t == MM_SOUND_PLUGIN_TYPE_CODEC ? "CODEC":
-                t == MM_SOUND_PLUGIN_TYPE_RUN ? "RUN" :
-                t == MM_SOUND_PLUGIN_TYPE_HAL ? "HAL": "Unknown");
+                t == MM_SOUND_PLUGIN_TYPE_RUN ? "RUN" : "Unknown");
     switch(t)
     {
         case MM_SOUND_PLUGIN_TYPE_CODEC:
         case MM_SOUND_PLUGIN_TYPE_RUN:
-        case MM_SOUND_PLUGIN_TYPE_HAL:
             plugin->type = t;
             plugin->module = pdll;
             break;
@@ -232,7 +221,15 @@ static int _MMSoundPluginGetList(const char *plugdir ,char ***list)
 		goto free_entry;
 	}
 	/* FIXME : need to handle error case */
-	chdir(plugdir);
+	if (chdir(plugdir) != 0) {
+		debug_error("chdir error\n");
+		if (temp) {
+			free (temp);
+			temp = NULL;
+		}
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto free_entry;
+	}
 
 	for(item_idx = items; item_idx--; ) {
 		if(stat(entry[item_idx]->d_name, &finfo) < 0) {
@@ -246,7 +243,7 @@ static int _MMSoundPluginGetList(const char *plugdir ,char ***list)
 		}
 
 		debug_msg("item %d is %s\n", item_idx, entry[item_idx]->d_name);
-		
+
 		if (S_ISREG(finfo.st_mode)) {
 			temp[tn++] = __strcatdup(plugdir, entry[item_idx]->d_name);
 		}
@@ -258,7 +255,7 @@ free_entry:
 	}
 	free(entry);
 	return ret;
-}	
+}
 
 static int _MMSoundPluginDestroyList(char **list)
 {
