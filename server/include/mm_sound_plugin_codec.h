@@ -29,6 +29,7 @@
 enum MMSoundSupportedCodec {
 	MM_SOUND_SUPPORTED_CODEC_INVALID = -1,	/**< Invalid codec type */
 	MM_SOUND_SUPPORTED_CODEC_WAVE,			/**< WAVE codec		*/
+	MM_SOUND_SUPPORTED_CODEC_OGG,		/**< OGG codec		*/
 	MM_SOUND_SUPPORTED_CODEC_DTMF,			/**< DTMF codec		*/
 	MM_SOUND_SUPPORTED_CODEC_MP3,			/**< MP3 codec		*/
 	MM_SOUND_SUPPORTED_CODEC_NUM,			/**< Number of audio codec type	*/
@@ -41,6 +42,7 @@ typedef struct {
 	int format;
 	int doffset;
 	int size;
+	int duration;			/**the wav file play duration, Unit: ms*/
 } mmsound_codec_info_t;
 
 typedef struct {
@@ -55,6 +57,7 @@ typedef struct {
 	int keytone;
 	MMSourceType *source;
 	int handle_route;
+	pthread_mutex_t *codec_wave_mutex;
 } mmsound_codec_param_t;
 
 typedef struct {

@@ -9,11 +9,9 @@ libmmfsoundcommon_la_SOURCES = mm_ipc.c \
 
 libmmfsoundcommon_la_CFLAGS = -I$(srcdir)/../include \
 			$(MMCOMMON_CFLAGS) \
-			$(AVSYSTEM_CFLAGS) \
 			$(VCONF_CFLAGS)
 
 libmmfsoundcommon_la_LIBADD = $(MMCOMMON_LIBS) \
-								$(AVSYSTEM_LIBS) \
 								$(VCONF_LIBS)
 			
 #libmmfsound_la_LDFLAGS = -version-info 1:0:1
