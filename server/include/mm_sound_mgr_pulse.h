@@ -48,7 +48,6 @@ int MMSoundMgrPulseGetBluetoothInfo(bool* is_nrec, int* bandwidth);
 void MMSoundMgrPulseSetSession(session_t session, session_state_t state);
 void MMSoundMgrPulseSetSubsession(subsession_t subsession, int subsession_opt);
 void MMSoundMgrPulseSetActiveDevice(mm_sound_device_in device_in, mm_sound_device_out device_out);
-void MMSoundMgrPulseUpdateVolume(void);
 
 void MMSoundMgrPulseSetCorkAll (bool cork);
 void MMSoundMgrPulseUnLoadHDMI();

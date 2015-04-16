@@ -2209,37 +2209,6 @@ static void set_update_volume_nosignal_cb(pa_context *c, int success, void *user
 	}
 }
 
-void MMSoundMgrPulseUpdateVolume(void)
-{
-	pa_operation *o = NULL;
-
-	if (pa_threaded_mainloop_in_thread(pulse_info->m)) {
-		o = pa_ext_policy_update_volume(pulse_info->context, set_update_volume_nosignal_cb, pulse_info);
-		pa_operation_unref(o);
-	} else {
-		pa_threaded_mainloop_lock(pulse_info->m);
-		CHECK_CONTEXT_DEAD_GOTO(pulse_info->context, unlock_and_fail);
-
-		debug_msg("[PA] pa_ext_update_volume m[%p] c[%p]", pulse_info->m, pulse_info->context);
-		o = pa_ext_policy_update_volume(pulse_info->context, set_update_volume_cb, pulse_info);
-		CHECK_CONTEXT_SUCCESS_GOTO(pulse_info->context, o, unlock_and_fail);
-		while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-			pa_threaded_mainloop_wait(pulse_info->m);
-			CHECK_CONTEXT_DEAD_GOTO(pulse_info->context, unlock_and_fail);
-		}
-		pa_operation_unref(o);
-		pa_threaded_mainloop_unlock(pulse_info->m);
-	}
-	return;
-
-unlock_and_fail:
-	if (o) {
-		pa_operation_cancel(o);
-		pa_operation_unref(o);
-	}
-	pa_threaded_mainloop_unlock(pulse_info->m);
-}
-
 /* -------------------------------- booting sound  --------------------------------------------*/
 
 #define VCONF_BOOTING "memory/private/sound/booting"

@@ -950,7 +950,6 @@ static int __set_sound_path_for_current_active (bool need_broadcast, bool need_c
 		}		
 		MMSoundMgrPulseSetCorkAll (false);
 	}
-	MMSoundMgrPulseUpdateVolume();
 
 	/* clean up */
 	debug_fleave();
