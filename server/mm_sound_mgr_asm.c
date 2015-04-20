@@ -775,6 +775,7 @@ static container_info_t* __get_container_info(int instance_id)
 static char* __get_asm_pipe_path(int instance_id, int handle, const char* postfix)
 {
 	char* path = NULL;
+	char* path2 = NULL;
 
 #ifdef SUPPORT_CONTAINER
 	container_info_t* container_info = __get_container_info(instance_id);
@@ -790,8 +791,11 @@ static char* __get_asm_pipe_path(int instance_id, int handle, const char* postfi
 #else
 	path = g_strdup_printf("/tmp/ASM.%d.%d", instance_id, handle);
 #endif
-	if (path && postfix)
-		strcat(path, postfix);
+	if (path && postfix) {
+		path2 = g_strconcat(path, postfix, NULL);
+		g_free(path);
+		path = path2;
+	}
 
 	return path;
 }
