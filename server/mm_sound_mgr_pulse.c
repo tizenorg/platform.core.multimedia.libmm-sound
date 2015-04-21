@@ -927,12 +927,14 @@ void _speaker_volume_changed_cb()
 		debug_warning("Fail to get volume value %x", ret);
 		return;
 	}
-
+#if 0
+	/* TODO : need to clarify BT volume requirement */
+	/* mm_sound_volume_get_step is deprecated now.(rather use dbus interface in pulseaudio directly, see sound-manager) */
 	if(MM_ERROR_NONE != mm_sound_volume_get_step(voltype, &max_vol)) {
 		debug_warning("get volume max failed. voltype(%d)\n", voltype);
 		return;
 	}
-
+#endif
 	native_vol = vconf_value;
 
 	/* limitation : should be matched between client volume 9 to native volume and
@@ -1001,9 +1003,14 @@ static int _bt_hf_set_volume_by_client(const unsigned int vol)
 			voltype = VOLUME_TYPE_VOIP;
 	}
 
+#if 0
+	/* TODO : need to clarify BT volume requirement */
+	/* mm_sound_volume_get_step is deprecated now.(rather use dbus interface in pulseaudio directly, see sound-manager) */
 	if(MM_ERROR_NONE != mm_sound_volume_get_step(voltype, &max_vol)) {
 		debug_warning("get volume max failed. voltype(%d)\n", voltype);
+		return;
 	}
+#endif
 
 	/* limitation : should be matched between client volume 9 to native volume 3 and
 	native volume 3 to client volume 9 for BLUETOOTH certification.*/

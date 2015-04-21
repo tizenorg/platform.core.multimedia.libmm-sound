@@ -870,38 +870,6 @@ static void __mm_sound_pa_get_cb(pa_context *c, uint32_t value, void *userdata)
 
 
 EXPORT_API
-int mm_sound_pa_get_volume_max(const int type, int* step)
-{
-    get_volume_max_userdata_t userdata;
-    pa_operation *o = NULL;
-
-    CHECK_VOLUME_TYPE_RANGE(type);
-    CHECK_CONNECT_TO_PULSEAUDIO();
-
-    pa_threaded_mainloop_lock(mm_sound_handle_mgr.mainloop);
-
-    userdata.mainloop = mm_sound_handle_mgr.mainloop;
-    userdata.value = -1;
-
-    o = pa_ext_policy_get_volume_level_max(mm_sound_handle_mgr.context, type, __mm_sound_pa_get_cb, (void *)&userdata);
-    WAIT_PULSEAUDIO_OPERATION(mm_sound_handle_mgr, o);
-
-    if(userdata.value < 0) {
-        debug_error("pa_ext_policy_get_volume_level_max() failed, userdata.value(%d)", userdata.value);
-        *step = -1;
-        pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-        return MM_ERROR_SOUND_INTERNAL;
-    } else
-        pa_operation_unref(o);
-
-    *step = userdata.value;
-
-    pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-
-    return MM_ERROR_NONE;
-}
-
-EXPORT_API
 int mm_sound_pa_get_volume_level(int handle, const int type, int* level)
 {
     mm_sound_handle_t* phandle = NULL;

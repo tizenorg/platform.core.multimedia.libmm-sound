@@ -204,25 +204,7 @@ int mm_sound_remove_volume_changed_callback(void)
 EXPORT_API
 int mm_sound_volume_get_step(volume_type_t type, int *step)
 {
-	int err;
-
-	/* Check input param */
-	if (step == NULL) {
-		debug_error("second parameter is null\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-	if (type < 0 || type >= VOLUME_TYPE_MAX) {
-		debug_error("Invalid type value %d\n", (int)type);
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	if(MM_ERROR_NONE != mm_sound_pa_get_volume_max(type, step)) {
-		err = MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	debug_msg("type = (%d)%15s, step = %d", type, _get_volume_str(type), *step);
-
-	return MM_ERROR_NONE;
+	return MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
 }
 
 EXPORT_API
