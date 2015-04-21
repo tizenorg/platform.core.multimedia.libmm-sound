@@ -2216,75 +2216,6 @@ static void set_update_volume_nosignal_cb(pa_context *c, int success, void *user
 	}
 }
 
-/* -------------------------------- booting sound  --------------------------------------------*/
-
-#define VCONF_BOOTING "memory/private/sound/booting"
-
-static void __pa_context_success_cb (pa_context *c, int success, void *userdata)
-{
-	pulse_info_t *pinfo = (pulse_info_t *)userdata;
-	if (pinfo == NULL) {
-		debug_error ("pinfo is null");
-		return;
-	}
-
-	if (success) {
-		debug_msg ("[PA_CB] m[%p] c[%p] set booting success", pinfo->m, c);
-	} else {
-		debug_error("[PA_CB] m[%p] c[%p] set booting fail:%s", pinfo->m, c, pa_strerror(pa_context_errno(c)));
-	}
-	pa_threaded_mainloop_signal(pinfo->m, 0);
-}
-
-static void _booting_changed_cb(keynode_t* node, void* data)
-{
-	char* booting = NULL;
-	pulse_info_t* pinfo = (pulse_info_t*)data;
-	pa_operation *o = NULL;
-	unsigned int value;
-
-	if (pinfo == NULL) {
-		debug_error ("pinfo is null");
-		return;
-	}
-
-	booting = vconf_get_str(VCONF_BOOTING);
-	debug_msg ("%s changed callback called, booting value = %s\n",vconf_keynode_get_name(node), booting);
-	if (booting) {
-		free(booting);
-	}
-
-	pa_threaded_mainloop_lock(pinfo->m);
-	CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-
-	mm_sound_volume_get_value(VOLUME_TYPE_SYSTEM, &value);
-	o = pa_ext_policy_play_sample(pinfo->context, "booting", VOLUME_TYPE_SYSTEM, VOLUME_GAIN_BOOTING, value, ( void (*)(pa_context *, uint32_t , void *))__pa_context_success_cb, pinfo);
-
-	CHECK_CONTEXT_SUCCESS_GOTO(pinfo->context, o, unlock_and_fail);
-	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-		pa_threaded_mainloop_wait(pinfo->m);
-		CHECK_CONTEXT_DEAD_GOTO(pinfo->context, unlock_and_fail);
-	}
-	pa_operation_unref(o);
-
-	pa_threaded_mainloop_unlock(pinfo->m);
-	return;
-
-unlock_and_fail:
-	if (o) {
-		pa_operation_cancel(o);
-		pa_operation_unref(o);
-	}
-	pa_threaded_mainloop_unlock(pinfo->m);
-}
-
-int MMSoundMgrPulseHandleRegisterBooting (void* pinfo)
-{
-	int ret = vconf_notify_key_changed(VCONF_BOOTING, _booting_changed_cb, pinfo);
-	debug_msg ("vconf [%s] set ret = %d\n", VCONF_BOOTING, ret);
-	return ret;
-}
-
 void* MMSoundMgrPulseInit(pa_disconnect_cb cb, void* user_data)
 {
 	pulse_info = (pulse_info_t*) malloc (sizeof(pulse_info_t));
@@ -2308,7 +2239,6 @@ void* MMSoundMgrPulseInit(pa_disconnect_cb cb, void* user_data)
 #ifdef SUPPORT_BT_SCO
 	MMSoundMgrPulseHandleRegisterBluetoothStatus(pulse_info);
 #endif
-	MMSoundMgrPulseHandleRegisterBooting(pulse_info);
 
 	debug_leave("\n");
 	return pulse_info;

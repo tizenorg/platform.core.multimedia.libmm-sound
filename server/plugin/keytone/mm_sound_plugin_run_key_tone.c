@@ -61,6 +61,8 @@
 #define KEYTONE_PATH_TMP "/tmp/keytone"		/* Keytone pipe path (it will be deprecated)*/
 #define KEYTONE_GROUP	6526			/* Keytone group : assigned by security */
 #define FILE_FULL_PATH 1024				/* File path lenth */
+#define ROLE_NAME_LEN 64				/* Role name length */
+#define VOLUME_GAIN_TYPE_LEN 64		/* Volume gain type length */
 #define AUDIO_CHANNEL 1
 #define AUDIO_SAMPLERATE 44100
 #define DURATION_CRITERIA 11000          /* write once or not       */
@@ -164,23 +166,80 @@ static unsigned char g_silent_sound[SILENT_SND];
 static unsigned char g_latency_buf[LATENCY_BUF];
 #endif
 
-
-
 #ifdef SUPPORT_DBUS_KEYTONE
-typedef struct {
+#define AUDIO_VOLUME_CONFIG_TYPE(vol) (vol & 0x00FF)
+#define AUDIO_VOLUME_CONFIG_GAIN(vol) (vol & 0xFF00)
+typedef struct ipc_data {
 	char filename[FILE_FULL_PATH];
-	int volume_config;
-} ipc_t;
+	char role[ROLE_NAME_LEN];
+	char volume_gain_type[VOLUME_GAIN_TYPE_LEN];
+}ipc_t;
 
 GDBusConnection *conn;
 guint sig_id;
+
+static const char* convert_volume_type_to_role(int volume_type)
+{
+	debug_warning ("volume_type(%d)", volume_type);
+	switch(volume_type) {
+	case VOLUME_TYPE_SYSTEM:
+		return "system";
+	case VOLUME_TYPE_NOTIFICATION:
+		return "notification";
+	case VOLUME_TYPE_ALARM:
+		return "alarm";
+	case VOLUME_TYPE_RINGTONE:
+		return "ringtone";
+	case VOLUME_TYPE_CALL:
+		return "call";
+	case VOLUME_TYPE_VOIP:
+		return "voip";
+	case VOLUME_TYPE_VOICE:
+		return "voice";
+	default:
+		return NULL;
+	}
+}
+
+static const char* convert_volume_gain_type_to_string(int volume_gain_type)
+{
+	debug_warning ("volume_gain_type(0x%x)", volume_gain_type);
+	switch(volume_gain_type) {
+	case VOLUME_GAIN_DEFAULT:
+		return NULL;
+	case VOLUME_GAIN_DIALER:
+		return "dialer";
+	case VOLUME_GAIN_TOUCH:
+		return "touch";
+	case VOLUME_GAIN_AF:
+		return "af";
+	case VOLUME_GAIN_SHUTTER1:
+		return "shutter1";
+	case VOLUME_GAIN_SHUTTER2:
+		return "shutter2";
+	case VOLUME_GAIN_CAMCORDING:
+		return "camcording";
+	case VOLUME_GAIN_MIDI:
+		return "midi";
+	case VOLUME_GAIN_BOOTING:
+		return "booting";
+	case VOLUME_GAIN_VIDEO:
+		return "video";
+	case VOLUME_GAIN_TTS:
+		return "tts";
+	default:
+		return NULL;
+	}
+}
 
 static int _play_keytone(const char *filename, int volume_config)
 {
 	int err = -1;
 	int fd = -1;
-	ipc_t data = {{0,},};
+	ipc_t data = {{0,},{0,},{0,}};
 	int ret = MM_ERROR_NONE;
+	char *role = NULL;
+	char *vol_gain_type = NULL;
 
 	debug_msg("filepath=[%s], volume_config=[0x%x]\n", filename, volume_config);
 
@@ -189,9 +248,16 @@ static int _play_keytone(const char *filename, int volume_config)
 
 	/* Open PIPE */
 	if ((fd = open(KEYTONE_PATH, O_WRONLY | O_NONBLOCK)) != -1) {
-		/* Set send info. */
-		data.volume_config = volume_config;
+		/* convert volume type to role */
+		role = convert_volume_type_to_role(AUDIO_VOLUME_CONFIG_TYPE(volume_config));
+		if (role) {
+			MMSOUND_STRNCPY(data.role, role, ROLE_NAME_LEN);
+			vol_gain_type = convert_volume_gain_type_to_string(AUDIO_VOLUME_CONFIG_GAIN(volume_config));
+			if (vol_gain_type)
+				MMSOUND_STRNCPY(data.volume_gain_type, vol_gain_type, VOLUME_GAIN_TYPE_LEN);
+		}
 		MMSOUND_STRNCPY(data.filename, filename, FILE_FULL_PATH);
+
 		/* Write to PIPE */
 		if ((err = write(fd, &data, sizeof(ipc_t))) < 0) {
 			debug_error("Fail to write data: %s\n", strerror(errno));

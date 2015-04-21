@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.9.197
+Version:    0.9.198
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -99,7 +99,6 @@ ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/soun
 
 /usr/bin/vconftool set -t int memory/private/Sound/ASMReady 0 -g 29 -f -i -s system::vconf_multimedia
 /usr/bin/vconftool set -t int memory/private/Sound/VoiceControlOn 0 -g 29 -f -i -s system::vconf_multimedia
-/usr/bin/vconftool set -t string memory/private/sound/booting "/usr/share/keysound/poweron.wav" -g 29 -f -i -s system::vconf_multimedia
 #SPK REC EAR BTS BTA DOCK HDMI MIR USB MDOCK
 #/usr/bin/vconftool set -t string file/private/sound/volume/system "09090909090909090909" -g 29 -f
 #/usr/bin/vconftool set -t string file/private/sound/volume/notification "11" -g 29 -f
