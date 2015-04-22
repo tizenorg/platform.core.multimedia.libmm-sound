@@ -57,6 +57,8 @@
 #include <sys/poll.h>
 #endif
 
+#define CLIENT_HANDLE_MAX 256
+
 /* global variables for device list */
 //static GList *g_device_list = NULL;
 static mm_sound_device_list_t g_device_list_t;
@@ -303,6 +305,11 @@ int mm_sound_client_stop_sound(int handle)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
+
+	if (handle < 0 || handle > CLIENT_HANDLE_MAX) {
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		return ret;
+	}
 
 	ret = mm_sound_client_dbus_stop_sound(handle);
 
