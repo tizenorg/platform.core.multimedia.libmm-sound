@@ -348,7 +348,7 @@ static int _mm_sound_client_device_list_dump (GList *device_list)
 	for (list = device_list; list != NULL; list = list->next) {
 		device_node = (mm_sound_device_t *)list->data;
 		if (device_node) {
-			debug_log(" list idx[%d]: type[%02d], id[%02d], io_direction[%d], state[%d], name[%s]\n",
+			debug_log(" list idx[%d]: type[%17s], id[%02d], io_direction[%d], state[%d], name[%s]\n",
 						count++, device_node->type, device_node->id, device_node->io_direction, device_node->state, device_node->name);
 		}
 	}

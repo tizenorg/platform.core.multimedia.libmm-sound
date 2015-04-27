@@ -247,7 +247,7 @@ int __mm_sound_mgr_ipc_set_sound_path_for_active_device(mm_sound_device_in _devi
 
 	device_in = _device_in;
 	device_out = _device_out;
-	ret = _mm_sound_mgr_device_set_sound_path_for_active_device(device_out, device_in);
+//	ret = _mm_sound_mgr_device_set_sound_path_for_active_device(device_out, device_in);
 
 	return ret;
 }
@@ -256,7 +256,7 @@ int __mm_sound_mgr_ipc_get_audio_path(mm_sound_device_in *device_in, mm_sound_de
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = _mm_sound_mgr_device_get_audio_path(device_in, device_out);
+//	ret = _mm_sound_mgr_device_get_audio_path(device_in, device_out);
 
 	return ret;
 }
@@ -265,7 +265,7 @@ int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_so
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = _mm_sound_mgr_device_get_current_connected_dev_list(device_flags, device_list, total_num);
+//	ret = _mm_sound_mgr_device_get_current_connected_dev_list(device_flags, device_list, total_num);
 
 	return ret;
 }

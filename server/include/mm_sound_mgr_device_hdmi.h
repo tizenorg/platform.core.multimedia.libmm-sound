@@ -22,8 +22,10 @@
 #ifndef __MM_SOUND_MGR_HDMI_H__
 #define __MM_SOUND_MGR_HDMI_H__
 
+#if 0
 int MMSoundMgrHdmiInit(void);
 int MMSoundMgrHdmiFini(void);
+#endif
 
 
 #endif /* __MM_SOUND_MGR_HDMI_H__ */

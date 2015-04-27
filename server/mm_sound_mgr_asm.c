@@ -1701,7 +1701,7 @@ gboolean __need_to_compare_again(ASM_sound_events_t current_playing_event, int c
 		bool available = false;
 
 		if (incoming_playing_event == ASM_EVENT_NOTIFY && (mm_sound_util_is_recording() || mm_sound_util_is_mute_policy()) ) {
-			ret = MMSoundMgrSessionIsDeviceAvailable (device_out_wired_accessory, device_in, &available);
+//			ret = MMSoundMgrSessionIsDeviceAvailable (device_out_wired_accessory, device_in, &available);
 			if (ret) {
 				debug_error("Failed to IsDeviceAvailable()\n");
 			} else {
@@ -1730,7 +1730,7 @@ gboolean __need_to_compare_again(ASM_sound_events_t current_playing_event, int c
 			}
 		} else if (current_playing_event == ASM_EVENT_NOTIFY &&
 			(incoming_playing_event != ASM_EVENT_EARJACK_UNPLUG && __is_session_using_media_volume(incoming_playing_event))) {
-			ret = MMSoundMgrSessionGetDeviceActive(&device_out, &device_in);
+//			ret = MMSoundMgrSessionGetDeviceActive(&device_out, &device_in);
 			if (ret) {
 				debug_error("Failed to GetDeviceActive()\n");
 			} else {
@@ -2520,7 +2520,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 	int ret = MM_ERROR_NONE;
 	session_t cur_session;
 
-	MMSoundMgrSessionGetSession(&cur_session);
+//	MMSoundMgrSessionGetSession(&cur_session);
 	debug_warning (" cur_session[%d] (0:MEDIA 1:VC 2:VT 3:VOIP 4:FM 5:NOTI 6:ALARM 7:EMER 8:VR)\n",cur_session);
 	if (is_for_recovery) {
 		if (need_to_resume) {
@@ -2538,21 +2538,21 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 			switch (rcv_sound_event) {
 			case ASM_EVENT_CALL:
 				debug_warning (" ****** SESSION_VOICECALL start ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VOICECALL, SESSION_START);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VOICECALL, SESSION_START);
 				if (ret) {
 					goto ERROR_CASE;
 				}
 				break;
 			case ASM_EVENT_VIDEOCALL:
 				debug_warning (" ****** SESSION_VIDEOCALL start ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VIDEOCALL, SESSION_START);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VIDEOCALL, SESSION_START);
 				if (ret) {
 					goto ERROR_CASE;
 				}
 				break;
 			case ASM_EVENT_VOIP:
 				debug_warning (" ****** SESSION_VOIP start ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VOIP, SESSION_START);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VOIP, SESSION_START);
 				if (ret) {
 					goto ERROR_CASE;
 				}
@@ -2563,7 +2563,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 					if (vconf_set_int(VCONFKEY_SOUND_VOICE_CONTROL_STATUS, 1)) {
 						debug_error(" vconf_set_int(SOUND_VOICE_CONTROL_KEY, 1) fail\n");
 					}
-					MMSoundMgrSessionSetVoiceControlState(true);
+//					MMSoundMgrSessionSetVoiceControlState(true);
 				}
 				break;
 			default:
@@ -2584,7 +2584,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 					debug_warning (" ****** Notify starts on Call/Voip session ******\n");
 				} else {
 					debug_warning (" ****** SESSION_NOTIFICATION start ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_NOTIFICATION, SESSION_START);
+//					ret = MMSoundMgrSessionSetSession(SESSION_NOTIFICATION, SESSION_START);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2600,7 +2600,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 					debug_warning (" ****** Alarm starts on Call/Voip session ******\n");
 				} else {
 					debug_warning (" ****** SESSION_ALARM start ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_START);
+//					ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_START);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2614,7 +2614,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 					SESSION_REF(cur_session);
 				} else {
 					debug_warning (" ****** SESSION_EMERGENCY start ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_EMERGENCY, SESSION_START);
+//					ret = MMSoundMgrSessionSetSession(SESSION_EMERGENCY, SESSION_START);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2628,7 +2628,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 					SESSION_REF(cur_session);
 				} else {
 					debug_warning (" ****** SESSION_FMRADIO start ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_FMRADIO, SESSION_START);
+//					ret = MMSoundMgrSessionSetSession(SESSION_FMRADIO, SESSION_START);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2671,7 +2671,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 					SESSION_REF(cur_session);
 				} else {
 					debug_warning (" ****** SESSION_VOICE_RECOGNITION start ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_START);
+//					ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_START);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2701,7 +2701,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 				/* wakeup mode */
 				if (cur_session == SESSION_VOICE_RECOGNITION) {
 					subsession_t subsession = 0;
-					MMSoundMgrSessionGetSubSession(&subsession);
+//					MMSoundMgrSessionGetSubSession(&subsession);
 					if (subsession == SUBSESSION_VR_NORMAL || subsession == SUBSESSION_VR_DRIVE) {
 						/* do nothing */
 					}
@@ -2711,7 +2711,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 				/* command mode */
 				if (cur_session == SESSION_VOICE_RECOGNITION) {
 					subsession_t subsession = 0;
-					MMSoundMgrSessionGetSubSession(&subsession);
+//					MMSoundMgrSessionGetSubSession(&subsession);
 					if (subsession == SUBSESSION_VR_NORMAL || subsession == SUBSESSION_VR_DRIVE) {
 						/* do nothing */
 					}
@@ -2732,7 +2732,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 			switch (rcv_sound_event) {
 			case ASM_EVENT_CALL:
 				debug_warning (" ****** SESSION_VOICECALL end ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VOICECALL, SESSION_END);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VOICECALL, SESSION_END);
 				if (ret) {
 					goto ERROR_CASE;
 				}
@@ -2740,7 +2740,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 				break;
 			case ASM_EVENT_VIDEOCALL:
 				debug_warning (" ****** SESSION_VIDEOCALL end ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VIDEOCALL, SESSION_END);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VIDEOCALL, SESSION_END);
 				if (ret) {
 					goto ERROR_CASE;
 				}
@@ -2748,7 +2748,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 				break;
 			case ASM_EVENT_VOIP:
 				debug_warning (" ****** SESSION_VOIP end ******\n");
-				ret = MMSoundMgrSessionSetSession(SESSION_VOIP, SESSION_END);
+//				ret = MMSoundMgrSessionSetSession(SESSION_VOIP, SESSION_END);
 				if (ret) {
 					goto ERROR_CASE;
 				}
@@ -2767,7 +2767,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 						debug_warning (" ****** KEEP GOING SESSION_VOICE_RECOGNITION ****** current ref.count(%d)\n", g_session_ref_count);
 					} else {
 						debug_warning (" ****** SESSION_VOICE_RECOGNITION end ******\n");
-						ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_END);
+//						ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_END);
 						if (ret) {
 							goto ERROR_CASE;
 						}
@@ -2779,7 +2779,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 			case ASM_EVENT_MMCAMCORDER_VIDEO:
 				if (cur_session == SESSION_MEDIA) {
 					debug_warning (" ****** SESSION_MEDIA for MMCAMCORDER end ******\n");
-					ret = MMSoundMgrSessionSetSession(SESSION_MEDIA, SESSION_END);
+//					ret = MMSoundMgrSessionSetSession(SESSION_MEDIA, SESSION_END);
 					if (ret) {
 						goto ERROR_CASE;
 					}
@@ -2788,7 +2788,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 			case ASM_EVENT_EXCLUSIVE_RESOURCE:
 				if ( rcv_resource & ASM_RESOURCE_VOICECONTROL ) {
 					debug_warning (" ****** ASM_RESOURCE_VOICECONTROL END ******\n");
-					MMSoundMgrSessionSetVoiceControlState(false);
+//					MMSoundMgrSessionSetVoiceControlState(false);
 					if (vconf_set_int(VCONFKEY_SOUND_VOICE_CONTROL_STATUS, 0)) {
 						debug_error(" vconf_set_int(SOUND_VOICE_CONTROL_KEY, 0) fail\n");
 					}
@@ -2810,7 +2810,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_NOTIFICATION ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_NOTIFICATON end ******\n");
-							ret = MMSoundMgrSessionSetSession(SESSION_NOTIFICATION, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_NOTIFICATION, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2821,7 +2821,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_ALARM ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_ALARM end ******\n");
-							ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2838,7 +2838,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_ALARM ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_ALARM end ******\n");
-							ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_ALARM, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2857,7 +2857,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_EMERGENCY ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_EMERGENCY end ******\n");
-							ret = MMSoundMgrSessionSetSession(SESSION_EMERGENCY, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_EMERGENCY, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2874,7 +2874,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_FMRADIO ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_FMRADIO end ******");
-							ret = MMSoundMgrSessionSetSession(SESSION_FMRADIO, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_FMRADIO, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2897,7 +2897,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 							debug_warning (" ****** KEEP GOING SESSION_VOICE_RECOGNITION ****** current ref.count(%d)\n", g_session_ref_count);
 						} else {
 							debug_warning (" ****** SESSION_VOICE_RECOGNITION end ******\n");
-							ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_END);
+//							ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, SESSION_END);
 							if (ret) {
 								goto ERROR_CASE;
 							}
@@ -2926,14 +2926,14 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 		debug_warning (" need_to_resume[%d]", *need_to_resume);
 	}
 
-	MMSoundMgrSessionGetSession(&cur_session);
+//	MMSoundMgrSessionGetSession(&cur_session);
 	debug_msg (" cur_session[%d] : leave", cur_session);
 
 	return ret;
 
 RECOVERY_CASE:
 	debug_warning (" ****** recovery case : current session(%d) end ******\n", cur_session);
-	ret = MMSoundMgrSessionSetSession(cur_session, SESSION_END);
+//	ret = MMSoundMgrSessionSetSession(cur_session, SESSION_END);
 	if (ret) {
 		goto ERROR_CASE;
 	}
@@ -3583,7 +3583,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 				int session_order = -1;
 
 				session_t cur_session;
-				MMSoundMgrSessionGetSession(&cur_session);
+//				MMSoundMgrSessionGetSession(&cur_session);
 				debug_warning (" cur_session[%d] (0:MEDIA 1:VC 2:VT 3:VOIP 4:FM 5:NOTI 6:ALARM 7:EMER 8:VR)\n",cur_session);
 				if (cur_session == SESSION_VOICECALL ||
 					cur_session == SESSION_VIDEOCALL ||
@@ -3603,7 +3603,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 					session_order = SESSION_END;
 				}
 				if (session_order != -1) {
-					ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, session_order);
+//					ret = MMSoundMgrSessionSetSession(SESSION_VOICE_RECOGNITION, session_order);
 					if (ret) {
 						debug_error (" failed to MMSoundMgrSessionSetSession() for VOICE_RECOGNITION\n");
 						do_set_subsession = false;
@@ -3616,7 +3616,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 						}
 					}
 				}
-				MMSoundMgrSessionGetSession(&cur_session);
+//				MMSoundMgrSessionGetSession(&cur_session);
 				debug_msg (" cur_session[%d] : leave", cur_session);
 				break;
 			}
@@ -3626,7 +3626,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 				int ret = 0;
 				int session_order = -1;
 				session_t cur_session;
-				MMSoundMgrSessionGetSession(&cur_session);
+//				MMSoundMgrSessionGetSession(&cur_session);
 				debug_warning (" cur_session[%d] (0:MEDIA 1:VC 2:VT 3:VOIP 4:FM 5:NOTI 6:ALARM 7:EMER 8:VR)\n",cur_session);
 				if (cur_session == SESSION_VOICECALL ||
 					cur_session == SESSION_VIDEOCALL ||
@@ -3645,13 +3645,13 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 					session_order = SESSION_END;
 				}
 				if (session_order != -1) {
-					ret = MMSoundMgrSessionSetSession(SESSION_MEDIA, session_order);
+//					ret = MMSoundMgrSessionSetSession(SESSION_MEDIA, session_order);
 					if (ret) {
 						debug_error (" failed to MMSoundMgrSessionSetSession() for MMCAMCORDER_AUDIO/VIDEO\n");
 						do_set_subsession = false;
 					}
 				}
-				MMSoundMgrSessionGetSession(&cur_session);
+//				MMSoundMgrSessionGetSession(&cur_session);
 				debug_msg (" cur_session[%d] : leave", cur_session);
 
 				break;
@@ -3681,7 +3681,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 					}
 				}
 
-				ret = MMSoundMgrSessionSetSubSession(rcv_subsession, result_resource);
+//				ret = MMSoundMgrSessionSetSubSession(rcv_subsession, result_resource);
 				if (ret != MM_ERROR_NONE) {
 					/* TODO : Error Handling */
 					debug_error (" MMSoundMgrSessionSetSubSession failed....ret = [%x]\n", ret);
@@ -3709,7 +3709,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 
 			/* FIXME: have to check only call instance with playing stsate can request this */
 			debug_warning (" ****** GET SUB-SESSION ******\n");
-			ret = MMSoundMgrSessionGetSubSession(&subsession);
+//			ret = MMSoundMgrSessionGetSubSession(&subsession);
 			if (ret != MM_ERROR_NONE) {
 				/* TODO : Error Handling */
 				debug_error (" MMSoundMgrSessionGetSubSession failed....ret = [%x]\n", ret);

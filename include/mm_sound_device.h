@@ -37,8 +37,9 @@
 #endif
 
 #define MAX_DEVICE_NAME_NUM 256
+#define MAX_DEVICE_TYPE_STR_LEN 30
 typedef struct {
-	int type;
+	char type[MAX_DEVICE_TYPE_STR_LEN];
 	int io_direction;
 	int id;
 	char name[MAX_DEVICE_NAME_NUM];
@@ -50,9 +51,9 @@ typedef struct {
 } mm_sound_device_list_t;
 
 typedef enum {
-	DEVICE_IO_DIRECTION_IN,
-	DEVICE_IO_DIRECTION_OUT,
-	DEVICE_IO_DIRECTION_BOTH,
+	DEVICE_IO_DIRECTION_IN = 0x1,
+	DEVICE_IO_DIRECTION_OUT = 0x2,
+	DEVICE_IO_DIRECTION_BOTH = DEVICE_IO_DIRECTION_IN | DEVICE_IO_DIRECTION_OUT,
 } device_io_direction_e;
 
 typedef enum {

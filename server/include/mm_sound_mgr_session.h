@@ -22,22 +22,11 @@
 #ifndef __MM_SOUND_MGR_SESSION_H__
 #define __MM_SOUND_MGR_SESSION_H__
 
-//#include <pulse/pulseaudio.h>
-#include "../../include/mm_ipc.h"
-#include "include/mm_sound.h"
-//#include <vconf.h>
-
 typedef enum
 {
 	SESSION_END = 0,
 	SESSION_START,
 } session_state_t;
-
-typedef enum
-{
-	NOT_AVAILABLE = 0,
-	AVAILABLE,
-} device_status_t;
 
 /* MMSoundMgrPulseSetSession & pa_tizen_session_t should be updated for PA */
 typedef enum
@@ -67,6 +56,19 @@ typedef enum
 	SUBSESSION_RECORD_MONO,
 	SUBSESSION_NUM
 } subsession_t;
+
+#if 0
+//#include <pulse/pulseaudio.h>
+#include "../../include/mm_ipc.h"
+#include "include/mm_sound.h"
+//#include <vconf.h>
+
+typedef enum
+{
+	NOT_AVAILABLE = 0,
+	AVAILABLE,
+} device_status_t;
+
 
 typedef enum
 {
@@ -139,6 +141,7 @@ int MMSoundMgrSessionSetHFState (int stat);
 int MMSoundMgrSessionMediaPause();
 int MMSoundMgrSessionSetDuplicateSubSession(void);
 const char* MMSoundMgrSessionGetSessionString(session_t session);
+#endif
 #endif
 #endif /* __MM_SOUND_MGR_SESSION_H__ */
 

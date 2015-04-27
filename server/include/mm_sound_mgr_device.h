@@ -23,6 +23,7 @@
 #ifndef __MM_SOUND_MGR_DEVICE_H__
 #define __MM_SOUND_MGR_DEVICE_H__
 
+#if 0
 #include "../include/mm_sound.h"
 #include "../include/mm_sound_device.h"
 #include "../include/mm_ipc.h"
@@ -73,5 +74,6 @@ int MMSoundMgrDeviceGetIoDirectionById (int id, device_io_direction_e *io_direct
 int MMSoundMgrDeviceUpdateStatus (device_update_status_e update_status, device_type_e device_type, device_io_direction_e io_direction, int id, const char* name, device_state_e state, int *alloc_id);
 int MMSoundMgrDeviceUpdateStatusWithoutNotification (device_update_status_e update_status, device_type_e device_type, device_io_direction_e io_direction, int id, const char* name, device_state_e state, int *alloc_id);
 
+#endif
 #endif /* __MM_SOUND_MGR_DEVICE_H__ */
 

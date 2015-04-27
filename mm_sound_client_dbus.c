@@ -20,8 +20,10 @@
 #endif
 
 #define BUS_NAME_PULSEAUDIO "org.pulseaudio.Server"
-#define OBJECT_PULSEAUDIO "/org/pulseaudio/policy1"
-#define INTERFACE_PULSEAUDIO "org.PulseAudio.Ext.Policy1"
+#define OBJECT_PULSE_MODULE_POLICY "/org/pulseaudio/policy1"
+#define INTERFACE_PULSE_MODULE_POLICY "org.PulseAudio.Ext.Policy1"
+#define OBJECT_PULSE_MODULE_DEVICE_MANAGER "/org/pulseaudio/DeviceManager"
+#define INTERFACE_PULSE_MODULE_DEVICE_MANAGER "org.pulseaudio.DeviceManager"
 
 #define BUS_NAME_SOUND_SERVER "org.tizen.SoundServer"
 #define OBJECT_SOUND_SERVER "/org/tizen/SoundServer1"
@@ -38,6 +40,12 @@
 #define FOCUS_HANDLE_INIT_VAL -1
 
 #define CONFIG_ENABLE_RETCB
+
+enum {
+	DBUS_TO_SOUND_SERVER,
+	DBUS_TO_PULSE_MODULE_DEVICE_MANAGER,
+	DBUS_TO_PULSE_MODULE_POLICY,
+};
 
 
 
@@ -78,75 +86,75 @@ typedef struct {
 GThread *g_focus_thread;
 GMainLoop *g_focus_loop;
 focus_sound_info_t g_focus_sound_handle[FOCUS_HANDLE_MAX];
-guint g_dbus_subs_ids[SOUND_SERVER_SIGNAL_MAX];
+guint g_dbus_subs_ids[SIGNAL_MAX];
 guint g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MAX];
 GQuark g_mm_sound_error_quark;
 
-const struct mm_sound_dbus_method_info g_sound_server_methods[SOUND_SERVER_METHOD_MAX] = {
-	[SOUND_SERVER_METHOD_TEST] = {
+const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
+	[METHOD_CALL_TEST] = {
 		.name = "MethodTest1",
 	},
-	[SOUND_SERVER_METHOD_PLAY_FILE_START] = {
+	[METHOD_CALL_PLAY_FILE_START] = {
 		.name = "PlayFileStart",
 	},
-	[SOUND_SERVER_METHOD_PLAY_FILE_STOP] = {
+	[METHOD_CALL_PLAY_FILE_STOP] = {
 		.name = "PlayFileStop",
 	},
-	[SOUND_SERVER_METHOD_PLAY_DTMF] = {
+	[METHOD_CALL_PLAY_DTMF] = {
 		.name = "PlayDTMF",
 	},
-	[SOUND_SERVER_METHOD_GET_BT_A2DP_STATUS] = {
+	[METHOD_CALL_GET_BT_A2DP_STATUS] = {
 		.name = "GetBTA2DPStatus",
 	},
-	[SOUND_SERVER_METHOD_SET_PATH_FOR_ACTIVE_DEVICE] = {
+	[METHOD_CALL_SET_PATH_FOR_ACTIVE_DEVICE] = {
 		.name = "SetPathForActiveDevice",
 	},
-	[SOUND_SERVER_METHOD_GET_AUDIO_PATH] = {
+	[METHOD_CALL_GET_AUDIO_PATH] = {
 		.name = "GetAudioPath",
 	},
-	[SOUND_SERVER_METHOD_GET_CONNECTED_DEVICE_LIST] = {
+	[METHOD_CALL_GET_CONNECTED_DEVICE_LIST] = {
 		.name = "GetConnectedDeviceList",
 	},
-	[SOUND_SERVER_METHOD_REGISTER_FOCUS] = {
+	[METHOD_CALL_REGISTER_FOCUS] = {
 		.name = "RegisterFocus",
 	},
-	[SOUND_SERVER_METHOD_UNREGISTER_FOCUS] = {
+	[METHOD_CALL_UNREGISTER_FOCUS] = {
 		.name = "UnregisterFocus",
 	},
-	[SOUND_SERVER_METHOD_ACQUIRE_FOCUS] = {
+	[METHOD_CALL_ACQUIRE_FOCUS] = {
 		.name = "AcquireFocus",
 	},
-	[SOUND_SERVER_METHOD_RELEASE_FOCUS] = {
+	[METHOD_CALL_RELEASE_FOCUS] = {
 		.name = "ReleaseFocus",
 	},
-	[SOUND_SERVER_METHOD_WATCH_FOCUS] = {
+	[METHOD_CALL_WATCH_FOCUS] = {
 		.name = "WatchFocus",
 	},
-	[SOUND_SERVER_METHOD_UNWATCH_FOCUS] = {
+	[METHOD_CALL_UNWATCH_FOCUS] = {
 		.name = "UnwatchFocus",
 	},
 };
 
-const struct mm_sound_dbus_signal_info g_sound_server_signals[SOUND_SERVER_SIGNAL_MAX] = {
-    [SOUND_SERVER_SIGNAL_TEST] = {
+const struct mm_sound_dbus_signal_info g_signals[SIGNAL_MAX] = {
+    [SIGNAL_TEST] = {
 		.name = "SignalTest1",
 	},
-	[SOUND_SERVER_SIGNAL_PLAY_FILE_END] = {
+	[SIGNAL_PLAY_FILE_END] = {
 		.name = "PlayFileEnd",
 	},
-	[SOUND_SERVER_SIGNAL_VOLUME_CHANGED] = {
+	[SIGNAL_VOLUME_CHANGED] = {
 		.name = "VolumeChanged",
 	},
-	[SOUND_SERVER_SIGNAL_DEVICE_CONNECTED] = {
+	[SIGNAL_DEVICE_CONNECTED] = {
 		.name = "DeviceConnected",
 	},
-	[SOUND_SERVER_SIGNAL_DEVICE_INFO_CHANGED] = {
+	[SIGNAL_DEVICE_INFO_CHANGED] = {
 		.name = "DeviceInfoChanged",
 	},
-	[SOUND_SERVER_SIGNAL_FOCUS_CHANGED] = {
+	[SIGNAL_FOCUS_CHANGED] = {
 		.name = "FocusChanged",
 	},
-	[SOUND_SERVER_SIGNAL_FOCUS_WATCH] = {
+	[SIGNAL_FOCUS_WATCH] = {
 		.name = "FocusWatch",
 	}
 };
@@ -385,7 +393,7 @@ static int _sound_server_dbus_method_call(int method_type, GVariant* args, GVari
 	int ret = MM_ERROR_NONE;
 	GDBusConnection *conn = NULL;
 
-	if (method_type < 0 || method_type > SOUND_SERVER_METHOD_MAX) {
+	if (method_type < 0 || method_type > METHOD_CALL_MAX) {
 		debug_error("Invalid method type");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -406,7 +414,52 @@ static int _sound_server_dbus_method_call(int method_type, GVariant* args, GVari
 		if((ret = _dbus_method_call(conn, BUS_NAME_SOUND_SERVER,
 					      OBJECT_SOUND_SERVER,
 					      INTERFACE_SOUND_SERVER,
-					      g_sound_server_methods[method_type].name,
+					      g_methods[method_type].name,
+					      args, result)) != MM_ERROR_NONE) {
+			debug_error("Dbus Call on Client Error");
+			return ret;
+		}
+	} else {
+		debug_error("Get Dbus Connection Error");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	return MM_ERROR_NONE;
+}
+
+static int _dbus_method_call_to(int dbus_to, int method_type, GVariant *args, GVariant **result)
+{
+	int ret = MM_ERROR_NONE;
+	GDBusConnection *conn = NULL;
+	const char *bus_name, *object, *interface;
+
+	if (method_type < 0 || method_type > METHOD_CALL_MAX) {
+		debug_error("Invalid method type");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (dbus_to == DBUS_TO_SOUND_SERVER) {
+		bus_name = BUS_NAME_SOUND_SERVER;
+		object = OBJECT_SOUND_SERVER;
+		interface = INTERFACE_SOUND_SERVER;
+	} else if (dbus_to == DBUS_TO_PULSE_MODULE_DEVICE_MANAGER) {
+		bus_name = BUS_NAME_PULSEAUDIO;
+        object = OBJECT_PULSE_MODULE_DEVICE_MANAGER;
+        interface = INTERFACE_PULSE_MODULE_DEVICE_MANAGER;
+	} else if (dbus_to == DBUS_TO_PULSE_MODULE_POLICY) {
+		bus_name = BUS_NAME_PULSEAUDIO;
+        object = OBJECT_PULSE_MODULE_POLICY;
+        interface = INTERFACE_PULSE_MODULE_POLICY;
+	} else {
+		debug_error("Invalid case, dbus_to %d", dbus_to);
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
+		if((ret = _dbus_method_call(conn, bus_name,
+					      object,
+					      interface,
+					      g_methods[method_type].name,
 					      args, result)) != MM_ERROR_NONE) {
 			debug_error("Dbus Call on Client Error");
 			return ret;
@@ -437,7 +490,7 @@ static void _sound_server_dbus_signal_callback (GDBusConnection  *connection,
 		return;
 	}
 
-	if (user_cb->sig_type < 0 || user_cb->sig_type >= SOUND_SERVER_SIGNAL_MAX) {
+	if (user_cb->sig_type < 0 || user_cb->sig_type >= SIGNAL_MAX) {
 		debug_error("Wrong Signal Type");
 		return;
 	}
@@ -449,39 +502,41 @@ static void _sound_server_dbus_signal_callback (GDBusConnection  *connection,
 
 	debug_log("Signal(%s.%s) Received , Let's call real User-Callback", interface_name, signal_name);
 
-	if (user_cb->sig_type == SOUND_SERVER_SIGNAL_VOLUME_CHANGED) {
+	if (user_cb->sig_type == SIGNAL_VOLUME_CHANGED) {
 		volume_type_t vol_type;
 		unsigned int volume;
 
 		g_variant_get(params, "(uu)", &vol_type, &volume);
-		debug_log("Call usercallback for %s", g_sound_server_signals[user_cb->sig_type].name);
+		debug_log("Call usercallback for %s", g_signals[user_cb->sig_type].name);
 		((mm_sound_volume_changed_cb)(user_cb->cb))(vol_type, volume, user_cb->userdata);
-	} else if (user_cb->sig_type == SOUND_SERVER_SIGNAL_DEVICE_CONNECTED) {
+	} else if (user_cb->sig_type == SIGNAL_DEVICE_CONNECTED) {
 		mm_sound_device_t device_h;
-		const char* name = NULL;
+		const char *name = NULL, *device_type = NULL;
 		gboolean is_connected = FALSE;
 
-		g_variant_get(params, "((iiii&s)b)", &device_h.id, &device_h.type, &device_h.io_direction,
+		g_variant_get(params, "((i&sii&s)b)", &device_h.id, &device_type, &device_h.io_direction,
 					&device_h.state, &name, &is_connected);
 		MMSOUND_STRNCPY(device_h.name, name, MAX_DEVICE_NAME_NUM);
+		MMSOUND_STRNCPY(device_h.type, device_type, MAX_DEVICE_TYPE_STR_LEN);
 		((mm_sound_device_connected_cb)(user_cb->cb))(&device_h, is_connected, user_cb->userdata);
 
-	} else if (user_cb->sig_type == SOUND_SERVER_SIGNAL_DEVICE_INFO_CHANGED) {
+	} else if (user_cb->sig_type == SIGNAL_DEVICE_INFO_CHANGED) {
 		mm_sound_device_t device_h;
-		const char* name = NULL;
+		const char *name = NULL, *device_type = NULL;
 		int changed_device_info_type = 0;
 
-		g_variant_get(params, "((iiii&s)i)", &device_h.id, &device_h.type, &device_h.io_direction,
+		g_variant_get(params, "((i&sii&s)i)", &device_h.id, &device_type, &device_h.io_direction,
 					&device_h.state, &name, &changed_device_info_type);
 		MMSOUND_STRNCPY(device_h.name, name, MAX_DEVICE_NAME_NUM);
+		MMSOUND_STRNCPY(device_h.type, device_type, MAX_DEVICE_TYPE_STR_LEN);
 		((mm_sound_device_info_changed_cb)(user_cb->cb))(&device_h, changed_device_info_type, user_cb->userdata);
-	} else if (user_cb->sig_type == SOUND_SERVER_SIGNAL_FOCUS_CHANGED) {
-	} else if (user_cb->sig_type == SOUND_SERVER_SIGNAL_FOCUS_WATCH) {
-	} else if (user_cb->sig_type == SOUND_SERVER_SIGNAL_TEST) {
+	} else if (user_cb->sig_type == SIGNAL_FOCUS_CHANGED) {
+	} else if (user_cb->sig_type == SIGNAL_FOCUS_WATCH) {
+	} else if (user_cb->sig_type == SIGNAL_TEST) {
 		int test_var = 0;
 		g_variant_get(params, "(i)", &test_var);
 		((mm_sound_test_cb)(user_cb->cb))(test_var, user_cb->userdata);
-	} else if (user_cb->sig_type == SOUND_SERVER_SIGNAL_PLAY_FILE_END) {
+	} else if (user_cb->sig_type == SIGNAL_PLAY_FILE_END) {
 		int ended_handle = 0;
 		g_variant_get(params, "(i)", &ended_handle);
 		if (ended_handle == user_cb->mask) {
@@ -506,7 +561,7 @@ static int _sound_server_dbus_signal_subscribe(sound_server_signal_t signaltype,
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if (signaltype < 0 || signaltype >= SOUND_SERVER_SIGNAL_MAX) {
+	if (signaltype < 0 || signaltype >= SIGNAL_MAX) {
 		debug_error("Wrong Signal Type");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -522,7 +577,66 @@ static int _sound_server_dbus_signal_subscribe(sound_server_signal_t signaltype,
 	user_cb->mask = mask;
 
 	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
-		if(_dbus_subscribe_signal(conn, OBJECT_SOUND_SERVER, INTERFACE_SOUND_SERVER, g_sound_server_signals[signaltype].name,
+		if(_dbus_subscribe_signal(conn, OBJECT_SOUND_SERVER, INTERFACE_SOUND_SERVER, g_signals[signaltype].name,
+								_sound_server_dbus_signal_callback, &subs_id, user_cb) != MM_ERROR_NONE){
+			debug_error("Dbus Subscribe on Client Error");
+			return MM_ERROR_SOUND_INTERNAL;
+		} else {
+			g_dbus_subs_ids[signaltype] = subs_id;
+		}
+	} else {
+		debug_error("Get Dbus Connection Error");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+	return MM_ERROR_NONE;
+}
+
+static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signaltype, void *cb, void *userdata, int mask)
+{
+	GDBusConnection *conn = NULL;
+	guint subs_id = 0;
+	int instance = 0;
+	struct user_callback *user_cb  = NULL;
+	const char *object, *interface;
+
+	if (!cb) {
+		debug_error("Callback data Null");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (signaltype < 0 || signaltype >= SIGNAL_MAX) {
+		debug_error("Wrong Signal Type");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (!(user_cb = g_malloc0(sizeof(struct user_callback)))) {
+		debug_error("Allocate Memory for User CB data Failed");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	user_cb->sig_type = signaltype;
+	user_cb->cb = cb;
+	user_cb->userdata = userdata;
+	user_cb->mask = mask;
+
+
+	if (dbus_to == DBUS_TO_SOUND_SERVER) {
+		object = OBJECT_SOUND_SERVER;
+		interface = INTERFACE_SOUND_SERVER;
+	} else if (dbus_to == DBUS_TO_PULSE_MODULE_DEVICE_MANAGER) {
+		object = OBJECT_PULSE_MODULE_DEVICE_MANAGER;
+		interface = INTERFACE_PULSE_MODULE_DEVICE_MANAGER;
+	} else if (dbus_to == DBUS_TO_PULSE_MODULE_POLICY) {
+		object = OBJECT_PULSE_MODULE_POLICY;
+		interface = INTERFACE_PULSE_MODULE_POLICY;
+	} else {
+		debug_error("Invalid case, dbus_to %d", dbus_to);
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+
+	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
+		if(_dbus_subscribe_signal(conn, object, interface, g_signals[signaltype].name,
 								_sound_server_dbus_signal_callback, &subs_id, user_cb) != MM_ERROR_NONE){
 			debug_error("Dbus Subscribe on Client Error");
 			return MM_ERROR_SOUND_INTERNAL;
@@ -540,7 +654,7 @@ static int _sound_server_dbus_signal_unsubscribe(sound_server_signal_t signaltyp
 {
 	GDBusConnection *conn = NULL;
 
-	if (signaltype < 0 || signaltype >= SOUND_SERVER_SIGNAL_MAX) {
+	if (signaltype < 0 || signaltype >= SIGNAL_MAX) {
 		debug_error("Wrong Signal Type");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -569,7 +683,7 @@ static int _pulseaudio_dbus_set_property(pulseaudio_property_t property, GVarian
 	}
 
 	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
-		if((ret = _dbus_set_property(conn, BUS_NAME_PULSEAUDIO, OBJECT_PULSEAUDIO, INTERFACE_PULSEAUDIO,
+		if((ret = _dbus_set_property(conn, BUS_NAME_PULSEAUDIO, OBJECT_PULSE_MODULE_POLICY, INTERFACE_PULSE_MODULE_POLICY,
 									g_pulseaudio_properties[property].name, args, result)) != MM_ERROR_NONE) {
 			debug_error("Dbus Call on Client Error");
 			return ret;
@@ -593,7 +707,7 @@ static int _pulseaudio_dbus_get_property(pulseaudio_property_t property, GVarian
 	}
 
 	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
-		if((ret = _dbus_get_property(conn, BUS_NAME_PULSEAUDIO, OBJECT_PULSEAUDIO, INTERFACE_PULSEAUDIO,
+		if((ret = _dbus_get_property(conn, BUS_NAME_PULSEAUDIO, OBJECT_PULSE_MODULE_POLICY, INTERFACE_PULSE_MODULE_POLICY,
 									g_pulseaudio_properties[property].name, result)) != MM_ERROR_NONE) {
 			debug_error("Dbus Call on Client Error");
 			return ret;
@@ -616,7 +730,7 @@ int mm_sound_client_dbus_add_test_callback(mm_sound_test_cb func, void* user_dat
 
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_subscribe(SOUND_SERVER_SIGNAL_TEST, func, user_data, 0)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_SOUND_SERVER, SIGNAL_TEST, func, user_data, 0)) != MM_ERROR_NONE) {
 		debug_error("add test callback failed");
 	}
 
@@ -629,7 +743,7 @@ int mm_sound_client_dbus_remove_test_callback(void)
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_unsubscribe(SOUND_SERVER_SIGNAL_TEST)) != MM_ERROR_NONE) {
+	if ((ret = _sound_server_dbus_signal_unsubscribe(SIGNAL_TEST)) != MM_ERROR_NONE) {
 		debug_error("remove test callback failed");
 	}
 
@@ -647,7 +761,7 @@ int mm_sound_client_dbus_test(int a, int b, int *get)
 
 	params = g_variant_new("(ii)", a, b);
 	if (params) {
-		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_TEST, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_TEST, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus test call failed");
 			goto cleanup;
 		}
@@ -680,7 +794,7 @@ int mm_sound_client_dbus_get_current_connected_device_list(int device_flags, GLi
 	GVariantIter iter;
 	mm_sound_device_t* device_item;
 	GList* g_device_list = NULL;
-	const gchar* device_name_tmp = NULL;
+	const gchar *device_name_tmp = NULL, *device_type_tmp = NULL;
 
 	debug_fenter();
 
@@ -693,7 +807,7 @@ int mm_sound_client_dbus_get_current_connected_device_list(int device_flags, GLi
 	params = g_variant_new("(i)", device_flags);
 
 	if (params) {
-		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_GET_CONNECTED_DEVICE_LIST, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, METHOD_CALL_GET_CONNECTED_DEVICE_LIST, params, &result)) != MM_ERROR_NONE) {
 			debug_error("Get current connected device list failed");
 			goto cleanup;
 		}
@@ -706,10 +820,11 @@ int mm_sound_client_dbus_get_current_connected_device_list(int device_flags, GLi
 	g_variant_iter_init(&iter, child);
 	while (1) {
 		device_item = g_malloc0(sizeof(mm_sound_device_t));
-		if (device_item && g_variant_iter_loop(&iter, "(iiii&s)", &device_item->id, &device_item->type, &device_item->io_direction, &device_item->state, &device_name_tmp)) {
+		if (device_item && g_variant_iter_loop(&iter, "(i&sii&s)", &device_item->id, &device_type_tmp, &device_item->io_direction, &device_item->state, &device_name_tmp)) {
 			MMSOUND_STRNCPY(device_item->name, device_name_tmp, MAX_DEVICE_NAME_NUM);
+			MMSOUND_STRNCPY(device_item->type, device_type_tmp, MAX_DEVICE_TYPE_STR_LEN);
 			*device_list = g_list_append(*device_list, device_item);
-			debug_log("Added device id(%d) type(%d) direction(%d) state(%d) name(%s)", device_item->id, device_item->type,device_item->io_direction, device_item->state, device_item->name);
+			debug_log("Added device id(%d) type(%17s) direction(%d) state(%d) name(%s)", device_item->id, device_item->type,device_item->io_direction, device_item->state, device_item->name);
 		} else {
 			if (device_item)
 				g_free(device_item);
@@ -731,7 +846,7 @@ int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_soun
 
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_subscribe(SOUND_SERVER_SIGNAL_DEVICE_CONNECTED, func, user_data, device_flags)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, SIGNAL_DEVICE_CONNECTED, func, user_data, device_flags)) != MM_ERROR_NONE) {
 		debug_error("add device connected callback failed");
 	}
 
@@ -744,7 +859,7 @@ int mm_sound_client_dbus_remove_device_connected_callback(void)
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_unsubscribe(SOUND_SERVER_SIGNAL_DEVICE_CONNECTED)) != MM_ERROR_NONE) {
+	if ((ret = _sound_server_dbus_signal_unsubscribe(SIGNAL_DEVICE_CONNECTED)) != MM_ERROR_NONE) {
 		debug_error("remove device connected callback failed");
 	}
 
@@ -757,7 +872,7 @@ int mm_sound_client_dbus_add_device_info_changed_callback(int device_flags, mm_s
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_subscribe(SOUND_SERVER_SIGNAL_DEVICE_INFO_CHANGED, func, user_data, device_flags)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, SIGNAL_DEVICE_INFO_CHANGED, func, user_data, device_flags)) != MM_ERROR_NONE) {
 		debug_error("Add device info changed callback failed");
 	}
 
@@ -770,7 +885,7 @@ int mm_sound_client_dbus_remove_device_info_changed_callback(void)
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_unsubscribe(SOUND_SERVER_SIGNAL_DEVICE_INFO_CHANGED)) != MM_ERROR_NONE) {
+	if ((ret = _sound_server_dbus_signal_unsubscribe(SIGNAL_DEVICE_INFO_CHANGED)) != MM_ERROR_NONE) {
 		debug_error("remove device info changed callback failed");
 	}
 
@@ -787,7 +902,7 @@ int mm_sound_client_dbus_is_bt_a2dp_on (bool *connected, char** bt_name)
 
 	debug_fenter();
 
-	if((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_GET_BT_A2DP_STATUS, NULL, &result)) != MM_ERROR_NONE) {
+	if((ret = _dbus_method_call_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, METHOD_CALL_GET_BT_A2DP_STATUS, NULL, &result)) != MM_ERROR_NONE) {
 		goto cleanup;
 	}
 	g_variant_get(result, "(bs)", &_connected, &_bt_name);
@@ -810,7 +925,7 @@ int mm_sound_client_dbus_add_volume_changed_callback(mm_sound_volume_changed_cb 
 
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_subscribe(SOUND_SERVER_SIGNAL_VOLUME_CHANGED, func, user_data, 0)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_SOUND_SERVER, SIGNAL_VOLUME_CHANGED, func, user_data, 0)) != MM_ERROR_NONE) {
 		debug_error("Add Volume changed callback failed");
 	}
 
@@ -823,7 +938,7 @@ int mm_sound_client_dbus_remove_volume_changed_callback(void)
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_unsubscribe(SOUND_SERVER_SIGNAL_VOLUME_CHANGED)) != MM_ERROR_NONE) {
+	if ((ret = _sound_server_dbus_signal_unsubscribe(SIGNAL_VOLUME_CHANGED)) != MM_ERROR_NONE) {
 		debug_error("Remove Volume changed callback failed");
 	}
 
@@ -839,7 +954,7 @@ int mm_sound_client_dbus_get_audio_path(mm_sound_device_in *device_in, mm_sound_
 
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_GET_AUDIO_PATH, NULL, &result)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_GET_AUDIO_PATH, NULL, &result)) != MM_ERROR_NONE) {
 		debug_error("add device connected callback failed");
 		goto cleanup;
 	}
@@ -873,7 +988,7 @@ int mm_sound_client_dbus_play_tone(int tone, int repeat, int volume, int volume_
 	params = g_variant_new("(iiiiiiib)", tone, repeat, volume,
 		      volume_config, session_type, session_options, client_pid , _enable_session);
 	if (params) {
-		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_PLAY_DTMF, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_DTMF, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus play tone failed");
 			goto cleanup;
 		}
@@ -918,7 +1033,7 @@ int mm_sound_client_dbus_play_sound(char* filename, int tone, int repeat, int vo
 	params = g_variant_new("(siiiiiiiiiib)", filename, tone, repeat, volume,
 		      volume_config, priority, session_type, session_options, client_pid, keytone, handle_route, _enable_session);
 	if (params) {
-		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_PLAY_FILE_START, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_FILE_START, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus play file failed");
 			goto cleanup;
 		}
@@ -949,7 +1064,7 @@ int mm_sound_client_dbus_stop_sound(int handle)
 
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_PLAY_FILE_STOP, g_variant_new("(i)", handle), &result)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_FILE_STOP, g_variant_new("(i)", handle), &result)) != MM_ERROR_NONE) {
 		debug_error("dbus stop file playing failed");
 		goto cleanup;
 	}
@@ -1012,7 +1127,7 @@ int mm_sound_client_dbus_add_play_sound_end_callback(int handle, mm_sound_stop_c
 
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_subscribe(SOUND_SERVER_SIGNAL_PLAY_FILE_END, stop_cb, userdata, handle)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_SOUND_SERVER, SIGNAL_PLAY_FILE_END, stop_cb, userdata, handle)) != MM_ERROR_NONE) {
 		debug_error("add play sound end callback failed");
 	}
 
@@ -1333,7 +1448,7 @@ int mm_sound_client_dbus_add_mute_all_changed_callback(mm_sound_mute_all_changed
 	user_cb->cb = func;
 	user_cb->userdata = user_data;
 
-	if((ret = _dbus_subscribe_signal(conn, OBJECT_PULSEAUDIO, INTERFACE_DBUS, SIGNAL_PROP_CHANGED,
+	if((ret = _dbus_subscribe_signal(conn, OBJECT_PULSE_MODULE_POLICY, INTERFACE_DBUS, SIGNAL_PROP_CHANGED,
 									_mute_all_signal_changed_callback, &subs_id, user_cb)) == MM_ERROR_NONE) {
 		g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MUTE_ALL] = subs_id;
 	} else {
@@ -1972,7 +2087,7 @@ int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_soun
 #endif /* SUPPORT_CONTAINER */
 
 	if (params) {
-		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_REGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_REGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus register focus failed");
 			goto cleanup;
 		}
@@ -2042,7 +2157,7 @@ int mm_sound_client_dbus_unregister_focus(int id)
 
 	params = g_variant_new("(ii)", instance, id);
 	if (params) {
-		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_UNREGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_UNREGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus unregister focus failed");
 			goto cleanup;
 		}
@@ -2094,7 +2209,7 @@ int mm_sound_client_dbus_acquire_focus(int id, mm_sound_focus_type_e type, const
 
 	params = g_variant_new("(iiis)", instance, id, type, option);
 	if (params) {
-		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_ACQUIRE_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_ACQUIRE_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus acquire focus failed");
 			goto cleanup;
 		}
@@ -2134,7 +2249,7 @@ int mm_sound_client_dbus_release_focus(int id, mm_sound_focus_type_e type, const
 
 	params = g_variant_new("(iiis)", instance, id, type, option);
 	if (params) {
-		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_RELEASE_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_RELEASE_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus release focus failed");
 			goto cleanup;
 		}
@@ -2204,7 +2319,7 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 
 
 	if (params) {
-		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_WATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_WATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus set watch focus failed");
 			goto cleanup;
 		}
@@ -2267,7 +2382,7 @@ int mm_sound_client_dbus_unset_focus_watch_callback(void)
 
 	params = g_variant_new("(i)", instance);
 	if (params) {
-		if ((ret = _sound_server_dbus_method_call(SOUND_SERVER_METHOD_UNWATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_UNWATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus unset watch focus failed");
 			goto cleanup;
 		}

@@ -22,8 +22,10 @@
 #ifndef __MM_SOUND_MGR_WFD_H__
 #define __MM_SOUND_MGR_WFD_H__
 
+#if 0
 int MMSoundMgrWfdInit(void);
 int MMSoundMgrWfdFini(void);
+#endif
 
 
 #endif /* __MM_SOUND_MGR_WFD_H__ */

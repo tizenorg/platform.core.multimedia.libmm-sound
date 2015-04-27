@@ -24,8 +24,10 @@
 
 #include "../../include/mm_ipc.h"
 
+#if 0
 int MMSoundMgrHeadsetInit(void);
 int MMSoundMgrHeadsetFini(void);
+#endif
 
 #endif /* __MM_SOUND_MGR_HEADSET_H__ */
 

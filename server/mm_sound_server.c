@@ -48,14 +48,14 @@
 #include "include/mm_sound_mgr_codec.h"
 #include "include/mm_sound_mgr_ipc.h"
 #include "include/mm_sound_mgr_ipc_dbus.h"
-#include "include/mm_sound_mgr_pulse.h"
+//#include "include/mm_sound_mgr_pulse.h"
 #include "include/mm_sound_mgr_asm.h"
-#include "include/mm_sound_mgr_session.h"
-#include "include/mm_sound_mgr_device.h"
-#include "include/mm_sound_mgr_device_headset.h"
-#include "include/mm_sound_mgr_device_dock.h"
-#include "include/mm_sound_mgr_device_hdmi.h"
-#include "include/mm_sound_mgr_device_wfd.h"
+//#include "include/mm_sound_mgr_session.h"
+//#include "include/mm_sound_mgr_device.h"
+//#include "include/mm_sound_mgr_device_headset.h"
+//#include "include/mm_sound_mgr_device_dock.h"
+//#include "include/mm_sound_mgr_device_hdmi.h"
+//#include "include/mm_sound_mgr_device_wfd.h"
 #include <audio-session-manager.h>
 
 #include <glib.h>
@@ -269,7 +269,7 @@ int main(int argc, char **argv)
 
 		MMSoundMgrDbusInit();
 
-		pulse_handle = MMSoundMgrPulseInit(_pa_disconnect_cb, g_mainloop);
+//		pulse_handle = MMSoundMgrPulseInit(_pa_disconnect_cb, g_mainloop);
 		MMSoundMgrASMInit();
 		/* Wait for ASM Ready */
 		__wait_for_vconfkey_ready(ASM_READY_KEY);
@@ -278,12 +278,12 @@ int main(int argc, char **argv)
 		MMSoundMgrFocusInit();
 #endif
 
-		_mm_sound_mgr_device_init();
-		MMSoundMgrHeadsetInit();
-		MMSoundMgrDockInit();
-		MMSoundMgrHdmiInit();
-		MMSoundMgrWfdInit();
-		MMSoundMgrSessionInit();
+//		_mm_sound_mgr_device_init();
+//		MMSoundMgrHeadsetInit();
+//		MMSoundMgrDockInit();
+//		MMSoundMgrHdmiInit();
+//		MMSoundMgrWfdInit();
+//		MMSoundMgrSessionInit();
 	}
 
 	debug_warning("sound_server [%d] initialization complete...now, start running!!\n", getpid());
@@ -315,17 +315,17 @@ int main(int argc, char **argv)
 		MMSoundMgrRunFini();
 		MMSoundThreadPoolFini();
 
-		MMSoundMgrWfdFini();
-		MMSoundMgrHdmiFini();
-		MMSoundMgrDockFini();
-		MMSoundMgrHeadsetFini();
-		MMSoundMgrSessionFini();
-		_mm_sound_mgr_device_fini();
+//		MMSoundMgrWfdFini();
+//		MMSoundMgrHdmiFini();
+//		MMSoundMgrDockFini();
+//		MMSoundMgrHeadsetFini();
+//		MMSoundMgrSessionFini();
+//		_mm_sound_mgr_device_fini();
 #ifdef USE_FOCUS
 		MMSoundMgrFocusFini();
 #endif
 		MMSoundMgrASMFini();
-		MMSoundMgrPulseFini(pulse_handle);
+//		MMSoundMgrPulseFini(pulse_handle);
 #ifdef USE_HIBERNATION
 		if(heynoti_unsubscribe(heynotifd, "HIBERNATION_LEAVE", NULL)) {
 			debug_error("heynoti_unsubscribe failed..\n");

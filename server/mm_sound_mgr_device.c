@@ -19,6 +19,7 @@
  *
  */
 
+#if 0
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -714,6 +715,7 @@ int _mm_sound_mgr_device_update_volume()
 	return ret;
 }
 
+
 #define RELEASE_DEVICE_INFO_ID(x_id) \
 do { \
 	if (g_device_id_array[x_id-1] == 1) { \
@@ -1357,3 +1359,4 @@ int MMSoundMgrDeviceUpdateStatusWithoutNotification (device_update_status_e upda
 
 	return MM_ERROR_NONE;
 }
+#endif

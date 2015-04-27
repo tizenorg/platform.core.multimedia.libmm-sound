@@ -107,13 +107,13 @@ void mm_sound_test_cb1(int a, void *user_data)
 void device_connected_cb (MMSoundDevice_t device_h, bool is_connected, void *user_data)
 {
 	int ret = 0;
-	int type = 0;
+	char *device_type = NULL;
 	int io_direction = 0;
 	int state = 0;
 	int id = 0;
 	char *name = NULL;
 	debug_log("*** device_connected_cb is called, device_h[0x%x], is_connected[%d], user_date[0x%x]\n", device_h, is_connected, user_data);
-	ret = mm_sound_get_device_type(device_h, &type);
+	ret = mm_sound_get_device_type(device_h, &device_type);
 	if (ret) {
 		debug_error("failed to mm_sound_get_device_type()\n");
 	}
@@ -133,18 +133,18 @@ void device_connected_cb (MMSoundDevice_t device_h, bool is_connected, void *use
 	if (ret) {
 		debug_error("failed to mm_sound_get_device_name()\n");
 	}
-	debug_log("*** --- type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", type, id, io_direction, state, name);
+	debug_log("*** --- type[%s], id[%d], io_direction[%d], state[%d], name[%s]\n", device_type, id, io_direction, state, name);
 }
 void device_info_changed_cb (MMSoundDevice_t device_h, int changed_info_type, void *user_data)
 {
 	int ret = 0;
-	int type = 0;
+	char *device_type = NULL;
 	int io_direction = 0;
 	int state = 0;
 	int id = 0;
 	char *name = NULL;
 	debug_log("*** device_info_changed_cb is called, device_h[0x%x], changed_info_type[%d], user_date[0x%x]\n", device_h, changed_info_type, user_data);
-	ret = mm_sound_get_device_type(device_h, &type);
+	ret = mm_sound_get_device_type(device_h, &device_type);
 	if (ret) {
 		debug_error("failed to mm_sound_get_device_type()\n");
 	}
@@ -164,7 +164,7 @@ void device_info_changed_cb (MMSoundDevice_t device_h, int changed_info_type, vo
 	if (ret) {
 		debug_error("failed to mm_sound_get_device_name()\n");
 	}
-	debug_log("*** --- type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", type, id, io_direction, state, name);
+	debug_log("*** --- type[%s], id[%d], io_direction[%d], state[%d], name[%s]\n", device_type, id, io_direction, state, name);
 }
 #ifdef USE_FOCUS
 void focus_cb0 (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
@@ -1389,7 +1389,7 @@ static void interpret (char *cmd)
 			int ret = 0;
 			mm_sound_device_flags_e flags = MM_SOUND_DEVICE_ALL_FLAG;
 			MMSoundDeviceList_t device_list;
-			int type = 0;
+			char *device_type = NULL;
 			int io_direction = 0;
 			int state = 0;
 			int id = 0;
@@ -1407,7 +1407,7 @@ static void interpret (char *cmd)
 					if (dret) {
 						debug_error("failed to mm_sound_get_next_device(), dret[0x%x]\n", dret);
 					} else {
-						ret = mm_sound_get_device_type(device_h, &type);
+						ret = mm_sound_get_device_type(device_h, &device_type);
 						if (ret) {
 							debug_error("failed to mm_sound_get_device_type()\n");
 						}
@@ -1427,7 +1427,7 @@ static void interpret (char *cmd)
 						if (ret) {
 							debug_error("failed to mm_sound_get_device_name()\n");
 						}
-						debug_log("*** --- [NEXT DEVICE] type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", type, id, io_direction, state, name);
+						debug_log("*** --- [NEXT DEVICE] type[%s], id[%d], io_direction[%d], state[%d], name[%s]\n", device_type, id, io_direction, state, name);
 					}
 				} while (dret == MM_ERROR_NONE);
 				do {
@@ -1436,7 +1436,7 @@ static void interpret (char *cmd)
 					if (dret) {
 						debug_error("failed to mm_sound_get_prev_device(), dret[0x%x]\n", dret);
 					} else {
-						ret = mm_sound_get_device_type(device_h, &type);
+						ret = mm_sound_get_device_type(device_h, &device_type);
 						if (ret) {
 							debug_error("failed to mm_sound_get_device_type()\n");
 						}
@@ -1456,7 +1456,7 @@ static void interpret (char *cmd)
 						if (ret) {
 							debug_error("failed to mm_sound_get_device_name()\n");
 						}
-						debug_log("*** --- [PREV DEVICE] type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", type, id, io_direction, state, name);
+						debug_log("*** --- [PREV DEVICE] type[%s], id[%d], io_direction[%d], state[%d], name[%s]\n", device_type, id, io_direction, state, name);
 					}
 				} while (dret == MM_ERROR_NONE);
 			}

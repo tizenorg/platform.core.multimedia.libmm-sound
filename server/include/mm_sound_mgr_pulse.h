@@ -22,14 +22,13 @@
 #ifndef __MM_SOUND_MGR_PULSE_H__
 #define __MM_SOUND_MGR_PULSE_H__
 
+#if 0
 
 #include "../../include/mm_ipc.h"
 #include "mm_sound_mgr_session.h"
 
 typedef void (*pa_disconnect_cb)(void* user_data);
 
-void* MMSoundMgrPulseInit(pa_disconnect_cb cb, void* user_data);
-int MMSoundMgrPulseFini(void* handle);
 
 void MMSoundMgrPulseSetUSBDefaultSink (int usb_device);
 void MMSoundMgrPulseSetDefaultSink (char* device_api_name, char* device_bus_name);
@@ -57,6 +56,10 @@ void MMSoundMgrPulseSetMuteall(int mute);
 void MMSoundMgrPulseSetVolumeLevel(volume_type_t volume_type, unsigned int volume_level);
 #endif
 void MMSoundMgrPulseSetVoicecontrolState (bool state);
+
+void* MMSoundMgrPulseInit(pa_disconnect_cb cb, void* user_data);
+int MMSoundMgrPulseFini(void* handle);
+#endif
 
 #endif /* __MM_SOUND_MGR_PULSE_H__ */
 

@@ -204,15 +204,15 @@ int mm_sound_get_prev_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 }
 
 EXPORT_API
-int mm_sound_get_device_type(MMSoundDevice_t device_h, mm_sound_device_type_e *type)
+int mm_sound_get_device_type(MMSoundDevice_t device_h, char **type)
 {
 	mm_sound_device_t *device = (mm_sound_device_t*)device_h;
-	if(!device) {
-		debug_error("invalid handle\n");
+	if(!device || !type) {
+		debug_error("invalid argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	*type = device->type;
-	debug_log("device_handle:0x%x, type:%d\n", device, *type);
+	debug_log("device_handle:0x%x, type:%s\n", device, *type);
 
 	return MM_ERROR_NONE;
 }
@@ -226,7 +226,7 @@ int mm_sound_get_device_io_direction(MMSoundDevice_t device_h, mm_sound_device_i
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	*io_direction = device->io_direction;
-	debug_log("device_handle:0x%x, io_direction:%d (0:IN,1:OUT,2:INOUT)\n", device, *io_direction);
+	debug_log("device_handle:0x%x, io_direction:%d (1:IN,2:OUT,3:INOUT)\n", device, *io_direction);
 
 	return MM_ERROR_NONE;
 }

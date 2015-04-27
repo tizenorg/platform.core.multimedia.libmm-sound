@@ -383,176 +383,176 @@ static void handle_method_asm_dump(GDBusMethodInvocation* invocation);
 /* TODO : generate introspection xml automatically, with these value include argument and reply */
 /* TODO : argument check with these information */
 /* TODO : divide object and interface with features (ex. play, path, device, focus, asm) */
-struct mm_sound_dbus_method methods[SOUND_SERVER_METHOD_MAX] = {
-	[SOUND_SERVER_METHOD_TEST] = {
+struct mm_sound_dbus_method methods[METHOD_CALL_MAX] = {
+	[METHOD_CALL_TEST] = {
 		.info = {
 			.name = "MethodTest1",
 		},
 		.handler = handle_method_test
 	},
-	[SOUND_SERVER_METHOD_PLAY_FILE_START] = {
+	[METHOD_CALL_PLAY_FILE_START] = {
 		.info = {
 			.name = "PlayFileStart",
 		},
 		.handler = handle_method_play_file_start
 	},
-	[SOUND_SERVER_METHOD_PLAY_FILE_STOP] = {
+	[METHOD_CALL_PLAY_FILE_STOP] = {
 		.info = {
 			.name = "PlayFileStop",
 		},
 		.handler = handle_method_play_file_stop
 	},
-	[SOUND_SERVER_METHOD_PLAY_DTMF] = {
+	[METHOD_CALL_PLAY_DTMF] = {
 		.info = {
 			.name = "PlayDTMF",
 		},
 		.handler = handle_method_play_dtmf
 	},
-	[SOUND_SERVER_METHOD_GET_BT_A2DP_STATUS] = {
+	[METHOD_CALL_GET_BT_A2DP_STATUS] = {
 		.info = {
 			.name = "GetBTA2DPStatus",
 		},
 		.handler = handle_method_get_bt_a2dp_status
 	},
-	[SOUND_SERVER_METHOD_SET_PATH_FOR_ACTIVE_DEVICE] = {
+	[METHOD_CALL_SET_PATH_FOR_ACTIVE_DEVICE] = {
 		.info = {
 			.name = "SetPathForActiveDevice",
 		},
 		.handler = handle_method_set_sound_path_for_active_device
 	},
-	[SOUND_SERVER_METHOD_GET_AUDIO_PATH] = {
+	[METHOD_CALL_GET_AUDIO_PATH] = {
 		.info = {
 			.name = "GetAudioPath",
 		},
 		.handler = handle_method_get_audio_path
 	},
-	[SOUND_SERVER_METHOD_GET_CONNECTED_DEVICE_LIST] = {
+	[METHOD_CALL_GET_CONNECTED_DEVICE_LIST] = {
 		.info = {
 			.name = "GetConnectedDeviceList",
 		},
 		.handler = handle_method_get_connected_device_list
 	},
-	[SOUND_SERVER_METHOD_REGISTER_FOCUS] = {
+	[METHOD_CALL_REGISTER_FOCUS] = {
 		.info = {
 			.name = "RegisterFocus",
 		},
 		.handler = handle_method_register_focus
 	},
-	[SOUND_SERVER_METHOD_UNREGISTER_FOCUS] = {
+	[METHOD_CALL_UNREGISTER_FOCUS] = {
 		.info = {
 			.name = "UnregisterFocus",
 		},
 		.handler = handle_method_unregister_focus
 	},
-	[SOUND_SERVER_METHOD_ACQUIRE_FOCUS] = {
+	[METHOD_CALL_ACQUIRE_FOCUS] = {
 		.info = {
 			.name = "AcquireFocus",
 		},
 		.handler = handle_method_acquire_focus
 	},
-	[SOUND_SERVER_METHOD_RELEASE_FOCUS] = {
+	[METHOD_CALL_RELEASE_FOCUS] = {
 		.info = {
 			.name = "ReleaseFocus",
 		},
 		.handler = handle_method_release_focus
 	},
-	[SOUND_SERVER_METHOD_WATCH_FOCUS] = {
+	[METHOD_CALL_WATCH_FOCUS] = {
 		.info = {
 			.name = "WatchFocus",
 		},
 		.handler = handle_method_watch_focus
 	},
-	[SOUND_SERVER_METHOD_UNWATCH_FOCUS] = {
+	[METHOD_CALL_UNWATCH_FOCUS] = {
 		.info = {
 			.name = "UnwatchFocus",
 		},
 		.handler = handle_method_unwatch_focus
 	},
-	[SOUND_SERVER_METHOD_ASM_REGISTER_SOUND] = {
+	[METHOD_CALL_ASM_REGISTER_SOUND] = {
 		.info = {
 			.name = "ASMRegisterSound",
 		},
 		.handler = handle_method_asm_register_sound
 	},
-	[SOUND_SERVER_METHOD_ASM_UNREGISTER_SOUND] = {
+	[METHOD_CALL_ASM_UNREGISTER_SOUND] = {
 		.info = {
 			.name = "ASMUnregisterSound",
 		},
 		.handler = handle_method_asm_unregister_sound
 	},
-	[SOUND_SERVER_METHOD_ASM_REGISTER_WATCHER] = {
+	[METHOD_CALL_ASM_REGISTER_WATCHER] = {
 		.info = {
 			.name = "ASMRegisterWatcher",
 		},
 		.handler = handle_method_asm_register_watcher
 	},
-	[SOUND_SERVER_METHOD_ASM_UNREGISTER_WATCHER] = {
+	[METHOD_CALL_ASM_UNREGISTER_WATCHER] = {
 		.info = {
 			.name = "ASMUnregisterWatcher",
 		},
 		.handler = handle_method_asm_unregister_watcher
 	},
-	[SOUND_SERVER_METHOD_ASM_GET_MYSTATE] = {
+	[METHOD_CALL_ASM_GET_MYSTATE] = {
 		.info = {
 			.name = "ASMGetMyState",
 		},
 		.handler = handle_method_asm_get_mystate
 	},
-	[SOUND_SERVER_METHOD_ASM_GET_STATE] = {
+	[METHOD_CALL_ASM_GET_STATE] = {
 		.info = {
 			.name = "ASMGetState",
 		},
 		.handler = handle_method_asm_get_state
 	},
-	[SOUND_SERVER_METHOD_ASM_SET_STATE] = {
+	[METHOD_CALL_ASM_SET_STATE] = {
 		.info = {
 			.name = "ASMSetState",
 		},
 		.handler = handle_method_asm_set_state
 	},
-	[SOUND_SERVER_METHOD_ASM_SET_SUBSESSION] = {
+	[METHOD_CALL_ASM_SET_SUBSESSION] = {
 		.info = {
 			.name = "ASMSetSubsession",
 		},
 		.handler = handle_method_asm_set_subsession
 	},
-	[SOUND_SERVER_METHOD_ASM_GET_SUBSESSION] = {
+	[METHOD_CALL_ASM_GET_SUBSESSION] = {
 		.info = {
 			.name = "ASMGetSubsession",
 		},
 		.handler = handle_method_asm_get_subsession
 	},
-	[SOUND_SERVER_METHOD_ASM_SET_SUBEVENT] = {
+	[METHOD_CALL_ASM_SET_SUBEVENT] = {
 		.info = {
 			.name = "ASMSetSubevent",
 		},
 		.handler = handle_method_asm_set_subevent
 	},
-	[SOUND_SERVER_METHOD_ASM_GET_SUBEVENT] = {
+	[METHOD_CALL_ASM_GET_SUBEVENT] = {
 		.info = {
 			.name = "ASMGetSubevent",
 		},
 		.handler = handle_method_asm_get_subevent
 	},
-	[SOUND_SERVER_METHOD_ASM_SET_SESSION_OPTION] = {
+	[METHOD_CALL_ASM_SET_SESSION_OPTION] = {
 		.info = {
 			.name = "ASMSetSessionOption",
 		},
 		.handler = handle_method_asm_set_session_option
 	},
-	[SOUND_SERVER_METHOD_ASM_GET_SESSION_OPTION] = {
+	[METHOD_CALL_ASM_GET_SESSION_OPTION] = {
 		.info = {
 			.name = "ASMGetSessionOption",
 		},
 		.handler = handle_method_asm_get_session_option
 	},
-	[SOUND_SERVER_METHOD_ASM_RESET_RESUME_TAG] = {
+	[METHOD_CALL_ASM_RESET_RESUME_TAG] = {
 		.info = {
 			.name = "ASMResetResumeTag",
 		},
 		.handler = handle_method_asm_reset_resume_tag
 	},
-	[SOUND_SERVER_METHOD_ASM_DUMP] = {
+	[METHOD_CALL_ASM_DUMP] = {
 		.info = {
 			.name = "ASMDump",
 		},
@@ -560,38 +560,38 @@ struct mm_sound_dbus_method methods[SOUND_SERVER_METHOD_MAX] = {
 	},
 };
 
-struct mm_sound_dbus_signal signals[SOUND_SERVER_SIGNAL_MAX] = {
-	[SOUND_SERVER_SIGNAL_TEST] = {
+struct mm_sound_dbus_signal signals[SIGNAL_MAX] = {
+	[SIGNAL_TEST] = {
 		.info = {
 			.name = "SignalTest1",
 		},
 	},
-	[SOUND_SERVER_SIGNAL_PLAY_FILE_END] = {
+	[SIGNAL_PLAY_FILE_END] = {
 		.info = {
 			.name = "PlayFileEnd",
 		},
 	},
-	[SOUND_SERVER_SIGNAL_VOLUME_CHANGED] = {
+	[SIGNAL_VOLUME_CHANGED] = {
 		.info = {
 			.name = "VolumeChanged",
 		},
 	},
-	[SOUND_SERVER_SIGNAL_DEVICE_CONNECTED] = {
+	[SIGNAL_DEVICE_CONNECTED] = {
 		.info = {
 			.name = "DeviceConnected",
 		},
 	},
-	[SOUND_SERVER_SIGNAL_DEVICE_INFO_CHANGED] = {
+	[SIGNAL_DEVICE_INFO_CHANGED] = {
 		.info = {
 			.name = "DeviceInfoChanged",
 		},
 	},
-	[SOUND_SERVER_SIGNAL_FOCUS_CHANGED] = {
+	[SIGNAL_FOCUS_CHANGED] = {
 		.info = {
 			.name = "FocusChanged",
 		},
 	},
-	[SOUND_SERVER_SIGNAL_FOCUS_WATCH] = {
+	[SIGNAL_FOCUS_WATCH] = {
 		.info = {
 			.name = "FocusWatch",
 		},
@@ -649,7 +649,7 @@ static int mm_sound_mgr_ipc_dbus_send_signal(int signal_type, GVariant *paramete
 	GError* err = NULL;
 	gboolean emit_success = FALSE;
 
-	if (signal_type < 0 || signal_type >= SOUND_SERVER_SIGNAL_MAX || !parameter) {
+	if (signal_type < 0 || signal_type >= SIGNAL_MAX || !parameter) {
 		debug_error("Invalid Argument");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
@@ -726,7 +726,7 @@ static void handle_method_test(GDBusMethodInvocation* invocation)
 	g_variant_get(params, "(ii)", &val, &val2);
 	debug_log("Got value : %d , %d", val, val2);
 
-	if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SOUND_SERVER_SIGNAL_TEST, g_variant_new("(i)", val+val2))) != MM_ERROR_NONE) {
+	if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_TEST, g_variant_new("(i)", val+val2))) != MM_ERROR_NONE) {
 		debug_error("signal send error : %X", ret);
 	} else {
 		debug_error("signal send success");
@@ -852,7 +852,7 @@ static void handle_method_get_bt_a2dp_status(GDBusMethodInvocation* invocation)
 
 	debug_fenter();
 
-	ret = MMSoundMgrPulseHandleIsBtA2DPOnReq(&is_bt_on, &bt_name);
+//	ret = MMSoundMgrPulseHandleIsBtA2DPOnReq(&is_bt_on, &bt_name);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1748,7 +1748,7 @@ static void handle_method_call(GDBusConnection *connection,
 	}
 	debug_log("Method Call, obj : %s, intf : %s, method : %s", object_path, interface_name, method_name);
 
-	for (method_idx = 0; method_idx < SOUND_SERVER_METHOD_MAX; method_idx++) {
+	for (method_idx = 0; method_idx < METHOD_CALL_MAX; method_idx++) {
 		if (!g_strcmp0(method_name, methods[method_idx].info.name)) {
 			methods[method_idx].handler(invocation);
 		}
@@ -1954,7 +1954,7 @@ int __mm_sound_mgr_ipc_dbus_notify_device_connected (mm_sound_device_t *device, 
 	GVariantBuilder builder;
 	GVariant* param = NULL;
 
-	debug_log("Send Signal '%s'", signals[SOUND_SERVER_SIGNAL_DEVICE_CONNECTED]);
+	debug_log("Send Signal '%s'", signals[SIGNAL_DEVICE_CONNECTED]);
 
 	g_variant_builder_init(&builder, G_VARIANT_TYPE("((iiiis)b)"));
 	g_variant_builder_open(&builder, G_VARIANT_TYPE_TUPLE);
@@ -1963,7 +1963,7 @@ int __mm_sound_mgr_ipc_dbus_notify_device_connected (mm_sound_device_t *device, 
 	g_variant_builder_add(&builder, "b", is_connected);
 	param = g_variant_builder_end(&builder);
 	if (param) {
-		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SOUND_SERVER_SIGNAL_DEVICE_CONNECTED, param))!= MM_ERROR_NONE) {
+		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_DEVICE_CONNECTED, param))!= MM_ERROR_NONE) {
 			debug_error("Send device connected signal failed");
 		}
 	} else {
@@ -1979,7 +1979,7 @@ int __mm_sound_mgr_ipc_dbus_notify_device_info_changed (mm_sound_device_t *devic
 	GVariantBuilder builder;
 	GVariant* param = NULL;
 
-	debug_log("Send Signal '%s'", signals[SOUND_SERVER_SIGNAL_DEVICE_INFO_CHANGED]);
+	debug_log("Send Signal '%s'", signals[SIGNAL_DEVICE_INFO_CHANGED]);
 
 	g_variant_builder_init(&builder, G_VARIANT_TYPE("((iiiis)i)"));
 	g_variant_builder_open(&builder, G_VARIANT_TYPE_TUPLE);
@@ -1988,7 +1988,7 @@ int __mm_sound_mgr_ipc_dbus_notify_device_info_changed (mm_sound_device_t *devic
 	g_variant_builder_add(&builder, "i", changed_device_info_type);
 	param = g_variant_builder_end(&builder);
 	if (param) {
-		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SOUND_SERVER_SIGNAL_DEVICE_INFO_CHANGED, param)) != MM_ERROR_NONE) {
+		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_DEVICE_INFO_CHANGED, param)) != MM_ERROR_NONE) {
 			debug_error("Send device info changed signal failed");
 		}
 	} else {
@@ -2003,11 +2003,11 @@ int __mm_sound_mgr_ipc_dbus_notify_volume_changed(unsigned int vol_type, unsigne
 	int ret = MM_ERROR_NONE;
 	GVariant* param = NULL;
 
-	debug_log("Send Signal '%s'", signals[SOUND_SERVER_SIGNAL_VOLUME_CHANGED]);
+	debug_log("Send Signal '%s'", signals[SIGNAL_VOLUME_CHANGED]);
 
 	param = g_variant_new("(uu)", vol_type, value);
 	if (param) {
-		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SOUND_SERVER_SIGNAL_VOLUME_CHANGED, param)) != MM_ERROR_NONE) {
+		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_VOLUME_CHANGED, param)) != MM_ERROR_NONE) {
 			debug_error("Send device connected signal failed");
 		}
 	} else {
@@ -2022,11 +2022,11 @@ int __mm_sound_mgr_ipc_dbus_notify_play_file_end(int handle)
 	int ret = MM_ERROR_NONE;
 	GVariant* param = NULL;
 
-	debug_log("Send Signal '%s'", signals[SOUND_SERVER_SIGNAL_PLAY_FILE_END]);
+	debug_log("Send Signal '%s'", signals[SIGNAL_PLAY_FILE_END]);
 
 	param = g_variant_new("(i)", handle);
 	if (param) {
-		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SOUND_SERVER_SIGNAL_PLAY_FILE_END, param)) != MM_ERROR_NONE) {
+		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_PLAY_FILE_END, param)) != MM_ERROR_NONE) {
 			debug_error("Send play file end for '%d' failed", handle);
 		}
 	} else {

@@ -19,6 +19,7 @@
  *
  */
 
+#if 0
 #include <stdlib.h>
 #include <string.h>
 
@@ -420,6 +421,7 @@ void *pulse_client_thread_run (void *args)
 	pa_operation *o = NULL;
 	pa_client_command_t cmd = PA_CLIENT_NOT_USED;
 
+#if 0
 	while(1)
 	{
 		cmd = (pa_client_command_t)g_async_queue_pop(pinfo->queue);
@@ -510,6 +512,7 @@ unlock_and_fail:
 
 destroy:
 	pa_threaded_mainloop_unlock(pinfo->m);
+#endif
 
 	return 0;
 }
@@ -764,6 +767,7 @@ static void __bt_audio_connection_state_changed_cb(int result,
 		2 : BT_AUDIO_PROFILE_TYPE_A2DP
 		3 : BT_AUDIO_PROFILE_TYPE_AG    */
 
+#if 0
 	const static char * type_str[4] = { "ALL", "HSP/HFP", "A2DP", "AG" };
 	int length = sizeof(type_str) / sizeof(char*);
 	pulse_info_t* pinfo = (pulse_info_t*)user_data;
@@ -801,6 +805,7 @@ static void __bt_audio_connection_state_changed_cb(int result,
 		debug_msg("connection state changed end\n");
 	} else
 		debug_msg("bt ag-sco is not ready. ag_init(%d)\n", pinfo->ag_init);
+#endif
 
 }
 
@@ -2268,4 +2273,5 @@ int MMSoundMgrPulseFini(void* handle)
 	debug_leave("\n");
 	return MM_ERROR_NONE;
 }
+#endif
 
