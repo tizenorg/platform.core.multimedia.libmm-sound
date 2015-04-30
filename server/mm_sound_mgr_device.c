@@ -716,8 +716,8 @@ int _mm_sound_mgr_device_update_volume()
 
 #define RELEASE_DEVICE_INFO_ID(x_id) \
 do { \
-	if (g_device_id_array[x_id] == 1) { \
-		g_device_id_array[x_id] = 0; \
+	if (g_device_id_array[x_id-1] == 1) { \
+		g_device_id_array[x_id-1] = 0; \
 	} else { \
 		debug_error("could not release the id[%d]\n", x_id); \
 	} \
@@ -726,22 +726,22 @@ do { \
 #define SET_DEVICE_INFO_ID_AUTO(x_device_h) \
 do { \
 	int device_id = 0; \
-	int cnt = 0; \
+	int cnt = 1; \
 	if (!x_device_h) { \
 		debug_error("device_h is null, could not set device id"); \
 		break; \
 	} \
-	for (cnt = 0; cnt < MAX_SUPPORT_DEVICE_NUM; cnt++) { \
-		if (g_device_id_array[cnt] == 0) { \
+	for (cnt = 1; cnt < MAX_SUPPORT_DEVICE_NUM+1; cnt++) { \
+		if (g_device_id_array[cnt-1] == 0) { \
 			break; \
 		} \
 	} \
-	if (cnt == MAX_SUPPORT_DEVICE_NUM) { \
+	if (cnt == MAX_SUPPORT_DEVICE_NUM+1) { \
 		debug_error("could not get a new id, device array is full\n"); \
 		device_id = -1; \
 	} else { \
 		device_id = cnt; \
-		g_device_id_array[cnt] = 1; \
+		g_device_id_array[cnt-1] = 1; \
 	} \
 	x_device_h->id = device_id; \
 } while(0)

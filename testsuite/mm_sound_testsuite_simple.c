@@ -592,7 +592,7 @@ static void interpret (char *cmd)
 			if(strncmp(cmd, "k", 1) == 0)
 #endif
 			{
-				ret = mm_sound_play_keysound(KEYTONE_FILE, 8);
+				ret = mm_sound_play_keysound(KEYTONE_FILE, 0);
 				if(ret < 0)
 					debug_log("keysound play failed with 0x%x\n", ret);
 			}
