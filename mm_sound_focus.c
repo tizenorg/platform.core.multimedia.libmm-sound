@@ -31,6 +31,23 @@
 #include "server/include/mm_sound_mgr_focus.h"
 
 EXPORT_API
+int mm_sound_focus_get_uniq_id(int *id)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	ret = mm_sound_client_get_uniq_id(id);
+	if (ret) {
+		debug_error("Failed to mm_sound_client_get_uniq_id(), ret[0x%x]\n", ret);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
+EXPORT_API
 int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
@@ -127,18 +144,18 @@ int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char 
 }
 
 EXPORT_API
-int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data)
+int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data, int *id)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	if (callback == NULL) {
+	if (callback == NULL || id == NULL) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_set_focus_watch_callback(focus_type, callback, user_data);
+	ret = mm_sound_client_set_focus_watch_callback(focus_type, callback, user_data, id);
 	if (ret) {
 		debug_error("Could not set focus watch callback, ret[0x%x]\n", ret);
 	}
@@ -149,15 +166,15 @@ int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound
 }
 
 EXPORT_API
-int mm_sound_unset_focus_watch_callback(void)
+int mm_sound_unset_focus_watch_callback(int id)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = mm_sound_client_unset_focus_watch_callback();
+	ret = mm_sound_client_unset_focus_watch_callback(id);
 	if (ret) {
-		debug_error("Could not unset focus watch callback, ret = %x\n", ret);
+		debug_error("Could not unset focus watch callback, id(%d), ret = %x\n", id, ret);
 	}
 
 	debug_fleave();

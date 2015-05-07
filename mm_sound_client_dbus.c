@@ -58,8 +58,7 @@ struct user_callback {
 
 typedef gboolean (*focus_gLoopPollHandler_t)(gpointer d);
 
-typedef struct
-{
+typedef struct {
 	int focus_tid;
 	int handle;
 	int focus_fd;
@@ -1592,19 +1591,6 @@ static int _focus_find_index_by_handle(int handle)
 	return -1;
 }
 
-static int _focus_find_index_by_watch(int pid)
-{
-	int i = 0;
-	for(i = 0; i< FOCUS_HANDLE_MAX; i++) {
-		if (pid == g_focus_sound_handle[i].focus_tid && g_focus_sound_handle[i].watch_callback) {
-			//debug_msg("found index(%d) for handle(%d)", i, handle);
-			return i;
-		}
-	}
-	debug_msg("can not find watch callback index with given pid[%d]", pid);
-	return -1;
-}
-
 static bool _focus_callback_handler(gpointer d)
 {
 	GPollFD *data = (GPollFD*)d;
@@ -1710,9 +1696,9 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 			return FALSE;
 		}
 
-		focus_index = _focus_find_index_by_watch(cb_data.pid);
-		if (focus_index == -1) {
-			debug_error("Can not find index");
+		focus_index = cb_data.handle;
+		if (focus_index < 0) {
+			debug_error("index is not valid, %d", focus_index);
 			return FALSE;
 		}
 
@@ -1734,7 +1720,7 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 		}
 
 		debug_msg("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].watch_callback);
-		(g_focus_sound_handle[focus_index].watch_callback)(cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
+		(g_focus_sound_handle[focus_index].watch_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
 		debug_msg("[CALLBACK END]");
 
 #ifdef CONFIG_ENABLE_RETCB
@@ -2275,7 +2261,7 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, void* user_data)
+int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, void* user_data, int *id)
 {
 	int ret = MM_ERROR_NONE;
 	int instance;
@@ -2286,6 +2272,9 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 #endif
 
 	debug_fenter();
+
+	if (!id)
+		return MM_ERROR_INVALID_ARGUMENT;
 
 	//pthread_mutex_lock(&g_thread_mutex2);
 
@@ -2305,18 +2294,17 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
-	params = g_variant_new("(@ayii)", _get_cookie_variant(), instance, type);
+	params = g_variant_new("(@ayiii)", _get_cookie_variant(), instance, index, type);
 #else /* USE_SECURITY */
 	gethostname(container, sizeof(container));
 	debug_error("container = %s", container);
-	params = g_variant_new("(sii)", container, instance, type);
+	params = g_variant_new("(siii)", container, instance, index, type);
 #endif /* USE_SECURITY */
 
 #else /* SUPPORT_CONTAINER */
-	params = g_variant_new("(ii)", instance, type);
+	params = g_variant_new("(iii)", instance, index, type);
 
 #endif /* SUPPORT_CONTAINER */
-
 
 	if (params) {
 		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_WATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
@@ -2337,7 +2325,6 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 			if (g_focus_thread == NULL) {
 				debug_error ("could not create thread..");
 				g_main_loop_unref(g_focus_loop);
-				g_focus_sound_handle[index].is_used = false;
 				ret = MM_ERROR_SOUND_INTERNAL;
 				goto cleanup;
 			}
@@ -2350,7 +2337,12 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 
 	_focus_init_callback(index, true);
 
+	*id = index;
+
 cleanup:
+	if (ret) {
+		g_focus_sound_handle[index].is_used = false;
+	}
 	//pthread_mutex_unlock(&g_thread_mutex2);
 
 	if (result) {
@@ -2360,12 +2352,12 @@ cleanup:
 	debug_fleave();
 
 	return ret;
+
 }
 
-int mm_sound_client_dbus_unset_focus_watch_callback(void)
+int mm_sound_client_dbus_unset_focus_watch_callback(int id)
 {
 	int ret = MM_ERROR_NONE;
-	int instance;
 	int index = -1;
 	GVariant* params = NULL, *result = NULL;
 
@@ -2373,14 +2365,17 @@ int mm_sound_client_dbus_unset_focus_watch_callback(void)
 
 	//pthread_mutex_lock(&g_thread_mutex2);
 
-	instance = getpid();
-	index = _focus_find_index_by_watch(instance);
+	index = id;
+	if (index < 0) {
+		debug_error("index is not valid, %d", index);
+		return FALSE;
+	}
 
 	if (g_focus_sound_handle[index].focus_lock) {
 		g_mutex_lock(g_focus_sound_handle[index].focus_lock);
 	}
 
-	params = g_variant_new("(i)", instance);
+	params = g_variant_new("(ii)", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	if (params) {
 		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_UNWATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus unset watch focus failed");

@@ -124,10 +124,12 @@
 #endif
 #endif
   "      <arg name='pid' type='i' direction='in'/>"
+  "      <arg name='handle_id' type='i' direction='in'/>"
   "      <arg name='focus_type' type='i' direction='in'/>"
   "    </method>"
   "    <method name='UnwatchFocus'>"
   "      <arg name='pid' type='i' direction='in'/>"
+  "      <arg name='handle_id' type='i' direction='in'/>"
   "    </method>"
   "    <method name='ASMRegisterSound'>"
 #ifdef SUPPORT_CONTAINER
@@ -1104,7 +1106,7 @@ send_reply:
 static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
-	int pid = 0, focus_type = 0;
+	int pid = 0, handle_id = 0, focus_type = 0;
 	GVariant *params = NULL;
 #ifdef SUPPORT_CONTAINER
 	int container_pid = -1;
@@ -1124,20 +1126,20 @@ static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
-	g_variant_get(params, "(@ayii)", &cookie_data, &container_pid, &focus_type);
+	g_variant_get(params, "(@ayiii)", &cookie_data, &container_pid, &handle_id, &focus_type);
 	container = _get_container_from_cookie(cookie_data);
-	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation), focus_type, container, container_pid);
+	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, container, container_pid);
 
 	if (container)
 		free(container);
 #else /* USE_SECURITY */
-	g_variant_get(params, "(sii)", &container, &container_pid, &focus_type);
-	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation), focus_type, container, container_pid);
+	g_variant_get(params, "(siii)", &container, &container_pid, &handle_id, &focus_type);
+	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, container, container_pid);
 
 #endif /* USE_SECURITY */
 #else /* SUPPORT_CONTAINER */
-	g_variant_get(params, "(ii)", &pid, &focus_type);
-	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation),focus_type);
+	g_variant_get(params, "(iii)", &pid, &handle_id, &focus_type);
+	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type);
 
 #endif /* SUPPORT_CONTAINER */
 
@@ -1157,6 +1159,7 @@ static void handle_method_unwatch_focus (GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int pid = 0;
+	int handle_id = 0;
 	GVariant *params = NULL;
 
 	debug_fenter();
@@ -1167,8 +1170,8 @@ static void handle_method_unwatch_focus (GDBusMethodInvocation* invocation)
 		goto send_reply;
 	}
 
-	g_variant_get(params, "(i)", &pid);
-	ret = __mm_sound_mgr_ipc_unwatch_focus(pid);
+	g_variant_get(params, "(ii)", &pid, &handle_id);
+	ret = __mm_sound_mgr_ipc_unwatch_focus(pid, handle_id);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {

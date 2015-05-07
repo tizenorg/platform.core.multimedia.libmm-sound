@@ -550,7 +550,7 @@ static int _mm_sound_mgr_focus_watch_list_dump ()
 	for (list = g_focus_node_list; list != NULL; list = list->next) {
 		node = (focus_node_t *)list->data;
 		if (node && node->is_for_watch) {
-			debug_log("*** pid[%5d]/watch on focus status[%s]\n", node->pid, focus_status_str[node->status]);
+			debug_log("*** pid[%5d]/handle_id[%d]/watch on focus status[%s]\n", node->pid, node->handle_id, focus_status_str[node->status]);
 		}
 	}
 	debug_log("========================================== focus watch node list : end ===============================================\n");
@@ -708,6 +708,12 @@ int mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param
 			}
 		}
 	}
+
+	if (my_node == NULL) {
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto FINISH;
+	}
+
 	/* check if the priority of any node is higher than its based on io direction */
 	for (list = g_focus_node_list; list != NULL; list = list->next) {
 		node = (focus_node_t *)list->data;
@@ -797,6 +803,11 @@ int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param
 		}
 	}
 
+	if (my_node == NULL) {
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto FINISH;
+	}
+
 	for (list = g_focus_node_list; list != NULL; list = list->next) {
 		node = (focus_node_t *)list->data;
 		if (node == my_node || node->is_for_watch) {
@@ -849,8 +860,8 @@ int mm_sound_mgr_focus_set_watch_cb (const _mm_sound_mgr_focus_param_t *param)
 
 	for (list = g_focus_node_list; list != NULL; list = list->next) {
 		node = (focus_node_t *)list->data;
-		if (node && (node->pid == param->pid) && node->is_for_watch) {
-			debug_error("the node of pid[%d] for watch focus is already created\n", param->pid);
+		if (node && (node->pid == param->pid) && (node->handle_id == param->handle_id) && node->is_for_watch) {
+			debug_error("the node of pid[%d]/handle_id[%d] for watch focus is already created\n", param->pid, param->handle_id);
 			ret = MM_ERROR_INVALID_ARGUMENT;
 			goto FINISH;
 		}
@@ -895,8 +906,8 @@ int mm_sound_mgr_focus_unset_watch_cb (const _mm_sound_mgr_focus_param_t *param)
 
 	for (list = g_focus_node_list; list != NULL; list = list->next) {
 		node = (focus_node_t *)list->data;
-		if (node && (node->pid == param->pid) && (node->is_for_watch)) {
-			debug_log("found the node of pid[%d] for watch focus\n", param->pid);
+		if (node && (node->pid == param->pid) && (node->handle_id == param->handle_id) && (node->is_for_watch)) {
+			debug_log("found the node of pid[%d]/handle_id[%d] for watch focus\n", param->pid, param->handle_id);
 			g_focus_node_list = g_list_remove(g_focus_node_list, node);
 			g_free(node);
 			ret = MM_ERROR_NONE;
@@ -904,7 +915,7 @@ int mm_sound_mgr_focus_unset_watch_cb (const _mm_sound_mgr_focus_param_t *param)
 		}
 	}
 	if (list == NULL) {
-		debug_error("could not find any node of pid[%d] for watch focus\n", param->pid);
+		debug_error("could not find any node of pid[%d]/handle_id[%d] for watch focus\n", param->pid, param->handle_id);
 		ret = MM_ERROR_INVALID_ARGUMENT;
 		goto FINISH;
 	}

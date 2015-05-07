@@ -63,6 +63,7 @@
 //static GList *g_device_list = NULL;
 static mm_sound_device_list_t g_device_list_t;
 static pthread_mutex_t g_device_list_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_id_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int mm_sound_client_initialize(void)
 {
@@ -485,12 +486,31 @@ int mm_sound_client_get_audio_path(mm_sound_device_in *device_in, mm_sound_devic
 
 
 #ifdef USE_FOCUS
+int mm_sound_client_get_uniq_id(int *id)
+{
+	static int uniq_id = 0;
+	int ret = MM_ERROR_NONE;
+
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_id_mutex, MM_ERROR_SOUND_INTERNAL);
+	debug_fenter();
+
+	if (!id)
+		ret = MM_ERROR_INVALID_ARGUMENT;
+	else
+		*id = ++uniq_id;
+
+	debug_fleave();
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_id_mutex);
+
+	return ret;
+}
+
 int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_register_focus(id, stream_type, callback,  user_data);
+	ret = mm_sound_client_dbus_register_focus(id, stream_type, callback, user_data);
 
 	debug_fleave();
 	return ret;
@@ -529,23 +549,23 @@ int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char
 	return ret;
 }
 
-int mm_sound_client_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void* user_data)
+int mm_sound_client_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void* user_data, int *id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	mm_sound_client_dbus_set_focus_watch_callback(focus_type, callback, user_data);
+	mm_sound_client_dbus_set_focus_watch_callback(focus_type, callback, user_data, id);
 
 	debug_fleave();
 	return ret;
 }
 
-int mm_sound_client_unset_focus_watch_callback(void)
+int mm_sound_client_unset_focus_watch_callback(int id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_unset_focus_watch_callback();
+	ret = mm_sound_client_dbus_unset_focus_watch_callback(id);
 
 	debug_fleave();
 	return ret;

@@ -360,13 +360,14 @@ int __mm_sound_mgr_ipc_release_focus(int pid, int handle_id, int focus_type, con
 
 #ifdef SUPPORT_CONTAINER
 // method + add callback
-int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type, const char* container_name, int container_pid)
+int __mm_sound_mgr_ipc_watch_focus(int pid, int handle_id, int focus_type, const char* container_name, int container_pid)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
 
 	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
 	param.pid = pid;
+	param.handle_id = handle_id;
 	param.request_type = focus_type;
 //	param.callback = msg->sound_msg.callback;
 //	param.cbdata = msg->sound_msg.cbdata;
@@ -377,13 +378,14 @@ int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type, const char* containe
 	return ret;
 }
 #else
-int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type)
+int __mm_sound_mgr_ipc_watch_focus(int pid, int handle_id, int focus_type)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
 
 	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
 	param.pid = pid;
+	param.handle_id = handle_id;
 	param.request_type = focus_type;
 //	param.callback = msg->sound_msg.callback;
 //	param.cbdata = msg->sound_msg.cbdata;
@@ -395,13 +397,14 @@ int __mm_sound_mgr_ipc_watch_focus(int pid, int focus_type)
 #endif
 
 // method + remove callback
-int __mm_sound_mgr_ipc_unwatch_focus(int pid)
+int __mm_sound_mgr_ipc_unwatch_focus(int pid, int handle_id)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
 
 	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
 	param.pid = pid;
+	param.handle_id = handle_id;
 
 	ret = mm_sound_mgr_focus_unset_watch_cb(&param);
 
