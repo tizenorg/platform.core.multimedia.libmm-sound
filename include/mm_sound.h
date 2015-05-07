@@ -2066,7 +2066,6 @@ typedef enum {
 	MM_SOUND_DEVICE_STATE_ACTIVATED,
 } mm_sound_device_state_e;
 
-#if 0
 typedef enum
 {
 	MM_SOUND_DEVICE_TYPE_BUILTIN_SPEAKER,   /**< Built-in speaker. */
@@ -2078,7 +2077,6 @@ typedef enum
 	MM_SOUND_DEVICE_TYPE_MIRRORING,         /**< MIRRORING. */
 	MM_SOUND_DEVICE_TYPE_USB_AUDIO,         /**< USB Audio. */
 } mm_sound_device_type_e;
-#endif
 
 typedef void *MMSoundDevice_t;          /**< MMsound Device handle */
 typedef void *MMSoundDeviceList_t;      /**< MMsound Device list handle */
@@ -2093,7 +2091,7 @@ int mm_sound_remove_device_information_changed_callback(void);
 int mm_sound_get_current_device_list(mm_sound_device_flags_e device_mask, MMSoundDeviceList_t *device_list);
 int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *device);
 int mm_sound_get_prev_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *device);
-int mm_sound_get_device_type(MMSoundDevice_t device_h, char **type);
+int mm_sound_get_device_type(MMSoundDevice_t device_h, mm_sound_device_type_e *type);
 int mm_sound_get_device_io_direction(MMSoundDevice_t device_h, mm_sound_device_io_direction_e *io_direction);
 int mm_sound_get_device_id(MMSoundDevice_t device_h, int *id);
 int mm_sound_get_device_state(MMSoundDevice_t device_h, mm_sound_device_state_e *state);

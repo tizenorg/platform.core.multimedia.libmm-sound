@@ -29,6 +29,8 @@
 #include "include/mm_sound.h"
 #include "include/mm_sound_device.h"
 
+#define DEVICE_TYPE_LEN 64
+
 bool g_is_new_device_list = true;
 
 static int _check_for_valid_mask (mm_sound_device_flags_e flags)
@@ -60,6 +62,38 @@ static int _check_for_valid_mask (mm_sound_device_flags_e flags)
 	if (ret) {
 		debug_error("flags[0x%x] is not valid\n", flags);
 	}
+	return ret;
+}
+
+static int __convert_device_type_to_enum (char *device_type, mm_sound_device_type_e *device_type_enum)
+{
+	int ret = MM_ERROR_NONE;
+
+	if (!device_type || !device_type_enum) {
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (!strncmp(device_type, "builtin-speaker", DEVICE_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_BUILTIN_SPEAKER;
+	} else if (!strncmp(device_type, "builtin-receiver", DEVICE_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_BUILTIN_RECEIVER;
+	} else if (!strncmp(device_type, "builtin-mic", DEVICE_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_BUILTIN_MIC;
+	} else if (!strncmp(device_type, "audio-jack", DEVICE_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_AUDIOJACK;
+	} else if (!strncmp(device_type, "bt", DEVICE_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_BLUETOOTH;
+	} else if (!strncmp(device_type, "hdmi", DEVICE_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_HDMI;
+	} else if (!strncmp(device_type, "forwarding", DEVICE_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_MIRRORING;
+	} else if (!strncmp(device_type, "usb-audio", DEVICE_TYPE_LEN)) {
+		*device_type_enum = MM_SOUND_DEVICE_TYPE_USB_AUDIO;
+	} else {
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		debug_error("not supported device_type(%s), err(0x%08x)", device_type, ret);
+	}
+
 	return ret;
 }
 
@@ -204,15 +238,15 @@ int mm_sound_get_prev_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 }
 
 EXPORT_API
-int mm_sound_get_device_type(MMSoundDevice_t device_h, char **type)
+int mm_sound_get_device_type(MMSoundDevice_t device_h, mm_sound_device_type_e *type)
 {
 	mm_sound_device_t *device = (mm_sound_device_t*)device_h;
 	if(!device || !type) {
 		debug_error("invalid argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	*type = device->type;
-	debug_log("device_handle:0x%x, type:%s\n", device, *type);
+	__convert_device_type_to_enum(device->type, type);
+	debug_log("device_handle:0x%x, type:%d\n", device, *type);
 
 	return MM_ERROR_NONE;
 }
