@@ -581,8 +581,11 @@ static void interpret (char *cmd)
 				else if(flag_1 == '2') { type = 2; }
 				else if(flag_1 == '3') { type = 3; }
 				else { type = 1; }
-
+#ifdef NEW_FOCUS_WATCH
 				ret = mm_sound_set_focus_watch_callback(type, focus_watch_cb, user_data, &g_focus_watch_index);
+#else
+				ret = mm_sound_set_focus_watch_callback(type, focus_watch_cb, user_data);
+#endif
 				if (ret) {
 					g_print("failed to mm_sound_set_focus_watch_callback(), ret[0x%x]\n", ret);
 				} else {
@@ -592,7 +595,11 @@ static void interpret (char *cmd)
 
 			else if(strncmp(cmd, "WU", 2) ==0) {
 				int ret = 0;
+#ifdef NEW_FOCUS_WATCH
 				ret = mm_sound_unset_focus_watch_callback(g_focus_watch_index);
+#else
+				ret = mm_sound_unset_focus_watch_callback();
+#endif
 				if (ret) {
 					g_print("failed to mm_sound_unset_focus_watch_callback(), ret[0x%x]\n", ret);
 				}
