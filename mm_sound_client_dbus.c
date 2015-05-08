@@ -1812,7 +1812,7 @@ void _focus_close_callback(int index, bool is_for_watching)
 	debug_fenter();
 
 	if (g_focus_sound_handle[index].focus_fd < 0) {
-		debug_error("%Close fail : fd error.");
+		debug_error("Close fail : fd error.");
 	} else {
 		char *filename;
 		if (is_for_watching) {
@@ -1824,7 +1824,7 @@ void _focus_close_callback(int index, bool is_for_watching)
 		if (remove(filename)) {
 			debug_error("remove() failure, filename(%s), errno(%d)", filename, errno);
 		}
-		debug_log("%Close Sucess : index(%d), filename(%s)", index, filename);
+		debug_log("Close Sucess : index(%d), filename(%s)", index, filename);
 		g_free(filename);
 		filename = NULL;
 	}
