@@ -275,6 +275,9 @@ static void displaymenu()
 #ifdef USE_FOCUS
 		g_print("	Focus APIs\n");
 		g_print("==================================================================\n");
+		g_print("DS : signal subscribe for stream info\t");
+		g_print("DU : signal unsubscribe for stream info\n");
+		g_print("SS : Send signal for stream info\n");
 		g_print("GU : Get Focus id\n");
 		g_print("SF : Set Focus Callback\t");
 		g_print("UF : Unset Focus Callback\n");
@@ -407,9 +410,28 @@ static void __mm_sound_active_device_changed_cb (mm_sound_device_in device_in, m
 			device_in, __get_capture_device_str(device_in), device_out, __get_playback_device_str(device_out));
 }
 
+static void __mm_sound_signal_cb1 (mm_sound_signal_name_t signal, int value, void *user_data)
+{
+	int _value = 0;
+	g_print ("[%s] signal[%d], value[%d], user_data[0x%x]]\n", __func__, signal, value, user_data);
+	mm_sound_get_signal_value (signal, &_value);
+	g_print (" -- get value : %d\n", _value);
+}
+
+static void __mm_sound_signal_cb2 (mm_sound_signal_name_t signal, int value, void *user_data)
+{
+	int _value = 0;
+	g_print ("[%s] signal[%d], value[%d], user_data[0x%x]]\n", __func__, signal, value, user_data);
+	mm_sound_get_signal_value (signal, &_value);
+	g_print (" -- get value : %d\n", _value);
+}
+unsigned int g_subscribe_id1 = 0;
+unsigned int g_subscribe_id2 = 0;
+
 static void interpret (char *cmd)
 {
 	int ret=0;
+	int value = 0;
 	static int handle = -1;
 	MMSoundPlayParam soundparam = {0,};
 
@@ -417,7 +439,44 @@ static void interpret (char *cmd)
 	{
 		case CURRENT_STATUS_MAINMENU:
 #ifdef USE_FOCUS
-			if(strncmp(cmd, "GU", 2) ==0) {
+			if(strncmp(cmd, "DS", 2) ==0) {
+				ret = mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &g_subscribe_id1, __mm_sound_signal_cb1, NULL);
+				if(ret < 0)
+					debug_log("mm_sound_subscribe_signal() failed with 0x%x\n", ret);
+				else
+					debug_log("id: %u, callback:0x%x\n", g_subscribe_id1, __mm_sound_signal_cb1);
+				ret = mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &g_subscribe_id2, __mm_sound_signal_cb2, NULL);
+				if(ret < 0)
+					debug_log("mm_sound_subscribe_signal() failed with 0x%x\n", ret);
+				else
+					debug_log("id: %u, callback:0x%x\n", g_subscribe_id2, __mm_sound_signal_cb2);
+			}
+
+			else if(strncmp(cmd, "DU", 2) ==0) {
+				mm_sound_unsubscribe_signal(g_subscribe_id1);
+				debug_log("unsubscribe_signal for id[%d]\n", g_subscribe_id1);
+				mm_sound_unsubscribe_signal(g_subscribe_id2);
+				debug_log("unsubscribe_signal for id[%d]\n", g_subscribe_id2);
+			}
+
+			else if(strncmp(cmd, "SS", 2) ==0) {
+				ret = mm_sound_send_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 1);
+				if(ret < 0)
+					debug_log("mm_sound_send_signal() failed with 0x%x\n", ret);
+				else
+					debug_log("mm_sound_send_signal for signal[%s], value[%d] is success\n", MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 1);
+				mm_sound_get_signal_value (MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &value);
+				g_print (" -- get value of RELEASE_INTERNAL_FOCUS : %d\n", value);
+				ret = mm_sound_send_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 0);
+				if(ret < 0)
+					debug_log("mm_sound_send_signal() failed with 0x%x\n", ret);
+				else
+					debug_log("mm_sound_send_signal for signal[%s], value[%d] is success\n", MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 0);
+				mm_sound_get_signal_value (MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &value);
+				g_print (" -- get value of RELEASE_INTERNAL_FOCUS : %d\n", value);
+			}
+
+			else if(strncmp(cmd, "GU", 2) ==0) {
 				int id = 0;
 				ret = mm_sound_focus_get_id(&id);
 				if(ret < 0)

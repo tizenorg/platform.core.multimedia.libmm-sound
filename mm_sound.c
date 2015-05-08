@@ -63,6 +63,28 @@ volume_cb_param g_volume_param[VOLUME_TYPE_MAX];
 
 static pthread_mutex_t g_volume_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+#include <gio/gio.h>
+
+static GList *g_subscribe_cb_list = NULL;
+static pthread_mutex_t g_subscribe_cb_list_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+#define MM_SOUND_DBUS_BUS_NAME_PREPIX  "org.tizen.MMSound"
+#define MM_SOUND_DBUS_OBJECT_PATH  "/org/tizen/MMSound"
+#define MM_SOUND_DBUS_INTERFACE    "org.tizen.mmsound"
+
+GDBusConnection *g_dbus_conn_mmsound;
+
+int g_dbus_signal_values[MM_SOUND_SIGNAL_MAX] = {0,};
+
+const char* dbus_signal_name_str[] = {
+	"ReleaseInternalFocus",
+};
+
+typedef struct _subscribe_cb {
+	mm_sound_signal_callback callback;
+	void *user_data;
+	unsigned int id;
+} subscribe_cb_t;
 
 static char* _get_volume_str (volume_type_t type)
 {
@@ -901,6 +923,271 @@ int mm_sound_remove_test_callback(void)
 		debug_error("Can not remove test callback, ret = %x\n", ret);
 	}
 	debug_log("mm_sound_remove_test_callback leave");
+
+	return ret;
+}
+
+static void signal_callback(GDBusConnection *conn,
+							   const gchar *sender_name,
+							   const gchar *object_path,
+							   const gchar *interface_name,
+							   const gchar *signal_name,
+							   GVariant *parameters,
+							   gpointer user_data)
+{
+	int value=0;
+	const GVariantType* value_type;
+
+	debug_msg ("sender : %s, object : %s, interface : %s, signal : %s",
+			sender_name, object_path, interface_name, signal_name);
+	if(g_variant_is_of_type(parameters, G_VARIANT_TYPE("(i)"))) {
+		g_variant_get(parameters, "(i)",&value);
+		debug_msg(" - value : %d\n", value);
+		_dbus_signal_callback (signal_name, value, user_data);
+	} else	{
+		value_type = g_variant_get_type(parameters);
+		debug_warning("signal type is %s", value_type);
+	}
+}
+
+int _convert_signal_name_str_to_enum (const char *name_str, mm_sound_signal_name_t *name_enum) {
+	int ret = MM_ERROR_NONE;
+
+	if (!name_str || !name_enum)
+		return MM_ERROR_INVALID_ARGUMENT;
+
+	if (!strncmp(name_str, "ReleaseInternalFocus", strlen("ReleaseInternalFocus"))) {
+		*name_enum = MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS;
+	} else {
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		LOGE("not supported signal name(%s), err(0x%08x)", name_str, ret);
+	}
+	return ret;
+}
+
+void _dbus_signal_callback (const char *signal_name, int value, void *user_data)
+{
+	int ret = MM_ERROR_NONE;
+	mm_sound_signal_name_t signal;
+	subscribe_cb_t *subscribe_cb = (subscribe_cb_t*)user_data;
+
+	debug_fenter();
+
+	ret = _convert_signal_name_str_to_enum(signal_name, &signal);
+	if (ret)
+		return;
+
+	debug_msg ("signal_name[%s], value[%d], user_data[0x%x]\n", signal_name, value, user_data);
+
+	subscribe_cb->callback(signal, value, subscribe_cb->user_data);
+
+	debug_fleave();
+
+	return;
+}
+
+EXPORT_API
+int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subscribe_id, mm_sound_signal_callback callback, void *user_data)
+{
+	int ret = MM_ERROR_NONE;
+	GError *err = NULL;
+	char *bus_name = NULL;
+	subscribe_cb_t *subscribe_cb = NULL;
+
+	debug_fenter();
+
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_subscribe_cb_list_mutex, MM_ERROR_SOUND_INTERNAL);
+
+	if (signal < 0 || signal >= MM_SOUND_SIGNAL_MAX || !subscribe_id) {
+		debug_error ("invalid argument, signal(%d), subscribe_id(0x%p)", signal, subscribe_id);
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto error;
+	}
+
+	subscribe_cb = malloc(sizeof(subscribe_cb_t));
+	if (!subscribe_cb) {
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error;
+	}
+	memset(subscribe_cb, 0, sizeof(subscribe_cb_t));
+
+	g_type_init();
+
+	g_dbus_conn_mmsound = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
+	if (!g_dbus_conn_mmsound && err) {
+		debug_error ("g_bus_get_sync() error (%s) ", err->message);
+		g_error_free (err);
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error;
+	}
+
+	subscribe_cb->callback = callback;
+	subscribe_cb->user_data = user_data;
+
+	if (signal == MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS)
+		bus_name = g_strdup_printf("%s.%d", MM_SOUND_DBUS_BUS_NAME_PREPIX, getpid());
+	else
+		bus_name = g_strdup_printf("%s", MM_SOUND_DBUS_BUS_NAME_PREPIX);
+	*subscribe_id = g_dbus_connection_signal_subscribe(g_dbus_conn_mmsound,
+			NULL, MM_SOUND_DBUS_INTERFACE, dbus_signal_name_str[signal], MM_SOUND_DBUS_OBJECT_PATH, NULL, 0,
+			signal_callback, subscribe_cb, NULL);
+	if (*subscribe_id == 0) {
+		debug_error ("g_dbus_connection_signal_subscribe() error (%d)", *subscribe_id);
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto sig_error;
+	}
+
+	subscribe_cb->id = *subscribe_id;
+
+	if (bus_name)
+		g_free(bus_name);
+
+	g_subscribe_cb_list = g_list_append(g_subscribe_cb_list, subscribe_cb);
+	if (g_subscribe_cb_list) {
+		debug_log("new subscribe_cb(0x%x) is added\n", subscribe_cb);
+	} else {
+		debug_error("g_list_append failed\n");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error;
+	}
+
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
+
+	debug_fleave();
+
+	return ret;
+
+sig_error:
+	if (bus_name)
+		g_free(bus_name);
+	g_dbus_connection_signal_unsubscribe(g_dbus_conn_mmsound, *subscribe_id);
+	g_object_unref(g_dbus_conn_mmsound);
+
+error:
+	if (subscribe_cb)
+		free (subscribe_cb);
+
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
+
+	return ret;
+}
+
+EXPORT_API
+void mm_sound_unsubscribe_signal(unsigned int subscribe_id)
+{
+	GList *list = NULL;
+	subscribe_cb_t *subscribe_cb = NULL;
+
+	debug_fenter();
+
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_subscribe_cb_list_mutex, MM_ERROR_SOUND_INTERNAL);
+
+	if (g_dbus_conn_mmsound && subscribe_id) {
+		g_dbus_connection_signal_unsubscribe(g_dbus_conn_mmsound, subscribe_id);
+		g_object_unref(g_dbus_conn_mmsound);
+		for (list = g_subscribe_cb_list; list != NULL; list = list->next) {
+			subscribe_cb = (subscribe_cb_t *)list->data;
+			if (subscribe_cb && (subscribe_cb->id == subscribe_id)) {
+				g_subscribe_cb_list = g_list_remove(g_subscribe_cb_list, subscribe_cb);
+				debug_log("subscribe_cb(0x%x) is removed\n", subscribe_cb);
+				free (subscribe_cb);
+			}
+		}
+	}
+
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
+
+	debug_fleave();
+}
+
+EXPORT_API
+int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
+{
+	int ret = MM_ERROR_NONE;
+	GError *err = NULL;
+	GDBusConnection *conn = NULL;
+	gboolean dbus_ret = TRUE;
+	char *bus_name = NULL;
+
+	debug_fenter();
+
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_subscribe_cb_list_mutex, MM_ERROR_SOUND_INTERNAL);
+
+	if (signal < 0 || signal >= MM_SOUND_SIGNAL_MAX) {
+		debug_error ("invalid argument, signal(%d)", signal);
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto error;
+	}
+
+	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
+	if (!conn && err) {
+		debug_error ("g_bus_get_sync() error (%s)", err->message);
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error;
+	}
+
+	g_dbus_signal_values[signal] = value;
+
+	if (signal == MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS)
+		bus_name = g_strdup_printf("%s.%d", MM_SOUND_DBUS_BUS_NAME_PREPIX, getpid());
+	else
+		bus_name = g_strdup_printf("%s", MM_SOUND_DBUS_BUS_NAME_PREPIX);
+	dbus_ret = g_dbus_connection_emit_signal (conn,
+				bus_name, MM_SOUND_DBUS_OBJECT_PATH, MM_SOUND_DBUS_INTERFACE, dbus_signal_name_str[signal],
+				g_variant_new ("(i)", value),
+				&err);
+	if (!dbus_ret && err) {
+		debug_error ("g_dbus_connection_emit_signal() error (%s)", err->message);
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error;
+	}
+
+	dbus_ret = g_dbus_connection_flush_sync(conn, NULL, &err);
+	if (!dbus_ret && err) {
+		debug_error ("g_dbus_connection_flush_sync() error (%s)", err->message);
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error;
+	}
+
+	g_object_unref(conn);
+	debug_msg ("sending signal[%s], value[%d] success", dbus_signal_name_str[signal], value);
+
+	if (bus_name)
+		g_free(bus_name);
+
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
+
+	debug_fleave();
+
+	return ret;
+
+error:
+	if (bus_name)
+		g_free(bus_name);
+	if (err)
+		g_error_free (err);
+	if (conn)
+		g_object_unref(conn);
+
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_get_signal_value(mm_sound_signal_name_t signal, int *value)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_subscribe_cb_list_mutex, MM_ERROR_SOUND_INTERNAL);
+
+	*value = g_dbus_signal_values[signal];
+
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
+
+	debug_fleave();
 
 	return ret;
 }

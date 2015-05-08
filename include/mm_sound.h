@@ -2349,11 +2349,21 @@ int mm_sound_set_sound_path_for_active_device(mm_sound_device_out device_out, mm
 int mm_sound_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
 
-
 typedef void (*mm_sound_test_cb) (int a, void *user_data);
 int mm_sound_test(int a, int b, int* get);
 int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data);
 int mm_sound_remove_test_callback(void);
+
+typedef enum {
+	MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS,
+	MM_SOUND_SIGNAL_MAX,
+} mm_sound_signal_name_t;
+
+typedef void (* mm_sound_signal_callback) (mm_sound_signal_name_t signal, int value, void *user_data);
+int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subscribe_id, mm_sound_signal_callback callback, void *user_data);
+void mm_sound_unsubscribe_signal(unsigned int subscribe_id);
+int mm_sound_send_signal(mm_sound_signal_name_t signal, int value);
+int mm_sound_get_signal_value(mm_sound_signal_name_t signal, int *value);
 
 /**
 	@}
