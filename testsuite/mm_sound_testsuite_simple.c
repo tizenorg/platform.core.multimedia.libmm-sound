@@ -275,7 +275,7 @@ static void displaymenu()
 #ifdef USE_FOCUS
 		g_print("	Focus APIs\n");
 		g_print("==================================================================\n");
-		g_print("GU : Get Focus Uniq id\n");
+		g_print("GU : Get Focus id\n");
 		g_print("SF : Set Focus Callback\t");
 		g_print("UF : Unset Focus Callback\n");
 		g_print("AF : Acquire Focus\t");
@@ -419,11 +419,11 @@ static void interpret (char *cmd)
 #ifdef USE_FOCUS
 			if(strncmp(cmd, "GU", 2) ==0) {
 				int id = 0;
-				ret = mm_sound_focus_get_uniq_id(&id);
+				ret = mm_sound_focus_get_id(&id);
 				if(ret < 0)
-					debug_log("mm_sound_focus_get_uniq_id() failed with 0x%x\n", ret);
+					debug_log("mm_sound_focus_get_id() failed with 0x%x\n", ret);
 				else
-					debug_log("uniq id : %d\n", id);
+					debug_log("id : %d\n", id);
 			}
 
 			else if(strncmp(cmd, "SF", 2) ==0) {
@@ -581,11 +581,7 @@ static void interpret (char *cmd)
 				else if(flag_1 == '2') { type = 2; }
 				else if(flag_1 == '3') { type = 3; }
 				else { type = 1; }
-#ifdef NEW_FOCUS_WATCH
 				ret = mm_sound_set_focus_watch_callback(type, focus_watch_cb, user_data, &g_focus_watch_index);
-#else
-				ret = mm_sound_set_focus_watch_callback(type, focus_watch_cb, user_data);
-#endif
 				if (ret) {
 					g_print("failed to mm_sound_set_focus_watch_callback(), ret[0x%x]\n", ret);
 				} else {
@@ -595,11 +591,7 @@ static void interpret (char *cmd)
 
 			else if(strncmp(cmd, "WU", 2) ==0) {
 				int ret = 0;
-#ifdef NEW_FOCUS_WATCH
 				ret = mm_sound_unset_focus_watch_callback(g_focus_watch_index);
-#else
-				ret = mm_sound_unset_focus_watch_callback();
-#endif
 				if (ret) {
 					g_print("failed to mm_sound_unset_focus_watch_callback(), ret[0x%x]\n", ret);
 				}

@@ -45,7 +45,8 @@ typedef enum {
 	FOCUS_FOR_BOTH,
 } mm_sound_focus_type_e;
 
-int mm_sound_focus_get_uniq_id(int *id);
+int mm_sound_focus_get_id(int *id);
+
 typedef void (*mm_sound_focus_changed_cb) (int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data);
 int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data);
 int mm_sound_unregister_focus(int id);
@@ -53,13 +54,9 @@ int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char 
 int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info);
 
 typedef void (*mm_sound_focus_changed_watch_cb) (int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data);
-#ifdef NEW_FOCUS_WATCH
 int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data, int *id);
 int mm_sound_unset_focus_watch_callback(int id);
-#else
-int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data);
-int mm_sound_unset_focus_watch_callback(void);
-#endif
+
 
 #ifdef __cplusplus
 }
