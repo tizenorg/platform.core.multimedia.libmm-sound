@@ -1029,7 +1029,7 @@ static void handle_method_unregister_focus(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(ii)", &pid, &handle_id);
-	ret = __mm_sound_mgr_ipc_unregister_focus(pid, handle_id);
+	ret = __mm_sound_mgr_ipc_unregister_focus(_get_sender_pid(invocation), handle_id);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1059,7 +1059,7 @@ static void handle_method_acquire_focus(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(iiis)", &pid, &handle_id, &focus_type, &name);
-	ret = __mm_sound_mgr_ipc_acquire_focus(pid, handle_id, focus_type, name);
+	ret = __mm_sound_mgr_ipc_acquire_focus(_get_sender_pid(invocation), handle_id, focus_type, name);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1089,7 +1089,7 @@ static void handle_method_release_focus(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(iiis)", &pid, &handle_id, &focus_type, &name);
-	ret = __mm_sound_mgr_ipc_release_focus(pid, handle_id, focus_type, name);
+	ret = __mm_sound_mgr_ipc_release_focus(_get_sender_pid(invocation), handle_id, focus_type, name);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -1171,7 +1171,7 @@ static void handle_method_unwatch_focus (GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(ii)", &pid, &handle_id);
-	ret = __mm_sound_mgr_ipc_unwatch_focus(pid, handle_id);
+	ret = __mm_sound_mgr_ipc_unwatch_focus(_get_sender_pid(invocation), handle_id);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
