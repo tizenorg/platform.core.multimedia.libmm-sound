@@ -36,7 +36,7 @@
 #define DBUS_NAME_MAX                   32
 #define DBUS_SIGNATURE_MAX              32
 
-#define FOCUS_HANDLE_MAX 256
+#define FOCUS_HANDLE_MAX 512
 #define FOCUS_HANDLE_INIT_VAL -1
 
 #define CONFIG_ENABLE_RETCB
@@ -2288,21 +2288,21 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 	}
 
 	g_focus_sound_handle[index].focus_tid = instance;
-	g_focus_sound_handle[index].handle = index;
+	g_focus_sound_handle[index].handle = index + 1;
 	g_focus_sound_handle[index].watch_callback = callback;
 	g_focus_sound_handle[index].user_data = user_data;
 
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
-	params = g_variant_new("(@ayiii)", _get_cookie_variant(), instance, index, type);
+	params = g_variant_new("(@ayiii)", _get_cookie_variant(), instance, g_focus_sound_handle[index].handle, type);
 #else /* USE_SECURITY */
 	gethostname(container, sizeof(container));
 	debug_error("container = %s", container);
-	params = g_variant_new("(siii)", container, instance, index, type);
+	params = g_variant_new("(siii)", container, instance, g_focus_sound_handle[index].handle, type);
 #endif /* USE_SECURITY */
 
 #else /* SUPPORT_CONTAINER */
-	params = g_variant_new("(iii)", instance, index, type);
+	params = g_variant_new("(iii)", instance, g_focus_sound_handle[index].handle, type);
 
 #endif /* SUPPORT_CONTAINER */
 
@@ -2337,7 +2337,7 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 
 	_focus_init_callback(index, true);
 
-	*id = index;
+	*id = g_focus_sound_handle[index].handle;
 
 cleanup:
 	if (ret) {
@@ -2365,8 +2365,8 @@ int mm_sound_client_dbus_unset_focus_watch_callback(int id)
 
 	//pthread_mutex_lock(&g_thread_mutex2);
 
-	index = id;
-	if (index < 0) {
+	index = id - 1;
+	if (index < 0 || FOCUS_HANDLE_MAX <= index) {
 		debug_error("index is not valid, %d", index);
 		return FALSE;
 	}
