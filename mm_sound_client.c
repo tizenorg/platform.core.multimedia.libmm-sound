@@ -202,6 +202,41 @@ int mm_sound_client_set_sound_path_for_active_device(mm_sound_device_out device_
 	return ret;
 }
 
+void mm_sound_convert_volume_type_to_stream_type(int volume_type, char *stream_type)
+{
+	switch (volume_type) {
+	case VOLUME_TYPE_SYSTEM:
+		strncpy(stream_type, "system", MM_SOUND_STREAM_TYPE_LEN);
+		break;
+	case VOLUME_TYPE_NOTIFICATION:
+		strncpy(stream_type, "notification", MM_SOUND_STREAM_TYPE_LEN);
+		break;
+	case VOLUME_TYPE_ALARM:
+		strncpy(stream_type, "alarm", MM_SOUND_STREAM_TYPE_LEN);
+		break;
+	case VOLUME_TYPE_RINGTONE:
+		strncpy(stream_type, "ringtone-voip", MM_SOUND_STREAM_TYPE_LEN);
+		break;
+	case VOLUME_TYPE_MEDIA:
+		strncpy(stream_type, "media", MM_SOUND_STREAM_TYPE_LEN);
+		break;
+	case VOLUME_TYPE_CALL:
+		strncpy(stream_type, "system", MM_SOUND_STREAM_TYPE_LEN);
+		break;
+	case VOLUME_TYPE_VOIP:
+		strncpy(stream_type, "voip", MM_SOUND_STREAM_TYPE_LEN);
+		break;
+	case VOLUME_TYPE_VOICE:
+		strncpy(stream_type, "voice-recognition", MM_SOUND_STREAM_TYPE_LEN);
+		break;
+	default:
+		strncpy(stream_type, "media", MM_SOUND_STREAM_TYPE_LEN);
+		break;
+	}
+
+	debug_error("volume type (%d) converted to stream type (%s)", volume_type, stream_type);
+
+}
 
 /*****************************************************************************************
 			    DBUS SUPPORTED FUNCTIONS
@@ -211,6 +246,8 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 {
 	int ret = MM_ERROR_NONE;
 //	 int instance = -1; 	/* instance is unique to communicate with server : client message queue filter type */
+	int volume_type = MM_SOUND_VOLUME_CONFIG_TYPE(volume_config);
+	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = {0, };
 
 	 debug_fenter();
 
@@ -239,13 +276,25 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 	 debug_msg("[Client] Input number : %d\n", number);
 	 /* Send req memory */
 
+	mm_sound_convert_volume_type_to_stream_type(volume_type, stream_type);
 	ret = mm_sound_client_dbus_play_tone(number, time, volume, volume_config,
-					session_type, session_options, getpid(), enable_session, handle );
+					session_type, session_options, getpid(), enable_session, handle, stream_type, -1);
 
 	debug_fleave();
 	return ret;
 }
 
+int mm_sound_client_play_tone_with_stream_info(int tone, char *stream_type, int stream_id, double volume, int duration, int *handle)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	ret = mm_sound_client_dbus_play_tone_with_stream_info(getpid(), tone, stream_type, stream_id, volume, duration, handle);
+
+	debug_fleave();
+	return ret;
+}
 
 int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int keytone, int *handle)
 {
@@ -253,6 +302,8 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int keytone, i
 	int session_type = MM_SESSION_TYPE_MEDIA;
 	int session_options = 0;
 //	int instance = -1; 	/* instance is unique to communicate with server : client message queue filter type */
+	int volume_type = MM_SOUND_VOLUME_CONFIG_TYPE(param->volume_config);
+	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = {0, };
 
 	debug_fenter();
 
@@ -282,9 +333,10 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int keytone, i
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	mm_sound_convert_volume_type_to_stream_type(volume_type, stream_type);
 	ret = mm_sound_client_dbus_play_sound(param->filename, tone, param->loop, param->volume, param->volume_config,
 					 param->priority, session_type, session_options, getpid(), keytone, param->handle_route,
-					 !param->skip_session, handle);
+					 !param->skip_session, handle, stream_type, -1);
 	if (ret != MM_ERROR_NONE) {
 		debug_error("Play Sound Failed");
 		goto failed;
@@ -300,6 +352,30 @@ failed:
 
 	debug_fleave();
 	return ret;
+}
+
+int mm_sound_client_play_sound_with_stream_info(MMSoundPlayParam *param, int *handle, char* stream_type, int stream_id)
+{
+	int ret = MM_ERROR_NONE;
+
+	ret = mm_sound_client_dbus_play_sound_with_stream_info(param->filename, param->loop, param->volume,
+					 param->priority, getpid(), param->handle_route, handle, stream_type, stream_id);
+	if (ret != MM_ERROR_NONE) {
+		debug_error("Play Sound Failed");
+		goto failed;
+	}
+	if (param->callback) {
+		ret = mm_sound_client_dbus_add_play_sound_end_callback(param->callback, param->data, *handle);
+		if (ret != MM_ERROR_NONE) {
+			debug_error("Add callback for play sound(%d) Failed", *handle);
+		}
+	}
+
+failed:
+
+	debug_fleave();
+	return ret;
+
 }
 
 int mm_sound_client_stop_sound(int handle)

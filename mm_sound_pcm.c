@@ -359,6 +359,7 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 
 	int volume_config = 0;
 	pa_sample_spec ss;
+	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = {0, };
 
 	mm_sound_handle_route_info route_info;
 	route_info.policy = HANDLE_ROUTE_POLICY_DEFAULT;
@@ -450,7 +451,8 @@ int mm_sound_pcm_capture_open(MMSoundPcmHandle_t *handle, const unsigned int rat
 	else
 		volume_config = VOLUME_TYPE_SYSTEM; //dose not effect at capture mode
 
-	pcmHandle->handle = mm_sound_pa_open(HANDLE_MODE_INPUT, &route_info, 0, volume_config, &ss, NULL, &size);
+	mm_sound_convert_volume_type_to_stream_type(volume_config, stream_type);
+	pcmHandle->handle = mm_sound_pa_open(HANDLE_MODE_INPUT, &route_info, 0, volume_config, &ss, NULL, &size, stream_type, -1);
 	if(pcmHandle->handle<0) {
 		result = pcmHandle->handle;
 		debug_error("Device Open Error 0x%x\n", result);
@@ -487,6 +489,7 @@ int mm_sound_pcm_capture_open_ex(MMSoundPcmHandle_t *handle, const unsigned int 
 	pa_sample_spec ss;
 	mm_sound_handle_route_info route_info;
 	route_info.policy = HANDLE_ROUTE_POLICY_DEFAULT;
+	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = {0, };
 
 	debug_warning ("enter : rate=[%d Hz], channel=[%x][%s], format=[%x][%s], source_type=[%x]\n",
 				rate, channel, _get_channel_str(channel), format, _get_format_str(format), source_type);
@@ -594,7 +597,13 @@ int mm_sound_pcm_capture_open_ex(MMSoundPcmHandle_t *handle, const unsigned int 
 	else
 		volume_config = VOLUME_TYPE_SYSTEM; //dose not effect at capture mode
 
-	pcmHandle->handle = mm_sound_pa_open(HANDLE_MODE_INPUT, &route_info, 0, volume_config, &ss, NULL, &size);
+	mm_sound_convert_volume_type_to_stream_type(volume_config, stream_type);
+	if (result) {
+		debug_error("mm_sound_convert_volume_type_to_stream_type failed (0x%x)", result);
+		return result;
+	}
+
+	pcmHandle->handle = mm_sound_pa_open(HANDLE_MODE_INPUT, &route_info, 0, volume_config, &ss, NULL, &size, stream_type, -1);
 	if(pcmHandle->handle<0) {
 		result = pcmHandle->handle;
 		debug_error("Device Open Error 0x%x\n", result);
@@ -918,6 +927,7 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 	int ret_mutex = 0;
 	mm_sound_handle_route_info route_info;
 	route_info.policy = HANDLE_ROUTE_POLICY_OUT_AUTO;
+	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = {0, };
 
 	pa_sample_spec ss;
 
@@ -1024,7 +1034,8 @@ int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int ra
 
 
 	/* Open */
-	pcmHandle->handle = mm_sound_pa_open(HANDLE_MODE_OUTPUT, &route_info, 0, volume_config, &ss, NULL, &size);
+	mm_sound_convert_volume_type_to_stream_type(volume_type, stream_type);
+	pcmHandle->handle = mm_sound_pa_open(HANDLE_MODE_OUTPUT, &route_info, 0, volume_config, &ss, NULL, &size, stream_type, -1);
 	if(!pcmHandle->handle) {
 		debug_error("Device Open Error 0x%x\n");
 		result = MM_ERROR_SOUND_DEVICE_NOT_OPENED;

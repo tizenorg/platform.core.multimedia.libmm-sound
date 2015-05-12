@@ -205,7 +205,7 @@ gint __mm_sound_handle_comparefunc(gconstpointer a, gconstpointer b)
 }
 
 EXPORT_API
-int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_info, MMSoundHandlePriority priority, int volume_config, pa_sample_spec* ss, pa_channel_map* channel_map, int* size)
+int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_info, MMSoundHandlePriority priority, int volume_config, pa_sample_spec* ss, pa_channel_map* channel_map, int* size, char *stream_type, int stream_index)
 {
     pa_simple *s = NULL;
     pa_channel_map maps;
@@ -256,15 +256,18 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
     }
 
     /* Set volume type of stream */
-    vol_conf_type = volume_config & 0x000000FF;
-    prop_vol_type = mm_sound_volume_type_to_pa[vol_conf_type];
-    pa_proplist_setf(proplist, PA_PROP_MEDIA_TIZEN_VOLUME_TYPE, "%d", prop_vol_type);
+    if(volume_config > 0) {
+        debug_log("setting gain type");
+        vol_conf_type = volume_config & 0x000000FF;
+        prop_vol_type = mm_sound_volume_type_to_pa[vol_conf_type];
+//          pa_proplist_setf(proplist, PA_PROP_MEDIA_TIZEN_VOLUME_TYPE, "%d", prop_vol_type);
 
-    /* Set gain type of stream */
-    prop_gain_type = (volume_config >> 8) & 0x000000FF;
+        /* Set gain type of stream */
+        prop_gain_type = (volume_config >> 8) & 0x000000FF;
 
-    pa_proplist_setf(proplist, PA_PROP_MEDIA_TIZEN_GAIN_TYPE, "%d", prop_gain_type);
-
+        pa_proplist_setf(proplist, PA_PROP_MEDIA_TIZEN_GAIN_TYPE, "%d", prop_gain_type);
+    }
+#if 0
     IS_INPUT_HANDLE(handle_mode) {
         handle_inout = HANDLE_DIRECTION_IN;
 
@@ -329,10 +332,18 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
     }
     pa_proplist_sets(proplist, PA_PROP_MEDIA_POLICY, prop_policy);
 
-    if (priority) {
-        debug_msg("Set HIGH priority [%d]", priority);
-        pa_proplist_sets(proplist, PA_PROP_MEDIA_ROLE, "solo");
+#endif
+
+    if (stream_index != -1) {
+        char stream_index_s[11];
+        debug_msg("Set stream index [%d]", stream_index);
+
+        snprintf(stream_index_s, sizeof(stream_index_s)-1, "%d", stream_index);
+        debug_msg("stream_index[%d] converted to string[%s]", stream_index, stream_index_s);
+        pa_proplist_sets(proplist, PA_PROP_MEDIA_PARENT_ID, stream_index_s);
     }
+    /* Set stream type */
+    pa_proplist_sets(proplist, PA_PROP_MEDIA_ROLE, stream_type);
 
     memset(&attr, '\0', sizeof(attr));
 

@@ -532,6 +532,32 @@ int mm_sound_play_sound_ex(MMSoundPlayParam *param, int *handle)
 	return MM_ERROR_NONE;
 }
 
+EXPORT_API
+int mm_sound_play_sound_with_stream_info(const char *filename, char *stream_type, int stream_id, mm_sound_stop_callback_func callback, void *data, int *handle)
+{
+	MMSoundPlayParam param = { 0, };
+	int err;
+
+	param.filename = filename;
+	param.volume = 0; //volume value dose not effect anymore
+	param.callback = callback;
+	param.data = data;
+	param.loop = 1;
+	param.priority = HANDLE_PRIORITY_NORMAL;
+	param.handle_route = MM_SOUND_HANDLE_ROUTE_USING_CURRENT;
+
+	err = mm_sound_client_play_sound_with_stream_info(&param, handle, stream_type, stream_id);
+	if (err < 0) {
+		debug_error("Failed to play sound\n");
+		return err;
+	}
+
+	debug_warning ("success : handle=[%p]\n", handle);
+
+	return MM_ERROR_NONE;
+
+}
+
 
 EXPORT_API
 int mm_sound_stop_sound(int handle)
@@ -597,6 +623,23 @@ int mm_sound_play_tone_ex (MMSoundTone_t num, int volume_config, const double vo
 	debug_fleave();
 	return MM_ERROR_NONE;
 }
+
+EXPORT_API
+int mm_sound_play_tone_with_stream_info(MMSoundTone_t tone, char *stream_type, int stream_id, const double volume, const int duration, int *handle)
+{
+
+	int err = MM_ERROR_NONE;
+
+	err = mm_sound_client_play_tone_with_stream_info(tone, stream_type, stream_id, volume, duration, handle);
+	if (err <0) {
+		debug_error("Failed to play sound\n");
+		return err;
+	}
+
+	return err;
+
+}
+
 
 EXPORT_API
 int mm_sound_play_tone (MMSoundTone_t num, int volume_config, const double volume, const int duration, int *handle)

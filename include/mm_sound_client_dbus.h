@@ -11,10 +11,11 @@
 
 int mm_sound_client_dbus_play_tone(int tone, int repeat, int volume, int volume_config,
 			   int session_type, int session_options, int client_pid,
-			   bool enable_session, int *codechandle);
+			   bool enable_session, int *codechandle, char *stream_type, int stream_index);
+int mm_sound_client_dbus_play_tone_with_stream_info(int client_pid, int tone, char *stream_type, int stream_id, int volume, int repeat, int *codechandle);
 int mm_sound_client_dbus_play_sound(char* filename, int tone, int repeat, int volume, int volume_config,
 			   int priority, int session_type, int session_options, int client_pid, int keytone,  int handle_route,
-			   bool enable_session, int *codechandle);
+			   bool enable_session, int *codechandle, char *stream_type, int stream_index);
 int mm_sound_client_dbus_stop_sound(int handle);
 int mm_sound_client_dbus_is_route_available(mm_sound_route route, bool *is_available);
 int mm_sound_client_dbus_foreach_available_route_cb(mm_sound_available_route_cb, void *user_data);

@@ -72,7 +72,7 @@ typedef struct mm_sound_handle_route_info{
 	bool do_not_restore;
 }mm_sound_handle_route_info;
 
-int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_info, MMSoundHandlePriority priority, int volume_config, pa_sample_spec* ss, pa_channel_map* channel_map, int* size);
+int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_info, MMSoundHandlePriority priority, int volume_config, pa_sample_spec* ss, pa_channel_map* channel_map, int* size, char *stream_type, int stream_index);
 int mm_sound_pa_read(const int handle, void* buf, const int size);
 int mm_sound_pa_write(const int handle, void* buf, const int size);
 int mm_sound_pa_close(const int handle);

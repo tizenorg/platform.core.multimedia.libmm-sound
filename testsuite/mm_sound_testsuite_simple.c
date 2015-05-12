@@ -222,10 +222,12 @@ static void displaymenu()
 		g_print("	Sound Play APIs\n");
 		g_print("==================================================================\n");
 		g_print("k : Key Sound     \t");
-		g_print("a : play sound    \t");
+		g_print("an : play sound    \t");
+		g_print("as : play sound with stream type\t");
 		g_print("A : play loud solo\n");
 		g_print("c : play sound ex \t");
-		g_print("F : Play DTMF     \t");
+		g_print("FN : Play DTMF     \t");
+		g_print("FS : Play DTMF with stream type\t");
 		g_print("b : Play directory\n");
 		g_print("s : Stop play     \t");
 		g_print("m : stereo to mono\n");
@@ -960,10 +962,17 @@ static void interpret (char *cmd)
 					g_print ("### mm_sound_enable_mono_audio(%d) Error = %x\n", ismono, ret);
 				}
 			}
-			else if(strncmp(cmd, "a", 1) == 0)
+			else if(strncmp(cmd, "an", 2) == 0)
 			{
 				debug_log("volume is %d type, %d\n", g_volume_type, g_volume_value);
 				ret = mm_sound_play_sound(g_file_name, g_volume_type, mycallback ,"USERDATA", &handle);
+				if(ret < 0)
+					debug_log("mm_sound_play_sound() failed with 0x%x\n", ret);
+			}
+			else if(strncmp(cmd, "as", 2) == 0)
+			{
+				debug_log("stream %s type, %d\n", "media", g_volume_value);
+				ret = mm_sound_play_sound_with_stream_info(g_file_name, "media", -1, mycallback ,"USERDATA", &handle);
 				if(ret < 0)
 					debug_log("mm_sound_play_sound() failed with 0x%x\n", ret);
 			}
@@ -974,7 +983,7 @@ static void interpret (char *cmd)
 				if(ret < 0)
 					debug_log("mm_sound_play_sound_loud_solo() failed with 0x%x\n", ret);
 			}
-			else if(strncmp(cmd, "F", 1) == 0)
+			else if(strncmp(cmd, "FN", 2) == 0)
 			{
 				char num = 0;
 				char input_string[128] = "";
@@ -1094,6 +1103,124 @@ static void interpret (char *cmd)
 					ret = mm_sound_play_tone_ex(tone, volume_type, volume, tonetime, &handle, enable_session);
 					if(ret<0)
 						debug_log ("[magpie] Play DTMF sound cannot be played ! %d\n", handle);
+				}
+			}
+			else if(strncmp(cmd, "FS", 2) == 0)
+			{
+				char num = 0;
+				char input_string[128] = "";
+				char *tok = NULL;
+				char *stream_type = NULL;
+				int tonetime=0;
+				double volume=1.0;
+				MMSoundTone_t tone = MM_SOUND_TONE_DTMF_0;
+
+				while(num != 'q') {
+					fflush(stdin);
+					g_print("enter number(0~H exit:q), stream type(media, system, ...),  volume(0.0~1.0),  time(ms):\t ");
+					if (fgets(input_string, sizeof(input_string)-1, stdin) == NULL) {
+						g_print ("### fgets return  NULL\n");
+					}
+					tok = strtok(input_string, " ");
+					if(!tok) continue;
+					if(tok[0] == 'q') {
+						break;
+					}
+					else if(tok[0] < '0' || tok[0] > '~') {
+						if(tok[0] == '*' || tok[0] == '#')
+							;
+						else
+							continue;
+					}
+					num = tok[0];
+					if(num >= '0' && num <= '9') {
+						tone = (MMSoundTone_t)(num - '0');
+					}
+					else if(num == '*') {
+						tone = MM_SOUND_TONE_DTMF_S;
+					}
+					else if(num == '#') {
+						tone =MM_SOUND_TONE_DTMF_P;
+					}
+					else if(num == 'A') {	tone = MM_SOUND_TONE_DTMF_A;	}
+					else if(num == 'B') {	tone = MM_SOUND_TONE_DTMF_B;	}
+					else if(num == 'C') {	tone = MM_SOUND_TONE_DTMF_C;	}
+					else if(num == 'D') {	tone = MM_SOUND_TONE_DTMF_D;	}
+					else if(num == 'E') {	tone = MM_SOUND_TONE_SUP_DIAL;	}
+					else if(num == 'F') {	tone = MM_SOUND_TONE_ANSI_DIAL;	}
+					else if(num == 'G') {	tone = MM_SOUND_TONE_JAPAN_DIAL;	}
+					else if(num == 'H') {	tone = MM_SOUND_TONE_SUP_BUSY;		}
+					else if(num == 'I') {		tone = MM_SOUND_TONE_ANSI_BUSY;		}
+					else if(num == 'J') {		tone = MM_SOUND_TONE_JAPAN_BUSY;		}
+					else if(num == 'K') {	tone = MM_SOUND_TONE_SUP_CONGESTION;		}
+					else if(num == 'L') {		tone = MM_SOUND_TONE_ANSI_CONGESTION;		}
+					else if(num == 'M') {	tone = MM_SOUND_TONE_SUP_RADIO_ACK;		}
+					else if(num == 'N') {	tone = MM_SOUND_TONE_JAPAN_RADIO_ACK;		}
+					else if(num == 'O') {	tone = MM_SOUND_TONE_SUP_RADIO_NOTAVAIL;	}
+					else if(num == 'P') {	tone = MM_SOUND_TONE_SUP_ERROR;		}
+					else if(num == 'Q') {	tone = MM_SOUND_TONE_SUP_CALL_WAITING;	}
+					else if(num == 'R') {	tone = MM_SOUND_TONE_ANSI_CALL_WAITING;	}
+					else if(num == 'S') {	tone = MM_SOUND_TONE_SUP_RINGTONE;		}
+					else if(num == 'T') {	tone = MM_SOUND_TONE_ANSI_RINGTONE;	}
+					else if(num == 'U') {	tone = MM_SOUND_TONE_PROP_BEEP;		}
+					else if(num == 'V') {	tone = MM_SOUND_TONE_PROP_ACK;		}
+					else if(num == 'W') {	tone = MM_SOUND_TONE_PROP_NACK;	}
+					else if(num == 'X') {	tone = MM_SOUND_TONE_PROP_PROMPT;	}
+					else if(num == 'Y') {	tone = MM_SOUND_TONE_PROP_BEEP2;	}
+					else if(num == 'Z')  {	tone =MM_SOUND_TONE_CDMA_HIGH_SLS;	}
+					else if(num == '[')  {	tone = MM_SOUND_TONE_CDMA_MED_SLS;	}
+					else if(num == ']')  {	tone = MM_SOUND_TONE_CDMA_LOW_SLS;	}
+					else if(num == '^')  {	tone =MM_SOUND_TONE_CDMA_HIGH_S_X4;	}
+					else if(num == '_')  {	tone =MM_SOUND_TONE_CDMA_MED_S_X4;	}
+					else if(num == 'a')  {	tone =MM_SOUND_TONE_CDMA_LOW_S_X4;	}
+					else if(num == 'b')  {	tone =MM_SOUND_TONE_CDMA_HIGH_PBX_L;	}
+					else if(num == 'c')  {	tone =MM_SOUND_TONE_CDMA_MED_PBX_L;	}
+					else if(num == 'd')  {	tone =MM_SOUND_TONE_CDMA_LOW_PBX_L;	}
+					else if(num == 'e')  {	tone =MM_SOUND_TONE_CDMA_HIGH_PBX_SS;	}
+					else if(num == 'f')  {	tone =MM_SOUND_TONE_CDMA_MED_PBX_SS;	}
+					else if(num == 'g')  {	tone =MM_SOUND_TONE_CDMA_LOW_PBX_SS;	}
+					else if(num == 'h')  {	tone =MM_SOUND_TONE_CDMA_HIGH_PBX_SSL;	}
+					else if(num == 'i')  {		tone =MM_SOUND_TONE_CDMA_MED_PBX_SSL;	}
+					else if(num == 'j')  {	tone =MM_SOUND_TONE_CDMA_LOW_PBX_SSL;		}
+					else if(num == 'k')  {	tone =MM_SOUND_TONE_CDMA_HIGH_PBX_SLS;	}
+					else if(num == 'l')  {		tone =MM_SOUND_TONE_CDMA_MED_PBX_SLS;	}
+					else if(num == 'm')  {	tone =MM_SOUND_TONE_CDMA_LOW_PBX_SLS;		}
+					else if(num == 'n')  {	tone =MM_SOUND_TONE_CDMA_HIGH_PBX_S_X4;	}
+					else if(num == 'o')  {	tone =MM_SOUND_TONE_CDMA_MED_PBX_S_X4;	}
+					else if(num == 'p')  {	tone =MM_SOUND_TONE_CDMA_LOW_PBX_S_X4;	}
+					else if(num == 'q')  {	tone =MM_SOUND_TONE_CDMA_ALERT_NETWORK_LITE;	}
+					else if(num == 'r')  {	tone =MM_SOUND_TONE_CDMA_ALERT_AUTOREDIAL_LITE;	}
+					else if(num == 's')  {	tone =MM_SOUND_TONE_CDMA_ONE_MIN_BEEP;	}
+					else if(num == 't')  {	tone =MM_SOUND_TONE_CDMA_KEYPAD_VOLUME_KEY_LITE;		}
+					else if(num == 'u')  {	tone =MM_SOUND_TONE_CDMA_PRESSHOLDKEY_LITE;	}
+					else if(num == 'v')  {	tone =MM_SOUND_TONE_CDMA_ALERT_INCALL_LITE;	}
+					else if(num == 'w')  {	tone =MM_SOUND_TONE_CDMA_EMERGENCY_RINGBACK;	}
+					else if(num == 'x')  {	tone =MM_SOUND_TONE_CDMA_ALERT_CALL_GUARD;	}
+					else if(num == 'y')  {	tone =MM_SOUND_TONE_CDMA_SOFT_ERROR_LITE;	}
+					else if(num == 'z')  {	tone =MM_SOUND_TONE_CDMA_CALLDROP_LITE;	}
+					else if(num == '{')  {	tone =MM_SOUND_TONE_LOW_FRE;	}
+					else if(num == '}')  {	tone =MM_SOUND_TONE_MED_FRE;	}
+					else if(num == '~')  {	tone =MM_SOUND_TONE_HIGH_FRE; }
+
+					stream_type = strtok(NULL, " ");
+
+					tok = strtok(NULL, " ");
+					if(tok)  volume = (double)atof(tok);
+
+					tok = strtok(NULL, " ");
+					if(tok)
+					{
+						tonetime = atoi(tok);
+					}
+					else
+					{
+						tonetime = MIN_TONE_PLAY_TIME;
+					}
+
+					debug_log("stream type: %s\t volume is %f\t tonetime: %d\n", stream_type, volume, tonetime);
+					ret = mm_sound_play_tone_with_stream_info(tone, stream_type, -1, volume, tonetime, &handle);
+					if(ret<0)
+						debug_log ("[magpie] Play DTMF sound with stream type cannot be played ! %d\n", handle);
 				}
 			}
 			else if (strncmp (cmd, "b",1) == 0)

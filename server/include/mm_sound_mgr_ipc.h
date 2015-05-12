@@ -50,13 +50,17 @@ int MMSoundMgrIpcFini(void);
 /* Msg processing */
 int _MMSoundMgrIpcPlayFile(char* filename, int tone, int repeat, int volume, int volume_config,
 			   int priority, int session_type, int session_options, int client_pid, int keytone,  int handle_route,
-			   gboolean enable_session, int *codechandle);
+			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index);
+int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
+			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index);
 //int _MMSoundMgrIpcStop(mm_ipc_msg_t *msg);
 int _MMSoundMgrIpcStop(int handle);
 //int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg);
 int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 			   int session_type, int session_options, int client_pid,
-			   gboolean enable_session, int *codechandle);
+			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index);
+int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume, int client_pid, int *codechandle, char *stream_type, int stream_index);
+
 /*
 int _MMSoundMgrIpcPlayMemory(int *codechandle, mm_ipc_msg_t *msg);
 int __mm_sound_mgr_ipc_is_route_available(mm_ipc_msg_t *msg, bool *is_available);

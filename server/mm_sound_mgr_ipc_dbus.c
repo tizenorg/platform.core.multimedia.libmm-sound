@@ -59,8 +59,21 @@
   "      <arg type='i' name='keytone' direction='in'/>"
   "      <arg type='i' name='handle_route' direction='in'/>"
   "      <arg type='b' name='enable_session' direction='in'/>"
+  "      <arg type='s' name='stream_type' direction='in'/>"
+  "      <arg type='i' name='stream_index' direction='in'/>"
   "      <arg type='i' name='handle' direction='out'/>"
   "    </method>"
+  "	 <method name='PlayFileStartWithStreamInfo'>"
+  "	   <arg type='s' name='filename' direction='in'/>"
+  "	   <arg type='i' name='repeat' direction='in'/>"
+  "	   <arg type='i' name='volume' direction='in'/>"
+  "	   <arg type='i' name='priority' direction='in'/>"
+  "	   <arg type='i' name='client_pid' direction='in'/>"
+  "	   <arg type='i' name='handle_route' direction='in'/>"
+  "	   <arg type='s' name='stream_type' direction='in'/>"
+  "	   <arg type='i' name='stream_index' direction='in'/>"
+  "	   <arg type='i' name='handle' direction='out'/>"
+  "	 </method>"
   "    <method name='PlayFileStop'>"
   "      <arg type='i' name='handle' direction='in'/>"
   "    </method>"
@@ -73,8 +86,19 @@
   "      <arg type='i' name='session_option' direction='in'/>"
   "      <arg type='i' name='client_pid' direction='in'/>"
   "      <arg type='b' name='enable_session' direction='in'/>"
+  "	     <arg type='s' name='stream_type' direction='in'/>"
+  "	     <arg type='i' name='stream_index' direction='in'/>"
   "      <arg type='i' name='handle' direction='out'/>"
   "    </method>"
+  "	 <method name='PlayDTMFWithStreamInfo'>"
+  "	   <arg type='i' name='tone' direction='in'/>"
+  "	   <arg type='i' name='repeat' direction='in'/>"
+  "	   <arg type='i' name='volume' direction='in'/>"
+  "	   <arg type='i' name='client_pid' direction='in'/>"
+  "	   <arg type='s' name='stream_type' direction='in'/>"
+  "	   <arg type='i' name='stream_index' direction='in'/>"
+  "	   <arg type='i' name='handle' direction='out'/>"
+  "	 </method>"
   "    <method name='SetPathForActiveDevice'>"
   "    </method>"
   "    <method name='GetConnectedDeviceList'>"
@@ -348,8 +372,10 @@ struct mm_sound_dbus_signal{
 };
 
 static void handle_method_play_file_start(GDBusMethodInvocation* invocation);
+static void handle_method_play_file_start_with_stream_info(GDBusMethodInvocation* invocation);
 static void handle_method_play_file_stop(GDBusMethodInvocation* invocation);
 static void handle_method_play_dtmf(GDBusMethodInvocation* invocation);
+static void handle_method_play_dtmf_with_stream_info(GDBusMethodInvocation* invocation);
 static void handle_method_get_bt_a2dp_status(GDBusMethodInvocation* invocation);
 static void handle_method_test(GDBusMethodInvocation* invocation);
 static void handle_method_set_sound_path_for_active_device(GDBusMethodInvocation* invocation);
@@ -396,6 +422,12 @@ struct mm_sound_dbus_method methods[METHOD_CALL_MAX] = {
 		},
 		.handler = handle_method_play_file_start
 	},
+	[METHOD_CALL_PLAY_FILE_START_WITH_STREAM_INFO] = {
+		.info = {
+			.name = "PlayFileStartWithStreamInfo",
+		},
+		.handler = handle_method_play_file_start_with_stream_info
+	},
 	[METHOD_CALL_PLAY_FILE_STOP] = {
 		.info = {
 			.name = "PlayFileStop",
@@ -407,6 +439,12 @@ struct mm_sound_dbus_method methods[METHOD_CALL_MAX] = {
 			.name = "PlayDTMF",
 		},
 		.handler = handle_method_play_dtmf
+	},
+	[METHOD_CALL_PLAY_DTMF_WITH_STREAM_INFO] = {
+		.info = {
+			.name = "PlayDTMFWithStreamInfo",
+		},
+		.handler = handle_method_play_dtmf_with_stream_info
 	},
 	[METHOD_CALL_GET_BT_A2DP_STATUS] = {
 		.info = {
@@ -763,9 +801,10 @@ send_reply:
 static void handle_method_play_file_start(GDBusMethodInvocation* invocation)
 {
 	gchar* filename = NULL;
+	char *stream_type = NULL;
 	gint32 ret = MM_ERROR_NONE, slotid = 0;
 	gint32 tone = 0, repeat = 0, volume = 0, vol_config = 0, priority = 0;
-	gint32 session_type = 0, session_option = 0, pid = 0, keytone = 0, handle_route =0;
+	gint32 session_type = 0, session_option = 0, pid = 0, keytone = 0, handle_route =0, stream_index = 0;
 	gboolean enable_session = 0;
 	GVariant *params = NULL;
 
@@ -777,15 +816,15 @@ static void handle_method_play_file_start(GDBusMethodInvocation* invocation)
 		goto send_reply;
 	}
 
-	g_variant_get(params, "(siiiiiiiiiib)", &filename, &tone, &repeat, &volume,
-		      &vol_config, &priority, &session_type, &session_option, &pid, &keytone, &handle_route, &enable_session);
+	g_variant_get(params, "(siiiiiiiiiibsi)", &filename, &tone, &repeat, &volume,
+		      &vol_config, &priority, &session_type, &session_option, &pid, &keytone, &handle_route, &enable_session, &stream_type, &stream_index);
 	if (!filename) {
 	    debug_error("filename null");
 	    ret = MM_ERROR_SOUND_INTERNAL;
 	    goto send_reply;
 	}
 	ret = _MMSoundMgrIpcPlayFile(filename, tone, repeat, volume, vol_config, priority,
-				session_type, session_option, _get_sender_pid(invocation), keytone, handle_route, enable_session, &slotid);
+				session_type, session_option, _get_sender_pid(invocation), keytone, handle_route, enable_session, &slotid, stream_type, stream_index);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -797,11 +836,47 @@ send_reply:
 	debug_fleave();
 }
 
+static void handle_method_play_file_start_with_stream_info(GDBusMethodInvocation* invocation)
+{
+	gchar* filename = NULL;
+	char *stream_type = NULL;
+	gint32 ret = MM_ERROR_NONE, slotid = 0;
+	gint32 repeat = 0, volume = 0, priority = 0, pid = 0, handle_route =0, stream_index = 0;
+	GVariant *params = NULL;
+
+	debug_fenter();
+
+	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
+		debug_error("Parameter for Method is NULL");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto send_reply;
+	}
+
+	g_variant_get(params, "(siiiiisi)", &filename, &repeat, &volume,
+		      &priority, &pid, &handle_route, &stream_type, &stream_index);
+	if (!filename) {
+	    debug_error("filename null");
+	    ret = MM_ERROR_SOUND_INTERNAL;
+	    goto send_reply;
+	}
+	ret = _MMSoundMgrIpcPlayFileWithStreamInfo(filename, repeat, volume, priority,
+				_get_sender_pid(invocation), handle_route, &slotid, stream_type, stream_index);
+
+send_reply:
+	if (ret == MM_ERROR_NONE) {
+		_method_call_return_value(invocation, g_variant_new("(i)", slotid));
+	} else {
+		_method_call_return_error(invocation, ret);
+	}
+
+	debug_fleave();
+}
 
 static void handle_method_play_dtmf(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE, slotid = 0;
-	int tone = 0, repeat = 0, volume = 0, vol_config = 0, session_type = 0, session_option = 0, pid = 0;
+	int tone = 0, repeat = 0, volume = 0, vol_config = 0, session_type = 0, session_option = 0, pid = 0, stream_index = 0;
+	char* stream_type = NULL;
 	gboolean enable_session = 0;
 	GVariant *params = NULL;
 
@@ -813,10 +888,40 @@ static void handle_method_play_dtmf(GDBusMethodInvocation* invocation)
 		goto send_reply;
 	}
 
-	g_variant_get(params, "(iiiiiiib)", &tone, &repeat, &volume,
-		      &vol_config, &session_type, &session_option, &pid, &enable_session);
+	g_variant_get(params, "(iiiiiiibsi)", &tone, &repeat, &volume,
+		      &vol_config, &session_type, &session_option, &pid, &enable_session, &stream_type, &stream_index);
+	debug_error("volume - %d", volume);
 	ret = _MMSoundMgrIpcPlayDTMF(tone, repeat, volume, vol_config,
-				     session_type, session_option, _get_sender_pid(invocation), enable_session, &slotid);
+				     session_type, session_option, _get_sender_pid(invocation), enable_session, &slotid, stream_type, stream_index);
+
+send_reply:
+	if (ret == MM_ERROR_NONE) {
+		_method_call_return_value(invocation, g_variant_new("(i)", slotid));
+	} else {
+		_method_call_return_error(invocation, ret);
+	}
+
+
+	debug_fleave();
+}
+
+static void handle_method_play_dtmf_with_stream_info(GDBusMethodInvocation* invocation)
+{
+	int ret = MM_ERROR_NONE, slotid = 0;
+	int tone = 0, repeat = 0, volume = 0, pid = 0, stream_index = 0;
+	char* stream_type = NULL;
+	GVariant *params = NULL;
+
+	debug_fenter();
+
+	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
+		debug_error("Parameter for Method is NULL");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto send_reply;
+	}
+
+	g_variant_get(params, "(iiiisi)", &tone, &repeat, &volume, &pid, &stream_type, &stream_index);
+	ret = _MMSoundMgrIpcPlayDTMFWithStreamInfo(tone, repeat, volume, _get_sender_pid(invocation), &slotid, stream_type, stream_index);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {

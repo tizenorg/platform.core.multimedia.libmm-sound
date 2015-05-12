@@ -94,6 +94,8 @@ typedef struct
 	MMSourceType *source;
 	char buffer[48000 / 1000 * SAMPLE_COUNT * 2 *2];//segmentation fault when above 22.05KHz stereo
 	int gain, out, in, option;
+	char stream_type[MM_SOUND_STREAM_TYPE_LEN];
+	int stream_index;
 } wave_info_t;
 
 static void _runing(void *param);
@@ -275,6 +277,8 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	p->cb_param = param->param;
 	p->source = source;
 	p->codec_wave_mutex = param->codec_wave_mutex;
+	p->stream_index = param->stream_index;
+	strncpy(p->stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
 	//	pthread_mutex_init(&p->mutex, NULL);
 
 	debug_msg("[CODEC WAV] transper_size : %d\n", p->transper_size);
@@ -408,7 +412,7 @@ static void _runing(void *param)
 	ss.channels = p->channels;
 	ss.format = p->format;
 	p->period = pa_sample_size(&ss) * ((ss.rate * 25) / 1000);
-	p->handle = mm_sound_pa_open(p->mode, &route_info, p->priority, p->volume_config, &ss, NULL, &size);
+	p->handle = mm_sound_pa_open(p->mode, &route_info, p->priority, p->volume_config, &ss, NULL, &size, p->stream_type, p->stream_index);
 	if(!p->handle) {
 		debug_critical("[CODEC WAV] Can not open audio handle\n");
 		CODEC_WAVE_UNLOCK(p->codec_wave_mutex);

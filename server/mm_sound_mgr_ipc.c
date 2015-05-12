@@ -67,7 +67,7 @@
 // except msgid
 int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int volume_config,
 			   int priority, int session_type, int session_options, int client_pid, int keytone, int handle_route,
-			   gboolean enable_session, int *codechandle)
+			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index)
 {
 	mmsound_mgr_codec_param_t param = {0,};
 	MMSourceType *source = NULL;
@@ -102,6 +102,8 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 	param.source = source;
 	param.handle_route = handle_route;
 	param.enable_session = enable_session;
+	param.stream_index = stream_index;
+	strncpy(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
 
 	/* workaround for AF volume gain tuning */
 	if (strncmp(filename, MM_SOUND_AF_FILE_PREFIX, strlen(MM_SOUND_AF_FILE_PREFIX)) == 0) {
@@ -130,9 +132,6 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 		break;
 	case MM_SESSION_TYPE_EMERGENCY:
 		param.session_type = ASM_EVENT_EMERGENCY;
-		break;
-	case MM_SESSION_TYPE_CALL:
-		param.session_type = ASM_EVENT_CALL;
 		break;
 	case MM_SESSION_TYPE_VIDEOCALL:
 		param.session_type = ASM_EVENT_VIDEOCALL;
@@ -174,9 +173,63 @@ int _MMSoundMgrIpcStop(int handle)
 	return MM_ERROR_NONE;
 }
 
+_MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
+			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index)
+{
+	mmsound_mgr_codec_param_t param = {0,};
+	MMSourceType *source = NULL;
+	int ret = MM_ERROR_NONE;
+
+	/* Set source */
+	source = (MMSourceType*)malloc(sizeof(MMSourceType));
+	if (!source) {
+		debug_error("malloc fail!!\n");
+		return MM_ERROR_OUT_OF_MEMORY;
+	}
+
+	ret = mm_source_open_file(filename, source, MM_SOURCE_CHECK_DRM_CONTENTS);
+	if(ret != MM_ERROR_NONE) {
+		debug_error("Fail to open file\n");
+		if (source) {
+			free(source);
+		}
+		return ret;
+	}
+
+	/* Set sound player parameter */
+	param.repeat_count = repeat;
+	param.volume = volume;
+	param.priority = priority;
+	param.param = client_pid;
+	param.source = source;
+	param.handle_route = handle_route;
+	param.stream_index = stream_index;
+	strncpy(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
+
+	/* workaround for AF volume gain tuning */
+	if (strncmp(filename, MM_SOUND_AF_FILE_PREFIX, strlen(MM_SOUND_AF_FILE_PREFIX)) == 0) {
+		param.volume_config |= VOLUME_GAIN_AF;
+		debug_msg("Volume Gain AF\n");
+	}
+
+	ret = MMSoundMgrCodecPlayWithStreamInfo(codechandle, &param);
+	if (ret != MM_ERROR_NONE) {
+		debug_error("Will be closed a sources, codechandle : 0x%08X\n", *codechandle);
+		mm_source_close(source);
+		if (source) {
+			free(source);
+			source = NULL;
+		}
+		return ret;
+	}
+
+	return MM_ERROR_NONE;
+
+}
+
 int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 			   int session_type, int session_options, int client_pid,
-			   gboolean enable_session, int *codechandle)
+			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index)
 {
 	mmsound_mgr_codec_param_t param = {0,};
 	int ret = MM_ERROR_NONE;
@@ -190,6 +243,8 @@ int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 	param.param = client_pid;
 	param.session_options = session_options;
 	param.enable_session = enable_session;
+	param.stream_index = stream_index;
+	strncpy(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
 
 	//convert mm_session_type to asm_event_type
 	switch(session_type)
@@ -238,6 +293,38 @@ int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 
 	return ret;
 }
+
+int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume, int client_pid, int *codechandle, char *stream_type, int stream_index)
+{
+	mmsound_mgr_codec_param_t param = {0,};
+	int ret = MM_ERROR_NONE;
+
+	/* Set sound player parameter */
+	param.tone = tone;
+	param.repeat_count = repeat;
+	param.volume = volume;
+	param.priority = 0;
+	param.param = client_pid;
+	param.stream_index = stream_index;
+	strncpy(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
+
+	debug_msg("DTMF %d\n", param.tone);
+	debug_msg("Loop %d\n", param.repeat_count);
+	debug_msg("Volume %d\n",param.volume);
+	debug_msg("Priority %d\n", param.priority);
+	debug_msg("stream type %s\n", param.stream_type);
+	debug_msg("stream index %d\n", param.stream_index);
+
+
+	ret = MMSoundMgrCodecPlayDtmfWithStreamInfo(codechandle, &param);
+	if ( ret != MM_ERROR_NONE) {
+		debug_error("Will be closed a sources, codec handle : [0x%d]\n", *codechandle);
+		return ret;
+	}
+
+	return ret;
+}
+
 
 int __mm_sound_mgr_ipc_set_sound_path_for_active_device(mm_sound_device_in _device_in, mm_sound_device_out _device_out)
 {

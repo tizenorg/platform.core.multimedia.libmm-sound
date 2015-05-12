@@ -101,11 +101,17 @@ const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_PLAY_FILE_START] = {
 		.name = "PlayFileStart",
 	},
+	[METHOD_CALL_PLAY_FILE_START_WITH_STREAM_INFO] = {
+		.name = "PlayFileStartWithStreamInfo",
+	},
 	[METHOD_CALL_PLAY_FILE_STOP] = {
 		.name = "PlayFileStop",
 	},
 	[METHOD_CALL_PLAY_DTMF] = {
 		.name = "PlayDTMF",
+	},
+	[METHOD_CALL_PLAY_DTMF_WITH_STREAM_INFO] = {
+		.name = "PlayDTMFWithStreamInfo",
 	},
 	[METHOD_CALL_GET_BT_A2DP_STATUS] = {
 		.name = "GetBTA2DPStatus",
@@ -1123,7 +1129,7 @@ cleanup:
 
 int mm_sound_client_dbus_play_tone(int tone, int repeat, int volume, int volume_config,
 			   int session_type, int session_options, int client_pid,
-			   bool enable_session, int *codechandle)
+			   bool enable_session, int *codechandle, char *stream_type, int stream_index)
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
@@ -1137,8 +1143,8 @@ int mm_sound_client_dbus_play_tone(int tone, int repeat, int volume, int volume_
 
 	debug_fenter();
 
-	params = g_variant_new("(iiiiiiib)", tone, repeat, volume,
-		      volume_config, session_type, session_options, client_pid , _enable_session);
+	params = g_variant_new("(iiiiiiibsi)", tone, repeat, volume,
+		      volume_config, session_type, session_options, client_pid , _enable_session, stream_type, stream_index);
 	if (params) {
 		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_DTMF, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus play tone failed");
@@ -1166,9 +1172,50 @@ cleanup:
 
 }
 
+int mm_sound_client_dbus_play_tone_with_stream_info(int client_pid, int tone, char *stream_type, int stream_index, int volume, int repeat, int *codechandle)
+{
+	int ret = MM_ERROR_NONE;
+	int handle = 0;
+	GVariant* params = NULL, *result = NULL;
+
+	debug_fenter();
+
+	if (!codechandle) {
+		debug_error("Param for play is null");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	params = g_variant_new("(iiiisi)", tone, repeat, volume, client_pid, stream_type, stream_index);
+	if (params) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_DTMF_WITH_STREAM_INFO, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus play tone failed");
+			goto cleanup;
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+	}
+
+	if (result) {
+		g_variant_get(result, "(i)",  &handle);
+		debug_log("handle : %d", handle);
+		*codechandle = handle;
+	} else {
+		debug_error("reply null");
+	}
+
+cleanup:
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+
+
+}
+
 int mm_sound_client_dbus_play_sound(char* filename, int tone, int repeat, int volume, int volume_config,
 			   int priority, int session_type, int session_options, int client_pid, int keytone,  int handle_route,
-			   bool enable_session, int *codechandle)
+			   bool enable_session, int *codechandle, char *stream_type, int stream_index)
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
@@ -1182,8 +1229,8 @@ int mm_sound_client_dbus_play_sound(char* filename, int tone, int repeat, int vo
 
 	debug_fenter();
 
-	params = g_variant_new("(siiiiiiiiiib)", filename, tone, repeat, volume,
-		      volume_config, priority, session_type, session_options, client_pid, keytone, handle_route, _enable_session);
+	params = g_variant_new("(siiiiiiiiiibsi)", filename, tone, repeat, volume,
+		      volume_config, priority, session_type, session_options, client_pid, keytone, handle_route, _enable_session, stream_type, stream_index);
 	if (params) {
 		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_FILE_START, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus play file failed");
@@ -1208,6 +1255,50 @@ cleanup:
 	debug_fleave();
 	return ret;
 }
+
+int mm_sound_client_dbus_play_sound_with_stream_info(char* filename, int repeat, int volume,
+			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index)
+{
+	int ret = MM_ERROR_NONE;
+	int handle = 0;
+	GVariant* params = NULL, *result = NULL;
+
+	if (!filename || !codechandle) {
+		debug_error("Param for play is null");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	debug_fenter();
+
+	params = g_variant_new("(siiiiisi)", filename, repeat, volume,
+		      priority, client_pid, handle_route, stream_type, stream_index);
+	if (params) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_FILE_START_WITH_STREAM_INFO, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus play file failed");
+			goto cleanup;
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+	}
+
+	if (result) {
+		g_variant_get(result, "(i)",  &handle);
+		debug_log("handle : %d", handle);
+		*codechandle = handle;
+	} else {
+		debug_error("reply null");
+	}
+
+cleanup:
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+
+
+}
+
 
 int mm_sound_client_dbus_stop_sound(int handle)
 {

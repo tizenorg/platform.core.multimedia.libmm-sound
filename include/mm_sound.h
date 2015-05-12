@@ -273,6 +273,7 @@
 	</table></div>
 
  */
+#define MM_SOUND_STREAM_TYPE_LEN 64
 
 /*
  * MMSound Volume APIs
@@ -1841,6 +1842,8 @@ else
  */
 int mm_sound_play_tone (MMSoundTone_t num, int volume_config, const double volume, const int duration, int *handle);
 
+int mm_sound_play_tone_with_stream_info(MMSoundTone_t tone, char *stream_type, int stream_id, const double volume, const int duration, int *handle);
+
 /*
  * Enumerations of System audio route policy
  */
@@ -2255,10 +2258,13 @@ int mm_sound_set_sound_path_for_active_device(mm_sound_device_out device_out, mm
 int mm_sound_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
 
+
 typedef void (*mm_sound_test_cb) (int a, void *user_data);
 int mm_sound_test(int a, int b, int* get);
 int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data);
 int mm_sound_remove_test_callback(void);
+
+void mm_sound_convert_volume_type_to_stream_type(int volume_type, char *stream_type);
 
 typedef enum {
 	MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS,

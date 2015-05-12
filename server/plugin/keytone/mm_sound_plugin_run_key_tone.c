@@ -730,7 +730,8 @@ int CreateAudioHandle(mmsound_codec_info_t info)
 	mm_sound_handle_route_info route_info;
 	route_info.policy = HANDLE_ROUTE_POLICY_OUT_AUTO;
 
-	g_keytone.handle = mm_sound_pa_open(mode, &route_info, HANDLE_PRIORITY_NORMAL, g_keytone.volume_config, &ss, NULL, &size);
+	//setting stream_type to system
+	g_keytone.handle = mm_sound_pa_open(mode, &route_info, HANDLE_PRIORITY_NORMAL, g_keytone.volume_config, &ss, NULL, &size, "system", -1);
 	if(!g_keytone.handle) {
 		debug_error("Fail to audio open \n");
 		return MM_ERROR_SOUND_INTERNAL;
