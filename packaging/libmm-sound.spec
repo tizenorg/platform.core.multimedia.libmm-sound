@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.9.182
+Version:    0.9.183
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -105,10 +105,10 @@ mkdir -p %{buildroot}/opt/etc/dump.d/module.d/
 cp dump_audio.sh %{buildroot}/opt/etc/dump.d/module.d/dump_audio.sh
 
 %make_install
-install -d %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants
-install -m0644 %{SOURCE1} %{buildroot}%{_libdir}/systemd/system/
-install -m0644 %{SOURCE2} %{buildroot}%{_libdir}/systemd/system/
-ln -sf ../sound-server.path %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants/sound-server.path
+install -d %{buildroot}%{_unitdir}/multi-user.target.wants
+install -m0644 %{SOURCE1} %{buildroot}%{_unitdir}/
+install -m0644 %{SOURCE2} %{buildroot}%{_unitdir}/
+ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/sound-server.path
 
 %post
 /sbin/ldconfig
@@ -167,9 +167,9 @@ ln -sf ../sound-server.path %{buildroot}%{_libdir}/systemd/system/multi-user.tar
 %if 0%{?tizen_audio_feature_ogg_enable}
 %{_libdir}/soundplugins/libsoundplugintremoloogg.so
 %endif
-%{_libdir}/systemd/system/multi-user.target.wants/sound-server.path
-%{_libdir}/systemd/system/sound-server.service
-%{_libdir}/systemd/system/sound-server.path
+%{_unitdir}/multi-user.target.wants/sound-server.path
+%{_unitdir}/sound-server.service
+%{_unitdir}/sound-server.path
 /usr/share/sounds/sound-server/*
 %{_datadir}/license/%{name}
 %{_datadir}/license/libmm-sound-tool
