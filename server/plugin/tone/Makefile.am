@@ -13,6 +13,7 @@ libsoundplugintone_la_LIBADD  = \
 				$(MMCOMMON_LIBS) \
 				$(PA_LIBS) \
 				$(srcdir)/../../../libmmfsound.la \
+				$(srcdir)/../../../common/libmmfsoundcommon.la \
 				$(MMLOGSVR_LIBS)
 
 install-exec-hook:
