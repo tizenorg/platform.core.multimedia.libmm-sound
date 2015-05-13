@@ -1696,7 +1696,7 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 			return FALSE;
 		}
 
-		focus_index = cb_data.handle;
+		focus_index = cb_data.handle - 1;
 		if (focus_index < 0) {
 			debug_error("index is not valid, %d", focus_index);
 			return FALSE;
