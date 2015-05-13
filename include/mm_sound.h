@@ -618,7 +618,7 @@ else
 }
  * @endcode
  */
-int mm_sound_volume_set_value(volume_type_t type, const unsigned int value);
+int mm_sound_volume_set_value(volume_type_t type, const unsigned int volume_level);
 
 
 /**

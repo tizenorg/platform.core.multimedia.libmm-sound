@@ -19,11 +19,15 @@
 #define COOKIE_SIZE 20
 #endif
 
+#define VOLUME_TYPE_LEN 64
+
 #define BUS_NAME_PULSEAUDIO "org.pulseaudio.Server"
 #define OBJECT_PULSE_MODULE_POLICY "/org/pulseaudio/policy1"
 #define INTERFACE_PULSE_MODULE_POLICY "org.PulseAudio.Ext.Policy1"
 #define OBJECT_PULSE_MODULE_DEVICE_MANAGER "/org/pulseaudio/DeviceManager"
 #define INTERFACE_PULSE_MODULE_DEVICE_MANAGER "org.pulseaudio.DeviceManager"
+#define OBJECT_PULSE_MODULE_STREAM_MANAGER "/org/pulseaudio/Ext/StreamManager"
+#define INTERFACE_PULSE_MODULE_STREAM_MANAGER "org.pulseaudio.Ext.StreamManager"
 
 #define BUS_NAME_SOUND_SERVER "org.tizen.SoundServer"
 #define OBJECT_SOUND_SERVER "/org/tizen/SoundServer1"
@@ -44,6 +48,7 @@
 enum {
 	DBUS_TO_SOUND_SERVER,
 	DBUS_TO_PULSE_MODULE_DEVICE_MANAGER,
+	DBUS_TO_PULSE_MODULE_STREAM_MANAGER,
 	DBUS_TO_PULSE_MODULE_POLICY,
 };
 
@@ -110,6 +115,9 @@ const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	},
 	[METHOD_CALL_GET_AUDIO_PATH] = {
 		.name = "GetAudioPath",
+	},
+	[METHOD_CALL_SET_VOLUME_LEVEL] = {
+		.name = "SetVolumeLevel",
 	},
 	[METHOD_CALL_GET_CONNECTED_DEVICE_LIST] = {
 		.name = "GetConnectedDeviceList",
@@ -232,6 +240,81 @@ static int _dbus_convert_error(GError *err)
 		debug_log("Dbus error");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
+}
+
+int __convert_volume_type_to_str(int volume_type, char **volume_type_str)
+{
+	int ret = MM_ERROR_NONE;
+
+	if (!volume_type_str) {
+		return MM_ERROR_COMMON_INVALID_ARGUMENT;
+	}
+
+	switch (volume_type) {
+	case VOLUME_TYPE_SYSTEM:
+		*volume_type_str = "system";
+		break;
+	case VOLUME_TYPE_NOTIFICATION:
+		*volume_type_str = "notification";
+		break;
+	case VOLUME_TYPE_ALARM:
+		*volume_type_str = "alarm";
+		break;
+	case VOLUME_TYPE_RINGTONE:
+		*volume_type_str = "ringtone";
+		break;
+	case VOLUME_TYPE_MEDIA:
+		*volume_type_str = "media";
+		break;
+	case VOLUME_TYPE_CALL:
+		*volume_type_str = "call";
+		break;
+	case VOLUME_TYPE_VOIP:
+		*volume_type_str = "voip";
+		break;
+	case VOLUME_TYPE_VOICE:
+		*volume_type_str = "voice";
+		break;
+	}
+	if (!strncmp(*volume_type_str,"", VOLUME_TYPE_LEN)) {
+		debug_error("could not find the volume_type[%d] in this switch case statement", volume_type);
+		ret = MM_ERROR_SOUND_INTERNAL;
+	} else {
+		debug_log("volume_type[%s]", *volume_type_str);
+	}
+	return ret;
+}
+
+int __convert_volume_type_to_int(char *volume_type_str, unsigned int *volume_type)
+{
+	int ret = MM_ERROR_NONE;
+
+	if (!volume_type || !volume_type_str) {
+		return MM_ERROR_COMMON_INVALID_ARGUMENT;
+	}
+
+	if (!strncmp(volume_type_str, "system", VOLUME_TYPE_LEN)) {
+		*volume_type = VOLUME_TYPE_SYSTEM;
+	} else if (!strncmp(volume_type_str, "notification", VOLUME_TYPE_LEN)) {
+		*volume_type = VOLUME_TYPE_NOTIFICATION;
+	} else if (!strncmp(volume_type_str, "alarm", VOLUME_TYPE_LEN)) {
+		*volume_type = VOLUME_TYPE_ALARM;
+	} else if (!strncmp(volume_type_str, "ringtone", VOLUME_TYPE_LEN)) {
+		*volume_type = VOLUME_TYPE_RINGTONE;
+	} else if (!strncmp(volume_type_str, "media", VOLUME_TYPE_LEN)) {
+		*volume_type = VOLUME_TYPE_MEDIA;
+	} else if (!strncmp(volume_type_str, "call", VOLUME_TYPE_LEN)) {
+		*volume_type = VOLUME_TYPE_CALL;
+	} else if (!strncmp(volume_type_str, "voip", VOLUME_TYPE_LEN)) {
+		*volume_type = VOLUME_TYPE_VOIP;
+	} else if (!strncmp(volume_type_str, "voice", VOLUME_TYPE_LEN)) {
+		*volume_type = VOLUME_TYPE_VOICE;
+	} else {
+		debug_log("Invalid volume type : [%s]", volume_type_str);
+		ret = MM_ERROR_SOUND_INTERNAL;
+	}
+
+	return ret;
 }
 
 
@@ -445,6 +528,10 @@ static int _dbus_method_call_to(int dbus_to, int method_type, GVariant *args, GV
 		bus_name = BUS_NAME_PULSEAUDIO;
         object = OBJECT_PULSE_MODULE_DEVICE_MANAGER;
         interface = INTERFACE_PULSE_MODULE_DEVICE_MANAGER;
+	} else if (dbus_to == DBUS_TO_PULSE_MODULE_STREAM_MANAGER) {
+		bus_name = BUS_NAME_PULSEAUDIO;
+		object = OBJECT_PULSE_MODULE_STREAM_MANAGER;
+		interface = INTERFACE_PULSE_MODULE_STREAM_MANAGER;
 	} else if (dbus_to == DBUS_TO_PULSE_MODULE_POLICY) {
 		bus_name = BUS_NAME_PULSEAUDIO;
         object = OBJECT_PULSE_MODULE_POLICY;
@@ -502,12 +589,17 @@ static void _sound_server_dbus_signal_callback (GDBusConnection  *connection,
 	debug_log("Signal(%s.%s) Received , Let's call real User-Callback", interface_name, signal_name);
 
 	if (user_cb->sig_type == SIGNAL_VOLUME_CHANGED) {
-		volume_type_t vol_type;
-		unsigned int volume;
+		volume_type_t volume_type = 0;
+		char *volume_type_str = NULL, *direction = NULL;
+		unsigned int volume_level;
 
-		g_variant_get(params, "(uu)", &vol_type, &volume);
-		debug_log("Call usercallback for %s", g_signals[user_cb->sig_type].name);
-		((mm_sound_volume_changed_cb)(user_cb->cb))(vol_type, volume, user_cb->userdata);
+		g_variant_get(params, "(&s&su)", &direction, &volume_type_str, &volume_level);
+		if (__convert_volume_type_to_int(volume_type_str, &volume_type) != MM_ERROR_NONE) {
+			debug_error("volume type convert failed");
+			return;
+		}
+		debug_log("Call usercallback for %s, direction : %s, vol_type : %s(%d), level : %u", g_signals[user_cb->sig_type].name, direction, volume_type_str, volume_type, volume_level);
+		((mm_sound_volume_changed_cb)(user_cb->cb))(volume_type, volume_level, user_cb->userdata);
 	} else if (user_cb->sig_type == SIGNAL_DEVICE_CONNECTED) {
 		mm_sound_device_t device_h;
 		const char *name = NULL, *device_type = NULL;
@@ -625,6 +717,9 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 	} else if (dbus_to == DBUS_TO_PULSE_MODULE_DEVICE_MANAGER) {
 		object = OBJECT_PULSE_MODULE_DEVICE_MANAGER;
 		interface = INTERFACE_PULSE_MODULE_DEVICE_MANAGER;
+	} else if (dbus_to == DBUS_TO_PULSE_MODULE_STREAM_MANAGER) {
+		object = OBJECT_PULSE_MODULE_STREAM_MANAGER;
+		interface = INTERFACE_PULSE_MODULE_STREAM_MANAGER;
 	} else if (dbus_to == DBUS_TO_PULSE_MODULE_POLICY) {
 		object = OBJECT_PULSE_MODULE_POLICY;
 		interface = INTERFACE_PULSE_MODULE_POLICY;
@@ -917,6 +1012,46 @@ cleanup:
 	return ret;
 }
 
+int mm_sound_client_dbus_set_volume_by_type(const int volume_type, const unsigned int volume_level)
+{
+	int ret = MM_ERROR_NONE;
+	char *reply = NULL, *type_str = NULL, *direction = "out";
+	GVariant *params = NULL, *result = NULL;
+
+	debug_fenter();
+
+	if (ret = __convert_volume_type_to_str(volume_type, &type_str) != MM_ERROR_NONE) {
+		debug_error("volume type convert failed");
+		return ret;
+	}
+
+	params = g_variant_new("(ssu)", direction, type_str, volume_level);
+	if (params) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_PULSE_MODULE_STREAM_MANAGER, METHOD_CALL_SET_VOLUME_LEVEL, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus test call failed");
+			goto cleanup;
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	if (result) {
+		g_variant_get(result, "(&s)",  &reply);
+		debug_log("reply : %s", reply);
+		if (!strcmp(reply, "STREAM_MANAGER_RETURN_ERROR"))
+			ret = MM_ERROR_SOUND_INTERNAL;
+	} else {
+		debug_error("reply null");
+	}
+
+cleanup:
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+}
 
 int mm_sound_client_dbus_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data)
 {
@@ -924,7 +1059,7 @@ int mm_sound_client_dbus_add_volume_changed_callback(mm_sound_volume_changed_cb 
 
 	debug_fenter();
 
-	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_SOUND_SERVER, SIGNAL_VOLUME_CHANGED, func, user_data, 0)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_PULSE_MODULE_STREAM_MANAGER, SIGNAL_VOLUME_CHANGED, func, user_data, 0)) != MM_ERROR_NONE) {
 		debug_error("Add Volume changed callback failed");
 	}
 

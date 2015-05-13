@@ -79,7 +79,6 @@ int mm_sound_pa_close(const int handle);
 int mm_sound_pa_cork(const int handle, const int cork);
 int mm_sound_pa_drain(const int handle);
 int mm_sound_pa_flush(const int handle);
-int mm_sound_pa_set_volume_by_type(const int type, const int value);
 int mm_sound_pa_get_latency(const int handle, int* latency);
 int mm_sound_pa_set_call_mute(const int type, const int mute, int direction);
 int mm_sound_pa_get_volume_level(const int handle, const int type, int* level);

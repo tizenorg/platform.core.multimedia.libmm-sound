@@ -29,7 +29,7 @@
 #include "include/mm_sound.h"
 #include "include/mm_sound_device.h"
 
-#define DEVICE_TYPE_LEN 64
+#define VOLUME_TYPE_LEN 64
 
 bool g_is_new_device_list = true;
 
@@ -73,21 +73,21 @@ static int __convert_device_type_to_enum (char *device_type, mm_sound_device_typ
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if (!strncmp(device_type, "builtin-speaker", DEVICE_TYPE_LEN)) {
+	if (!strncmp(device_type, "builtin-speaker", VOLUME_TYPE_LEN)) {
 		*device_type_enum = MM_SOUND_DEVICE_TYPE_BUILTIN_SPEAKER;
-	} else if (!strncmp(device_type, "builtin-receiver", DEVICE_TYPE_LEN)) {
+	} else if (!strncmp(device_type, "builtin-receiver", VOLUME_TYPE_LEN)) {
 		*device_type_enum = MM_SOUND_DEVICE_TYPE_BUILTIN_RECEIVER;
-	} else if (!strncmp(device_type, "builtin-mic", DEVICE_TYPE_LEN)) {
+	} else if (!strncmp(device_type, "builtin-mic", VOLUME_TYPE_LEN)) {
 		*device_type_enum = MM_SOUND_DEVICE_TYPE_BUILTIN_MIC;
-	} else if (!strncmp(device_type, "audio-jack", DEVICE_TYPE_LEN)) {
+	} else if (!strncmp(device_type, "audio-jack", VOLUME_TYPE_LEN)) {
 		*device_type_enum = MM_SOUND_DEVICE_TYPE_AUDIOJACK;
-	} else if (!strncmp(device_type, "bt", DEVICE_TYPE_LEN)) {
+	} else if (!strncmp(device_type, "bt", VOLUME_TYPE_LEN)) {
 		*device_type_enum = MM_SOUND_DEVICE_TYPE_BLUETOOTH;
-	} else if (!strncmp(device_type, "hdmi", DEVICE_TYPE_LEN)) {
+	} else if (!strncmp(device_type, "hdmi", VOLUME_TYPE_LEN)) {
 		*device_type_enum = MM_SOUND_DEVICE_TYPE_HDMI;
-	} else if (!strncmp(device_type, "forwarding", DEVICE_TYPE_LEN)) {
+	} else if (!strncmp(device_type, "forwarding", VOLUME_TYPE_LEN)) {
 		*device_type_enum = MM_SOUND_DEVICE_TYPE_MIRRORING;
-	} else if (!strncmp(device_type, "usb-audio", DEVICE_TYPE_LEN)) {
+	} else if (!strncmp(device_type, "usb-audio", VOLUME_TYPE_LEN)) {
 		*device_type_enum = MM_SOUND_DEVICE_TYPE_USB_AUDIO;
 	} else {
 		ret = MM_ERROR_INVALID_ARGUMENT;

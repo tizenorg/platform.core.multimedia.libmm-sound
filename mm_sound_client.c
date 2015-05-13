@@ -446,6 +446,17 @@ int mm_sound_client_is_bt_a2dp_on (bool *connected, char** bt_name)
 	return ret;
 }
 
+int mm_sound_client_set_volume_by_type(const int volume_type, const unsigned int volume_level)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	ret = mm_sound_client_dbus_set_volume_by_type(volume_type, volume_level);
+
+	debug_fleave();
+	return ret;
+}
 
 int mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data)
 {

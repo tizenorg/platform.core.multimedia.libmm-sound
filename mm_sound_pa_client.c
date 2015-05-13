@@ -809,27 +809,6 @@ static void __mm_sound_pa_success_cb(pa_context *c, int success, void *userdata)
 }
 
 EXPORT_API
-int mm_sound_pa_set_volume_by_type(const int type, const int value)
-{
-    pa_operation *o = NULL;
-
-    CHECK_VOLUME_TYPE_RANGE(type);
-    CHECK_CONNECT_TO_PULSEAUDIO();
-
-    pa_threaded_mainloop_lock(mm_sound_handle_mgr.mainloop);
-
-    o = pa_ext_policy_set_volume_level(mm_sound_handle_mgr.context, -1, type, value, __mm_sound_pa_success_cb, (void*)mm_sound_handle_mgr.mainloop);
-    WAIT_PULSEAUDIO_OPERATION(mm_sound_handle_mgr, o);
-
-    if(o)
-        pa_operation_unref(o);
-
-    pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-
-    return MM_ERROR_NONE;
-}
-
-EXPORT_API
 int mm_sound_pa_set_call_mute(const int type, const int mute, int direction)
 {
     pa_operation *o = NULL;

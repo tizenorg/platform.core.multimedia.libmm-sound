@@ -43,6 +43,7 @@ int mm_sound_client_add_active_device_changed_callback(const char *name, mm_soun
 int mm_sound_client_remove_active_device_changed_callback(const char *name);
 int mm_sound_client_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void* user_data);
 int mm_sound_client_remove_available_route_changed_callback(void);
+int mm_sound_client_set_volume_by_type(const int volume_type, const unsigned int volume_level);
 int mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data);
 int mm_sound_client_remove_volume_changed_callback(void);
 int mm_sound_client_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in);

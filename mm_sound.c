@@ -230,19 +230,19 @@ int mm_sound_volume_get_step(volume_type_t type, int *step)
 }
 
 EXPORT_API
-int mm_sound_volume_set_value(volume_type_t type, const unsigned int value)
+int mm_sound_volume_set_value(volume_type_t volume_type, const unsigned int volume_level)
 {
 	int ret = MM_ERROR_NONE;
 
-	debug_msg("type = (%d)%s, value = %d", type, _get_volume_str(type), value);
+	debug_msg("type = (%d)%s, value = %d", volume_type, _get_volume_str(volume_type), volume_level);
 
 	/* Check input param */
-	if (0 > _validate_volume(type, (int)value)) {
-		debug_error("invalid volume type %d, value %u\n", type, value);
+	if (0 > _validate_volume(volume_type, (int)volume_level)) {
+		debug_error("invalid volume type %d, value %u\n", volume_type, volume_level);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_util_volume_set_value_by_type(type, value);
+	ret = mm_sound_util_volume_set_value_by_type(volume_type, volume_level);
 	if (ret == MM_ERROR_NONE) {
 		/* update shared memory value */
 #if 0 /* FIXME ..... */
@@ -250,7 +250,7 @@ int mm_sound_volume_set_value(volume_type_t type, const unsigned int value)
 		mm_sound_util_get_muteall(&muteall);
 		if(!muteall) {
 #endif
-			if(MM_ERROR_NONE != mm_sound_pa_set_volume_by_type(type, (int)value)) {
+			if(MM_ERROR_NONE != mm_sound_client_set_volume_by_type(volume_type, volume_level)) {
 				debug_error("Can not set volume to shared memory 0x%x\n", ret);
 			}
 #if 0
