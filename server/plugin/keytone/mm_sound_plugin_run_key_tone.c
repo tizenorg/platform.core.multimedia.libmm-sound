@@ -45,7 +45,7 @@
 #include "../../include/mm_sound_plugin_codec.h"
 #include "../../../include/mm_sound_utils.h"
 #include "../../../include/mm_sound_common.h"
-#include "../../include/mm_sound_pa_client.h"
+#include "../../../include/mm_sound_pa_client.h"
 
 #ifdef OGG_SUPPORT
 #include <tremolo_vorbisdec_api.h>
