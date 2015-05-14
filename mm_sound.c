@@ -81,6 +81,7 @@ const char* dbus_signal_name_str[] = {
 };
 
 typedef struct _subscribe_cb {
+	mm_sound_signal_name_t signal_type;
 	mm_sound_signal_callback callback;
 	void *user_data;
 	unsigned int id;
@@ -973,13 +974,23 @@ void _dbus_signal_callback (const char *signal_name, int value, void *user_data)
 
 	debug_fenter();
 
+	if (!subscribe_cb)
+		return;
+
 	ret = _convert_signal_name_str_to_enum(signal_name, &signal);
 	if (ret)
 		return;
 
 	debug_msg ("signal_name[%s], value[%d], user_data[0x%x]\n", signal_name, value, user_data);
 
-	subscribe_cb->callback(signal, value, subscribe_cb->user_data);
+	if (subscribe_cb->signal_type == MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS) {
+		/* trigger the signal callback when it comes from the same process */
+		if (getpid() == ((value & 0xFFFF0000) >> 16)) {
+			subscribe_cb->callback(signal, (value & 0x0000FFFF), subscribe_cb->user_data);
+		}
+	} else {
+		subscribe_cb->callback(signal, value, subscribe_cb->user_data);
+	}
 
 	debug_fleave();
 
@@ -991,7 +1002,7 @@ int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subsc
 {
 	int ret = MM_ERROR_NONE;
 	GError *err = NULL;
-	char *bus_name = NULL;
+
 	subscribe_cb_t *subscribe_cb = NULL;
 
 	debug_fenter();
@@ -1021,13 +1032,10 @@ int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subsc
 		goto error;
 	}
 
+	subscribe_cb->signal_type = signal;
 	subscribe_cb->callback = callback;
 	subscribe_cb->user_data = user_data;
 
-	if (signal == MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS)
-		bus_name = g_strdup_printf("%s.%d", MM_SOUND_DBUS_BUS_NAME_PREPIX, getpid());
-	else
-		bus_name = g_strdup_printf("%s", MM_SOUND_DBUS_BUS_NAME_PREPIX);
 	*subscribe_id = g_dbus_connection_signal_subscribe(g_dbus_conn_mmsound,
 			NULL, MM_SOUND_DBUS_INTERFACE, dbus_signal_name_str[signal], MM_SOUND_DBUS_OBJECT_PATH, NULL, 0,
 			signal_callback, subscribe_cb, NULL);
@@ -1039,12 +1047,9 @@ int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subsc
 
 	subscribe_cb->id = *subscribe_id;
 
-	if (bus_name)
-		g_free(bus_name);
-
 	g_subscribe_cb_list = g_list_append(g_subscribe_cb_list, subscribe_cb);
 	if (g_subscribe_cb_list) {
-		debug_log("new subscribe_cb(0x%x) is added\n", subscribe_cb);
+		debug_log("new subscribe_cb(0x%x)[user_callback(0x%x), subscribe_id(%u)] is added\n", subscribe_cb, subscribe_cb->callback, subscribe_cb->id);
 	} else {
 		debug_error("g_list_append failed\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
@@ -1058,8 +1063,6 @@ int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subsc
 	return ret;
 
 sig_error:
-	if (bus_name)
-		g_free(bus_name);
 	g_dbus_connection_signal_unsubscribe(g_dbus_conn_mmsound, *subscribe_id);
 	g_object_unref(g_dbus_conn_mmsound);
 
@@ -1107,7 +1110,6 @@ int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
 	GError *err = NULL;
 	GDBusConnection *conn = NULL;
 	gboolean dbus_ret = TRUE;
-	char *bus_name = NULL;
 
 	debug_fenter();
 
@@ -1127,13 +1129,12 @@ int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
 	}
 
 	g_dbus_signal_values[signal] = value;
-
-	if (signal == MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS)
-		bus_name = g_strdup_printf("%s.%d", MM_SOUND_DBUS_BUS_NAME_PREPIX, getpid());
-	else
-		bus_name = g_strdup_printf("%s", MM_SOUND_DBUS_BUS_NAME_PREPIX);
+	if (signal == MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS) {
+		/* trigger the signal callback when it comes from the same process */
+		value |= ((int)getpid() << 16);
+	}
 	dbus_ret = g_dbus_connection_emit_signal (conn,
-				bus_name, MM_SOUND_DBUS_OBJECT_PATH, MM_SOUND_DBUS_INTERFACE, dbus_signal_name_str[signal],
+				NULL, MM_SOUND_DBUS_OBJECT_PATH, MM_SOUND_DBUS_INTERFACE, dbus_signal_name_str[signal],
 				g_variant_new ("(i)", value),
 				&err);
 	if (!dbus_ret && err) {
@@ -1152,9 +1153,6 @@ int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
 	g_object_unref(conn);
 	debug_msg ("sending signal[%s], value[%d] success", dbus_signal_name_str[signal], value);
 
-	if (bus_name)
-		g_free(bus_name);
-
 	MMSOUND_LEAVE_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
 
 	debug_fleave();
@@ -1162,8 +1160,6 @@ int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
 	return ret;
 
 error:
-	if (bus_name)
-		g_free(bus_name);
 	if (err)
 		g_error_free (err);
 	if (conn)
