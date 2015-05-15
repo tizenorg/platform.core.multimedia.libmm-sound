@@ -273,8 +273,8 @@ int mm_sound_get_device_id(MMSoundDevice_t device_h, int *id)
 		debug_error("invalid handle\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	debug_log("device_handle:0x%x, id:%d\n", device, *id);
 	*id = device->id;
+	debug_log("device_handle:0x%x, id:%d\n", device, *id);
 
 	return MM_ERROR_NONE;
 }
@@ -287,8 +287,8 @@ int mm_sound_get_device_state(MMSoundDevice_t device_h, mm_sound_device_state_e 
 		debug_error("invalid handle\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	debug_log("device_handle:0x%x, state:%d (0:INACTIVATED,1:ACTIVATED)\n", device, *state);
 	*state = device->state;
+	debug_log("device_handle:0x%x, state:%d (0:INACTIVATED,1:ACTIVATED)\n", device, *state);
 
 	return MM_ERROR_NONE;
 }
