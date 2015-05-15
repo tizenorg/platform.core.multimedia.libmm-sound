@@ -33,8 +33,6 @@
 #define OBJECT_ASM "/org/tizen/asm"
 #define INTERFACE_ASM "org.tizen.asm"
 
-#define MM_SOUND_ERROR mm_sound_error_quark()
-
 /* Introspection data for the service we are exporting */
   static const gchar introspection_xml[] =
   "<node>"
@@ -633,16 +631,18 @@ static const GDBusErrorEntry mm_sound_error_entries[] =
 	{MM_ERROR_SOUND_INVALID_PATH, "org.tizen.multimedia.audio.InvalidPath"},
 };
 
-GQuark mm_sound_error_quark (void)
+static const char* _convert_error_code(int err_code)
 {
-	static volatile gsize quark_volatile = 0;
-	g_dbus_error_register_error_domain("mm-sound-error-quark",
-					   &quark_volatile,
-					   mm_sound_error_entries,
-					   G_N_ELEMENTS(mm_sound_error_entries));
-	return (GQuark) quark_volatile;
-}
+	int i = 0;
 
+	for (i = 0; i < G_N_ELEMENTS(mm_sound_error_entries); i++) {
+		if (err_code == mm_sound_error_entries[i].error_code) {
+			return mm_sound_error_entries[i].dbus_error_name;
+		}
+	}
+
+	return "org.tizen.multimedia.common.Unknown";
+}
 
 static int mm_sound_mgr_ipc_dbus_send_signal(int signal_type, GVariant *parameter)
 {
@@ -710,6 +710,21 @@ static int _get_sender_pid(GDBusMethodInvocation* invocation)
 	return pid;
 }
 
+static void _method_call_return_value(GDBusMethodInvocation *invocation, GVariant *params)
+{
+	const char *method_name;
+	method_name = g_dbus_method_invocation_get_method_name(invocation);
+	debug_error("Method Call '%s' success", method_name);
+	g_dbus_method_invocation_return_value(invocation, params);
+}
+static void _method_call_return_error(GDBusMethodInvocation *invocation, int ret)
+{
+	const char *err_name, *method_name;
+	err_name = _convert_error_code(ret);
+	method_name = g_dbus_method_invocation_get_method_name(invocation);
+	debug_error("Method Call '%s' failed, err '%s(%X)'", method_name, err_name, ret);
+	g_dbus_method_invocation_return_dbus_error(invocation, err_name, "failed");
+}
 
 static void handle_method_test(GDBusMethodInvocation* invocation)
 {
@@ -736,11 +751,10 @@ static void handle_method_test(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Method Test success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(i)", val*val2) );
+		_method_call_return_value(invocation, g_variant_new("(i)", val * val2));
 	} else {
-		debug_error("Method Test failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "method for test failed");
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		_method_call_return_error(invocation,  ret);
 	}
 
 	debug_fleave();
@@ -775,11 +789,9 @@ static void handle_method_play_file_start(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Method Play file start success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(i)", slotid));
+		_method_call_return_value(invocation, g_variant_new("(i)", slotid));
 	} else {
-		debug_error("Method Play file start failed");
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Play file failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -808,11 +820,9 @@ static void handle_method_play_dtmf(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Method play dtmf success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(i)", slotid));
+		_method_call_return_value(invocation, g_variant_new("(i)", slotid));
 	} else {
-		debug_error("Method play dtmf failed");
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Play DTMF failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -837,11 +847,9 @@ static void handle_method_play_file_stop(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Method Stop file playing Success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
-		debug_error("Method Stop file playing failed");
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Stop file playing failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -858,11 +866,9 @@ static void handle_method_get_bt_a2dp_status(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Get BT A2DP status success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(bs)", is_bt_on, bt_name));
+		_method_call_return_value(invocation, g_variant_new("(bs)", is_bt_on, bt_name));
 	} else {
-		debug_error("Get BT A2DP status failed");
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Get BT A2DP status failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	if (bt_name)
@@ -890,11 +896,9 @@ static void handle_method_set_sound_path_for_active_device( GDBusMethodInvocatio
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_log("Set sound path for active device success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
-		debug_error("Set sound path for active device failed");
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Set Sound Path for active device failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -911,11 +915,9 @@ static void handle_method_get_audio_path(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Get audio path success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(ii)", device_in, device_out));
+		_method_call_return_value(invocation, g_variant_new("(ii)", device_in, device_out));
 	} else {
-		debug_error("Get audio path failed");
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Set audio Path for active device failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -951,11 +953,10 @@ static void handle_method_get_connected_device_list(GDBusMethodInvocation* invoc
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		g_dbus_method_invocation_return_value(invocation, g_variant_builder_end(&reply_builder));
+		_method_call_return_value(invocation, g_variant_builder_end(&reply_builder));
 		debug_log("Reply Sent");
 	} else {
-		debug_error("Get connected device list failed");
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Get Connected device list failed");
+		_method_call_return_error(invocation, ret);
 	}
 }
 
@@ -1003,11 +1004,9 @@ static void handle_method_register_focus(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Register focus success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
-		debug_error("Register focus failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Register focus failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1033,11 +1032,9 @@ static void handle_method_unregister_focus(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Unregister focus success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
-		debug_error("Unregister focus failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Unregister focus failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1063,11 +1060,9 @@ static void handle_method_acquire_focus(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Acquire focus success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
-		debug_error("Acquire focus failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Acquire focus failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1093,11 +1088,9 @@ static void handle_method_release_focus(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Release focus success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
-		debug_error("Release focus failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Release focus failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1145,11 +1138,9 @@ static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Watch focus success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
-		debug_error("Watch focus failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Watch focus failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1175,11 +1166,9 @@ static void handle_method_unwatch_focus (GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("Unwatch focus success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
-		debug_error("Unwatch focus failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "Unwatch focus failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1258,12 +1247,10 @@ static void handle_method_asm_register_sound(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM register sound success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
 								    request_id_r, sound_command_r, sound_state_r));
 	} else {
-		debug_error("ASM register sound failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM register sound failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1288,11 +1275,9 @@ static void handle_method_asm_unregister_sound(GDBusMethodInvocation* invocation
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM unregister sound success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
-		debug_error("ASM unregister sound failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM register sound failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1341,12 +1326,10 @@ static void handle_method_asm_register_watcher(GDBusMethodInvocation* invocation
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM register watcher success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
 								    request_id_r, sound_command_r, sound_state_r));
 	} else {
-		debug_error("ASM register watcher failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM register watcher failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1371,11 +1354,9 @@ static void handle_method_asm_unregister_watcher(GDBusMethodInvocation* invocati
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM unregister watcher success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
-		debug_error("ASM unregister watcher failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM unregister watcher failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1402,12 +1383,10 @@ static void handle_method_asm_get_mystate(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM get mystate success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiiii)", pid_r, alloc_handle_r, cmd_handle_r,
 								    request_id_r, sound_state_r));
 	} else {
-		debug_error("ASM get mystate failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM get mystate failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1434,12 +1413,10 @@ static void handle_method_asm_set_state(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM requeset set state success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
 								    request_id_r, sound_command_r, sound_state_r, error_code_r));
 	} else {
-		debug_error("ASM set state failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM set state failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1466,12 +1443,10 @@ static void handle_method_asm_get_state(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM get state success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiiii)", pid_r, alloc_handle_r, cmd_handle_r,
 								    request_id_r, sound_state_r));
 	} else {
-		debug_error("ASM get state failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM get state failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1498,12 +1473,10 @@ static void handle_method_asm_set_subsession(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM set subsession success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiii)", pid_r, alloc_handle_r, cmd_handle_r,
 								    request_id_r));
 	} else {
-		debug_error("ASM set subsession failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM set subsession failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1530,12 +1503,10 @@ static void handle_method_asm_get_subsession(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM get subsession success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiiii)", pid_r, alloc_handle_r, cmd_handle_r,
 								    request_id_r, sound_command_r));
 	} else {
-		debug_error("ASM get subsession failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM get subsession failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1562,12 +1533,10 @@ static void handle_method_asm_set_subevent(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM set subevent success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
 								 request_id_r, sound_command_r, sound_state_r));
 	} else {
-		debug_error("ASM set subevent failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM set subevent failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1594,12 +1563,10 @@ static void handle_method_asm_get_subevent(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM get subevent success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiiii)", pid_r, alloc_handle_r, cmd_handle_r,
 								 request_id_r, sound_command_r ));
 	} else {
-		debug_error("ASM get subevent failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM get subevent failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1626,12 +1593,10 @@ static void handle_method_asm_set_session_option(GDBusMethodInvocation* invocati
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM set session options success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
 							      request_id_r, sound_command_r, error_code_r ));
 	} else {
-		debug_error("ASM set session options failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM set sesion options failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1658,12 +1623,10 @@ static void handle_method_asm_get_session_option(GDBusMethodInvocation* invocati
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM get session options success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
 							   request_id_r, sound_command_r, option_flag_r ));
 	} else {
-		debug_error("ASM get session options failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM get sesion options failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1690,12 +1653,10 @@ static void handle_method_asm_reset_resume_tag(GDBusMethodInvocation* invocation
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM reset resume tag success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
+		_method_call_return_value(invocation, g_variant_new("(iiiiii)", pid_r, alloc_handle_r, cmd_handle_r,
 							request_id_r, sound_command_r, sound_state_r ));
 	} else {
-		debug_error("ASM reset resume tag failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM reset resume tag failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
@@ -1721,11 +1682,9 @@ static void handle_method_asm_dump(GDBusMethodInvocation* invocation)
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		debug_error("ASM dump success");
-		g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
-		debug_error("ASM dump failed, ret : 0x%X", ret);
-		g_dbus_method_invocation_return_error(invocation, MM_SOUND_ERROR, ret, "ASM dump failed");
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();

@@ -39,6 +39,7 @@
 #define METHOD_SET			"Set"
 #define DBUS_NAME_MAX                   32
 #define DBUS_SIGNATURE_MAX              32
+#define ERR_MSG_MAX                     100
 
 #define FOCUS_HANDLE_MAX 512
 #define FOCUS_HANDLE_INIT_VAL -1
@@ -92,7 +93,6 @@ GMainLoop *g_focus_loop;
 focus_sound_info_t g_focus_sound_handle[FOCUS_HANDLE_MAX];
 guint g_dbus_subs_ids[SIGNAL_MAX];
 guint g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MAX];
-GQuark g_mm_sound_error_quark;
 
 const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_TEST] = {
@@ -217,29 +217,40 @@ static const GDBusErrorEntry mm_sound_error_entries[] =
 ******************************************************************************************/
 
 
-static GQuark _dbus_register_error_domain (void)
+static int _parse_error_msg(const char *full_err_msg, char **err_name, char **err_msg)
 {
-	static volatile gsize quark_volatile = 0;
-	g_dbus_error_register_error_domain("mm-sound-error-quark",
-					   &quark_volatile,
-					   mm_sound_error_entries,
-					   G_N_ELEMENTS(mm_sound_error_entries));
-	return (GQuark) quark_volatile;
+	char *save_p, *domain, *_err_name, *_err_msg;
+
+	if (!(domain = strtok_r(full_err_msg, ":", &save_p))) {
+		debug_error("get domain failed");
+		return -1;
+	}
+	if (!(_err_name = strtok_r(NULL, ":", &save_p))) {
+		debug_error("get err name failed");
+		return -1;
+	}
+	if (!(_err_msg = strtok_r(NULL, ":", &save_p))) {
+		debug_error("get err msg failed");
+		return -1;
+	}
+
+	*err_name = _err_name;
+	*err_msg = _err_msg;
+
+	return 0;
 }
 
-static int _dbus_convert_error(GError *err)
+static int _convert_error_name(const char *err_name)
 {
-	if (g_dbus_error_is_remote_error(err)) {
-		if (err->domain == g_mm_sound_error_quark) {
-			return err->code;
-		} else{
-			debug_error("Unknown Error domain");
-			return MM_ERROR_SOUND_INTERNAL;
+	int i = 0;
+
+	for (i = 0; i < G_N_ELEMENTS(mm_sound_error_entries); i++) {
+		if (!strcmp(mm_sound_error_entries[i].dbus_error_name, err_name)) {
+			return mm_sound_error_entries[i].error_code;
 		}
-	} else {
-		debug_log("Dbus error");
-		return MM_ERROR_SOUND_INTERNAL;
 	}
+
+	return MM_ERROR_COMMON_UNKNOWN;
 }
 
 int __convert_volume_type_to_str(int volume_type, char **volume_type_str)
@@ -347,8 +358,15 @@ static int _dbus_method_call(GDBusConnection* conn, const char* bus_name, const 
 		debug_log("Method Call '%s.%s' Success", intf, method);
 		*result = dbus_reply;
 	} else {
-		debug_error ("g_dbus_connection_call_sync() error (%s)(%s) ",  g_quark_to_string(err->domain), err->message);
-		ret = _dbus_convert_error(err);
+		char *err_name = NULL, *err_msg = NULL;
+		debug_log("Method Call '%s.%s' Failed", intf, method);
+
+		if (_parse_error_msg(err->message,  &err_name, &err_msg) < 0) {
+			debug_error("failed to parse error message");
+			g_error_free(err);
+			return MM_ERROR_SOUND_INTERNAL;
+		}
+		ret = _convert_error_name(err_name);
 		g_error_free(err);
 	}
 
@@ -2556,7 +2574,6 @@ int mm_sound_client_dbus_initialize(void)
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-	g_mm_sound_error_quark = _dbus_register_error_domain();
 	debug_fleave();
 	return ret;
 }
