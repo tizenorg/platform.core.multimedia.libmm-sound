@@ -242,7 +242,7 @@ static int _MMSoundPluginGetList(const char *plugdir ,char ***list)
 			goto free_entry;
 		}
 
-		debug_msg("item %d is %s\n", item_idx, entry[item_idx]->d_name);
+		debug_log("item %d is %s\n", item_idx, entry[item_idx]->d_name);
 
 		if (S_ISREG(finfo.st_mode)) {
 			temp[tn++] = __strcatdup(plugdir, entry[item_idx]->d_name);

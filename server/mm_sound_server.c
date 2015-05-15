@@ -133,26 +133,12 @@ static void __wait_for_vconfkey_ready (const char *keyname)
 
 static int _handle_power_off ()
 {
-	int handle = 0;
-	int asm_error = 0;
-
-	if (ASM_register_sound (-1, &handle, ASM_EVENT_EMERGENCY, ASM_STATE_PLAYING, NULL, NULL, ASM_RESOURCE_NONE, &asm_error)) {
-		if (ASM_unregister_sound (handle, ASM_EVENT_EMERGENCY, &asm_error)) {
-			debug_log ("asm register/unregister success!!!\n");
-			return 0;
-		} else {
-			debug_error ("asm unregister failed...0x%x\n", asm_error);
-		}
-	} else {
-		debug_error ("asm register failed...0x%x\n", asm_error);
-	}
-
-	return -1;
+	debug_warning ("not supported\n");
+	return 0;
 }
 
 static int _handle_sound_reset ()
 {
-	int ret = 0;
 	debug_warning ("not supported\n");
 	return 0;
 }

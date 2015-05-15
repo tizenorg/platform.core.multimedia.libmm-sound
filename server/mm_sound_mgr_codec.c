@@ -912,7 +912,7 @@ static int _MMSoundMgrCodecRegisterInterface(MMSoundPluginType *plugin)
 		debug_error("Get Symbol CODEC_GET_INTERFACE_FUNC_NAME is fail : %x\n", err);
 		goto cleanup;
 	}
-	debug_msg("interface[%s] empty_slot[%d]\n", (char*)getinterface, count);
+	debug_msg("interface[%p] empty_slot[%d]\n", getinterface, count);
 
 	err = MMSoundPlugCodecCastGetInterface(getinterface)(&g_plugins[count]);
 	if (err != MM_ERROR_NONE) {
