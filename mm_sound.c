@@ -118,11 +118,6 @@ static int _validate_volume(volume_type_t type, int value)
 			return -1;
 		}
 		break;
-	case VOLUME_TYPE_EXT_ANDROID:
-		if (value >= VOLUME_MAX_SINGLE) {
-			return -1;
-		}
-		break;
 	default:
 		return -1;
 		break;
@@ -290,13 +285,13 @@ int mm_sound_volume_primary_type_set(volume_type_t type)
 	int ret = MM_ERROR_NONE;
 
 	/* Check input param */
-	if(type < 0 || type >= VOLUME_TYPE_MAX) {
+	if(type < VOLUME_TYPE_UNKNOWN || type >= VOLUME_TYPE_MAX) {
 		debug_error("invalid argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if (vconf_set_int(VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE_FORCE, type)) {
-		debug_error("could not set vconf for RIMARY_VOLUME_TYPE_FORCE\n");
+	if (vconf_set_int(VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE, type)) {
+		debug_error("could not set vconf for RIMARY_VOLUME_TYPE\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
 	} else {
 		debug_msg("set primary volume type forcibly %d(%s)", type, _get_volume_str(type));
@@ -306,27 +301,10 @@ int mm_sound_volume_primary_type_set(volume_type_t type)
 }
 
 EXPORT_API
-int mm_sound_volume_primary_type_clear(void)
-{
-	pid_t mypid;
-	int ret = MM_ERROR_NONE;
-
-	if (vconf_set_int(VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE_FORCE, -1)) {
-		debug_error("could not reset vconf for RIMARY_VOLUME_TYPE_FORCE\n");
-		ret = MM_ERROR_SOUND_INTERNAL;
-	} else {
-		debug_msg("clear primary volume type forcibly %d(%s)", -1, "none");
-	}
-
-	return ret;
-}
-
-EXPORT_API
-int mm_sound_volume_get_current_playing_type(volume_type_t *type)
+int mm_sound_volume_primary_type_get(volume_type_t *type)
 {
 	int ret = MM_ERROR_NONE;
 	int voltype = VOLUME_TYPE_RINGTONE;
-	int fvoltype = -1;
 
 	/* Check input param */
 	if(type == NULL) {
@@ -335,35 +313,30 @@ int mm_sound_volume_get_current_playing_type(volume_type_t *type)
 	}
 
 	/* check force set */
-	if (vconf_get_int(VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE_FORCE, &fvoltype)) {
-		debug_error("could not get vconf for RIMARY_VOLUME_TYPE_FORCE\n");
+	if (vconf_get_int(VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE, &voltype)) {
+		debug_error("could not get vconf for PRIMARY_VOLUME_TYPE\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
 	} else {
-		if(fvoltype >= 0) {
-			*type = fvoltype;
-			return MM_ERROR_NONE;
-		}
-	}
-
-	/* If primary volume is not set by user, get current playing volume */
-	if(vconf_get_int(VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE, &voltype)) {
-		debug_error("get vconf(VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE) failed voltype(%d)\n", voltype);
-	} else {
-		debug_error("get vconf(VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE) voltype(%d)\n", voltype);
-	}
-
-	if(voltype >= 0) {
+		debug_msg("get primary volume type %d(%s)", voltype, _get_volume_str(voltype));
 		*type = voltype;
-		ret = MM_ERROR_NONE;
 	}
-	else if(voltype == -1)
-		ret = MM_ERROR_SOUND_VOLUME_NO_INSTANCE;
-	else if(voltype == -2)
-		ret = MM_ERROR_SOUND_VOLUME_CAPTURE_ONLY;
-	else
-		ret = MM_ERROR_SOUND_INTERNAL;
 
-	debug_msg("returned type = (%d)%15s, ret = 0x%x", *type, _get_volume_str(*type), ret);
+	return ret;
+}
+
+/* it will be removed */
+EXPORT_API
+int mm_sound_volume_primary_type_clear(void)
+{
+	pid_t mypid;
+	int ret = MM_ERROR_NONE;
+
+	if (vconf_set_int(VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE, -1)) {
+		debug_error("could not reset vconf for PRIMARY_VOLUME_TYPE\n");
+		ret = MM_ERROR_SOUND_INTERNAL;
+	} else {
+		debug_msg("clear primary volume type forcibly %d(%s)", -1, "none");
+	}
 
 	return ret;
 }

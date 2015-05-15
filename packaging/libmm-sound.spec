@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.9.211
+Version:    0.9.212
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -100,29 +100,28 @@ ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/soun
 /usr/bin/vconftool set -t int memory/private/Sound/ASMReady 0 -g 29 -f -i -s system::vconf_multimedia
 /usr/bin/vconftool set -t int memory/private/Sound/VoiceControlOn 0 -g 29 -f -i -s system::vconf_multimedia
 #SPK REC EAR BTS BTA DOCK HDMI MIR USB MDOCK
-#/usr/bin/vconftool set -t string file/private/sound/volume/system "09090909090909090909" -g 29 -f
-#/usr/bin/vconftool set -t string file/private/sound/volume/notification "11" -g 29 -f
-#/usr/bin/vconftool set -t string file/private/sound/volume/alarm "7" -g 29 -f
-#/usr/bin/vconftool set -t string file/private/sound/volume/ringtone "11" -g 29 -f
-#/usr/bin/vconftool set -t string file/private/sound/volume/media "07070907070707070707" -g 29 -f
-#/usr/bin/vconftool set -t string file/private/sound/volume/call "04040404040404040404" -g 29 -f
-#/usr/bin/vconftool set -t string file/private/sound/volume/voip "04040404040404040404" -g 29 -f
-#/usr/bin/vconftool set -t string file/private/sound/volume/voice "07070707070707070707" -g 29 -f
-#/usr/bin/vconftool set -t string file/private/sound/volume/fixed "00000000000000000000" -g 29 -f
-/usr/bin/vconftool set -t int memory/private/sound/PrimaryVolumetypeForce -1 -g 29 -f -i
-/usr/bin/vconftool set -t int memory/private/sound/PrimaryVolumetype -1 -g 29 -f -i
-/usr/bin/vconftool set -t int memory/private/sound/hdmisupport 0 -g 29 -f -i
-/usr/bin/vconftool set -t int memory/factory/loopback 0 -g 29 -f -i
+#/usr/bin/vconftool set -t string file/private/sound/volume/system "09090909090909090909" -g 29 -f -s system::vconf_multimedia
+#/usr/bin/vconftool set -t string file/private/sound/volume/notification "11" -g 29 -f -s system::vconf_multimedia
+#/usr/bin/vconftool set -t string file/private/sound/volume/alarm "7" -g 29 -f -s system::vconf_multimedia
+#/usr/bin/vconftool set -t string file/private/sound/volume/ringtone "11" -g 29 -f -s system::vconf_multimedia
+#/usr/bin/vconftool set -t string file/private/sound/volume/media "07070907070707070707" -g 29 -f -s system::vconf_multimedia
+#/usr/bin/vconftool set -t string file/private/sound/volume/call "04040404040404040404" -g 29 -f -s system::vconf_multimedia
+#/usr/bin/vconftool set -t string file/private/sound/volume/voip "04040404040404040404" -g 29 -f -s system::vconf_multimedia
+#/usr/bin/vconftool set -t string file/private/sound/volume/voice "07070707070707070707" -g 29 -f -s system::vconf_multimedia
+#/usr/bin/vconftool set -t string file/private/sound/volume/fixed "00000000000000000000" -g 29 -f -s system::vconf_multimedia
+/usr/bin/vconftool set -t int memory/private/sound/PrimaryVolumeType -1 -g 29 -f -i -s system::vconf_multimedia
+/usr/bin/vconftool set -t int memory/private/sound/hdmisupport 0 -g 29 -f -i -s system::vconf_multimedia
+/usr/bin/vconftool set -t int memory/factory/loopback 0 -g 29 -f -i -s system::vconf_multimedia
 
-/usr/bin/vconftool set -t int file/private/sound/volume/system 9 -g 29 -f -s User
-/usr/bin/vconftool set -t int file/private/sound/volume/notification 11 -g 29 -f -s User
-/usr/bin/vconftool set -t int file/private/sound/volume/alarm 7 -g 29 -f -s User
-/usr/bin/vconftool set -t int file/private/sound/volume/ringtone 11 -g 29 -f -s User
-/usr/bin/vconftool set -t int file/private/sound/volume/media 7 -g 29 -f -s User
-/usr/bin/vconftool set -t int file/private/sound/volume/call 4 -g 29 -f -s User
-/usr/bin/vconftool set -t int file/private/sound/volume/voip 4 -g 29 -f -s User
-/usr/bin/vconftool set -t int file/private/sound/volume/voice 7 -g 29 -f -s User
-/usr/bin/vconftool set -t int file/private/sound/volume/fixed 0 -g 29 -f -s User
+/usr/bin/vconftool set -t int file/private/sound/volume/system 9 -g 29 -f -s system::vconf_multimedia
+/usr/bin/vconftool set -t int file/private/sound/volume/notification 11 -g 29 -f -s system::vconf_multimedia
+/usr/bin/vconftool set -t int file/private/sound/volume/alarm 7 -g 29 -f -s system::vconf_multimedia
+/usr/bin/vconftool set -t int file/private/sound/volume/ringtone 11 -g 29 -f -s system::vconf_multimedia
+/usr/bin/vconftool set -t int file/private/sound/volume/media 7 -g 29 -f -s system::vconf_multimedia
+/usr/bin/vconftool set -t int file/private/sound/volume/call 4 -g 29 -f -s system::vconf_multimedia
+/usr/bin/vconftool set -t int file/private/sound/volume/voip 4 -g 29 -f -s system::vconf_multimedia
+/usr/bin/vconftool set -t int file/private/sound/volume/voice 7 -g 29 -f -s system::vconf_multimedia
+/usr/bin/vconftool set -t int file/private/sound/volume/fixed 0 -g 29 -f -s system::vconf_multimedia
 
 
 %postun -p /sbin/ldconfig

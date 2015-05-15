@@ -293,7 +293,7 @@ typedef enum {
 	VOLUME_TYPE_VOICE,				/**< VOICE volume type */
 	VOLUME_TYPE_FIXED,				/**< Volume type for fixed acoustic level */
 	VOLUME_TYPE_MAX,				/**< Volume type count */
-	VOLUME_TYPE_EXT_ANDROID = VOLUME_TYPE_FIXED,		/**< External system volume for Android */
+	VOLUME_TYPE_UNKNOWN = -1,	/**< volume type is not determined */
 } volume_type_t;
 
 typedef enum {
@@ -684,7 +684,7 @@ static int _pause(void* data)
 {
 	int ret = 0;
 
-	ret = mm_sound_volume_primary_type_clear();
+	ret = mm_sound_volume_primary_type_set(VOLUME_TYPE_UNKNOWN);
 	if(ret < 0)
 	{
 		printf("Can not clear primary volume type\n");
@@ -708,102 +708,8 @@ int main()
  * @endcode
  */
 int mm_sound_volume_primary_type_set(volume_type_t type);
-
-
-
-/**
- * This function is to clear primary volume type.
- *
- *
- * @return 	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	mm_sound_volume_primary_type_set() and mm_sound_volume_primary_type_clear() should be used as pair
- * @see		mm_sound_volume_primary_type_set
- * @pre		primary volume should be set at same process.
- * @post	primary volume will be cleared.
- * @par Example
- * @code
-static int _resume(void *data)
-{
-	int ret = 0;
-
-	ret = mm_sound_volume_primary_type_set(VOLUME_TYPE_MEDIA);
-	if(ret < 0)
-	{
-		printf("Can not set primary volume type\n");
-	}
-	...
-}
-
-static int _pause(void* data)
-{
-	int ret = 0;
-
-	ret = mm_sound_volume_primary_type_clear();
-	if(ret < 0)
-	{
-		printf("Can not clear primary volume type\n");
-	}
-	...
-}
-
-int main()
-{
-	...
-	struct appcore_ops ops = {
-		.create = _create,
-		.terminate = _terminate,
-		.pause = _pause,
-		.resume = _resume,
-		.reset = _reset,
-	};
-	...
-	return appcore_efl_main(PACKAGE, ..., &ops);
-}
- * @endcode
- */
+int mm_sound_volume_primary_type_get(volume_type_t *type);
 int mm_sound_volume_primary_type_clear(void);
-
-
-
-/**
- * This function is to get current playing volume type
- *
- * @param	type			[out]	current playing volume type
- *
- * @return 	This function returns MM_ERROR_NONE on success,
- *          or MM_ERROR_SOUND_VOLUME_NO_INSTANCE when there is no existing playing instance,
- *          or MM_ERROR_SOUND_VOLUME_CAPTURE_ONLY when only capture audio instances are exist.
- *          or negative value with error code for other errors.
- * @remark	None.
- * @pre		None.
- * @post	None.
- * @see		mm_sound_volume_get_value, mm_sound_volume_set_value
- * @par Example
- * @code
-int ret=0;
-volume_type_t type = 0;
-
-ret = mm_sound_volume_get_current_playing_type(&type);
-switch(ret)
-{
-case MM_ERROR_NONE:
-	printf("Current playing is %d\n", type);
-	break;
-case MM_ERROR_SOUND_VOLUME_NO_INSTANCE:
-	printf("No sound instance\n");
-	break;
-case MM_ERROR_SOUND_VOLUME_CAPTURE_ONLY:
-	printf("Only sound capture instances are exist\n");
-	break;
-default:
-	printf("Error\n");
-	break;
-}
-
- * @endcode
- */
-int mm_sound_volume_get_current_playing_type(volume_type_t *type);
 
 int mm_sound_volume_set_balance (double balance);
 int mm_sound_volume_get_balance (double *balance);

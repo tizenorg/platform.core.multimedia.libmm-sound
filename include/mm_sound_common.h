@@ -40,9 +40,7 @@
 
 #define VCONF_KEY_MUTE_ALL			        VCONF_KEY_VOLUME_PREFIX"/muteall"
 
-#define VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE		"memory/private/sound/PrimaryVolumetype"
-#define VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE_FORCE	"memory/private/sound/PrimaryVolumetypeForce"
-
+#define VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE	"memory/private/sound/PrimaryVolumeType"
 
 #ifndef _TIZEN_PUBLIC_
 #define VCONF_KEY_NOISE_REDUCTION			VCONFKEY_CALL_NOISE_REDUCTION_STATE_BOOL

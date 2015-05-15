@@ -1295,7 +1295,6 @@ static const pa_tizen_volume_type_t mm_sound_volume_type_to_pa[VOLUME_TYPE_MAX] 
 	[VOLUME_TYPE_CALL] = PA_TIZEN_VOLUME_TYPE_CALL,
 	[VOLUME_TYPE_VOIP] = PA_TIZEN_VOLUME_TYPE_VOIP,
 	[VOLUME_TYPE_FIXED] = PA_TIZEN_VOLUME_TYPE_FIXED,
-//	[VOLUME_TYPE_EXT_SYSTEM_JAVA] = PA_TIZEN_VOLUME_TYPE_EXT_JAVA,
 };
 
 static int mm_sound_pa_open(mm_sound_pcm_async_t* handle, int is_capture, int policy, int priority, int volume_config, pa_sample_spec* ss,
