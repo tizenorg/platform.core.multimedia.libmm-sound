@@ -817,9 +817,16 @@ static void __bt_ag_sco_state_changed_cb(int result, bool opened, void *user_dat
 	debug_msg("bt ag-sco state changed. opend(%d), ag_init(%d)\n", opened, pinfo->ag_init);
 
 	if(pinfo->ag_init == true) {
+		if (opened) {
+			MMSoundMgrDeviceUpdateStatus (DEVICE_UPDATE_STATUS_CHANGED_INFO_IO_DIRECTION, DEVICE_TYPE_BLUETOOTH, DEVICE_IO_DIRECTION_BOTH, DEVICE_ID_AUTO, NULL, DEVICE_STATE_DEACTIVATED, NULL);
+		} else {
+			MMSoundMgrDeviceUpdateStatus (DEVICE_UPDATE_STATUS_CHANGED_INFO_IO_DIRECTION, DEVICE_TYPE_BLUETOOTH, DEVICE_IO_DIRECTION_OUT, DEVICE_ID_AUTO, NULL, DEVICE_STATE_DEACTIVATED, NULL);
+		}
 		MMSoundMgrSessionGetSession(&session);
-		if (session == SESSION_VOICECALL) {
-			debug_warning("SESSION(SESSION_VOICECALL), we don't handle sco stat in call session. sound-path should be routed in active device function by call app\n");
+		if (session == SESSION_VOICECALL ||
+			session == SESSION_VIDEOCALL ||
+			session == SESSION_VOIP) {
+			debug_warning("SESSION(%d), we don't handle sco stat in call session. sound-path should be routed in active device function by call app\n", session);
 			return;
 		}
 
