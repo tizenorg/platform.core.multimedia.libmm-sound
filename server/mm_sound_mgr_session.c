@@ -811,41 +811,13 @@ static int __set_sound_path_for_current_active (bool need_broadcast, bool need_c
 	case SESSION_VOICECALL:
 	case SESSION_VIDEOCALL:
 		if (g_info.subsession == SUBSESSION_RINGTONE) {
-#ifndef _TIZEN_PUBLIC_
-#ifndef TIZEN_MICRO
-			int vr_enabled = 0;
-#endif
-			int vr_ringtone_enabled = 0;
-#endif
 			in = MM_SOUND_DEVICE_IN_NONE;
 			/* If active device was WFD(mirroring), set option */
 			if (out == MM_SOUND_DEVICE_OUT_MIRRORING) {
 				/* mirroring option */
 			}
 
-#ifndef _TIZEN_PUBLIC_
-#ifdef TIZEN_MICRO
-			if (vconf_get_bool(VCONF_KEY_VR_RINGTONE_ENABLED, &vr_ringtone_enabled)) {
-				debug_warning("vconf_get_bool for %s failed\n", VCONF_KEY_VR_RINGTONE_ENABLED);
-			}
-
-			if (vr_ringtone_enabled) {
-				/* bargin option */
-			}
-#else
-			/* If voice control for incoming call is enabled, set capture path here for avoiding ringtone breaks */
-			if (vconf_get_bool(VCONF_KEY_VR_ENABLED, &vr_enabled)) {
-				debug_warning("vconf_get_bool for %s failed\n", VCONF_KEY_VR_ENABLED);
-			} else if (vconf_get_bool(VCONF_KEY_VR_RINGTONE_ENABLED, &vr_ringtone_enabled)) {
-				debug_warning("vconf_get_bool for %s failed\n", VCONF_KEY_VR_RINGTONE_ENABLED);
-			}
-
-			if (vr_enabled && vr_ringtone_enabled) {
-				/* bargin option */
-			}
-#endif /* TIZEN_MICRO */
-#endif /* #ifndef _TIZEN_PUBLIC_ */
-			if (mm_sound_util_is_mute_policy ()) {
+			if (_mm_sound_is_mute_policy ()) {
 				/* Mute Ringtone */
 #ifdef TIZEN_MICRO
 				out = MM_SOUND_DEVICE_OUT_SPEAKER;
