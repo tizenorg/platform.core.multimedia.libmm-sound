@@ -342,7 +342,7 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int keytone, i
 		goto failed;
 	} 
 	if (param->callback) {
-		ret = mm_sound_client_dbus_add_play_sound_end_callback(param->callback, param->data, *handle);
+		ret = mm_sound_client_dbus_add_play_sound_end_callback(*handle, param->callback, param->data);
 		if (ret != MM_ERROR_NONE) {
 			debug_error("Add callback for play sound(%d) Failed", *handle);
 		}

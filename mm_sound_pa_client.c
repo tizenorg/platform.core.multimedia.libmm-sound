@@ -451,8 +451,8 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
         samples_per_period = (ss->rate * period_time) / 1000;
         periods_per_buffer = PA_SIMPLE_PERIODS_PER_BUFFER_VOIP;
         attr.prebuf = -1;
-        attr.minreq = pa_usec_to_bytes(20*PA_USEC_PER_MSEC, &ss);
-        attr.tlength = pa_usec_to_bytes(100*PA_USEC_PER_MSEC, &ss);
+        attr.minreq = pa_usec_to_bytes(20*PA_USEC_PER_MSEC, ss);
+        attr.tlength = pa_usec_to_bytes(100*PA_USEC_PER_MSEC, ss);
         attr.maxlength = -1;
         attr.fragsize = 0;
 
