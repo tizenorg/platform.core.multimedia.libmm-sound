@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.9.219
+Version:    0.9.220
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -19,6 +19,9 @@ BuildRequires: pkgconfig(gio-2.0)
 BuildRequires: pkgconfig(vconf)
 BuildRequires: pkgconfig(libpulse)
 BuildRequires: pkgconfig(iniparser)
+%if "%{?tizen_profile_name}" != "tv"
+BuildRequires: pkgconfig(capi-network-bluetooth)
+%endif
 %ifarch %{arm}
 %endif
 BuildRequires: pkgconfig(libtremolo)
@@ -56,6 +59,12 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 
 %build
 %define tizen_audio_feature_ogg_enable 1
+
+%if "%{?tizen_profile_name}" == "tv"
+%define tizen_audio_feature_bluetooth_enable 0
+%else
+%define tizen_audio_feature_bluetooth_enable 1
+%endif
 
 %ifarch %{arm}
 	CFLAGS="%{optflags} -fvisibility=hidden -DSUPPORT_CONTAINER -D_TIZEN_PUBLIC_ -DUSE_FOCUS -DMM_DEBUG_FLAG -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\"" ;export CFLAGS

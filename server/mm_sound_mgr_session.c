@@ -2558,16 +2558,7 @@ int MMSoundMgrSessionSetSubSession(subsession_t subsession, int subsession_opt)
 				need_update = true;
 			}
 			break;
-	}	if (g_info.subsession == SUBSESSION_VOICE) {
-#ifdef SUPPORT_BT_SCO
-		if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_SCO) && IS_ACTIVE(MM_SOUND_DEVICE_IN_BT_SCO)) {
-			/* Update BT info */
-			/* Remove BT dependency */
-			/* MMSoundMgrPulseUpdateBluetoothAGCodec(); */
-		}
-#endif
 	}
-
 	if (g_info.subsession == SUBSESSION_VOICE) {
 #ifdef SUPPORT_BT_SCO
 		if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_SCO) && IS_ACTIVE(MM_SOUND_DEVICE_IN_BT_SCO)) {
