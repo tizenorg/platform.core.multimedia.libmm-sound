@@ -240,12 +240,24 @@ bool mm_sound_util_is_process_alive(pid_t pid)
 	int ret = -1;
 
 	if (pid > 999999 || pid < 2)
-		return FALSE;
+		return false;
 
 	if ((tmp = g_strdup_printf("/proc/%d", pid))) {
 		ret = access(tmp, F_OK);
 		g_free(tmp);
 	}
 
-	return (ret == 0)? TRUE : FALSE;
+	if (ret == -1) {
+		if (errno == ENOENT) {
+			debug_warning ("/proc/%d not exist", pid);
+			return false;
+		} else {
+			debug_error ("/proc/%d access errno[%d]", pid, errno);
+
+			/* FIXME: error occured but file exists */
+			return true;
+		}
+	}
+
+	return true;
 }

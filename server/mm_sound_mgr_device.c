@@ -607,13 +607,17 @@ int _mm_sound_mgr_device_remove_info_changed_callback(const _mm_sound_mgr_device
 	return ret;
 }
 
-/* debug_warning ("cb_list = %p, cb_param = %p, pid=[%d]", x, cb_param, (cb_param)? cb_param->pid : -1); \ remove logs*/
 #define CLEAR_DEAD_CB_LIST(x)  do { \
-	debug_warning ("cb_list = %p, cb_param = %p, pid=[%d]", x, cb_param, (cb_param)? cb_param->pid : -1); \
-	if (x && cb_param && mm_sound_util_is_process_alive(cb_param->pid) != 0) { \
-		debug_warning("PID:%d does not exist now! remove from device cb list\n", cb_param->pid); \
-		g_free (cb_param); \
-		x = g_list_remove (x, cb_param); \
+	if (x && cb_param) { \
+		bool is_exist = mm_sound_util_is_process_alive(cb_param->pid); \
+		debug_msg ("cb_list = %p, cb_param = %p, pid=[%d] : exist[%d]", x, cb_param, cb_param->pid, is_exist); \
+		if (!is_exist) { \
+			debug_warning("PID:%d does not exist now! remove from device cb list\n", cb_param->pid); \
+			g_free (cb_param); \
+			x = g_list_remove (x, cb_param); \
+		} \
+	} else { \
+		debug_error ("Invalid list or param"); \
 	} \
 }while(0)
 
