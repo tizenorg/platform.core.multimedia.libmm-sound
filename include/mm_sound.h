@@ -724,9 +724,6 @@ int mm_sound_is_mute_all_enabled (bool *is_enabled);
 int mm_sound_set_call_mute(volume_type_t type, int mute);
 int mm_sound_get_call_mute(volume_type_t type, int *mute);
 
-int mm_sound_set_factory_loopback_test(int loopback);
-int mm_sound_get_factory_loopback_test(int *loopback);
-
 typedef enum {
 	MM_SOUND_FACTORY_MIC_TEST_STATUS_OFF = 0,
 	MM_SOUND_FACTORY_MIC_TEST_STATUS_MAIN_MIC,
