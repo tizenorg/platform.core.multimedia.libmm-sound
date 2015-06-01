@@ -965,6 +965,12 @@ int mm_sound_pcm_play_write_async(MMSoundPcmHandle_t handle, void* ptr, unsigned
 	/* Write */
 
 	/*  Check whether voicerecorder is running */
+#ifdef TIZEN_TV
+	ret = pa_stream_write(pcmHandle->s, ptr, length_byte, NULL, 0LL, PA_SEEK_RELATIVE);
+	if (ret == 0) {
+		ret = length_byte;
+	}
+#else
 	vconf_get_int(VCONFKEY_VOICERECORDER_STATE, &vr_state);
 
 	if (vr_state == VCONFKEY_VOICERECORDER_RECORDING) {
@@ -975,7 +981,7 @@ int mm_sound_pcm_play_write_async(MMSoundPcmHandle_t handle, void* ptr, unsigned
 			ret = length_byte;
 		}
 	}
-
+#endif
 EXIT:
 //	PCM_UNLOCK_INTERNAL(&pcmHandle->pcm_mutex_internal);
 NULL_HANDLE:

@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.9.220
+Version:    0.9.223
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -74,6 +74,9 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 
 %if "%{?tizen_profile_name}" == "wearable"
 	CFLAGS+=" -DTIZEN_MICRO";export CFLAGS
+%endif
+%if "%{?tizen_profile_name}" == "tv"
+        CFLAGS+=" -DTIZEN_TV";export CFLAGS
 %endif
 
 ./autogen.sh
