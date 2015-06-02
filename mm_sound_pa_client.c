@@ -687,6 +687,25 @@ int mm_sound_pa_drain(const int handle)
 }
 
 EXPORT_API
+int mm_sound_pa_flush(const int handle)
+{
+    mm_sound_handle_t* phandle = NULL;
+    int err = MM_ERROR_NONE;
+
+	CHECK_HANDLE_RANGE(handle);
+    GET_HANDLE_DATA(phandle, mm_sound_handle_mgr.handles, &handle, __mm_sound_handle_comparefunc);
+    if(phandle == NULL)
+        return MM_ERROR_SOUND_INTERNAL;
+
+    if (0 > pa_simple_flush(phandle->s, &err)) {
+		debug_error("pa_simple_flush() failed with %s\n", pa_strerror(err));
+		err = MM_ERROR_SOUND_INTERNAL;
+	}
+
+	return err;
+}
+
+EXPORT_API
 int mm_sound_pa_get_latency(const int handle, int* latency)
 {
     mm_sound_handle_t* phandle = NULL;

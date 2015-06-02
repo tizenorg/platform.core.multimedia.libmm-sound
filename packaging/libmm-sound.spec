@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.9.183
+Version:    0.9.184
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
