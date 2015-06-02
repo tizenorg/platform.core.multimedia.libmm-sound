@@ -101,6 +101,7 @@ static int mm_sound_pa_open(mm_sound_pcm_async_t* handle, int mode, int policy, 
 static int _mm_sound_pa_close(mm_sound_pcm_async_t* handle);
 static int _mm_sound_pa_cork(mm_sound_pcm_async_t* handle, int cork);
 static int _mm_sound_pa_drain(mm_sound_pcm_async_t* handle);
+static int _mm_sound_pa_flush(mm_sound_pcm_async_t* handle);
 static int _mm_sound_pa_get_latency(mm_sound_pcm_async_t* handle, int* latency);;
 static void __mm_sound_pa_success_cb(pa_context *c, int success, void *userdata);
 
@@ -561,6 +562,26 @@ int mm_sound_pcm_capture_stop_async(MMSoundPcmHandle_t handle)
 }
 
 EXPORT_API
+int mm_sound_pcm_capture_flush_async(MMSoundPcmHandle_t handle)
+{
+	int ret = 0;
+	mm_sound_pcm_async_t *pcmHandle = (mm_sound_pcm_async_t*)handle;
+
+	/* Check input param */
+	if(pcmHandle == NULL) {
+		debug_error ("Handle is null, return Invalid Argument\n");
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		return ret;
+	}
+
+	debug_warning ("enter : handle=[%p]\n", handle);
+	ret = _mm_sound_pa_flush(handle);
+	debug_warning ("leave : handle=[%p], ret=[0x%X]\n", handle, ret);
+
+	return ret;
+}
+
+EXPORT_API
 int mm_sound_pcm_capture_peek(MMSoundPcmHandle_t handle, const void **buffer, const unsigned int *length)
 {
 	int ret = 0;
@@ -859,6 +880,46 @@ int mm_sound_pcm_play_stop_async(MMSoundPcmHandle_t handle)
 
 	debug_warning ("enter : handle=[%p]\n", handle);
 	ret = _pcm_sound_stop(handle);
+	debug_warning ("leave : handle=[%p], ret=[0x%X]\n", handle, ret);
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_pcm_play_drain_async(MMSoundPcmHandle_t handle)
+{
+	int ret = 0;
+	mm_sound_pcm_async_t *pcmHandle = (mm_sound_pcm_async_t*)handle;
+
+	/* Check input param */
+	if(pcmHandle == NULL) {
+		debug_error ("Handle is null, return Invalid Argument\n");
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		return ret;
+	}
+
+	debug_warning ("enter : handle=[%p]\n", handle);
+	ret = _mm_sound_pa_drain(handle);
+	debug_warning ("leave : handle=[%p], ret=[0x%X]\n", handle, ret);
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_pcm_play_flush_async(MMSoundPcmHandle_t handle)
+{
+	int ret = 0;
+	mm_sound_pcm_async_t *pcmHandle = (mm_sound_pcm_async_t*)handle;
+
+	/* Check input param */
+	if(pcmHandle == NULL) {
+		debug_error ("Handle is null, return Invalid Argument\n");
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		return ret;
+	}
+
+	debug_warning ("enter : handle=[%p]\n", handle);
+	ret = _mm_sound_pa_flush(handle);
 	debug_warning ("leave : handle=[%p], ret=[0x%X]\n", handle, ret);
 
 	return ret;
@@ -1413,6 +1474,39 @@ unlock_and_fail:
     return -1;
 }
 
+static int _mm_sound_pa_flush(mm_sound_pcm_async_t* handle)
+{
+    pa_operation *o = NULL;
+
+    MAINLOOP_LOCK(handle->mainloop);
+
+    o = pa_stream_flush(handle->s, (pa_stream_success_cb_t)__mm_sound_pa_success_cb, handle);
+    if (!(o)) {
+        goto unlock_and_fail;
+    }
+    handle->operation_success = 0;
+    while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(handle->mainloop);
+    }
+    if (!(handle->operation_success)) {
+        goto unlock_and_fail;
+    }
+    pa_operation_unref(o);
+
+    MAINLOOP_UNLOCK(handle->mainloop);
+
+    return 0;
+
+unlock_and_fail:
+	debug_error ("error!!!!");
+    if (o) {
+        pa_operation_cancel(o);
+        pa_operation_unref(o);
+    }
+
+    MAINLOOP_UNLOCK(handle->mainloop);
+    return -1;
+}
 
 static int _mm_sound_pa_get_latency(mm_sound_pcm_async_t* handle, int* latency)
 {

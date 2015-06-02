@@ -1018,6 +1018,34 @@ int mm_sound_pcm_play_start(MMSoundPcmHandle_t handle);
 int mm_sound_pcm_play_stop(MMSoundPcmHandle_t handle);
 
 /**
+ * This function flush pcm playback
+ *
+ * @param	handle	[in] handle to flush playback
+ *
+ * @return	This function returns MM_ERROR_NONE on success, or negative value
+ *			with error code.
+ * @remark
+ * @see
+ * @pre		PCM playback handle should be allocated.
+ * @post	PCM playback data will not be buffered.
+ */
+int mm_sound_pcm_play_drain(MMSoundPcmHandle_t handle);
+
+/**
+ * This function flush pcm playback
+ *
+ * @param	handle	[in] handle to flush playback
+ *
+ * @return	This function returns MM_ERROR_NONE on success, or negative value
+ *			with error code.
+ * @remark
+ * @see
+ * @pre		PCM playback handle should be allocated.
+ * @post	PCM playback data will not be buffered.
+ */
+int mm_sound_pcm_play_flush(MMSoundPcmHandle_t handle);
+
+/**
  * This function is to play PCM memory buffer.
  *
  * @param	handle	[in] handle to play pcm data
@@ -1349,6 +1377,20 @@ int mm_sound_pcm_capture_start(MMSoundPcmHandle_t handle);
  * @post	PCM capture data will not be buffered.
  */
 int mm_sound_pcm_capture_stop(MMSoundPcmHandle_t handle);
+
+/**
+ * This function flush pcm capture
+ *
+ * @param	handle	[in] handle to flush capture
+ *
+ * @return	This function returns MM_ERROR_NONE on success, or negative value
+ *			with error code.
+ * @remark
+ * @see
+ * @pre		PCM capture handle should be allocated.
+ * @post	PCM capture data will not be buffered.
+ */
+int mm_sound_pcm_capture_flush(MMSoundPcmHandle_t handle);
 
 /**
  * This function captures PCM to memory buffer. (Samsung extension)
