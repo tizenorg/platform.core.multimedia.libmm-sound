@@ -2560,9 +2560,6 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 			case ASM_EVENT_EXCLUSIVE_RESOURCE:
 				if ( rcv_resource & ASM_RESOURCE_VOICECONTROL ) {
 					debug_warning (" ****** ASM_RESOURCE_VOICECONTROL START ******\n");
-					if (vconf_set_int(VCONFKEY_SOUND_VOICE_CONTROL_STATUS, 1)) {
-						debug_error(" vconf_set_int(SOUND_VOICE_CONTROL_KEY, 1) fail\n");
-					}
 //					MMSoundMgrSessionSetVoiceControlState(true);
 				}
 				break;
@@ -2787,11 +2784,8 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 				break;
 			case ASM_EVENT_EXCLUSIVE_RESOURCE:
 				if ( rcv_resource & ASM_RESOURCE_VOICECONTROL ) {
-					debug_warning (" ****** ASM_RESOURCE_VOICECONTROL END ******\n");
 //					MMSoundMgrSessionSetVoiceControlState(false);
-					if (vconf_set_int(VCONFKEY_SOUND_VOICE_CONTROL_STATUS, 0)) {
-						debug_error(" vconf_set_int(SOUND_VOICE_CONTROL_KEY, 0) fail\n");
-					}
+					debug_warning (" ****** ASM_RESOURCE_VOICECONTROL END ******\n");
 				}
 				break;
 			default:
