@@ -2639,11 +2639,7 @@ bool MMSoundMgrSessionGetVoiceControlState ()
 /* -------------------------------- NOISE REDUCTION --------------------------------------------*/
 static bool __is_noise_reduction_on (void)
 {
-	int noise_reduction_on = 1;
-
-	if (vconf_get_bool(VCONF_KEY_NOISE_REDUCTION, &noise_reduction_on)) {
-		debug_warning("vconf_get_bool for VCONF_KEY_NOISE_REDUCTION failed\n");
-	}
+	int noise_reduction_on = 0;
 
 	return (noise_reduction_on == 1) ? true : false;
 }
@@ -2651,11 +2647,7 @@ static bool __is_noise_reduction_on (void)
 /* -------------------------------- EXTRA VOLUME --------------------------------------------*/
 static bool __is_extra_volume_on (void)
 {
-	int extra_volume_on = 1;
-
-	if (vconf_get_bool(VCONF_KEY_EXTRA_VOLUME, &extra_volume_on )) {
-		debug_warning("vconf_get_bool for VCONF_KEY_EXTRA_VOLUME failed\n");
-	}
+	int extra_volume_on = 0;
 
 	return (extra_volume_on  == 1) ? true : false;
 }
@@ -2664,11 +2656,7 @@ static bool __is_extra_volume_on (void)
 /* -------------------------------- UPSCALING --------------------------------------------*/
 static bool __is_upscaling_needed (void)
 {
-	int is_wbamr = 1;
-
-	if (vconf_get_bool(VCONF_KEY_WBAMR, &is_wbamr)) {
-		debug_warning("vconf_get_bool for VCONF_KEY_WBAMR failed\n");
-	}
+	int is_wbamr = 0;
 
 	return (is_wbamr == 0) ? true : false;
 }
