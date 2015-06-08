@@ -1068,6 +1068,18 @@ int  MMSoundMgrSessionSetSoundPathForActiveDevice (mm_sound_device_out playback,
 		SET_CAPTURE_ONLY_ACTIVE(capture);
 	}
 	MMSoundMgrPulseSetActiveDevice(GET_ACTIVE_CAPTURE(), GET_ACTIVE_PLAYBACK());
+
+	if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_A2DP)) {
+		MMSoundMgrPulseSetDefaultSink (DEVICE_API_BLUETOOTH, DEVICE_BUS_BLUETOOTH);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_USB_AUDIO)) {
+		MMSoundMgrPulseSetUSBDefaultSink (MM_SOUND_DEVICE_OUT_USB_AUDIO);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_MULTIMEDIA_DOCK)) {
+		MMSoundMgrPulseSetUSBDefaultSink (MM_SOUND_DEVICE_OUT_MULTIMEDIA_DOCK);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_HDMI)) {
+		MMSoundMgrPulseSetDefaultSinkByName (ALSA_SINK_HDMI);
+	} else {
+		MMSoundMgrPulseSetDefaultSink (DEVICE_API_ALSA, DEVICE_BUS_BUILTIN);
+	}
 	UNLOCK_PATH();
 
 END_SET_DEVICE:
@@ -1098,6 +1110,18 @@ static int __set_sound_path_for_active_device_nolock (mm_sound_device_out playba
 		SET_CAPTURE_ONLY_ACTIVE(capture);
 	}
 	MMSoundMgrPulseSetActiveDevice(GET_ACTIVE_CAPTURE(), GET_ACTIVE_PLAYBACK());
+
+	if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_BT_A2DP)) {
+		MMSoundMgrPulseSetDefaultSink (DEVICE_API_BLUETOOTH, DEVICE_BUS_BLUETOOTH);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_USB_AUDIO)) {
+		MMSoundMgrPulseSetUSBDefaultSink (MM_SOUND_DEVICE_OUT_USB_AUDIO);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_MULTIMEDIA_DOCK)) {
+		MMSoundMgrPulseSetUSBDefaultSink (MM_SOUND_DEVICE_OUT_MULTIMEDIA_DOCK);
+	} else if (IS_ACTIVE(MM_SOUND_DEVICE_OUT_HDMI)) {
+		MMSoundMgrPulseSetDefaultSinkByName (ALSA_SINK_HDMI);
+	} else {
+		MMSoundMgrPulseSetDefaultSink (DEVICE_API_ALSA, DEVICE_BUS_BUILTIN);
+	}
 
 END_SET_DEVICE:
 	debug_fleave();
