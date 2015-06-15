@@ -35,10 +35,7 @@ void MMSoundMgrPulseSetDefaultSink (char* device_api_name, char* device_bus_name
 void MMSoundMgrPulseSetDefaultSinkByName (char* name);
 void MMSoundMgrPulseSetSourcemutebyname (char* sourcename, int mute);
 
-int MMSoundMgrPulseHandleRegisterMonoAudio (void* pinfo);
-int MMSoundMgrPulseHandleRegisterAudioBalance (void* pinfo);
 int MMSoundMgrPulseHandleRegisterBluetoothStatus (void* pinfo);
-int MMSoundMgrPulseHandleRegisterSurroundSoundStatus(void *pinfo);
 
 int MMSoundMgrPulseHandleIsBtA2DPOnReq (bool* is_bt_on, char** bt_name);
 void MMSoundMgrPulseGetInitialBTStatus (bool *a2dp, bool *sco);
@@ -52,7 +49,6 @@ void MMSoundMgrPulseSetCorkAll (bool cork);
 void MMSoundMgrPulseUnLoadHDMI();
 void MMSoundMgrPulseGetPathInfo(mm_sound_device_out *device_out, mm_sound_device_in *device_in);
 #ifdef TIZEN_MICRO
-void MMSoundMgrPulseSetMuteall(int mute);
 void MMSoundMgrPulseSetVolumeLevel(volume_type_t volume_type, unsigned int volume_level);
 #endif
 void MMSoundMgrPulseSetVoicecontrolState (bool state);

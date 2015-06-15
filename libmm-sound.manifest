@@ -8,6 +8,7 @@
 			<smack request="system::vconf_network" type="arwxt"/>
 			<smack request="system::vconf_multimedia" type="arwxt"/>
 			<smack request="system::share" type="rwx"/>
+			<smack request="system::homedir" type="arwxt"/>
 			<smack request="device::sys_logging" type="w"/>
 			<smack request="device::app_logging" type="w"/>
 			<smack request="sys-assert::core" type="arwxt"/>

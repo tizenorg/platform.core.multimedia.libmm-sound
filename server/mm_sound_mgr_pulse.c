@@ -2021,14 +2021,6 @@ static void set_active_device_cb(pa_context *c, int success, int need_update, vo
 	}
 
 	pa_threaded_mainloop_signal(pinfo->m, 0);
-
-	if (need_update) {
-		debug_msg("[PA] pa_ext_policy_set_active_device need to update volume.");
-		if(MM_ERROR_NONE != _mm_sound_mgr_device_update_volume()) {
-			debug_error ("_mm_sound_mgr_device_update_volume failed.");
-		}
-	}
-
 }
 
 static void set_active_device_nosignal_cb(pa_context *c, int success, int need_update, void *userdata)
@@ -2043,13 +2035,6 @@ static void set_active_device_nosignal_cb(pa_context *c, int success, int need_u
 		debug_msg ("[PA_CB] c[%p] set active device success. need_update(%d)", c, need_update);
 	} else {
 		debug_error("[PA_CB] c[%p] set active device fail:%s", c, pa_strerror(pa_context_errno(c)));
-	}
-
-	if (need_update) {
-		debug_msg("[PA] pa_ext_policy_set_active_device need to update volume.");
-		if(MM_ERROR_NONE != _mm_sound_mgr_device_update_volume()) {
-			debug_error ("_mm_sound_mgr_device_update_volume failed.");
-		}
 	}
 }
 

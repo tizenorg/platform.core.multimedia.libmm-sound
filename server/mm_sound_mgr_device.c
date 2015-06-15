@@ -693,33 +693,6 @@ int _mm_sound_mgr_device_available_device_callback(mm_sound_device_in device_in,
 	return ret;
 }
 
-int _mm_sound_mgr_device_update_volume()
-{
-	int i=0;
-	char* str = NULL;
-	int ret = MM_ERROR_NONE;
-
-	for (i=0; i<VOLUME_TYPE_MAX; i++) {
-		/* Update vconf */
-		str = vconf_get_str(g_volume_vconf[i]);
-		/* FIXME : Need to check history */
-		/*
-		if (vconf_set_str_no_fdatasync(g_volume_vconf[i], str) != 0) {
-			debug_error("vconf_set_str_no_fdatasync(%s) failed", g_volume_vconf[i]);
-			ret = MM_ERROR_SOUND_INTERNAL;
-			continue;
-		}
-		*/
-		if(str != NULL) {
-			free(str);
-			str = NULL;
-		}
-	}
-
-	return ret;
-}
-
-
 #define RELEASE_DEVICE_INFO_ID(x_id) \
 do { \
 	if (g_device_id_array[x_id-1] == 1) { \

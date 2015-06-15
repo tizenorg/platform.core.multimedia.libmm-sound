@@ -243,8 +243,6 @@ static void displaymenu()
 		g_print("g : Get voice   \t");
 		g_print("h : Inc. voice  \t");
 		g_print("j : Dec. voice  \n");
-		g_print("B : Set audio balance\n");
-		g_print("M : Set mute all\n");
 		g_print("==================================================================\n");
 		g_print("	Audio route APIs\n");
 		g_print("==================================================================\n");
@@ -878,88 +876,6 @@ static void interpret (char *cmd)
 					}else {
 						g_print("Current Voice volume is %d\n", value);
 					}
-				}
-			}
-
-			else if(strncmp(cmd, "B", 1) == 0)
-			{
-				int ret = 0;
-				char input_string[128];
-				double balance;
-
-				fflush(stdin);
-				ret = mm_sound_volume_get_balance(&balance);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_volume_get_balance Success, balance=%f\n", balance);
-				} else {
-					g_print ("### mm_sound_volume_get_balance Error = %x\n", ret);
-				}
-				g_print("> Enter new audio balance (current is %f) : ", balance);
-				if (fgets(input_string, sizeof(input_string)-1, stdin) == NULL) {
-					g_print ("### fgets return  NULL\n");
-				}
-
-				balance = atof (input_string);
-				ret = mm_sound_volume_set_balance(balance);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_volume_set_balance(%f) Success\n", balance);
-				} else {
-					g_print ("### mm_sound_volume_set_balance(%f) Error = %x\n", balance, ret);
-				}
-			}
-
-			else if(strncmp(cmd, "M", 1) == 0)
-			{
-				int ret = 0;
-				char input_string[128];
-				bool muteall;
-
-				fflush(stdin);
-				ret = mm_sound_is_mute_all_enabled(&muteall);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_get_muteall Success, muteall=%d\n", muteall);
-				} else {
-					g_print ("### mm_sound_get_muteall Error = %x\n", ret);
-				}
-				g_print("> Enter new muteall state (current is %d) : ", muteall);
-				if (fgets(input_string, sizeof(input_string)-1, stdin) == NULL) {
-					g_print ("### fgets return  NULL\n");
-				}
-
-				muteall = atoi (input_string);
-				ret = mm_sound_enable_mute_all(muteall);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_set_muteall(%d) Success\n", muteall);
-				} else {
-					g_print ("### mm_sound_set_muteall(%d) Error = %x\n", muteall, ret);
-				}
-			}
-
-			else if(strncmp(cmd, "m", 1) == 0)
-			{
-				int ret = 0;
-				char input_string[128];
-				bool ismono = false;
-
-				fflush(stdin);
-
-				ret = mm_sound_is_mono_audio_enabled(&ismono);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_is_mono_audio_enabled() Success, ismono=%d\n", ismono);
-				} else {
-					g_print ("### mm_sound_is_mono_audio_enabled() Error = %x\n", ret);
-				}
-
-				g_print("> Enter new stereo to mono state (current is %d) : ", ismono);
-				if (fgets(input_string, sizeof(input_string)-1, stdin) == NULL) {
-					g_print ("### fgets return  NULL\n");
-				}
-				ismono = atoi (input_string);
-				ret = mm_sound_enable_mono_audio(ismono);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_enable_mono_audio(%d) Success\n", ismono);
-				} else {
-					g_print ("### mm_sound_enable_mono_audio(%d) Error = %x\n", ismono, ret);
 				}
 			}
 			else if(strncmp(cmd, "an", 2) == 0)
@@ -1818,11 +1734,6 @@ void volume_change_callback(volume_type_t type, unsigned int volume, void *user_
 		g_print("Volume Callback Runs :::: MEDIA VALUME %d\n", volume);
 }
 
-static void muteall_change_callback(bool mute_all, void* user_data)
-{
-	g_print("Muteall Callback Runs :::: muteall value = %d, user_data = %p\n", mute_all, user_data);
-}
-
 int main(int argc, char *argv[])
 {
 	int ret = 0;
@@ -1842,9 +1753,6 @@ int main(int argc, char *argv[])
 		g_print("mm_sound_volume_get_value 0x%x\n", ret);
 	}
 	mm_sound_add_volume_changed_callback(volume_change_callback, (void*) &g_volume_type);
-
-	/* test mute_all changed callback */
-	mm_sound_add_mute_all_callback(muteall_change_callback, 0x1234);
 
 	displaymenu();
 	g_main_loop_run (g_loop);

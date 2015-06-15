@@ -54,8 +54,6 @@
 
 #define MAX_STRING_LEN	256
 
-#define VCONF_SOUND_BURSTSHOT "memory/private/sound/burstshot"
-
 #define DEVICE_API_BLUETOOTH	"bluez"
 #define DEVICE_API_ALSA	"alsa"
 #define DEVICE_BUS_BLUETOOTH "bluetooth"
@@ -700,25 +698,6 @@ static bool __is_recording_subsession ()
 	return is_recording;
 }
 
-static void _wait_if_burstshot_exists(void)
-{
-	int retry = 0;
-	int is_burstshot = 0;
-
-	do {
-		if (retry > 0)
-			usleep (BURST_CHECK_INTERVAL);
-		if (vconf_get_int(VCONF_SOUND_BURSTSHOT, &is_burstshot) != 0) {
-			debug_warning ("Faided to get [%s], assume no burstshot....", VCONF_SOUND_BURSTSHOT);
-			is_burstshot = 0;
-		} else {
-			debug_warning ("Is Burstshot [%d], retry...[%d/%d], interval usec = %d",
-						is_burstshot, retry, MAX_BURST_CHECK_RETRY, BURST_CHECK_INTERVAL);
-		}
-	} while (is_burstshot && retry++ < MAX_BURST_CHECK_RETRY);
-}
-
-
 static int __set_sound_path_for_current_active (bool need_broadcast, bool need_cork)
 {
 	int ret = MM_ERROR_NONE;
@@ -733,9 +712,6 @@ static int __set_sound_path_for_current_active (bool need_broadcast, bool need_c
 		debug_warning ("Current session is ALARM/NOTI/EMER, pending path setting. path set will be done after session ends");
 		return MM_ERROR_SOUND_INVALID_STATE;
 	}
-
-	/* Wait if BurstShot is ongoing */
-	_wait_if_burstshot_exists();
 
 	if (need_cork)
 		MMSoundMgrPulseSetCorkAll (true);
