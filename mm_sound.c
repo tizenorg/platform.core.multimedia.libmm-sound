@@ -241,11 +241,9 @@ int mm_sound_volume_set_value(volume_type_t volume_type, const unsigned int volu
 	ret = mm_sound_util_volume_set_value_by_type(volume_type, volume_level);
 	if (ret == MM_ERROR_NONE) {
 		/* update shared memory value */
-			if(MM_ERROR_NONE != mm_sound_client_set_volume_by_type(volume_type, volume_level)) {
-				debug_error("Can not set volume to shared memory 0x%x\n", ret);
-			}
+		if(MM_ERROR_NONE != mm_sound_client_set_volume_by_type(volume_type, volume_level)) {
+			debug_error("Can not set volume to shared memory 0x%x\n", ret);
 		}
-#endif
 	}
 
 	return ret;
