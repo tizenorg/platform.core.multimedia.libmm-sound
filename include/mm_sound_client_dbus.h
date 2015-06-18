@@ -39,15 +39,6 @@ int mm_sound_client_dbus_add_volume_changed_callback(mm_sound_volume_changed_cb 
 int mm_sound_client_dbus_remove_volume_changed_callback(void);
 int mm_sound_client_dbus_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
-int mm_sound_client_dbus_set_audio_balance(double audio_balance);
-int mm_sound_client_dbus_get_audio_balance(double *audio_balance);
-
-int mm_sound_client_dbus_enable_mono_audio(bool enable);
-int mm_sound_client_dbus_is_mono_audio_enabled(bool *is_enabled);
-
-int mm_sound_client_dbus_enable_mute_all(bool enable);
-int mm_sound_client_dbus_is_mute_all_enabled(bool *is_enabled);
-
 #ifdef USE_FOCUS
 int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
 int mm_sound_client_dbus_unregister_focus(int id);
