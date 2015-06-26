@@ -1,6 +1,5 @@
 <manifest>
 	<define>
-		<domain name="sound_server"/>
 		<request>
 			<smack request="system::vconf" type="arwxt"/>
 			<smack request="system::vconf_system" type="arwxt"/>
@@ -19,8 +18,4 @@
 	<request>
 		<domain name="_"/>
 	</request>
-	<assign>
-		<filesystem path="/usr/bin/sound_server" label="sound_server" exec_label="sound_server"/>
-		<filesystem path="/opt/etc/dump.d/module.d/dump_audio.sh" label="_" exec_label="none"/>
-	</assign>
 </manifest>
