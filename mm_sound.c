@@ -800,7 +800,7 @@ int mm_sound_system_get_capture_status(system_audio_capture_status_t *status)
 	}
 
 	/*  Check whether sound is capturing */
-	vconf_get_int(VCONFKEY_SOUND_CAPTURE_STATUS, &on_capture); // need to check where it is set
+//	vconf_get_int(VCONFKEY_SOUND_CAPTURE_STATUS, &on_capture); // need to check where it is set
 
 	if(on_capture)
 		*status = SYSTEM_AUDIO_CAPTURE_ACTIVE;

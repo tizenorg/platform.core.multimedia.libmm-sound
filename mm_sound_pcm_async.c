@@ -964,16 +964,9 @@ int mm_sound_pcm_play_write_async(MMSoundPcmHandle_t handle, void* ptr, unsigned
 #endif
 	/* Write */
 
-	/*  Check whether voicerecorder is running */
-	vconf_get_int(VCONFKEY_VOICERECORDER_STATE, &vr_state);
-
-	if (vr_state == VCONFKEY_VOICERECORDER_RECORDING) {
-		debug_log ("During VoiceRecording....MUTE!!!");
-	} else {
-		ret = pa_stream_write(pcmHandle->s, ptr, length_byte, NULL, 0LL, PA_SEEK_RELATIVE);
-		if (ret == 0) {
-			ret = length_byte;
-		}
+    ret = pa_stream_write(pcmHandle->s, ptr, length_byte, NULL, 0LL, PA_SEEK_RELATIVE);
+	if (ret == 0) {
+		ret = length_byte;
 	}
 
 EXIT:
