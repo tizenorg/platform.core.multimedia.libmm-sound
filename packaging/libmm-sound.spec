@@ -1,12 +1,13 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.9.237
+Version:    0.9.238
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1:    sound-server.service
 Source2:    sound-server.path
+Source3:    sound-server.conf
 Requires(post): /sbin/ldconfig
 Requires(post): /usr/bin/vconftool
 Requires(postun): /sbin/ldconfig
@@ -99,6 +100,8 @@ cp LICENSE.APLv2 %{buildroot}/usr/share/license/%{name}
 cp LICENSE.APLv2 %{buildroot}/usr/share/license/libmm-sound-tool
 mkdir -p %{buildroot}/opt/etc/dump.d/module.d/
 cp dump_audio.sh %{buildroot}/opt/etc/dump.d/module.d/dump_audio.sh
+mkdir -p %{buildroot}/etc/dbus-1/system.d/
+cp %{SOURCE3} %{buildroot}/etc/dbus-1/system.d/sound-server.conf
 
 %make_install
 install -d %{buildroot}%{_unitdir}/multi-user.target.wants
@@ -156,6 +159,7 @@ ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/soun
 %{_datadir}/license/libmm-sound-tool
 /usr/share/sounds/sound-server/*
 /opt/etc/dump.d/module.d/dump_audio.sh
+/etc/dbus-1/system.d/sound-server.conf
 
 %files devel
 %defattr(-,root,root,-)
