@@ -26,8 +26,8 @@
 #define INTERFACE_PULSE_MODULE_POLICY "org.PulseAudio.Ext.Policy1"
 #define OBJECT_PULSE_MODULE_DEVICE_MANAGER "/org/pulseaudio/DeviceManager"
 #define INTERFACE_PULSE_MODULE_DEVICE_MANAGER "org.pulseaudio.DeviceManager"
-#define OBJECT_PULSE_MODULE_STREAM_MANAGER "/org/pulseaudio/Ext/StreamManager"
-#define INTERFACE_PULSE_MODULE_STREAM_MANAGER "org.pulseaudio.Ext.StreamManager"
+#define OBJECT_PULSE_MODULE_STREAM_MANAGER "/org/pulseaudio/StreamManager"
+#define INTERFACE_PULSE_MODULE_STREAM_MANAGER "org.pulseaudio.StreamManager"
 
 #define BUS_NAME_SOUND_SERVER "org.tizen.SoundServer"
 #define OBJECT_SOUND_SERVER "/org/tizen/SoundServer1"

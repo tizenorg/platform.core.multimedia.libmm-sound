@@ -2114,8 +2114,8 @@ int __mm_sound_mgr_ipc_dbus_notify_available_device_changed(int device_in, int d
 }
 
 #define PA_BUS_NAME                                    "org.pulseaudio.Server"
-#define PA_STREAM_MANAGER_OBJECT_PATH                  "/org/pulseaudio/Ext/StreamManager"
-#define PA_STREAM_MANAGER_INTERFACE                    "org.pulseaudio.Ext.StreamManager"
+#define PA_STREAM_MANAGER_OBJECT_PATH                  "/org/pulseaudio/StreamManager"
+#define PA_STREAM_MANAGER_INTERFACE                    "org.pulseaudio.StreamManager"
 #define PA_STREAM_MANAGER_METHOD_NAME_GET_STREAM_LIST  "GetStreamList"
 int __mm_sound_mgr_ipc_dbus_get_stream_list(stream_list_t* stream_list)
 {
