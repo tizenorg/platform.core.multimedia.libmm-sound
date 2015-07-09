@@ -365,7 +365,7 @@ static int _dbus_method_call(GDBusConnection* conn, const char* bus_name, const 
 		*result = dbus_reply;
 	} else {
 		char *err_name = NULL, *err_msg = NULL;
-		debug_log("Method Call '%s.%s' Failed", intf, method);
+		debug_log("Method Call '%s.%s' Failed, %s", intf, method, err->message);
 
 		if (_parse_error_msg(err->message,  &err_name, &err_msg) < 0) {
 			debug_error("failed to parse error message");
