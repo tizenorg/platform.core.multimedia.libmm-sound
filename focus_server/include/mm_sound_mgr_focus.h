@@ -26,7 +26,7 @@
 #include "../include/mm_sound_focus.h"
 #include "../include/mm_sound_stream.h"
 #include "../include/mm_ipc.h"
-#include "mm_sound_mgr_ipc.h"
+#include "mm_sound_mgr_focus_ipc.h"
 
 typedef enum
 {

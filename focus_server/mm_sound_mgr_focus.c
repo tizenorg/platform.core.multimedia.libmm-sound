@@ -22,7 +22,7 @@
 #include <stdio.h>
 
 #include "include/mm_sound_mgr_focus.h"
-#include "include/mm_sound_thread_pool.h"
+#include "include/mm_sound_focus_thread_pool.h"
 #include "../include/mm_sound_common.h"
 #include "../include/mm_sound_stream.h"
 
@@ -32,7 +32,7 @@
 #include <poll.h>
 #include <fcntl.h>
 
-#include "include/mm_sound_mgr_ipc.h"
+#include "include/mm_sound_mgr_focus_ipc.h"
 #include "../include/mm_sound_utils.h"
 #include <sys/time.h>
 #include <sys/stat.h>
@@ -933,7 +933,7 @@ int MMSoundMgrFocusInit(void)
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = __mm_sound_mgr_ipc_dbus_get_stream_list(&g_stream_list);
+	ret = __mm_sound_mgr_focus_dbus_get_stream_list(&g_stream_list);
 	if (ret)
 		debug_error("failed to __mm_sound_mgr_ipc_dbus_get_stream_list()\n");
 
