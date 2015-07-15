@@ -1,0 +1,13 @@
+[Unit]
+Description=Start the focus profile service
+
+[Service]
+User=system
+Group=system
+ExecStart=/usr/bin/focus_server -S
+Restart=always
+RestartSec=0
+MemoryLimit=50M
+
+[Install]
+WantedBy=tizen-system.target

@@ -58,7 +58,7 @@ static void __ThreadWork(gpointer data, gpointer user_data)
 			 	debug_warning ("No func to call....\n");
 		 }
 
-		 /* Info was allocated by MMSoundThreadPoolRun(). 
+		 /* Info was allocated by MMSoundThreadPoolRun().
 			The actual content of info should be  freed whether inside func or outside (if handle) */
 		 debug_log ("free [%p]\n", info);
 		 free (info);
@@ -109,8 +109,8 @@ int MMSoundThreadPoolInit()
 	debug_msg ("thread pool set max unused threads to %d\n", MAX_UNUSED_THREADS_IN_THREADPOOL);
 	g_thread_pool_set_max_unused_threads (MAX_UNUSED_THREADS_IN_THREADPOOL);
 
-	/* To reserve unused threads, let's start some threads for beggining 
-	   This dummy thread will be remained unused as soon as it started */	 
+	/* To reserve unused threads, let's start some threads for beggining
+	   This dummy thread will be remained unused as soon as it started */
 	debug_msg ("run threads to reserve minimum thread\n");
 	for (i=0; i<MAX_UNUSED_THREADS_IN_THREADPOOL; i++) {
 		MMSoundThreadPoolRun ((void *)i, __DummyWork);
@@ -128,7 +128,7 @@ int MMSoundThreadPoolRun(void *param, void (*func)(void*))
 	/* Dump current thread pool */
 	MMSoundThreadPoolDump(FALSE);
 
-	/* Create thread info structure. 
+	/* Create thread info structure.
 	   This thread info data will be free in __ThreadWork(), after use. */
 	THREAD_INFO* thread_info = (THREAD_INFO*)malloc (sizeof(THREAD_INFO));
 	if (thread_info) {
@@ -154,17 +154,17 @@ int MMSoundThreadPoolRun(void *param, void (*func)(void*))
 
 int MMSoundThreadPoolFini(void)
 {
-	/* If immediate is TRUE, no new task is processed for pool. 
-	Otherwise pool is not freed before the last task is processed. 
-	Note however, that no thread of this pool is interrupted, while processing a task. 
+	/* If immediate is TRUE, no new task is processed for pool.
+	Otherwise pool is not freed before the last task is processed.
+	Note however, that no thread of this pool is interrupted, while processing a task.
 	Instead at least all still running threads can finish their tasks before the pool is freed.
 
-	If wait_ is TRUE, the functions does not return before all tasks to be processed 
-	(dependent on immediate, whether all or only the currently running) are ready. 
+	If wait_ is TRUE, the functions does not return before all tasks to be processed
+	(dependent on immediate, whether all or only the currently running) are ready.
 	Otherwise the function returns immediately.	*/
 	debug_msg ("thread pool will be free\n");
 	g_thread_pool_free (g_pool, TRUE, FALSE);
-    
+
 	return MM_ERROR_NONE;
 }
 
