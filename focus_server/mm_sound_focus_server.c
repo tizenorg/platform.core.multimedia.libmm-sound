@@ -43,20 +43,10 @@
 
 #include "../include/mm_sound_common.h"
 #include "../include/mm_sound_utils.h"
-#include "include/mm_sound_thread_pool.h"
-#include "include/mm_sound_mgr_run.h"
-#include "include/mm_sound_mgr_codec.h"
-#include "include/mm_sound_mgr_ipc.h"
-#include "include/mm_sound_mgr_ipc_dbus.h"
-//#include "include/mm_sound_mgr_pulse.h"
-#include "include/mm_sound_mgr_asm.h"
-//#include "include/mm_sound_mgr_session.h"
-//#include "include/mm_sound_mgr_device.h"
-//#include "include/mm_sound_mgr_device_headset.h"
-//#include "include/mm_sound_mgr_device_dock.h"
-//#include "include/mm_sound_mgr_device_hdmi.h"
-//#include "include/mm_sound_mgr_device_wfd.h"
-#include <audio-session-manager.h>
+#include "include/mm_sound_focus_thread_pool.h"
+//#include "include/mm_focus_mgr_run.h"
+#include "include/mm_sound_mgr_focus_ipc.h"
+#include "include/mm_sound_mgr_focus_dbus.h"
 
 #include <glib.h>
 
@@ -131,14 +121,9 @@ static void __wait_for_vconfkey_ready (const char *keyname)
 	vconf_set_int(keyname, 0);
 }
 
-static int _handle_power_off ()
-{
-	debug_warning ("not supported\n");
-	return 0;
-}
-
 static int _handle_sound_reset ()
 {
+	int ret = 0;
 	debug_warning ("not supported\n");
 	return 0;
 }
@@ -189,7 +174,7 @@ int main(int argc, char **argv)
 	if (getOption(argc, argv, &serveropt))
 		return 1;
 
-	debug_warning("sound_server [%d] init \n", getpid());
+	debug_warning("focus_server [%d] init \n", getpid());
 
 	if (serveropt.startserver) {
 		sem = sem_create_n_wait();
@@ -200,6 +185,8 @@ int main(int argc, char **argv)
 		daemon(0,0); //chdir to ("/"), and close stdio
 #endif
 	}
+
+#if 0
 	if (serveropt.poweroff) {
 		if (_handle_power_off() == 0) {
 			debug_log("_handle_power_off success!!\n");
@@ -217,9 +204,9 @@ int main(int argc, char **argv)
 		}
 		return 0;
 	}
-
-	/* Sound Server Starts!!!*/
-	debug_warning("sound_server [%d] start \n", getpid());
+#endif
+	/* focus Server Starts!!!*/
+	debug_warning("focus_server [%d] start \n", getpid());
 
 	signal(SIGPIPE, SIG_IGN); //ignore SIGPIPE
 
@@ -250,32 +237,22 @@ int main(int argc, char **argv)
 
 	if (serveropt.startserver || serveropt.printlist) {
 		MMSoundThreadPoolInit();
-		MMSoundMgrRunInit(serveropt.plugdir);
-		MMSoundMgrCodecInit(serveropt.plugdir);
+//		MMSoundMgrRunInit(serveropt.plugdir);
 
 		MMSoundMgrDbusInit();
-
-//		pulse_handle = MMSoundMgrPulseInit(_pa_disconnect_cb, g_mainloop);
-		MMSoundMgrASMInit();
-		/* Wait for ASM Ready */
-		__wait_for_vconfkey_ready(ASM_READY_KEY);
 		debug_warning("sound_server [%d] asm ready...now, initialize devices!!!\n", getpid());
-
-//		_mm_sound_mgr_device_init();
-//		MMSoundMgrHeadsetInit();
-//		MMSoundMgrDockInit();
-//		MMSoundMgrHdmiInit();
-//		MMSoundMgrWfdInit();
-//		MMSoundMgrSessionInit();
+#ifdef USE_FOCUS
+		MMSoundMgrFocusInit();
+#endif
 	}
 
 	debug_warning("sound_server [%d] initialization complete...now, start running!!\n", getpid());
-
+	
 	if (serveropt.startserver) {
 		/* Start Run types */
-		MMSoundMgrRunRunAll();
-
-		unlink(PA_READY); // remove pa_ready file after sound-server init.
+//		MMSoundMgrRunRunAll();
+		
+//		unlink(PA_READY); // remove pa_ready file after sound-server init.
 
 		if (sem) {
 			if (sem_post(sem) == -1) {
@@ -292,20 +269,15 @@ int main(int argc, char **argv)
 	debug_warning("sound_server [%d] terminating \n", getpid());
 
 	if (serveropt.startserver || serveropt.printlist) {
-		MMSoundMgrRunStopAll();
+//		MMSoundMgrRunStopAll();
 		MMSoundMgrDbusFini();
-		MMSoundMgrCodecFini();
-		MMSoundMgrRunFini();
+//		MMSoundMgrRunFini();
 		MMSoundThreadPoolFini();
 
-//		MMSoundMgrWfdFini();
-//		MMSoundMgrHdmiFini();
-//		MMSoundMgrDockFini();
-//		MMSoundMgrHeadsetFini();
-//		MMSoundMgrSessionFini();
-//		_mm_sound_mgr_device_fini();
-		MMSoundMgrASMFini();
-//		MMSoundMgrPulseFini(pulse_handle);
+#ifdef USE_FOCUS
+		MMSoundMgrFocusFini();
+#endif
+
 #ifdef USE_HIBERNATION
 		if(heynoti_unsubscribe(heynotifd, "HIBERNATION_LEAVE", NULL)) {
 			debug_error("heynoti_unsubscribe failed..\n");
@@ -386,7 +358,7 @@ static void _exit_handler(int sig)
 {
 	int ret = MM_ERROR_NONE;
 	
-	ret = MMSoundMgrRunStopAll();
+//	ret = MMSoundMgrRunStopAll();
 	if (ret != MM_ERROR_NONE) {
 		debug_error("Fail to stop run-plugin\n");
 	} else {
