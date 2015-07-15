@@ -109,50 +109,6 @@
   "      <arg type='i' name='device_in' direction='out'/>"
   "      <arg type='i' name='device_out' direction='out'/>"
   "    </method>"
-  "    <method name='RegisterFocus'>"
-#ifdef SUPPORT_CONTAINER
-#ifdef USE_SECURITY
-  "      <arg name='container' type='ay' direction='in'/>"
-#else
-  "      <arg name='container' type='s' direction='in'/>"
-#endif
-#endif
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "      <arg name='stream_type' type='s' direction='in'/>"
-  "    </method>"
-  "    <method name='UnregisterFocus'>"
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "    </method>"
-  "    <method name='AcquireFocus'>"
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "      <arg name='focus_type' type='i' direction='in'/>"
-  "      <arg name='name' type='s' direction='in'/>"
-  "    </method>"
-  "    <method name='ReleaseFocus'>"
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "      <arg name='focus_type' type='i' direction='in'/>"
-  "      <arg name='name' type='s' direction='in'/>"
-  "    </method>"
-  "    <method name='WatchFocus'>"
-#ifdef SUPPORT_CONTAINER
-#ifdef USE_SECURITY
-	  " 	 <arg name='container' type='ay' direction='in'/>"
-#else
-	  " 	 <arg name='container' type='s' direction='in'/>"
-#endif
-#endif
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "      <arg name='focus_type' type='i' direction='in'/>"
-  "    </method>"
-  "    <method name='UnwatchFocus'>"
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "    </method>"
   "    <method name='ASMRegisterSound'>"
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
@@ -382,13 +338,6 @@ static void handle_method_set_sound_path_for_active_device(GDBusMethodInvocation
 static void handle_method_get_audio_path(GDBusMethodInvocation* invocation);
 static void handle_method_get_connected_device_list(GDBusMethodInvocation* invocation);
 
-static void handle_method_register_focus(GDBusMethodInvocation* invocation);
-static void handle_method_unregister_focus(GDBusMethodInvocation* invocation);
-static void handle_method_acquire_focus(GDBusMethodInvocation* invocation);
-static void handle_method_release_focus(GDBusMethodInvocation* invocation);
-static void handle_method_watch_focus(GDBusMethodInvocation* invocation);
-static void handle_method_unwatch_focus(GDBusMethodInvocation* invocation);
-
 static void handle_method_asm_register_sound(GDBusMethodInvocation* invocation);
 static void handle_method_asm_unregister_sound(GDBusMethodInvocation* invocation);
 static void handle_method_asm_register_watcher(GDBusMethodInvocation* invocation);
@@ -469,42 +418,6 @@ struct mm_sound_dbus_method methods[METHOD_CALL_MAX] = {
 			.name = "GetConnectedDeviceList",
 		},
 		.handler = handle_method_get_connected_device_list
-	},
-	[METHOD_CALL_REGISTER_FOCUS] = {
-		.info = {
-			.name = "RegisterFocus",
-		},
-		.handler = handle_method_register_focus
-	},
-	[METHOD_CALL_UNREGISTER_FOCUS] = {
-		.info = {
-			.name = "UnregisterFocus",
-		},
-		.handler = handle_method_unregister_focus
-	},
-	[METHOD_CALL_ACQUIRE_FOCUS] = {
-		.info = {
-			.name = "AcquireFocus",
-		},
-		.handler = handle_method_acquire_focus
-	},
-	[METHOD_CALL_RELEASE_FOCUS] = {
-		.info = {
-			.name = "ReleaseFocus",
-		},
-		.handler = handle_method_release_focus
-	},
-	[METHOD_CALL_WATCH_FOCUS] = {
-		.info = {
-			.name = "WatchFocus",
-		},
-		.handler = handle_method_watch_focus
-	},
-	[METHOD_CALL_UNWATCH_FOCUS] = {
-		.info = {
-			.name = "UnwatchFocus",
-		},
-		.handler = handle_method_unwatch_focus
 	},
 	[METHOD_CALL_ASM_REGISTER_SOUND] = {
 		.info = {
@@ -624,16 +537,6 @@ struct mm_sound_dbus_signal signals[SIGNAL_MAX] = {
 			.name = "DeviceInfoChanged",
 		},
 	},
-	[SIGNAL_FOCUS_CHANGED] = {
-		.info = {
-			.name = "FocusChanged",
-		},
-	},
-	[SIGNAL_FOCUS_WATCH] = {
-		.info = {
-			.name = "FocusWatch",
-		},
-	}
 };
 
 
@@ -1063,220 +966,6 @@ send_reply:
 	} else {
 		_method_call_return_error(invocation, ret);
 	}
-}
-
-static void handle_method_register_focus(GDBusMethodInvocation* invocation)
-{
-	int ret = MM_ERROR_NONE;
-	int pid = 0, handle_id = 0;
-	const char* stream_type = NULL;
-	GVariant *params = NULL;
-#ifdef SUPPORT_CONTAINER
-	int container_pid = -1;
-	char* container = NULL;
-#ifdef USE_SECURITY
-	GVariant* cookie_data;
-#endif /* USE_SECURITY */
-#endif /* SUPPORT_CONTAINER */
-
-
-	debug_fenter();
-
-	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
-		debug_error("Parameter for Method is NULL");
-		ret = MM_ERROR_SOUND_INTERNAL;
-		goto send_reply;
-	}
-
-#ifdef SUPPORT_CONTAINER
-#ifdef USE_SECURITY
-	g_variant_get(params, "(@ayiis)", &cookie_data, &container_pid, &handle_id, &stream_type);
-	container = _get_container_from_cookie(cookie_data);
-	ret = __mm_sound_mgr_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, container, container_pid);
-
-	if (container)
-		free(container);
-#else /* USE_SECURITY */
-	g_variant_get(params, "(siis)", &container, &container_pid, &handle_id, &stream_type);
-	ret = __mm_sound_mgr_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, container, container_pid);
-
-#endif /* USE_SECURITY */
-#else /* SUPPORT_CONTAINER */
-	g_variant_get(params, "(iis)", &pid, &handle_id, &stream_type);
-	ret = __mm_sound_mgr_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type);
-
-#endif /* SUPPORT_CONTAINER */
-
-send_reply:
-	if (ret == MM_ERROR_NONE) {
-		_method_call_return_value(invocation, g_variant_new("()"));
-	} else {
-		_method_call_return_error(invocation, ret);
-	}
-
-	debug_fleave();
-}
-
-static void handle_method_unregister_focus(GDBusMethodInvocation* invocation)
-{
-
-	int ret = MM_ERROR_NONE;
-	int pid = 0, handle_id = 0;
-	GVariant *params = NULL;
-
-	debug_fenter();
-
-	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
-		debug_error("Parameter for Method is NULL");
-		ret = MM_ERROR_SOUND_INTERNAL;
-		goto send_reply;
-	}
-
-	g_variant_get(params, "(ii)", &pid, &handle_id);
-	ret = __mm_sound_mgr_ipc_unregister_focus(_get_sender_pid(invocation), handle_id);
-
-send_reply:
-	if (ret == MM_ERROR_NONE) {
-		_method_call_return_value(invocation, g_variant_new("()"));
-	} else {
-		_method_call_return_error(invocation, ret);
-	}
-
-	debug_fleave();
-}
-
-static void handle_method_acquire_focus(GDBusMethodInvocation* invocation)
-{
-	int ret = MM_ERROR_NONE;
-	int pid = 0, handle_id = 0, focus_type = 0;
-	const char* name = NULL;
-	GVariant *params = NULL;
-
-	debug_fenter();
-
-	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
-		debug_error("Parameter for Method is NULL");
-		ret = MM_ERROR_SOUND_INTERNAL;
-		goto send_reply;
-	}
-
-	g_variant_get(params, "(iiis)", &pid, &handle_id, &focus_type, &name);
-	ret = __mm_sound_mgr_ipc_acquire_focus(_get_sender_pid(invocation), handle_id, focus_type, name);
-
-send_reply:
-	if (ret == MM_ERROR_NONE) {
-		_method_call_return_value(invocation, g_variant_new("()"));
-	} else {
-		_method_call_return_error(invocation, ret);
-	}
-
-	debug_fleave();
-}
-
-static void handle_method_release_focus(GDBusMethodInvocation* invocation)
-{
-	int ret = MM_ERROR_NONE;
-	int pid = 0, handle_id = 0, focus_type = 0;
-	const char* name = NULL;
-	GVariant *params = NULL;
-
-	debug_fenter();
-
-	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
-		debug_error("Parameter for Method is NULL");
-		ret = MM_ERROR_SOUND_INTERNAL;
-		goto send_reply;
-	}
-
-	g_variant_get(params, "(iiis)", &pid, &handle_id, &focus_type, &name);
-	ret = __mm_sound_mgr_ipc_release_focus(_get_sender_pid(invocation), handle_id, focus_type, name);
-
-send_reply:
-	if (ret == MM_ERROR_NONE) {
-		_method_call_return_value(invocation, g_variant_new("()"));
-	} else {
-		_method_call_return_error(invocation, ret);
-	}
-
-	debug_fleave();
-}
-
-static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
-{
-	int ret = MM_ERROR_NONE;
-	int pid = 0, handle_id = 0, focus_type = 0;
-	GVariant *params = NULL;
-#ifdef SUPPORT_CONTAINER
-	int container_pid = -1;
-	char* container = NULL;
-#ifdef USE_SECURITY
-	GVariant* cookie_data;
-#endif /* USE_SECURITY */
-#endif /* SUPPORT_CONTAINER */
-
-	debug_fenter();
-
-	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
-		debug_error("Parameter for Method is NULL");
-		ret = MM_ERROR_SOUND_INTERNAL;
-		goto send_reply;
-	}
-
-#ifdef SUPPORT_CONTAINER
-#ifdef USE_SECURITY
-	g_variant_get(params, "(@ayiii)", &cookie_data, &container_pid, &handle_id, &focus_type);
-	container = _get_container_from_cookie(cookie_data);
-	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, container, container_pid);
-
-	if (container)
-		free(container);
-#else /* USE_SECURITY */
-	g_variant_get(params, "(siii)", &container, &container_pid, &handle_id, &focus_type);
-	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, container, container_pid);
-
-#endif /* USE_SECURITY */
-#else /* SUPPORT_CONTAINER */
-	g_variant_get(params, "(iii)", &pid, &handle_id, &focus_type);
-	ret = __mm_sound_mgr_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type);
-
-#endif /* SUPPORT_CONTAINER */
-
-send_reply:
-	if (ret == MM_ERROR_NONE) {
-		_method_call_return_value(invocation, g_variant_new("()"));
-	} else {
-		_method_call_return_error(invocation, ret);
-	}
-
-	debug_fleave();
-}
-
-static void handle_method_unwatch_focus (GDBusMethodInvocation* invocation)
-{
-	int ret = MM_ERROR_NONE;
-	int pid = 0;
-	int handle_id = 0;
-	GVariant *params = NULL;
-
-	debug_fenter();
-
-	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
-		debug_error("Parameter for Method is NULL");
-		ret = MM_ERROR_SOUND_INTERNAL;
-		goto send_reply;
-	}
-
-	g_variant_get(params, "(ii)", &pid, &handle_id);
-	ret = __mm_sound_mgr_ipc_unwatch_focus(_get_sender_pid(invocation), handle_id);
-
-send_reply:
-	if (ret == MM_ERROR_NONE) {
-		_method_call_return_value(invocation, g_variant_new("()"));
-	} else {
-		_method_call_return_error(invocation, ret);
-	}
-
-	debug_fleave();
 }
 
 /*********************** ASM METHODS ****************************/

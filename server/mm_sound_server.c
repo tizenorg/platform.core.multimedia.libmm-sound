@@ -238,7 +238,7 @@ int main(int argc, char **argv)
 		else if(pid > 0)
 		{
 			wait(&ret);
-			fprintf(stderr, "Killed by signal [%05X]\n", ret);	
+			fprintf(stderr, "Killed by signal [%05X]\n", ret);
 			fprintf(stderr, "Daemon is run againg\n");
 		}
 	}
@@ -260,9 +260,6 @@ int main(int argc, char **argv)
 		/* Wait for ASM Ready */
 		__wait_for_vconfkey_ready(ASM_READY_KEY);
 		debug_warning("sound_server [%d] asm ready...now, initialize devices!!!\n", getpid());
-#ifdef USE_FOCUS
-		MMSoundMgrFocusInit();
-#endif
 
 //		_mm_sound_mgr_device_init();
 //		MMSoundMgrHeadsetInit();
@@ -307,9 +304,6 @@ int main(int argc, char **argv)
 //		MMSoundMgrHeadsetFini();
 //		MMSoundMgrSessionFini();
 //		_mm_sound_mgr_device_fini();
-#ifdef USE_FOCUS
-		MMSoundMgrFocusFini();
-#endif
 		MMSoundMgrASMFini();
 //		MMSoundMgrPulseFini(pulse_handle);
 #ifdef USE_HIBERNATION
@@ -347,7 +341,7 @@ static int getOption(int argc, char **argv, server_arg *arg)
 	} else {
 		MMSOUND_STRNCPY(arg->plugdir, PLUGIN_DIR, MAX_PLUGIN_DIR_PATH_LEN);
 	}
-		
+
 	arg->testmode = 0;
 
 	while (1)
