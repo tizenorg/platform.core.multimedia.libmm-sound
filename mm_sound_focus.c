@@ -28,7 +28,7 @@
 
 #include "include/mm_sound.h"
 #include "include/mm_sound_focus.h"
-#include "server/include/mm_sound_mgr_focus.h"
+#include "focus_server/include/mm_sound_mgr_focus.h"
 
 EXPORT_API
 int mm_sound_focus_get_id(int *id)

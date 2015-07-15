@@ -26,7 +26,7 @@
 
 #include <mm_error.h>
 #include <mm_debug.h>
-#include <mm_sound_thread_pool.h>
+#include <mm_sound_focus_thread_pool.h>
 
 #define USE_G_THREAD_POOL
 #ifdef USE_G_THREAD_POOL
@@ -68,7 +68,7 @@ static void __ThreadWork(gpointer data, gpointer user_data)
 	}
 }
 
-int MMSoundThreadPoolDump(int fulldump)
+int MMSoundFocusThreadPoolDump(int fulldump)
 {
 	if (g_pool == NULL) {
 		debug_error ("No thread pool initialized....\n");
@@ -88,7 +88,7 @@ int MMSoundThreadPoolDump(int fulldump)
 	return MM_ERROR_NONE;
 }
 
-int MMSoundThreadPoolInit()
+int MMSoundFocusThreadPoolInit()
 {
 	int i=0;
 	GError* error = NULL;
@@ -102,7 +102,7 @@ int MMSoundThreadPoolInit()
 	}
 	debug_msg ("thread pool created successfully\n");
 
-	MMSoundThreadPoolDump(TRUE);
+	MMSoundFocusThreadPoolDump(TRUE);
 
 	/* Thread pool setting : this will maintain at least 10 unused threads and this will be reused. */
 	/* If no unused thread left, new thread will be created, but always maintain 10 unused thread */
@@ -113,20 +113,20 @@ int MMSoundThreadPoolInit()
 	   This dummy thread will be remained unused as soon as it started */
 	debug_msg ("run threads to reserve minimum thread\n");
 	for (i=0; i<MAX_UNUSED_THREADS_IN_THREADPOOL; i++) {
-		MMSoundThreadPoolRun ((void *)i, __DummyWork);
+		MMSoundFocusThreadPoolRun ((void *)i, __DummyWork);
 	}
 
-	MMSoundThreadPoolDump(TRUE);
+	MMSoundFocusThreadPoolDump(TRUE);
 
      return MM_ERROR_NONE;
 }
 
-int MMSoundThreadPoolRun(void *param, void (*func)(void*))
+int MMSoundFocusThreadPoolRun(void *param, void (*func)(void*))
 {
 	GError* error = NULL;
 
 	/* Dump current thread pool */
-	MMSoundThreadPoolDump(FALSE);
+	MMSoundFocusThreadPoolDump(FALSE);
 
 	/* Create thread info structure.
 	   This thread info data will be free in __ThreadWork(), after use. */
@@ -152,7 +152,7 @@ int MMSoundThreadPoolRun(void *param, void (*func)(void*))
 	return MM_ERROR_NONE;
 }
 
-int MMSoundThreadPoolFini(void)
+int MMSoundFocusThreadPoolFini(void)
 {
 	/* If immediate is TRUE, no new task is processed for pool.
 	Otherwise pool is not freed before the last task is processed.
@@ -264,7 +264,7 @@ static void* __ThreadWork(void *param)
     }
 }
 
-int MMSoundThreadPoolDump(void)
+int MMSoundFocusThreadPoolDump(void)
 {
 	int count = 0;
 	int ret = MM_ERROR_NONE;
@@ -290,7 +290,7 @@ int MMSoundThreadPoolDump(void)
 	return ret;
 }
 
-int MMSoundThreadPoolInit(void)
+int MMSoundFocusThreadPoolInit(void)
 {
     volatile int count = 0;
     pthread_mutex_lock(&funcsync);
@@ -314,7 +314,7 @@ int MMSoundThreadPoolInit(void)
     return MM_ERROR_NONE;
 }
 
-int MMSoundThreadPoolRun(void *param, void (*func)(void*))
+int MMSoundFocusThreadPoolRun(void *param, void (*func)(void*))
 {
     int poolnum = -1;
 
@@ -336,7 +336,7 @@ int MMSoundThreadPoolRun(void *param, void (*func)(void*))
     return MM_ERROR_NONE;
 }
 
-int MMSoundThreadPoolFini(void)
+int MMSoundFocusThreadPoolFini(void)
 {
     int count = 0;
 

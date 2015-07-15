@@ -53,10 +53,6 @@ sound_server_CFLAGS += $(SECURITY_CFLAGS) -DUSE_SECURITY
 sound_server_LDADD += $(SECURITY_LIBS)
 endif
 
-if USE_FOCUS
-sound_server_SOURCES += mm_sound_mgr_focus.c
-endif
-
 sound_server_DEPENDENCIES = $(srcdir)/../common/libmmfsoundcommon.la
 sound_server_CFLAGS += -fPIC -pie
 installsounddir = $(prefix)/share/sounds/sound-server
