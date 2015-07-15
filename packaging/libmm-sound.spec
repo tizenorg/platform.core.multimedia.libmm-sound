@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.9.239
+Version:    0.9.240
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -8,6 +8,8 @@ Source0:    %{name}-%{version}.tar.gz
 Source1:    sound-server.service
 Source2:    sound-server.path
 Source3:    sound-server.conf
+Source4:    focus-server.service
+Source5:    focus-server.path
 Requires(post): /sbin/ldconfig
 Requires(post): /usr/bin/vconftool
 Requires(postun): /sbin/ldconfig
@@ -100,6 +102,7 @@ cp LICENSE.APLv2 %{buildroot}/usr/share/license/%{name}
 cp LICENSE.APLv2 %{buildroot}/usr/share/license/libmm-sound-tool
 mkdir -p %{buildroot}/opt/etc/dump.d/module.d/
 cp dump_audio.sh %{buildroot}/opt/etc/dump.d/module.d/dump_audio.sh
+#mkdir -p %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants
 mkdir -p %{buildroot}/etc/dbus-1/system.d/
 cp %{SOURCE3} %{buildroot}/etc/dbus-1/system.d/sound-server.conf
 
@@ -107,7 +110,10 @@ cp %{SOURCE3} %{buildroot}/etc/dbus-1/system.d/sound-server.conf
 install -d %{buildroot}%{_unitdir}/multi-user.target.wants
 install -m0644 %{SOURCE1} %{buildroot}%{_unitdir}/
 install -m0644 %{SOURCE2} %{buildroot}%{_unitdir}/
+install -m0644 %{SOURCE4} %{buildroot}%{_unitdir}/
+install -m0644 %{SOURCE5} %{buildroot}%{_unitdir}/
 ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/sound-server.path
+ln -sf ../focus-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/focus-server.path
 
 %post
 /sbin/ldconfig
@@ -135,6 +141,8 @@ ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/soun
 %manifest libmm-sound.manifest
 %defattr(-,root,root,-)
 %caps(cap_chown,cap_dac_override,cap_fowner,cap_mac_override,cap_lease=eip) %{_bindir}/sound_server
+%caps(cap_chown,cap_dac_override,cap_fowner,cap_mac_override,cap_lease=eip) %{_bindir}/focus_server
+%{_bindir}/focus_server
 %{_libdir}/libmmfsound.so.*
 %{_libdir}/libmmfsoundcommon.so.*
 %{_libdir}/libmmfkeysound.so.*
@@ -152,8 +160,11 @@ ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/soun
 %{_libdir}/soundplugins/libsoundplugintremoloogg.so
 %endif
 %{_unitdir}/multi-user.target.wants/sound-server.path
+%{_unitdir}/multi-user.target.wants/focus-server.path
 %{_unitdir}/sound-server.service
 %{_unitdir}/sound-server.path
+%{_unitdir}/focus-server.service
+%{_unitdir}/focus-server.path
 /usr/share/sounds/sound-server/*
 %{_datadir}/license/%{name}
 %{_datadir}/license/libmm-sound-tool

@@ -43,36 +43,14 @@
 
 #include "../include/mm_sound_common.h"
 #include "../include/mm_sound_utils.h"
-#include "include/mm_sound_thread_pool.h"
-#include "include/mm_sound_mgr_run.h"
-#include "include/mm_sound_mgr_codec.h"
-#include "include/mm_sound_mgr_ipc.h"
-#include "include/mm_sound_mgr_ipc_dbus.h"
-//#include "include/mm_sound_mgr_pulse.h"
-#include "include/mm_sound_mgr_asm.h"
-//#include "include/mm_sound_mgr_session.h"
-//#include "include/mm_sound_mgr_device.h"
-//#include "include/mm_sound_mgr_device_headset.h"
-//#include "include/mm_sound_mgr_device_dock.h"
-//#include "include/mm_sound_mgr_device_hdmi.h"
-//#include "include/mm_sound_mgr_device_wfd.h"
-#include <audio-session-manager.h>
+#include "include/mm_sound_mgr_focus_ipc.h"
+#include "include/mm_sound_mgr_focus_dbus.h"
 
 #include <glib.h>
 
-#define PLUGIN_ENV "MM_SOUND_PLUGIN_PATH"
-#define PLUGIN_DIR "/usr/lib/soundplugins/"
-#define PLUGIN_MAX 30
-
-#define HIBERNATION_SOUND_CHECK_PATH	"/tmp/hibernation/sound_ready"
 #define USE_SYSTEM_SERVER_PROCESS_MONITORING
 
-#define VCONFKEY_CHECK_INTERVAL	10000
-
-#define MAX_PLUGIN_DIR_PATH_LEN	256
-
 typedef struct {
-    char plugdir[MAX_PLUGIN_DIR_PATH_LEN];
     int startserver;
     int printlist;
     int testmode;
@@ -116,68 +94,17 @@ void mainloop_run()
 	g_main_loop_run(g_mainloop);
 }
 
-static void __wait_for_vconfkey_ready (const char *keyname)
-{
-	int retry_count = 0;
-	int vconf_ready = 0;
-	while (!vconf_ready) {
-		debug_msg("Checking the vconf key[%s] ready....[%d]\n", keyname, retry_count++);
-		if (vconf_get_int(keyname, &vconf_ready)) {
-			debug_warning("vconf_get_int for vconf key[%s] failed\n", keyname);
-		}
-		usleep (VCONFKEY_CHECK_INTERVAL);
-	}
-	debug_msg("vconf key[%s] is now ready...clear the key!!!\n", keyname);
-	vconf_set_int(keyname, 0);
-}
-
 static int _handle_power_off ()
 {
 	debug_warning ("not supported\n");
 	return 0;
 }
 
-static int _handle_sound_reset ()
-{
-	debug_warning ("not supported\n");
-	return 0;
-}
-
-static void _pa_disconnect_cb (void *user_data)
-{
-	debug_warning ("g_mainloop = %p, user_data = %p", g_mainloop, user_data);
-
-	if (pulse_handle) {
-		free(pulse_handle);
-		pulse_handle = NULL;
-	}
-
-	if (g_mainloop)
-		g_main_loop_quit(g_mainloop);
-}
-
-static sem_t* sem_create_n_wait()
-{
-	sem_t* sem = NULL;
-
-	if ((sem = sem_open ("booting-sound", O_CREAT, 0660, 0))== SEM_FAILED) {
-		debug_error ("error creating sem : %d", errno);
-		return NULL;
-	}
-
-	debug_msg ("returning sem [%p]", sem);
-	return sem;
-}
 
 int main(int argc, char **argv)
 {
-	sem_t* sem = NULL;
 	server_arg serveropt;
 	struct sigaction action;
-#ifdef USE_HIBERNATION
-	int heynotifd = -1;
-#endif
-	int volumes[VOLUME_TYPE_MAX] = {0, };
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
 	int pid;
 #endif
@@ -189,17 +116,15 @@ int main(int argc, char **argv)
 	if (getOption(argc, argv, &serveropt))
 		return 1;
 
-	debug_warning("sound_server [%d] init \n", getpid());
+	debug_warning("focus_server [%d] init \n", getpid());
 
-	if (serveropt.startserver) {
-		sem = sem_create_n_wait();
-	}
 	/* Daemon process create */
 	if (!serveropt.testmode && serveropt.startserver) {
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
 		daemon(0,0); //chdir to ("/"), and close stdio
 #endif
 	}
+
 	if (serveropt.poweroff) {
 		if (_handle_power_off() == 0) {
 			debug_log("_handle_power_off success!!\n");
@@ -209,17 +134,8 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	if (serveropt.soundreset) {
-		if (_handle_sound_reset() == 0) {
-			debug_log("_handle_sound_reset success!!\n");
-		} else {
-			debug_error("_handle_sound_reset failed..\n");
-		}
-		return 0;
-	}
-
-	/* Sound Server Starts!!!*/
-	debug_warning("sound_server [%d] start \n", getpid());
+	/* focus Server Starts!!!*/
+	debug_warning("focus_server [%d] start \n", getpid());
 
 	signal(SIGPIPE, SIG_IGN); //ignore SIGPIPE
 
@@ -248,42 +164,16 @@ int main(int argc, char **argv)
 	sigaction(SIGTERM, &action, &sigterm_action);
 	sigaction(SIGSYS, &action, &sigsys_action);
 
-	if (serveropt.startserver || serveropt.printlist) {
-		MMSoundThreadPoolInit();
-		MMSoundMgrRunInit(serveropt.plugdir);
-		MMSoundMgrCodecInit(serveropt.plugdir);
-
-		MMSoundMgrDbusInit();
-
-//		pulse_handle = MMSoundMgrPulseInit(_pa_disconnect_cb, g_mainloop);
-		MMSoundMgrASMInit();
-		/* Wait for ASM Ready */
-		__wait_for_vconfkey_ready(ASM_READY_KEY);
-		debug_warning("sound_server [%d] asm ready...now, initialize devices!!!\n", getpid());
-
-//		_mm_sound_mgr_device_init();
-//		MMSoundMgrHeadsetInit();
-//		MMSoundMgrDockInit();
-//		MMSoundMgrHdmiInit();
-//		MMSoundMgrWfdInit();
-//		MMSoundMgrSessionInit();
+	if (serveropt.startserver) {
+		MMSoundMgrFocusDbusInit();
+		MMSoundMgrFocusInit();
 	}
 
-	debug_warning("sound_server [%d] initialization complete...now, start running!!\n", getpid());
+	debug_warning("focus_server [%d] initialization complete...now, start running!!\n", getpid());
 
 	if (serveropt.startserver) {
-		/* Start Run types */
-		MMSoundMgrRunRunAll();
+//		unlink(PA_READY); // remove pa_ready file after sound-server init.
 
-		unlink(PA_READY); // remove pa_ready file after sound-server init.
-
-		if (sem) {
-			if (sem_post(sem) == -1) {
-				debug_error ("error sem post : %d", errno);
-			} else {
-				debug_msg ("Ready to play booting sound!!!!");
-			}
-		}
 		/* Start Ipc mgr */
 
 		mainloop_run();
@@ -291,27 +181,9 @@ int main(int argc, char **argv)
 
 	debug_warning("sound_server [%d] terminating \n", getpid());
 
-	if (serveropt.startserver || serveropt.printlist) {
-		MMSoundMgrRunStopAll();
-		MMSoundMgrDbusFini();
-		MMSoundMgrCodecFini();
-		MMSoundMgrRunFini();
-		MMSoundThreadPoolFini();
-
-//		MMSoundMgrWfdFini();
-//		MMSoundMgrHdmiFini();
-//		MMSoundMgrDockFini();
-//		MMSoundMgrHeadsetFini();
-//		MMSoundMgrSessionFini();
-//		_mm_sound_mgr_device_fini();
-		MMSoundMgrASMFini();
-//		MMSoundMgrPulseFini(pulse_handle);
-#ifdef USE_HIBERNATION
-		if(heynoti_unsubscribe(heynotifd, "HIBERNATION_LEAVE", NULL)) {
-			debug_error("heynoti_unsubscribe failed..\n");
-		}
-		heynoti_close(heynotifd);
-#endif
+	if (serveropt.startserver) {
+		MMSoundMgrFocusDbusFini();
+		MMSoundMgrFocusFini();
 	}
 
 	debug_warning("sound_server [%d] exit ----------------- END \n", getpid());
@@ -322,25 +194,14 @@ int main(int argc, char **argv)
 static int getOption(int argc, char **argv, server_arg *arg)
 {
 	int c;
-	char *plugin_env_dir = NULL;
 	static struct option long_options[] = {
 		{"start", 0, 0, 'S'},
 		{"poweroff", 0, 0, 'F'},
-		{"soundreset", 0, 0, 'R'},
-		{"list", 0, 0, 'L'},
 		{"help", 0, 0, 'H'},
-		{"plugdir", 1, 0, 'P'},
 		{"testmode", 0, 0, 'T'},
 		{0, 0, 0, 0}
 	};
 	memset(arg, 0, sizeof(server_arg));
-
-	plugin_env_dir = getenv(PLUGIN_ENV);
-	if (plugin_env_dir) {
-		MMSOUND_STRNCPY(arg->plugdir, plugin_env_dir, MAX_PLUGIN_DIR_PATH_LEN);
-	} else {
-		MMSOUND_STRNCPY(arg->plugdir, PLUGIN_DIR, MAX_PLUGIN_DIR_PATH_LEN);
-	}
 
 	arg->testmode = 0;
 
@@ -359,15 +220,6 @@ static int getOption(int argc, char **argv, server_arg *arg)
 		case 'F': /* Poweroff */
 			arg->poweroff = 1;
 			break;
-		case 'R': /* SoundReset */
-			arg->soundreset = 1;
-			break;
-		case 'L': /* list of plugins */
-			arg->printlist = 1;
-			break;
-		case 'P': /* Custom plugindir */
-			MMSOUND_STRNCPY(arg->plugdir, optarg, MAX_PLUGIN_DIR_PATH_LEN);
-			break;
 		case 'T': /* Test mode */
 			arg->testmode = 1;
 			break;
@@ -385,8 +237,7 @@ static int getOption(int argc, char **argv, server_arg *arg)
 static void _exit_handler(int sig)
 {
 	int ret = MM_ERROR_NONE;
-	
-	ret = MMSoundMgrRunStopAll();
+
 	if (ret != MM_ERROR_NONE) {
 		debug_error("Fail to stop run-plugin\n");
 	} else {
@@ -426,12 +277,7 @@ static int usgae(int argc, char **argv)
 	fprintf(stderr, "Usage: %s [Options]\n", argv[0]);
 	fprintf(stderr, "\t%-20s: start sound server.\n", "--start,-S");
 	fprintf(stderr, "\t%-20s: handle poweroff\n", "--poweroff,-F");
-	fprintf(stderr, "\t%-20s: handle soundreset\n", "--soundreset,-R");
 	fprintf(stderr, "\t%-20s: help message.\n", "--help,-H");
-#if 0 /* currently not in use */
-	fprintf(stderr, "\t%-20s: print plugin list.\n", "--list,-L");
-	fprintf(stderr, "\t%-20s: print this message.\n", "--plugdir,-P");
-#endif
 
 	return 1;
 }

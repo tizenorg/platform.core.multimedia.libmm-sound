@@ -33,6 +33,10 @@
 #define OBJECT_SOUND_SERVER "/org/tizen/SoundServer1"
 #define INTERFACE_SOUND_SERVER "org.tizen.SoundServer1"
 
+#define BUS_NAME_FOCUS_SERVER "org.tizen.FocusServer"
+#define OBJECT_FOCUS_SERVER "/org/tizen/FocusServer1"
+#define INTERFACE_FOCUS_SERVER "org.tizen.FocusServer1"
+
 #define INTERFACE_DBUS			"org.freedesktop.DBus.Properties"
 #define SIGNAL_PROP_CHANGED "PropertiesChanged"
 #define METHOD_GET			"Get"
@@ -51,6 +55,7 @@ enum {
 	DBUS_TO_PULSE_MODULE_DEVICE_MANAGER,
 	DBUS_TO_PULSE_MODULE_STREAM_MANAGER,
 	DBUS_TO_PULSE_MODULE_POLICY,
+	DBUS_TO_FOCUS_SERVER,
 };
 
 
@@ -560,6 +565,10 @@ static int _dbus_method_call_to(int dbus_to, int method_type, GVariant *args, GV
 		bus_name = BUS_NAME_PULSEAUDIO;
         object = OBJECT_PULSE_MODULE_POLICY;
         interface = INTERFACE_PULSE_MODULE_POLICY;
+	} else if (dbus_to == DBUS_TO_FOCUS_SERVER) {
+		bus_name = BUS_NAME_FOCUS_SERVER;
+        object = OBJECT_FOCUS_SERVER;
+        interface = INTERFACE_FOCUS_SERVER;
 	} else {
 		debug_error("Invalid case, dbus_to %d", dbus_to);
 		return MM_ERROR_SOUND_INTERNAL;
@@ -2040,7 +2049,7 @@ int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_soun
 #endif /* SUPPORT_CONTAINER */
 
 	if (params) {
-		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_REGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_REGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus register focus failed");
 			goto cleanup;
 		}
@@ -2110,7 +2119,7 @@ int mm_sound_client_dbus_unregister_focus(int id)
 
 	params = g_variant_new("(ii)", instance, id);
 	if (params) {
-		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_UNREGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_UNREGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus unregister focus failed");
 			goto cleanup;
 		}
@@ -2162,7 +2171,7 @@ int mm_sound_client_dbus_acquire_focus(int id, mm_sound_focus_type_e type, const
 
 	params = g_variant_new("(iiis)", instance, id, type, option);
 	if (params) {
-		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_ACQUIRE_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_ACQUIRE_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus acquire focus failed");
 			goto cleanup;
 		}
@@ -2202,7 +2211,7 @@ int mm_sound_client_dbus_release_focus(int id, mm_sound_focus_type_e type, const
 
 	params = g_variant_new("(iiis)", instance, id, type, option);
 	if (params) {
-		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_RELEASE_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_RELEASE_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus release focus failed");
 			goto cleanup;
 		}
@@ -2274,7 +2283,7 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 #endif /* SUPPORT_CONTAINER */
 
 	if (params) {
-		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_WATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_WATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus set watch focus failed");
 			goto cleanup;
 		}
@@ -2344,7 +2353,7 @@ int mm_sound_client_dbus_unset_focus_watch_callback(int id)
 
 	params = g_variant_new("(ii)", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	if (params) {
-		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_UNWATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_UNWATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus unset watch focus failed");
 			goto cleanup;
 		}
