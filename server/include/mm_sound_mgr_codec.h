@@ -32,6 +32,9 @@ typedef struct {
 	int session_type;
 	int session_options;
 	int session_handle;
+	int focus_handle;
+	int focus_wcb_id;
+	int keytone;
 	void *stopcb;
 	int (*callback)(int, void *, void *, int);
 	void *msgcallback;		/* Client callback function */
