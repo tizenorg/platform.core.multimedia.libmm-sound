@@ -55,6 +55,7 @@ int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index);
 //int _MMSoundMgrIpcStop(mm_ipc_msg_t *msg);
 int _MMSoundMgrIpcStop(int handle);
+int _MMSoundMgrIpcClearFocus(int pid);
 //int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg);
 int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 			   int session_type, int session_options, int client_pid,

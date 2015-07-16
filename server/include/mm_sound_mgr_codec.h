@@ -32,6 +32,8 @@ typedef struct {
 	int session_type;
 	int session_options;
 	int session_handle;
+	int focus_handle;
+	int focus_wcb_id;
 	void *stopcb;
 	int (*callback)(int, void *, void *, int);
 	void *msgcallback;		/* Client callback function */
@@ -60,6 +62,7 @@ int MMSoundMgrCodecFini(void);
 int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param);
 int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param_t *param);
 int MMSoundMgrCodecStop(const int slotid);
+int MMSoundMgrCodecClearFocus(int pid);
 int MMSoundMgrCodecCreate(int *slotid, const mmsound_mgr_codec_param_t *param);
 int MMSoundMgrCodecPlayWave(int slotid, const mmsound_mgr_codec_param_t *param);
 int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param);
