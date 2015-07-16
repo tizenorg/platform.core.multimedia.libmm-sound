@@ -17,6 +17,7 @@ int mm_sound_client_dbus_play_sound(char* filename, int tone, int repeat, int vo
 			   int priority, int session_type, int session_options, int client_pid, int handle_route,
 			   bool enable_session, int *codechandle, char *stream_type, int stream_index);
 int mm_sound_client_dbus_stop_sound(int handle);
+int mm_sound_client_dbus_clear_focus(int pid); // Not original focus feature, only for cleaning up tone/wav player internal focus usage.
 int mm_sound_client_dbus_is_route_available(mm_sound_route route, bool *is_available);
 int mm_sound_client_dbus_foreach_available_route_cb(mm_sound_available_route_cb, void *user_data);
 int mm_sound_client_dbus_set_active_route(mm_sound_route route, bool need_broadcast);
