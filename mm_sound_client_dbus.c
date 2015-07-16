@@ -118,6 +118,9 @@ const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_PLAY_DTMF_WITH_STREAM_INFO] = {
 		.name = "PlayDTMFWithStreamInfo",
 	},
+	[METHOD_CALL_CLEAR_FOCUS] = {
+		.name = "ClearFocus",
+	},
 	[METHOD_CALL_GET_BT_A2DP_STATUS] = {
 		.name = "GetBTA2DPStatus",
 	},
@@ -1322,6 +1325,24 @@ int mm_sound_client_dbus_stop_sound(int handle)
 	}
 
 cleanup:
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+}
+
+int mm_sound_client_dbus_clear_focus(int pid)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant *result = NULL;
+
+	debug_fenter();
+
+	if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_CLEAR_FOCUS, g_variant_new("(i)", pid), &result)) != MM_ERROR_NONE) {
+		debug_error("dbus clear focus failed");
+	}
+
 	if (result)
 		g_variant_unref(result);
 

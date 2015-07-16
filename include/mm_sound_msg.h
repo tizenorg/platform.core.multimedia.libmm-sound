@@ -124,6 +124,7 @@ enum {
         METHOD_CALL_PLAY_FILE_STOP,
         METHOD_CALL_PLAY_DTMF,
         METHOD_CALL_PLAY_DTMF_WITH_STREAM_INFO,
+        METHOD_CALL_CLEAR_FOCUS, // Not original focus feature, only for tone/wav player internal focus usage.
         METHOD_CALL_GET_BT_A2DP_STATUS,
         METHOD_CALL_SET_PATH_FOR_ACTIVE_DEVICE,
         METHOD_CALL_GET_CONNECTED_DEVICE_LIST,
