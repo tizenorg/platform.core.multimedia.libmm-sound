@@ -122,7 +122,6 @@ typedef struct {
 	int					priority;		/**< 0 or 1 */
 } MMSoundPlayParam;
 
-
 /**
  * This function is to play system sound with specified parameters.
  *

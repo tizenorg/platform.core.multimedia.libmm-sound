@@ -65,6 +65,8 @@ static mm_sound_device_list_t g_device_list_t;
 static pthread_mutex_t g_device_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_id_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+int g_focus_signal_handle[CLIENT_HANDLE_MAX];
+
 int mm_sound_client_initialize(void)
 {
 	int ret = MM_ERROR_NONE;
@@ -242,6 +244,22 @@ void mm_sound_convert_volume_type_to_stream_type(int volume_type, char *stream_t
 			    DBUS SUPPORTED FUNCTIONS
 ******************************************************************************************/
 
+void _mm_sound_client_focus_signal_callback(mm_sound_signal_name_t signal, int value, void *user_data)
+{
+	int handle = (int)user_data;
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+	debug_error("focus siganl recieved, value = %d, handle = %d", value, handle);
+
+	if (value == 1) {
+		ret = mm_sound_client_dbus_clear_sound_focus(handle);
+		if (ret)
+			debug_error("clear focus failed ret = 0x%x", ret);
+		mm_sound_unsubscribe_signal(g_focus_signal_handle[handle]);
+	}
+}
+
 int mm_sound_client_play_tone(int number, int volume_config, double volume, int time, int *handle, bool enable_session)
 {
 	int ret = MM_ERROR_NONE;
@@ -251,23 +269,34 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 
 	 debug_fenter();
 
-	 /* read session information */
-	 int session_type = MM_SESSION_TYPE_MEDIA;
-	 int session_options = 0;
-	 if (enable_session)
-	 {
-		 if (MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options))
-		 {
-			 debug_warning("[Client] Read Session Information failed. use default \"media\" type\n");
-			 session_type = MM_SESSION_TYPE_MEDIA;
+	/* read session information */
+	int session_type = MM_SESSION_TYPE_MEDIA;
+	int session_options = 0;
+	int is_focus_registered = 0;
 
-			 if(MM_ERROR_NONE != mm_session_init(session_type))
-			 {
-				 debug_critical("[Client] MMSessionInit() failed\n");
-				 return MM_ERROR_POLICY_INTERNAL;
-			 }
-		 }
-	 }
+	ret = mm_sound_get_signal_value(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &is_focus_registered);
+	if (ret) {
+		debug_error("mm_sound_subscribe_signal failed [0x%x]", ret);
+		return MM_ERROR_POLICY_INTERNAL;
+	}
+
+	if (is_focus_registered)
+		enable_session = false;
+
+	if (enable_session)
+	{
+		if (MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options))
+		{
+			debug_warning("[Client] Read Session Information failed. use default \"media\" type\n");
+			session_type = MM_SESSION_TYPE_MEDIA;
+
+			if(MM_ERROR_NONE != mm_session_init(session_type))
+			{
+				debug_critical("[Client] MMSessionInit() failed\n");
+				return MM_ERROR_POLICY_INTERNAL;
+			}
+		}
+	}
 
 	 // instance = getpid();
 	 //debug_log("[Client] pid for client ::: [%d]\n", instance);
@@ -279,6 +308,14 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 	mm_sound_convert_volume_type_to_stream_type(volume_type, stream_type);
 	ret = mm_sound_client_dbus_play_tone(number, time, volume, volume_config,
 					session_type, session_options, getpid(), enable_session, handle, stream_type, -1);
+
+	if (enable_session) {
+		ret = mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &g_focus_signal_handle[*handle], _mm_sound_client_focus_signal_callback, (void*)*handle);
+		if (ret) {
+			debug_error("mm_sound_subscribe_signal failed [0x%x]", ret);
+			return MM_ERROR_POLICY_INTERNAL;
+		}
+	}
 
 	debug_fleave();
 	return ret;
@@ -301,6 +338,7 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 	int ret = MM_ERROR_NONE;
 	int session_type = MM_SESSION_TYPE_MEDIA;
 	int session_options = 0;
+	int is_focus_registered = 0;
 //	int instance = -1; 	/* instance is unique to communicate with server : client message queue filter type */
 	int volume_type = MM_SOUND_VOLUME_CONFIG_TYPE(param->volume_config);
 	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = {0, };
@@ -308,6 +346,15 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 	debug_fenter();
 
 	/* read session information */
+
+	ret = mm_sound_get_signal_value(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &is_focus_registered);
+	if (ret) {
+		debug_error("mm_sound_subscribe_signal failed [0x%x]", ret);
+		return MM_ERROR_POLICY_INTERNAL;
+	}
+
+	if (is_focus_registered)
+		param->skip_session == true;
 
 	if (param->skip_session == false) {
 		if(MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options))
@@ -340,11 +387,18 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 	if (ret != MM_ERROR_NONE) {
 		debug_error("Play Sound Failed");
 		goto failed;
-	} 
+	}
 	if (param->callback) {
 		ret = mm_sound_client_dbus_add_play_sound_end_callback(*handle, param->callback, param->data);
 		if (ret != MM_ERROR_NONE) {
 			debug_error("Add callback for play sound(%d) Failed", *handle);
+		}
+	}
+	if (!param->skip_session) {
+		ret = mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &g_focus_signal_handle[*handle], _mm_sound_client_focus_signal_callback, (void*)*handle);
+		if (ret) {
+			debug_error("mm_sound_subscribe_signal failed [0x%x]", ret);
+			return MM_ERROR_POLICY_INTERNAL;
 		}
 	}
 

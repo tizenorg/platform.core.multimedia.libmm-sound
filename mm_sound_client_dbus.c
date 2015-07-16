@@ -112,6 +112,9 @@ const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_PLAY_FILE_STOP] = {
 		.name = "PlayFileStop",
 	},
+	[METHOD_CALL_PLAY_CLEAR_FOCUS] = {
+		.name = "PlayClearFocus",
+	},
 	[METHOD_CALL_PLAY_DTMF] = {
 		.name = "PlayDTMF",
 	},
@@ -1317,6 +1320,26 @@ int mm_sound_client_dbus_stop_sound(int handle)
 	debug_fenter();
 
 	if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_FILE_STOP, g_variant_new("(i)", handle), &result)) != MM_ERROR_NONE) {
+		debug_error("dbus stop file playing failed");
+		goto cleanup;
+	}
+
+cleanup:
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+}
+
+int mm_sound_client_dbus_clear_sound_focus(int handle)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant *result = NULL;
+
+	debug_fenter();
+
+	if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_CLEAR_FOCUS, g_variant_new("(i)", handle), &result)) != MM_ERROR_NONE) {
 		debug_error("dbus stop file playing failed");
 		goto cleanup;
 	}
