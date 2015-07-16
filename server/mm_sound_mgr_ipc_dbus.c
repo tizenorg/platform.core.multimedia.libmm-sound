@@ -62,19 +62,22 @@
   "      <arg type='i' name='stream_index' direction='in'/>"
   "      <arg type='i' name='handle' direction='out'/>"
   "    </method>"
-  "	 <method name='PlayFileStartWithStreamInfo'>"
-  "	   <arg type='s' name='filename' direction='in'/>"
-  "	   <arg type='i' name='repeat' direction='in'/>"
-  "	   <arg type='i' name='volume' direction='in'/>"
-  "	   <arg type='i' name='priority' direction='in'/>"
-  "	   <arg type='i' name='client_pid' direction='in'/>"
-  "	   <arg type='i' name='handle_route' direction='in'/>"
-  "	   <arg type='s' name='stream_type' direction='in'/>"
-  "	   <arg type='i' name='stream_index' direction='in'/>"
-  "	   <arg type='i' name='handle' direction='out'/>"
-  "	 </method>"
+  "	   <method name='PlayFileStartWithStreamInfo'>"
+  "	     <arg type='s' name='filename' direction='in'/>"
+  "	     <arg type='i' name='repeat' direction='in'/>"
+  "	     <arg type='i' name='volume' direction='in'/>"
+  "	     <arg type='i' name='priority' direction='in'/>"
+  "	     <arg type='i' name='client_pid' direction='in'/>"
+  "	     <arg type='i' name='handle_route' direction='in'/>"
+  "	     <arg type='s' name='stream_type' direction='in'/>"
+  "	     <arg type='i' name='stream_index' direction='in'/>"
+  "	     <arg type='i' name='handle' direction='out'/>"
+  "	   </method>"
   "    <method name='PlayFileStop'>"
   "      <arg type='i' name='handle' direction='in'/>"
+  "    </method>"
+  "    <method name='PlayClearFocus'>"
+  "      <arg type='i' name='pid' direction='in'/>"
   "    </method>"
   "    <method name='PlayDTMF'>"
   "      <arg type='i' name='tone' direction='in'/>"
@@ -89,15 +92,15 @@
   "	     <arg type='i' name='stream_index' direction='in'/>"
   "      <arg type='i' name='handle' direction='out'/>"
   "    </method>"
-  "	 <method name='PlayDTMFWithStreamInfo'>"
-  "	   <arg type='i' name='tone' direction='in'/>"
-  "	   <arg type='i' name='repeat' direction='in'/>"
-  "	   <arg type='i' name='volume' direction='in'/>"
-  "	   <arg type='i' name='client_pid' direction='in'/>"
-  "	   <arg type='s' name='stream_type' direction='in'/>"
-  "	   <arg type='i' name='stream_index' direction='in'/>"
-  "	   <arg type='i' name='handle' direction='out'/>"
-  "	 </method>"
+  "	   <method name='PlayDTMFWithStreamInfo'>"
+  "	     <arg type='i' name='tone' direction='in'/>"
+  "	     <arg type='i' name='repeat' direction='in'/>"
+  "	     <arg type='i' name='volume' direction='in'/>"
+  "	     <arg type='i' name='client_pid' direction='in'/>"
+  "	     <arg type='s' name='stream_type' direction='in'/>"
+  "	     <arg type='i' name='stream_index' direction='in'/>"
+  "	     <arg type='i' name='handle' direction='out'/>"
+  "	   </method>"
   "    <method name='SetPathForActiveDevice'>"
   "    </method>"
   "    <method name='GetConnectedDeviceList'>"
@@ -329,6 +332,7 @@ struct mm_sound_dbus_signal{
 static void handle_method_play_file_start(GDBusMethodInvocation* invocation);
 static void handle_method_play_file_start_with_stream_info(GDBusMethodInvocation* invocation);
 static void handle_method_play_file_stop(GDBusMethodInvocation* invocation);
+static void handle_method_play_clear_focus(GDBusMethodInvocation* invocation);
 static void handle_method_play_dtmf(GDBusMethodInvocation* invocation);
 static void handle_method_play_dtmf_with_stream_info(GDBusMethodInvocation* invocation);
 static void handle_method_get_bt_a2dp_status(GDBusMethodInvocation* invocation);
@@ -381,6 +385,12 @@ struct mm_sound_dbus_method methods[METHOD_CALL_MAX] = {
 			.name = "PlayFileStop",
 		},
 		.handler = handle_method_play_file_stop
+	},
+	[METHOD_CALL_PLAY_CLEAR_FOCUS] = {
+		.info = {
+			.name = "PlayClearFocus",
+		},
+		.handler = handle_method_play_clear_focus
 	},
 	[METHOD_CALL_PLAY_DTMF] = {
 		.info = {
@@ -861,6 +871,34 @@ send_reply:
 
 	debug_fleave();
 }
+
+static void handle_method_play_clear_focus(GDBusMethodInvocation* invocation)
+{
+	int ret = MM_ERROR_NONE;
+	int pid = 0;
+	GVariant *params = NULL;
+
+	debug_fenter();
+
+	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
+		debug_error("Parameter for Method is NULL");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto send_reply;
+	}
+
+	g_variant_get(params, "(i)", &pid);
+	ret = _MMSoundMgrIpcClearFocus(pid);
+
+send_reply:
+	if (ret == MM_ERROR_NONE) {
+		_method_call_return_value(invocation, g_variant_new("()"));
+	} else {
+		_method_call_return_error(invocation, ret);
+	}
+
+	debug_fleave();
+}
+
 static void handle_method_get_bt_a2dp_status(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;

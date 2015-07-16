@@ -37,6 +37,7 @@ int mm_sound_client_play_tone_with_stream_info(int tone, char *stream_type, int 
 int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle);
 int mm_sound_client_play_sound_with_stream_info(MMSoundPlayParam *param, int *handle, char* stream_type, int stream_id);
 int mm_sound_client_stop_sound(int handle);
+int mm_sound_client_dbus_clear_sound_focus(int pid);
 int mm_sound_client_is_route_available(mm_sound_route route, bool *is_available);
 int mm_sound_client_foreach_available_route_cb(mm_sound_available_route_cb, void *user_data);
 int mm_sound_client_set_active_route(mm_sound_route route, bool need_broadcast);

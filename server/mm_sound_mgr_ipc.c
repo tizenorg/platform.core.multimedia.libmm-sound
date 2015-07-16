@@ -169,6 +169,20 @@ int _MMSoundMgrIpcStop(int handle)
 	return MM_ERROR_NONE;
 }
 
+int _MMSoundMgrIpcClearFocus(int pid)
+{
+	int ret = MM_ERROR_NONE;
+
+	ret = MMSoundMgrCodecClearFocus(pid);
+
+	if (ret != MM_ERROR_NONE) {
+		debug_error("Fail to stop sound\n");
+		return ret;
+	}
+
+	return MM_ERROR_NONE;
+}
+
 _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index)
 {
