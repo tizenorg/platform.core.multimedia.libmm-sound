@@ -1223,7 +1223,7 @@ cleanup:
 }
 
 int mm_sound_client_dbus_play_sound(char* filename, int tone, int repeat, int volume, int volume_config,
-			   int priority, int session_type, int session_options, int client_pid, int keytone,  int handle_route,
+			   int priority, int session_type, int session_options, int client_pid, int handle_route,
 			   bool enable_session, int *codechandle, char *stream_type, int stream_index)
 {
 	int ret = MM_ERROR_NONE;
@@ -1238,8 +1238,8 @@ int mm_sound_client_dbus_play_sound(char* filename, int tone, int repeat, int vo
 
 	debug_fenter();
 
-	params = g_variant_new("(siiiiiiiiiibsi)", filename, tone, repeat, volume,
-		      volume_config, priority, session_type, session_options, client_pid, keytone, handle_route, _enable_session, stream_type, stream_index);
+	params = g_variant_new("(siiiiiiiiibsi)", filename, tone, repeat, volume,
+		      volume_config, priority, session_type, session_options, client_pid, handle_route, _enable_session, stream_type, stream_index);
 	if (params) {
 		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_FILE_START, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus play file failed");

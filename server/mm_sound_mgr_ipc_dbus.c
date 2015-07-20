@@ -56,7 +56,6 @@
   "      <arg type='i' name='session_type' direction='in'/>"
   "      <arg type='i' name='session_option' direction='in'/>"
   "      <arg type='i' name='client_pid' direction='in'/>"
-  "      <arg type='i' name='keytone' direction='in'/>"
   "      <arg type='i' name='handle_route' direction='in'/>"
   "      <arg type='b' name='enable_session' direction='in'/>"
   "      <arg type='s' name='stream_type' direction='in'/>"
@@ -707,7 +706,7 @@ static void handle_method_play_file_start(GDBusMethodInvocation* invocation)
 	char *stream_type = NULL;
 	gint32 ret = MM_ERROR_NONE, slotid = 0;
 	gint32 tone = 0, repeat = 0, volume = 0, vol_config = 0, priority = 0;
-	gint32 session_type = 0, session_option = 0, pid = 0, keytone = 0, handle_route =0, stream_index = 0;
+	gint32 session_type = 0, session_option = 0, pid = 0, handle_route =0, stream_index = 0;
 	gboolean enable_session = 0;
 	GVariant *params = NULL;
 
@@ -719,15 +718,15 @@ static void handle_method_play_file_start(GDBusMethodInvocation* invocation)
 		goto send_reply;
 	}
 
-	g_variant_get(params, "(siiiiiiiiiibsi)", &filename, &tone, &repeat, &volume,
-		      &vol_config, &priority, &session_type, &session_option, &pid, &keytone, &handle_route, &enable_session, &stream_type, &stream_index);
+	g_variant_get(params, "(siiiiiiiiibsi)", &filename, &tone, &repeat, &volume,
+		      &vol_config, &priority, &session_type, &session_option, &pid, &handle_route, &enable_session, &stream_type, &stream_index);
 	if (!filename) {
 	    debug_error("filename null");
 	    ret = MM_ERROR_SOUND_INTERNAL;
 	    goto send_reply;
 	}
 	ret = _MMSoundMgrIpcPlayFile(filename, tone, repeat, volume, vol_config, priority,
-				session_type, session_option, _get_sender_pid(invocation), keytone, handle_route, enable_session, &slotid, stream_type, stream_index);
+				session_type, session_option, _get_sender_pid(invocation), handle_route, enable_session, &slotid, stream_type, stream_index);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {

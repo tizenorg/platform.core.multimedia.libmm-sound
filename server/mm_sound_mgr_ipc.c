@@ -63,7 +63,7 @@
 ******************************************************************************************/
 // except msgid
 int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int volume_config,
-			   int priority, int session_type, int session_options, int client_pid, int keytone, int handle_route,
+			   int priority, int session_type, int session_options, int client_pid, int handle_route,
 			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index)
 {
 	mmsound_mgr_codec_param_t param = {0,};
@@ -94,7 +94,6 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 	param.volume_config = volume_config;
 	param.priority = priority;
 	mm_session_type = session_type;
-	param.keytone =  keytone;
 	param.param = client_pid;
 	param.source = source;
 	param.handle_route = handle_route;
