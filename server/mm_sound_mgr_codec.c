@@ -70,8 +70,6 @@ static int _MMSoundMgrCodecFindLocaleSlot(int *slotid);
 static int _MMSoundMgrCodecRegisterInterface(MMSoundPluginType *plugin);
 
 #define STATUS_IDLE 0
-#define STATUS_KEYTONE 1
-#define STATUS_LOCALE 2
 #define STATUS_SOUND 3
 
 #define SOUND_SLOT_START 0
@@ -190,35 +188,9 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 		goto cleanup;
 	}
 
-	/* KeyTone */
-	if (param->keytone == 1) {
-		/* Find keytone slot */
-		err = _MMSoundMgrCodecFindKeytoneSlot(slotid);
-		/* Not First connect */
-		if (err == MM_ERROR_NONE) {
-			if(g_slots[*slotid].status != STATUS_IDLE) {
-				MMSoundMgrCodecStop(*slotid);
-			}
-			debug_msg("Key tone : Stop to Play !!!\n");
-		}
-		codec_param.keytone = param->keytone;
-	} else if (param->keytone == 2) {
-		/* Find keytone slot */
-		err = _MMSoundMgrCodecFindLocaleSlot(slotid);
-		/* Not First connect */
-		if (err == MM_ERROR_NONE) {
-			if(g_slots[*slotid].status != STATUS_IDLE) {
-				MMSoundMgrCodecStop(*slotid);
-			}
-			debug_msg("Key tone : Stop to Play !!!\n");
-		}
-		codec_param.keytone = param->keytone;
-	} else {
 #ifdef DEBUG_DETAIL
-		debug_msg("Get New handle\n");
+	debug_msg("Get New handle\n");
 #endif
-		codec_param.keytone = 0;
-	}
 
 	err = _MMSoundMgrCodecGetEmptySlot(slotid);
 	if (err != MM_ERROR_NONE) {
@@ -243,14 +215,6 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 #ifdef DEBUG_DETAIL
 	debug_msg("After Slot_mutex LOCK\n");
 #endif
-
-	/* In case of KEYTONE */
-	if (param->keytone == 1)
-		g_slots[*slotid].status = STATUS_KEYTONE;
-
-	/* In case of LOCALE */
-	if (param->keytone == 2) /* KeyTone */
-		g_slots[*slotid].status = STATUS_LOCALE;
 
 	/*
 	 * Register ASM here
@@ -465,7 +429,6 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 #ifdef DEBUG_DETAIL
 	debug_msg("Get New handle\n");
 #endif
-	codec_param.keytone = 0;
 
 	err = _MMSoundMgrCodecGetEmptySlot(slotid);
 	if(err != MM_ERROR_NONE)
@@ -610,7 +573,6 @@ MMSoundMgrCodecPlayDtmfWithStreamInfo(int *slotid, const mmsound_mgr_codec_param
 #ifdef DEBUG_DETAIL
 	debug_msg("Get New handle\n");
 #endif
-	codec_param.keytone = 0;
 
 	err = _MMSoundMgrCodecGetEmptySlot(slotid);
 	if(err != MM_ERROR_NONE)
@@ -757,85 +719,6 @@ static int _MMSoundMgrCodecStopCallback(int param)
 	g_slots[param].status = STATUS_IDLE;
 	pthread_mutex_unlock(&g_slot_mutex);
 	debug_msg("[CODEC MGR] Slot_mutex done\n");
-
-	return err;
-}
-
-static int _MMSoundMgrCodecFindKeytoneSlot(int *slotid)
-{
-	int count = 0;
-	int err = MM_ERROR_NONE;
-
-#ifdef DEBUG_DETAIL
-	debug_enter("\n");
-#endif
-
-	pthread_mutex_lock(&g_slot_mutex);
-#ifdef DEBUG_DETAIL
-	debug_warning("After Slot_mutex LOCK\n");
-#endif
-
-	for (count = SOUND_SLOT_START; count < MANAGER_HANDLE_MAX ; count++) {
-		if (g_slots[count].status == STATUS_KEYTONE) {
-			break;
-		}
-	}
-	pthread_mutex_unlock(&g_slot_mutex);
-#ifdef DEBUG_DETAIL
-	debug_warning("After Slot_mutex UNLOCK\n");
-#endif
-	if (count < MANAGER_HANDLE_MAX) {
-		debug_msg("Found keytone handle allocated (Slot : [%d])\n", count);
-		*slotid = count;
-		err =  MM_ERROR_NONE;
-	} else {
-		debug_warning("Handle is full handle [KEY TONE] : [%d]\n", count);
-		err =  MM_ERROR_SOUND_INTERNAL;
-	}
-
-#ifdef DEBUG_DETAIL
-	debug_leave("\n");
-#endif
-
-	return err;
-}
-
-static int _MMSoundMgrCodecFindLocaleSlot(int *slotid)
-{
-	int count = 0;
-	int err = MM_ERROR_NONE;
-
-#ifdef DEBUG_DETAIL
-	debug_enter("\n");
-#endif
-
-	pthread_mutex_lock(&g_slot_mutex);
-#ifdef DEBUG_DETAIL
-	debug_warning("After Slot_mutex LOCK\n");
-#endif
-
-	for (count = SOUND_SLOT_START; count < MANAGER_HANDLE_MAX ; count++) {
-		if (g_slots[count].status == STATUS_LOCALE) {
-			break;
-		}
-	}
-	pthread_mutex_unlock(&g_slot_mutex);
-
-#ifdef DEBUG_DETAIL
-	debug_warning("After Slot_mutex UNLOCK\n");
-#endif
-	if (count < MANAGER_HANDLE_MAX) {
-		debug_msg("Found locale handle allocated (Slot : [%d])\n", count);
-		*slotid = count;
-		err =  MM_ERROR_NONE;
-	} else {
-		debug_warning("Handle is full handle [KEY TONE] \n");
-		err =  MM_ERROR_SOUND_INTERNAL;
-	}
-
-#ifdef DEBUG_DETAIL
-	debug_leave("\n");
-#endif
 
 	return err;
 }

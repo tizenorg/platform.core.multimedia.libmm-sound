@@ -420,7 +420,7 @@ int mm_sound_play_sound_ex(MMSoundPlayParam *param, int *handle)
 	debug_warning ("play sound : priority=[%d], handle_route=[%d]\n", param->priority, param->handle_route);
 
 	/* Play sound */
-	err = mm_sound_client_play_sound(param, 0, 0, &lhandle);
+	err = mm_sound_client_play_sound(param, 0, &lhandle);
 	if (err < 0) {
 		debug_error("Failed to play sound\n");
 		return err;

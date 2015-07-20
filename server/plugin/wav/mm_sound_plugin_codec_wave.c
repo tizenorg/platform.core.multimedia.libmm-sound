@@ -245,10 +245,10 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	debug_enter("\n");
 #endif
 
-	debug_msg("period[%d] type[%s] ch[%d] format[%d] rate[%d] doffset[%d] priority[%d] repeat[%d] volume[%f] callback[%p] keytone[%08x] route[%d]\n",
+	debug_msg("period[%d] type[%s] ch[%d] format[%d] rate[%d] doffset[%d] priority[%d] repeat[%d] volume[%f] callback[%p] route[%d]\n",
 			keytone_period, (info->codec == MM_SOUND_SUPPORTED_CODEC_WAVE) ? "Wave" : "Unknown",
 			info->channels, info->format, info->samplerate, info->doffset, param->priority, param->repeat_count,
-			param->volume, param->stop_cb, param->keytone, param->handle_route);
+			param->volume, param->stop_cb, param->handle_route);
 	source = param->source;
 
 	if (g_thread_pool_func == NULL) {

@@ -296,7 +296,7 @@ int mm_sound_client_play_tone_with_stream_info(int tone, char *stream_type, int 
 	return ret;
 }
 
-int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int keytone, int *handle)
+int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 {
 	int ret = MM_ERROR_NONE;
 	int session_type = MM_SESSION_TYPE_MEDIA;
@@ -335,7 +335,7 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int keytone, i
 
 	mm_sound_convert_volume_type_to_stream_type(volume_type, stream_type);
 	ret = mm_sound_client_dbus_play_sound(param->filename, tone, param->loop, param->volume, param->volume_config,
-					 param->priority, session_type, session_options, getpid(), keytone, param->handle_route,
+					 param->priority, session_type, session_options, getpid(), param->handle_route,
 					 !param->skip_session, handle, stream_type, -1);
 	if (ret != MM_ERROR_NONE) {
 		debug_error("Play Sound Failed");
