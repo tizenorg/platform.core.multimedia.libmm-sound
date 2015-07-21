@@ -116,21 +116,6 @@ void mainloop_run()
 	g_main_loop_run(g_mainloop);
 }
 
-static void __wait_for_vconfkey_ready (const char *keyname)
-{
-	int retry_count = 0;
-	int vconf_ready = 0;
-	while (!vconf_ready) {
-		debug_msg("Checking the vconf key[%s] ready....[%d]\n", keyname, retry_count++);
-		if (vconf_get_int(keyname, &vconf_ready)) {
-			debug_warning("vconf_get_int for vconf key[%s] failed\n", keyname);
-		}
-		usleep (VCONFKEY_CHECK_INTERVAL);
-	}
-	debug_msg("vconf key[%s] is now ready...clear the key!!!\n", keyname);
-	vconf_set_int(keyname, 0);
-}
-
 static int _handle_power_off ()
 {
 	debug_warning ("not supported\n");
@@ -257,11 +242,6 @@ int main(int argc, char **argv)
 
 //		pulse_handle = MMSoundMgrPulseInit(_pa_disconnect_cb, g_mainloop);
 		MMSoundMgrASMInit();
-		/* Wait for ASM Ready */
-#if 0 /* comment wait vconf key logic, it'll be removed after figuring it out */
-		__wait_for_vconfkey_ready(ASM_READY_KEY);
-		debug_warning("sound_server [%d] asm ready...now, initialize devices!!!\n", getpid());
-#endif
 //		_mm_sound_mgr_device_init();
 //		MMSoundMgrHeadsetInit();
 //		MMSoundMgrDockInit();
