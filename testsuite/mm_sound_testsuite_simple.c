@@ -1625,7 +1625,7 @@ static void interpret (char *cmd)
 			else if(flag_3 == '7') { device_flag_3 = MM_SOUND_DEVICE_STATE_ACTIVATED_FLAG; }
 			else if(flag_3 == '8') { device_flag_3 = MM_SOUND_DEVICE_ALL_FLAG; }
 
-			ret = mm_sound_add_device_connected_callback(device_flag_1|device_flag_2|device_flag_3, device_connected_cb, NULL);
+			ret = mm_sound_add_device_connected_callback(device_flag_1|device_flag_2|device_flag_3, device_connected_cb, true, NULL);
 			if (ret) {
 				g_print("failed to mm_sound_add_device_connected_callback(), ret[0x%x]\n", ret);
 			} else {
@@ -1635,7 +1635,7 @@ static void interpret (char *cmd)
 
 		else if(strncmp(cmd, "D", 1) ==0) {
 			int ret = 0;
-			ret = mm_sound_remove_device_connected_callback();
+			ret = mm_sound_remove_device_connected_callback(true);
 			if (ret) {
 				g_print("failed to mm_sound_remove_device_connected_callback(), ret[0x%x]\n", ret);
 			}

@@ -1891,8 +1891,8 @@ typedef void *MMSoundDeviceList_t;      /**< MMsound Device list handle */
 typedef void (*mm_sound_device_connected_cb) (MMSoundDevice_t device_h, bool is_connected, void *user_data);
 typedef void (*mm_sound_device_info_changed_cb) (MMSoundDevice_t device_h, int changed_info_type, void *user_data);
 
-int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sound_device_connected_cb func, void *user_data);
-int mm_sound_remove_device_connected_callback(void);
+int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sound_device_connected_cb func, bool is_genuine, void *user_data);
+int mm_sound_remove_device_connected_callback(bool is_genuine);
 int mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e flags, mm_sound_device_info_changed_cb func, void *user_data);
 int mm_sound_remove_device_information_changed_callback(void);
 
