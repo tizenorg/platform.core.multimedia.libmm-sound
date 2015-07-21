@@ -3912,38 +3912,18 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 	return ret;
 }
 
-void __asm_main_run (void* param)
-{
-	//ASM_msg_lib_to_asm_t asm_rcv_msg;
-
-	signal(SIGPIPE, SIG_IGN);
-
-	/*
-	 * Init Vconf
-	 */
-	if (vconf_set_int(SOUND_STATUS_KEY, 0)) {
-		debug_error(" vconf_set_int fail\n");
-		if (vconf_set_int(SOUND_STATUS_KEY, 0)) {
-			debug_error(" vconf_set_int fail\n");
-		}
-	}
-
-	/* Set READY flag */
-	if (vconf_set_int(ASM_READY_KEY, 1)) {
-		debug_error(" vconf_set_int fail\n");
-	}
-}
-
-
 int MMSoundMgrASMInit(void)
 {
 	int ret = 0;
 	debug_fenter();
 
-	ret = MMSoundThreadPoolRun(NULL, __asm_main_run);
-	if (ret != MM_ERROR_NONE) {
-		/* TODO : Error Handling */
-		debug_error ("MMSoundThreadPoolRun failed....ret = [%x]\n", ret);
+	signal(SIGPIPE, SIG_IGN);
+
+	if (vconf_set_int(SOUND_STATUS_KEY, 0)) {
+		debug_error(" vconf_set_int fail\n");
+		if (vconf_set_int(SOUND_STATUS_KEY, 0)) {
+			debug_error(" vconf_set_int fail\n");
+		}
 	}
 
 	debug_fleave();

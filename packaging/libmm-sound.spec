@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.9.243
+Version:    0.9.244
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -118,21 +118,6 @@ ln -sf ../focus-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/focu
 
 %post
 /sbin/ldconfig
-
-/usr/bin/vconftool set -t int memory/private/Sound/ASMReady 0 -g 29 -f -i -s system::vconf_multimedia
-/usr/bin/vconftool set -t int memory/private/Sound/VoiceControlOn 0 -g 29 -f -i -s system::vconf_multimedia
-/usr/bin/vconftool set -t string memory/private/sound/booting "/usr/share/keysound/poweron.wav" -g 29 -f -i -s system::vconf_multimedia
-/usr/bin/vconftool set -t int memory/private/sound/PrimaryVolumeType -1 -g 29 -f -i -s system::vconf_multimedia
-
-/usr/bin/vconftool set -t int file/private/sound/volume/system 9 -g 29 -f -s system::vconf_multimedia
-/usr/bin/vconftool set -t int file/private/sound/volume/notification 11 -g 29 -f -s system::vconf_multimedia
-/usr/bin/vconftool set -t int file/private/sound/volume/alarm 7 -g 29 -f -s system::vconf_multimedia
-/usr/bin/vconftool set -t int file/private/sound/volume/ringtone 11 -g 29 -f -s system::vconf_multimedia
-/usr/bin/vconftool set -t int file/private/sound/volume/media 7 -g 29 -f -s system::vconf_multimedia
-/usr/bin/vconftool set -t int file/private/sound/volume/call 4 -g 29 -f -s system::vconf_multimedia
-/usr/bin/vconftool set -t int file/private/sound/volume/voip 4 -g 29 -f -s system::vconf_multimedia
-/usr/bin/vconftool set -t int file/private/sound/volume/voice 7 -g 29 -f -s system::vconf_multimedia
-
 
 %postun -p /sbin/ldconfig
 

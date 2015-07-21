@@ -1686,37 +1686,6 @@ unlock_and_fail:
 	debug_leave("\n");
 }
 
-static void _recorder_changed_cb(keynode_t* node, void* data)
-{
-	int key_value;
-	pulse_info_t* pinfo = (pulse_info_t*)data;
-	session_t session = 0;
-
-	if (pinfo == NULL) {
-		debug_error ("pinfo is null\n");
-		return;
-	}
-
-	vconf_get_int(VCONFKEY_RECORDER_STATE, &key_value);
-	debug_msg ("%s changed callback called, recorder state value = %d\n", vconf_keynode_get_name(node), key_value);
-
-	MMSoundMgrSessionGetSession(&session);
-
-	if ((key_value == VCONFKEY_RECORDER_STATE_RECORDING || key_value == VCONFKEY_RECORDER_STATE_RECORDING_PAUSE) && session == SESSION_FMRADIO) {
-		vconf_set_int(VCONF_KEY_FMRADIO_RECORDING, 1);
-	} else {
-		vconf_set_int(VCONF_KEY_FMRADIO_RECORDING, 0);
-	}
-}
-
-int MMSoundMgrPulseHandleRegisterFMRadioRecording(void* pinfo)
-{
-	int ret = vconf_notify_key_changed(VCONFKEY_RECORDER_STATE, _recorder_changed_cb, pinfo);
-	debug_msg ("vconf [%s] set ret = %d\n", VCONFKEY_RECORDER_STATE, ret);
-
-	return ret;
-}
-
 void MMSoundMgrPulseUnLoadHDMI()
 {
 	pa_operation *o = NULL;
