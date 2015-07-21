@@ -92,10 +92,15 @@ typedef struct {
 	char name [MM_SOUND_NAME_NUM];
 } focus_cb_data_lib;
 
+typedef struct {
+	int is_registered;
+	mm_sound_focus_session_interrupt_cb user_cb;
+}focus_session_interrupt_info_t;
 
 GThread *g_focus_thread;
 GMainLoop *g_focus_loop;
 focus_sound_info_t g_focus_sound_handle[FOCUS_HANDLE_MAX];
+focus_session_interrupt_info_t g_focus_session_interrupt_info = {0, NULL};
 guint g_dbus_subs_ids[SIGNAL_MAX];
 guint g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MAX];
 
@@ -174,7 +179,10 @@ const struct mm_sound_dbus_signal_info g_signals[SIGNAL_MAX] = {
 	},
 	[SIGNAL_FOCUS_WATCH] = {
 		.name = "FocusWatch",
-	}
+	},
+	[SIGNAL_EARJACK_UNPLUG] = {
+		.name = "DeviceConnected",
+	},
 };
 
 const struct pulseaudio_dbus_property_info g_pulseaudio_properties[PULSEAUDIO_PROP_MAX] = {
@@ -967,13 +975,19 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data)
+int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, bool is_genuine, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
+	sound_server_signal_t signal;
 
 	debug_fenter();
 
-	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, SIGNAL_DEVICE_CONNECTED, func, user_data, device_flags)) != MM_ERROR_NONE) {
+	if (is_genuine)
+		signal = SIGNAL_DEVICE_CONNECTED;
+	else
+		signal = SIGNAL_EARJACK_UNPLUG;
+	
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, signal, func, user_data, device_flags)) != MM_ERROR_NONE) {
 		debug_error("add device connected callback failed");
 	}
 
@@ -981,12 +995,18 @@ int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_soun
 	return ret;
 }
 
-int mm_sound_client_dbus_remove_device_connected_callback(void)
+int mm_sound_client_dbus_remove_device_connected_callback(bool is_genuine)
 {
 	int ret = MM_ERROR_NONE;
+	sound_server_signal_t signal;
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_unsubscribe(SIGNAL_DEVICE_CONNECTED)) != MM_ERROR_NONE) {
+	if (is_genuine)
+		signal = SIGNAL_DEVICE_CONNECTED;
+	else
+		signal = SIGNAL_EARJACK_UNPLUG;
+
+	if ((ret = _sound_server_dbus_signal_unsubscribe(signal)) != MM_ERROR_NONE) {
 		debug_error("remove device connected callback failed");
 	}
 
@@ -1613,6 +1633,10 @@ static bool _focus_callback_handler(gpointer d)
 			debug_error("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].focus_callback);
 			(g_focus_sound_handle[focus_index].focus_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
 			debug_error("[CALLBACK END]");
+			if(g_focus_session_interrupt_info.is_registered) {
+				debug_error("sending session interrupt callback(%p)",g_focus_session_interrupt_info.user_cb);
+				(g_focus_session_interrupt_info.user_cb)(cb_data.state, cb_data.stream_type, false);
+			}
 		}
 #ifdef CONFIG_ENABLE_RETCB
 
@@ -1698,6 +1722,10 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 		debug_msg("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].watch_callback);
 		(g_focus_sound_handle[focus_index].watch_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
 		debug_msg("[CALLBACK END]");
+		if(g_focus_session_interrupt_info.is_registered) {
+			debug_error("sending session interrupt callback(%p)",g_focus_session_interrupt_info.user_cb);
+			(g_focus_session_interrupt_info.user_cb)(cb_data.state, cb_data.stream_type, true);
+		}
 
 #ifdef CONFIG_ENABLE_RETCB
 
@@ -2006,6 +2034,34 @@ static void _focus_destroy_callback(int index, bool is_for_watching)
 	debug_fleave();
 }
 
+void mm_sound_client_dbus_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback)
+{
+	debug_fenter();
+
+	if (!g_focus_session_interrupt_info.is_registered)
+		g_focus_session_interrupt_info.is_registered = true;
+
+	g_focus_session_interrupt_info.user_cb = callback;
+	
+	debug_enter();
+	return;
+}
+
+int mm_sound_client_dbus_unset_session_interrupt_callback(void)
+{
+	debug_fenter();
+	if (!g_focus_session_interrupt_info.is_registered) {
+		debug_error("no callback to unset");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+	
+	g_focus_session_interrupt_info.is_registered = false;
+	g_focus_session_interrupt_info.user_cb = NULL;
+
+	debug_enter();
+	return MM_ERROR_NONE;
+}
+
 int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
@@ -2262,6 +2318,7 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 			break;
 		}
 	}
+
 
 	g_focus_sound_handle[index].focus_tid = instance;
 	g_focus_sound_handle[index].handle = index + 1;

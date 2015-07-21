@@ -166,6 +166,7 @@ typedef enum sound_server_signal {
         SIGNAL_DEVICE_INFO_CHANGED,
         SIGNAL_FOCUS_CHANGED,
         SIGNAL_FOCUS_WATCH,
+        SIGNAL_EARJACK_UNPLUG,
         SIGNAL_MAX
 } sound_server_signal_t;
 

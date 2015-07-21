@@ -98,7 +98,7 @@ static int __convert_device_type_to_enum (char *device_type, mm_sound_device_typ
 }
 
 EXPORT_API
-int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sound_device_connected_cb func, void *user_data)
+int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sound_device_connected_cb func, bool is_genuine, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -108,7 +108,7 @@ int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sou
 	}
 	ret = _check_for_valid_mask(flags);
 	if (ret == MM_ERROR_NONE) {
-		ret = mm_sound_client_add_device_connected_callback(flags, func, user_data);
+		ret = mm_sound_client_add_device_connected_callback(flags, func, is_genuine, user_data);
 		if (ret < 0) {
 			debug_error("Could not add device connected callback, ret = %x\n", ret);
 		}
@@ -118,11 +118,11 @@ int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sou
 }
 
 EXPORT_API
-int mm_sound_remove_device_connected_callback(void)
+int mm_sound_remove_device_connected_callback(bool is_genuine)
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = mm_sound_client_remove_device_connected_callback();
+	ret = mm_sound_client_remove_device_connected_callback(is_genuine);
 	if (ret < 0) {
 		debug_error("Could not remove device connected callback, ret = %x\n", ret);
 	}
