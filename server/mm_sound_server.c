@@ -258,9 +258,10 @@ int main(int argc, char **argv)
 //		pulse_handle = MMSoundMgrPulseInit(_pa_disconnect_cb, g_mainloop);
 		MMSoundMgrASMInit();
 		/* Wait for ASM Ready */
+#if 0 /* comment wait vconf key logic, it'll be removed after figuring it out */
 		__wait_for_vconfkey_ready(ASM_READY_KEY);
 		debug_warning("sound_server [%d] asm ready...now, initialize devices!!!\n", getpid());
-
+#endif
 //		_mm_sound_mgr_device_init();
 //		MMSoundMgrHeadsetInit();
 //		MMSoundMgrDockInit();
