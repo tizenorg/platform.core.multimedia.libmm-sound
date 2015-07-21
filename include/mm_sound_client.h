@@ -50,11 +50,13 @@ int mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func,
 int mm_sound_client_remove_volume_changed_callback(void);
 int mm_sound_client_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in);
 int mm_sound_client_get_current_connected_device_list(int device_flgas, mm_sound_device_list_t **device_list);
-int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data);
-int mm_sound_client_remove_device_connected_callback(void);
+int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, bool is_genuine, void* user_data);
+int mm_sound_client_remove_device_connected_callback(bool is_genuine);
 int mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data);
 int mm_sound_client_remove_device_info_changed_callback(void);
 #ifdef USE_FOCUS
+void mm_sound_client_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback);
+int mm_sound_client_unset_session_interrupt_callback(void);
 int mm_sound_client_get_uniq_id(int *id);
 int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
 int mm_sound_client_unregister_focus(int id);

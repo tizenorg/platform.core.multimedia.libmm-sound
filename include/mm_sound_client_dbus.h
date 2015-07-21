@@ -29,8 +29,8 @@ int mm_sound_client_dbus_set_sound_path_for_active_device(mm_sound_device_out de
 int mm_sound_client_dbus_set_active_route_auto(void);
 int mm_sound_client_dbus_add_play_sound_end_callback(int handle, mm_sound_stop_callback_func stop_cb, void* userdata);
 int mm_sound_client_dbus_get_current_connected_device_list(int device_flags, GList** device_list);
-int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data);
-int mm_sound_client_dbus_remove_device_connected_callback(void);
+int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, bool is_genuine, void* user_data);
+int mm_sound_client_dbus_remove_device_connected_callback(bool is_genuine);
 int mm_sound_client_dbus_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data);
 int mm_sound_client_dbus_remove_device_info_changed_callback(void);
 int mm_sound_client_dbus_is_bt_a2dp_on (bool *connected, char** bt_name);
@@ -40,6 +40,8 @@ int mm_sound_client_dbus_remove_volume_changed_callback(void);
 int mm_sound_client_dbus_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
 #ifdef USE_FOCUS
+void mm_sound_client_dbus_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback);
+int mm_sound_client_dbus_unset_session_interrupt_callback(void);
 int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
 int mm_sound_client_dbus_unregister_focus(int id);
 int mm_sound_client_dbus_acquire_focus(int id, mm_sound_focus_type_e type, const char *option);

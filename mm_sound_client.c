@@ -463,25 +463,25 @@ failed:
 	return ret;
 }
 
-int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data)
+int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, bool is_genuine, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_add_device_connected_callback(device_flags, func, user_data);
+	ret = mm_sound_client_dbus_add_device_connected_callback(device_flags, func, is_genuine, user_data);
 
 	debug_fleave();
 	return ret;
 
 }
 
-int mm_sound_client_remove_device_connected_callback(void)
+int mm_sound_client_remove_device_connected_callback(bool is_genuine)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_remove_device_connected_callback();
+	ret = mm_sound_client_dbus_remove_device_connected_callback(is_genuine);
 
 	debug_fleave();
 	return ret;
@@ -573,6 +573,28 @@ int mm_sound_client_get_audio_path(mm_sound_device_in *device_in, mm_sound_devic
 
 
 #ifdef USE_FOCUS
+void mm_sound_client_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback)
+{
+	debug_fenter();
+
+	mm_sound_client_dbus_set_session_interrupt_callback(callback);
+
+	debug_fleave();
+	return;
+}
+
+int mm_sound_client_unset_session_interrupt_callback(void)
+{
+	int ret = MM_ERROR_NONE;
+	
+	debug_fenter();
+
+	ret = mm_sound_client_dbus_unset_session_interrupt_callback();
+
+	debug_fleave();
+	return ret;
+}
+
 int mm_sound_client_get_uniq_id(int *id)
 {
 	static int uniq_id = 0;
