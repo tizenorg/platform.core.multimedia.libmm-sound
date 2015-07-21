@@ -44,8 +44,6 @@
 #define VCONF_KEY_VR_LEFTHAND_ENABLED		VCONFKEY_SETAPPL_PERFERED_ARM_LEFT_BOOL
 #endif
 #endif
-#define ASM_READY_KEY		"memory/private/Sound/ASMReady"
-#define VCONF_KEY_FMRADIO_RECORDING	"memory/private/Sound/FMRadioRecording"
 
 #define PA_READY "/tmp/.pa_ready"
 

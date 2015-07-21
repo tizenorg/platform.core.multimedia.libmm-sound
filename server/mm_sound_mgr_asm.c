@@ -3927,11 +3927,6 @@ void __asm_main_run (void* param)
 			debug_error(" vconf_set_int fail\n");
 		}
 	}
-
-	/* Set READY flag */
-	if (vconf_set_int(ASM_READY_KEY, 1)) {
-		debug_error(" vconf_set_int fail\n");
-	}
 }
 
 
@@ -3940,11 +3935,15 @@ int MMSoundMgrASMInit(void)
 	int ret = 0;
 	debug_fenter();
 
+#if 0
 	ret = MMSoundThreadPoolRun(NULL, __asm_main_run);
 	if (ret != MM_ERROR_NONE) {
 		/* TODO : Error Handling */
 		debug_error ("MMSoundThreadPoolRun failed....ret = [%x]\n", ret);
 	}
+#else /* we don't need to run asm main loop by thread, just call once here */
+    __asm_main_run(NULL);
+#endif
 
 	debug_fleave();
 	return ret;
