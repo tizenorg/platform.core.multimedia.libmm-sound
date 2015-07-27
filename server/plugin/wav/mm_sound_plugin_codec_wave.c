@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include <semaphore.h>
 #include <unistd.h>
@@ -53,10 +54,10 @@ enum {
 };
 
 #define MAKE_FOURCC(a, b, c, d)		((a) | (b) << 8) | ((c) << 16 | ((d) << 24))
-#define RIFF_CHUNK_ID				((unsigned long) MAKE_FOURCC('R', 'I', 'F', 'F'))
-#define RIFF_CHUNK_TYPE				((unsigned long) MAKE_FOURCC('W', 'A', 'V', 'E'))
-#define FMT_CHUNK_ID				((unsigned long) MAKE_FOURCC('f', 'm', 't', ' '))
-#define DATA_CHUNK_ID				((unsigned long) MAKE_FOURCC('d', 'a', 't', 'a'))
+#define RIFF_CHUNK_ID				((uint32_t) MAKE_FOURCC('R', 'I', 'F', 'F'))
+#define RIFF_CHUNK_TYPE			((uint32_t) MAKE_FOURCC('W', 'A', 'V', 'E'))
+#define FMT_CHUNK_ID				((uint32_t) MAKE_FOURCC('f', 'm', 't', ' '))
+#define DATA_CHUNK_ID				((uint32_t) MAKE_FOURCC('d', 'a', 't', 'a'))
 
 #define CODEC_WAVE_LOCK(LOCK) do { pthread_mutex_lock(LOCK); } while (0)
 #define CODEC_WAVE_UNLOCK(LOCK) do { pthread_mutex_unlock(LOCK); } while (0)
@@ -122,27 +123,27 @@ int MMSoundPlugCodecWaveParse(MMSourceType *source, mmsound_codec_info_t *info)
 {
 	struct __riff_chunk
 	{
-		long chunkid;
-		long chunksize;
-		long rifftype;
+		uint32_t chunkid;
+		uint32_t chunksize;
+		uint32_t rifftype;
 	};
 
 	struct __wave_chunk
 	{
-		long chunkid;
-		long chunksize;
-		unsigned short compression;
-		unsigned short channels;
-		unsigned long samplerate;
-		unsigned long avgbytepersec;
-		unsigned short blockkalign;
-		unsigned short bitspersample;
+		uint32_t chunkid;
+		uint32_t chunksize;
+		uint16_t compression;
+		uint16_t channels;
+		uint32_t samplerate;
+		uint32_t avgbytepersec;
+		uint16_t blockkalign;
+		uint16_t bitspersample;
 	};
 
 	struct __data_chunk
 	{
-		long chunkid;
-		long chunkSize;
+		uint32_t chunkid;
+		uint32_t chunkSize;
 	};
 
 	struct __riff_chunk *priff = NULL;
