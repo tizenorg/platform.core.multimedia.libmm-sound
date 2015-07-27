@@ -18,5 +18,5 @@ libsoundplugintone_la_LIBADD  = \
 
 install-exec-hook:
 	mkdir -p $(DESTDIR)$(libdir)/soundplugins
-	ln -sf /usr/lib/libsoundplugintone.so $(DESTDIR)$(libdir)/soundplugins/libsoundplugintone.so
+	ln -sf ../libsoundplugintone.so $(DESTDIR)$(libdir)/soundplugins/libsoundplugintone.so
 

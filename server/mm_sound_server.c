@@ -60,8 +60,9 @@
 
 #include <glib.h>
 
+#include "../config.h" /* for PLUGIN_DIR */
+
 #define PLUGIN_ENV "MM_SOUND_PLUGIN_PATH"
-#define PLUGIN_DIR "/usr/lib/soundplugins/"
 #define PLUGIN_MAX 30
 
 #define HIBERNATION_SOUND_CHECK_PATH	"/tmp/hibernation/sound_ready"

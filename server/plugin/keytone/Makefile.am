@@ -26,5 +26,5 @@ endif
 
 install-exec-hook:
 	mkdir -p $(DESTDIR)$(libdir)/soundplugins
-	ln -sf /usr/lib/libsoundpluginkeytone.so $(DESTDIR)$(libdir)/soundplugins/libsoundpluginkeytone.so
+	ln -sf ../libsoundpluginkeytone.so $(DESTDIR)$(libdir)/soundplugins/libsoundpluginkeytone.so
 

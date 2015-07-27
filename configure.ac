@@ -120,6 +120,15 @@ AC_ARG_ENABLE(focus, AC_HELP_STRING([--enable-focus], [enable focus feature]),
  ],[USE_FOCUS=no])
 AM_CONDITIONAL([USE_FOCUS], [test "x$USE_FOCUS" = "xyes"])
 
+AC_ARG_WITH(plugindir, AS_HELP_STRING([--with-plugindir=<path>],[sound-server plugin dir]))
+if test -z "$with_plugindir" ; then
+PLUGIN_DIR=/usr/lib/soundplugins/
+else
+PLUGIN_DIR=$with_plugindir
+fi
+AC_SUBST(PLUGIN_DIR)
+AC_DEFINE_UNQUOTED(PLUGIN_DIR,"$PLUGIN_DIR", [sound-server plugin dir])
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h memory.h stdlib.h string.h sys/time.h unistd.h errno.h sys/types.h sys/stat.h])

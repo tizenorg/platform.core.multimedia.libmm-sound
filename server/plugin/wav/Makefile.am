@@ -17,5 +17,5 @@ libsoundpluginwave_la_LIBADD  = $(MMCOMMON_LIBS) \
 
 install-exec-hook:
 	mkdir -p $(DESTDIR)$(libdir)/soundplugins
-	ln -sf /usr/lib/libsoundpluginwave.so $(DESTDIR)$(libdir)/soundplugins/libsoundpluginwave.so
+	ln -sf ../libsoundpluginwave.so $(DESTDIR)$(libdir)/soundplugins/libsoundpluginwave.so
 

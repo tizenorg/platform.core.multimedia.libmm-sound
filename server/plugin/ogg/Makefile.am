@@ -21,4 +21,4 @@ libsoundplugintremoloogg_la_LIBADD = $(MMCOMMON_LIBS) \
 
 install-exec-hook:
 	mkdir -p $(DESTDIR)$(libdir)/soundplugins
-	ln -sf /usr/lib/libsoundplugintremoloogg.so $(DESTDIR)$(libdir)/soundplugins/libsoundplugintremoloogg.so
+	ln -sf ../libsoundplugintremoloogg.so $(DESTDIR)$(libdir)/soundplugins/libsoundplugintremoloogg.so
