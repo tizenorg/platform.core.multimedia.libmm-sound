@@ -189,16 +189,16 @@ int mm_sound_volume_remove_callback(volume_type_t type)
 }
 
 EXPORT_API
-int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data)
+int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
-	if (func == NULL) {
+	if (func == NULL || subs_id == NULL) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_add_volume_changed_callback(func, user_data);
+	ret = mm_sound_client_add_volume_changed_callback(func, user_data, subs_id);
 	if (ret < 0) {
 		debug_error("Can not add volume changed callback, ret = %x\n", ret);
 	}
@@ -207,11 +207,11 @@ int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* 
 }
 
 EXPORT_API
-int mm_sound_remove_volume_changed_callback(void)
+int mm_sound_remove_volume_changed_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = mm_sound_client_remove_volume_changed_callback();
+	ret = mm_sound_client_remove_volume_changed_callback(subs_id);
 	if (ret < 0) {
 		debug_error("Can not remove volume changed callback, ret = %x\n", ret);
 	}
@@ -814,17 +814,17 @@ int mm_sound_test(int a, int b, int* getv)
 }
 
 EXPORT_API
-int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data)
+int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_log("mm_sound_add_test_callback enter");
-	if (!func) {
+	if (!func || !subs_id) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_add_test_callback(func, user_data);
+	ret = mm_sound_client_add_test_callback(func, user_data, subs_id);
 	if (ret < 0) {
 		debug_error("Can not add test callback, ret = %x\n", ret);
 	}
@@ -834,12 +834,12 @@ int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data)
 }
 
 EXPORT_API
-int mm_sound_remove_test_callback(void)
+int mm_sound_remove_test_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_log("mm_sound_remove_test_callback enter");
-	ret = mm_sound_client_remove_test_callback();
+	ret = mm_sound_client_remove_test_callback(subs_id);
 	if (ret < 0) {
 		debug_error("Can not remove test callback, ret = %x\n", ret);
 	}
