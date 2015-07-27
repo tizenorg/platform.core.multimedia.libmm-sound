@@ -33,6 +33,7 @@
 #define VOLUME_TYPE_LEN 64
 
 bool g_is_new_device_list = true;
+unsigned int g_subs_id_device_conn, g_subs_id_device_info;
 
 static int _check_for_valid_mask (mm_sound_device_flags_e flags)
 {
@@ -99,17 +100,17 @@ static int __convert_device_type_to_enum (char *device_type, mm_sound_device_typ
 }
 
 EXPORT_API
-int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sound_device_connected_cb func, void *user_data)
+int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sound_device_connected_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
-	if (func == NULL) {
+	if (func == NULL || subs_id == NULL) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	ret = _check_for_valid_mask(flags);
 	if (ret == MM_ERROR_NONE) {
-		ret = mm_sound_client_add_device_connected_callback(flags, func, user_data);
+		ret = mm_sound_client_add_device_connected_callback(flags, func, user_data, subs_id);
 		if (ret < 0) {
 			debug_error("Could not add device connected callback, ret = %x\n", ret);
 		}
@@ -119,11 +120,11 @@ int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sou
 }
 
 EXPORT_API
-int mm_sound_remove_device_connected_callback(void)
+int mm_sound_remove_device_connected_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = mm_sound_client_remove_device_connected_callback();
+	ret = mm_sound_client_remove_device_connected_callback(subs_id);
 	if (ret < 0) {
 		debug_error("Could not remove device connected callback, ret = %x\n", ret);
 	}
@@ -132,17 +133,17 @@ int mm_sound_remove_device_connected_callback(void)
 }
 
 EXPORT_API
-int mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e flags, mm_sound_device_info_changed_cb func, void *user_data)
+int mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e flags, mm_sound_device_info_changed_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
-	if (func == NULL) {
+	if (func == NULL || subs_id == NULL) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	ret = _check_for_valid_mask(flags);
 	if (ret == MM_ERROR_NONE) {
-		ret = mm_sound_client_add_device_info_changed_callback(flags, func, user_data);
+		ret = mm_sound_client_add_device_info_changed_callback(flags, func, user_data, subs_id);
 		if (ret < 0) {
 			debug_error("Could not add device information changed callback, ret = %x\n", ret);
 		}
@@ -152,11 +153,11 @@ int mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e fla
 }
 
 EXPORT_API
-int mm_sound_remove_device_information_changed_callback()
+int mm_sound_remove_device_information_changed_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = mm_sound_client_remove_device_info_changed_callback();
+	ret = mm_sound_client_remove_device_info_changed_callback(subs_id);
 	if (ret < 0) {
 		debug_error("Could not remove device information changed callback, ret = %x\n", ret);
 	}

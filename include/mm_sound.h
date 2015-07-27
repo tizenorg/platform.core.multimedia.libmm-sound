@@ -442,7 +442,7 @@ int volume_control()
  * @endcode
  */
 int mm_sound_volume_add_callback(volume_type_t type, volume_callback_fn func, void* user_data);
-int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data);
+int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data, unsigned int *subs_id);
 
 
 /**
@@ -493,7 +493,7 @@ int mm_sound_volume_remove_callback(volume_type_t type);
  * @return 	This function returns MM_ERROR_NONE on success, or negative value
  * 			with error code.
  **/
-int mm_sound_remove_volume_changed_callback(void);
+int mm_sound_remove_volume_changed_callback(unsigned int subs_id);
 
 /**
  * This function is to set volume level of certain volume type.
@@ -1891,10 +1891,10 @@ typedef void *MMSoundDeviceList_t;      /**< MMsound Device list handle */
 typedef void (*mm_sound_device_connected_cb) (MMSoundDevice_t device_h, bool is_connected, void *user_data);
 typedef void (*mm_sound_device_info_changed_cb) (MMSoundDevice_t device_h, int changed_info_type, void *user_data);
 
-int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sound_device_connected_cb func, void *user_data);
-int mm_sound_remove_device_connected_callback(void);
-int mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e flags, mm_sound_device_info_changed_cb func, void *user_data);
-int mm_sound_remove_device_information_changed_callback(void);
+int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sound_device_connected_cb func, void *user_data, unsigned int *subs_id);
+int mm_sound_remove_device_connected_callback(unsigned int subs_id);
+int mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e flags, mm_sound_device_info_changed_cb func, void *user_data, unsigned int *subs_id);
+int mm_sound_remove_device_information_changed_callback(unsigned int subs_id);
 
 int mm_sound_get_current_device_list(mm_sound_device_flags_e device_mask, MMSoundDeviceList_t *device_list);
 int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *device);
@@ -2160,8 +2160,8 @@ int mm_sound_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *
 
 typedef void (*mm_sound_test_cb) (int a, void *user_data);
 int mm_sound_test(int a, int b, int* get);
-int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data);
-int mm_sound_remove_test_callback(void);
+int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data, unsigned int *subs_id);
+int mm_sound_remove_test_callback(unsigned int sub_id);
 
 void mm_sound_convert_volume_type_to_stream_type(int volume_type, char *stream_type);
 
