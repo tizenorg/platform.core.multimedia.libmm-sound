@@ -72,6 +72,8 @@ char g_dir_name[MAX_PATH_LEN];
 int g_focus_watch_index = -1;
 GMainLoop* g_loop;
 
+unsigned int g_subs_id_test, g_subs_id_volume, g_subs_id_device_conn, g_subs_id_device_info;
+
 // Function
 static void interpret (char *buf);
 gboolean timeout_menu_display(void *data);
@@ -681,7 +683,7 @@ static void interpret (char *cmd)
 			    int user_data = 3;
 			    g_print("dbus method test add callback\n");
 			    g_print("my testsuite pid : %u  tid : %u\n", getpid(), pthread_self());
-			    ret = mm_sound_add_test_callback(mm_sound_test_cb1, (void *)user_data);
+			    ret = mm_sound_add_test_callback(mm_sound_test_cb1, (void *)user_data, &g_subs_id_test);
 			    if (ret) {
 				g_print("failed to mm_sound_add_test_callback(), ret[0x%x]\n", ret);
 			    } else {
@@ -690,7 +692,7 @@ static void interpret (char *cmd)
 			} else if (strcmp(cmd, "dbus-r") == 0) {
 			    int ret = 0;
 			    g_print("dbus method test remove callback\n");
-			    ret = mm_sound_remove_test_callback();
+			    ret = mm_sound_remove_test_callback(g_subs_id_test);
 			    if (ret) {
 				g_print("failed to mm_sound_remove_test_callback(), ret[0x%x]\n", ret);
 			    } else {
@@ -1625,19 +1627,39 @@ static void interpret (char *cmd)
 			else if(flag_3 == '7') { device_flag_3 = MM_SOUND_DEVICE_STATE_ACTIVATED_FLAG; }
 			else if(flag_3 == '8') { device_flag_3 = MM_SOUND_DEVICE_ALL_FLAG; }
 
-			ret = mm_sound_add_device_connected_callback(device_flag_1|device_flag_2|device_flag_3, device_connected_cb, NULL);
-			if (ret) {
-				g_print("failed to mm_sound_add_device_connected_callback(), ret[0x%x]\n", ret);
+			if (strncmp(cmd, "C2", 2) == 0) {
+				g_print("device_connected_callback2");
+				ret = mm_sound_add_device_connected_callback2(device_flag_1|device_flag_2|device_flag_3, device_connected_cb, NULL, &g_subs_id_device_conn);
+				if (ret) {
+					g_print("failed to mm_sound_add_device_connected_callback(), ret[0x%x]\n", ret);
+				} else {
+					g_print("device_flags[0x%x], callback fun[0x%x], subs_id[%u]\n", device_flag_1|device_flag_2|device_flag_3, device_connected_cb, g_subs_id_device_conn);
+				}
 			} else {
-				g_print("device_flags[0x%x], callback fun[0x%x]\n", device_flag_1|device_flag_2|device_flag_3, device_connected_cb);
+				g_print("device_connected_callback");
+				ret = mm_sound_add_device_connected_callback(device_flag_1|device_flag_2|device_flag_3, device_connected_cb, NULL);
+				if (ret) {
+					g_print("failed to mm_sound_add_device_connected_callback(), ret[0x%x]\n", ret);
+				} else {
+					g_print("device_flags[0x%x], callback fun[0x%x]\n", device_flag_1|device_flag_2|device_flag_3, device_connected_cb);
+				}
 			}
+
+
 		}
 
 		else if(strncmp(cmd, "D", 1) ==0) {
 			int ret = 0;
-			ret = mm_sound_remove_device_connected_callback();
-			if (ret) {
-				g_print("failed to mm_sound_remove_device_connected_callback(), ret[0x%x]\n", ret);
+			if (strncmp(cmd, "D2", 2) == 0) {
+				ret = mm_sound_remove_device_connected_callback2(g_subs_id_device_conn);
+				if (ret) {
+					g_print("failed to mm_sound_remove_device_connected_callback(), ret[0x%x]\n", ret);
+				}
+			} else {
+				ret = mm_sound_remove_device_connected_callback();
+				if (ret) {
+					g_print("failed to mm_sound_remove_device_connected_callback(), ret[0x%x]\n", ret);
+				}
 			}
 		}
 		else if(strncmp(cmd, "Q", 1) ==0) {
@@ -1692,12 +1714,24 @@ static void interpret (char *cmd)
 			else if(flag_3 == '7') { device_flag_3 = MM_SOUND_DEVICE_STATE_ACTIVATED_FLAG; }
 			else if(flag_3 == '8') { device_flag_3 = MM_SOUND_DEVICE_ALL_FLAG; }
 
-			ret = mm_sound_add_device_information_changed_callback(device_flag_1|device_flag_2|device_flag_3, device_info_changed_cb, NULL);
-			if (ret) {
-				g_print("failed to mm_sound_add_device_information_changed_callback(), ret[0x%x]\n", ret);
+			if (strncmp(cmd, "D2", 2) == 0) {
+				g_print("add_device_info_changed2");
+				ret = mm_sound_add_device_information_changed_callback2(device_flag_1 | device_flag_2 | device_flag_3, device_info_changed_cb, NULL, &g_subs_id_device_info);
+				if (ret) {
+					g_print("failed to mm_sound_add_device_information_changed_callback(), ret[0x%x]\n", ret);
+				} else {
+					g_print("device_flags[0x%x], callback fun[0x%x], subs_id[%u]\n", device_flag_1|device_flag_2|device_flag_3, device_info_changed_cb, g_subs_id_device_info);
+				}
 			} else {
-				g_print("device_flags[0x%x], callback fun[0x%x]\n", device_flag_1|device_flag_2|device_flag_3, device_info_changed_cb);
+				g_print("add_device_info_changed");
+				ret = mm_sound_add_device_information_changed_callback(device_flag_1 | device_flag_2 | device_flag_3, device_info_changed_cb, NULL);
+				if (ret) {
+					g_print("failed to mm_sound_add_device_information_changed_callback(), ret[0x%x]\n", ret);
+				} else {
+					g_print("device_flags[0x%x], callback fun[0x%x]\n", device_flag_1|device_flag_2|device_flag_3, device_info_changed_cb);
+				}
 			}
+
 		}
 
 		else if(strncmp(cmd, "W", 1) ==0) {
@@ -1752,7 +1786,7 @@ int main(int argc, char *argv[])
 	if(ret < 0) {
 		g_print("mm_sound_volume_get_value 0x%x\n", ret);
 	}
-	mm_sound_add_volume_changed_callback(volume_change_callback, (void*) &g_volume_type);
+	mm_sound_add_volume_changed_callback2(volume_change_callback, (void*) &g_volume_type, &g_subs_id_volume);
 
 	displaymenu();
 	g_main_loop_run (g_loop);

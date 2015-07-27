@@ -433,7 +433,7 @@ static int _dbus_subscribe_signal(GDBusConnection *conn, const char* object_name
 {
 	guint subs_id = 0;
 
-	if (!conn || !object_name || !intf_name || !signal_name || !signal_cb || !subscribe_id) {
+	if (!conn || !object_name || !intf_name || !signal_name || !signal_cb) {
 		debug_error("Invalid Argument");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -447,7 +447,8 @@ static int _dbus_subscribe_signal(GDBusConnection *conn, const char* object_name
 		debug_error ("g_dbus_connection_signal_subscribe() failed ");
 		return MM_ERROR_SOUND_INTERNAL;
 	} else {
-		*subscribe_id = subs_id;
+		if (subscribe_id)
+			*subscribe_id = subs_id;
 	}
 
 	return MM_ERROR_NONE;
@@ -718,10 +719,10 @@ static int _sound_server_dbus_signal_subscribe(sound_server_signal_t signaltype,
 	return MM_ERROR_NONE;
 }
 
-static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signaltype, void *cb, void *userdata, int mask)
+static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signaltype, void *cb, void *userdata, int mask, unsigned int *subs_id)
 {
 	GDBusConnection *conn = NULL;
-	guint subs_id = 0;
+	guint _subs_id = 0;
 	int instance = 0;
 	struct user_callback *user_cb  = NULL;
 	const char *object, *interface;
@@ -767,11 +768,12 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 
 	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
 		if(_dbus_subscribe_signal(conn, object, interface, g_signals[signaltype].name,
-								_sound_server_dbus_signal_callback, &subs_id, user_cb) != MM_ERROR_NONE){
+								_sound_server_dbus_signal_callback, &_subs_id, user_cb) != MM_ERROR_NONE){
 			debug_error("Dbus Subscribe on Client Error");
 			return MM_ERROR_SOUND_INTERNAL;
 		} else {
-			g_dbus_subs_ids[signaltype] = subs_id;
+			if (subs_id)
+				*subs_id = (unsigned int)_subs_id;
 		}
 	} else {
 		debug_error("Get Dbus Connection Error");
@@ -780,17 +782,12 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 	return MM_ERROR_NONE;
 }
 
-static int _sound_server_dbus_signal_unsubscribe(sound_server_signal_t signaltype)
+static int _sound_server_dbus_signal_unsubscribe(unsigned int subs_id)
 {
 	GDBusConnection *conn = NULL;
 
-	if (signaltype < 0 || signaltype >= SIGNAL_MAX) {
-		debug_error("Wrong Signal Type");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
 	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
-		_dbus_unsubscribe_signal(conn, g_dbus_subs_ids[signaltype]);
+		_dbus_unsubscribe_signal(conn, (guint) subs_id);
 	} else {
 		debug_error("Get Dbus Connection Error");
 		return MM_ERROR_SOUND_INTERNAL;
@@ -854,13 +851,13 @@ static int _pulseaudio_dbus_get_property(pulseaudio_property_t property, GVarian
 		Implementation of each dbus client code (Construct Params,..)
 ******************************************************************************************/
 
-int mm_sound_client_dbus_add_test_callback(mm_sound_test_cb func, void* user_data)
+int mm_sound_client_dbus_add_test_callback(mm_sound_test_cb func, void* user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_SOUND_SERVER, SIGNAL_TEST, func, user_data, 0)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_SOUND_SERVER, SIGNAL_TEST, func, user_data, 0, subs_id)) != MM_ERROR_NONE) {
 		debug_error("add test callback failed");
 	}
 
@@ -868,12 +865,12 @@ int mm_sound_client_dbus_add_test_callback(mm_sound_test_cb func, void* user_dat
 	return ret;
 }
 
-int mm_sound_client_dbus_remove_test_callback(void)
+int mm_sound_client_dbus_remove_test_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_unsubscribe(SIGNAL_TEST)) != MM_ERROR_NONE) {
+	if ((ret = _sound_server_dbus_signal_unsubscribe(subs_id)) != MM_ERROR_NONE) {
 		debug_error("remove test callback failed");
 	}
 
@@ -970,13 +967,13 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data)
+int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, SIGNAL_DEVICE_CONNECTED, func, user_data, device_flags)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, SIGNAL_DEVICE_CONNECTED, func, user_data, device_flags, subs_id)) != MM_ERROR_NONE) {
 		debug_error("add device connected callback failed");
 	}
 
@@ -984,12 +981,12 @@ int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_soun
 	return ret;
 }
 
-int mm_sound_client_dbus_remove_device_connected_callback(void)
+int mm_sound_client_dbus_remove_device_connected_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_unsubscribe(SIGNAL_DEVICE_CONNECTED)) != MM_ERROR_NONE) {
+	if ((ret = _sound_server_dbus_signal_unsubscribe(subs_id)) != MM_ERROR_NONE) {
 		debug_error("remove device connected callback failed");
 	}
 
@@ -997,12 +994,12 @@ int mm_sound_client_dbus_remove_device_connected_callback(void)
 	return ret;
 }
 
-int mm_sound_client_dbus_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data)
+int mm_sound_client_dbus_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, SIGNAL_DEVICE_INFO_CHANGED, func, user_data, device_flags)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, SIGNAL_DEVICE_INFO_CHANGED, func, user_data, device_flags, subs_id)) != MM_ERROR_NONE) {
 		debug_error("Add device info changed callback failed");
 	}
 
@@ -1010,12 +1007,12 @@ int mm_sound_client_dbus_add_device_info_changed_callback(int device_flags, mm_s
 	return ret;
 }
 
-int mm_sound_client_dbus_remove_device_info_changed_callback(void)
+int mm_sound_client_dbus_remove_device_info_changed_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_unsubscribe(SIGNAL_DEVICE_INFO_CHANGED)) != MM_ERROR_NONE) {
+	if ((ret = _sound_server_dbus_signal_unsubscribe(subs_id)) != MM_ERROR_NONE) {
 		debug_error("remove device info changed callback failed");
 	}
 
@@ -1089,13 +1086,13 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_dbus_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data)
+int mm_sound_client_dbus_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_PULSE_MODULE_STREAM_MANAGER, SIGNAL_VOLUME_CHANGED, func, user_data, 0)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_PULSE_MODULE_STREAM_MANAGER, SIGNAL_VOLUME_CHANGED, func, user_data, 0, subs_id)) != MM_ERROR_NONE) {
 		debug_error("Add Volume changed callback failed");
 	}
 
@@ -1103,12 +1100,12 @@ int mm_sound_client_dbus_add_volume_changed_callback(mm_sound_volume_changed_cb 
 	return ret;
 }
 
-int mm_sound_client_dbus_remove_volume_changed_callback(void)
+int mm_sound_client_dbus_remove_volume_changed_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	if ((ret = _sound_server_dbus_signal_unsubscribe(SIGNAL_VOLUME_CHANGED)) != MM_ERROR_NONE) {
+	if ((ret = _sound_server_dbus_signal_unsubscribe(subs_id)) != MM_ERROR_NONE) {
 		debug_error("Remove Volume changed callback failed");
 	}
 
@@ -1394,13 +1391,13 @@ int mm_sound_client_dbus_get_active_device(mm_sound_device_in *device_in, mm_sou
 	return ret;
 }
 
-int mm_sound_client_dbus_add_play_sound_end_callback(int handle, mm_sound_stop_callback_func stop_cb, void* userdata)
+int mm_sound_client_dbus_add_play_sound_end_callback(int handle, mm_sound_stop_callback_func stop_cb, void* userdata, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_SOUND_SERVER, SIGNAL_PLAY_FILE_END, stop_cb, userdata, handle)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_signal_subscribe_to(DBUS_TO_SOUND_SERVER, SIGNAL_PLAY_FILE_END, stop_cb, userdata, handle, subs_id)) != MM_ERROR_NONE) {
 		debug_error("add play sound end callback failed");
 	}
 

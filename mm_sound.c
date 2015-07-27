@@ -75,6 +75,7 @@ static pthread_mutex_t g_subscribe_cb_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 GDBusConnection *g_dbus_conn_mmsound;
 
 int g_dbus_signal_values[MM_SOUND_SIGNAL_MAX] = {0,};
+unsigned int g_subs_id_volume, g_subs_id_test;
 
 const char* dbus_signal_name_str[] = {
 	"ReleaseInternalFocus",
@@ -192,15 +193,38 @@ EXPORT_API
 int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
+	unsigned int subs_id = 0;
 
 	if (func == NULL) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_add_volume_changed_callback(func, user_data);
+	ret = mm_sound_client_add_volume_changed_callback(func, user_data, &subs_id);
 	if (ret < 0) {
 		debug_error("Can not add volume changed callback, ret = %x\n", ret);
+	} else {
+		g_subs_id_volume = subs_id;
+	}
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_add_volume_changed_callback2(mm_sound_volume_changed_cb func, void* user_data, unsigned int *subs_id)
+{
+	int ret = MM_ERROR_NONE;
+
+	if (func == NULL || subs_id == NULL) {
+		debug_error("argument is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = mm_sound_client_add_volume_changed_callback(func, user_data, subs_id);
+	if (ret < 0) {
+		debug_error("Can not add volume changed callback, ret = %x\n", ret);
+	} else {
+		g_subs_id_volume = subs_id;
 	}
 
 	return ret;
@@ -211,7 +235,20 @@ int mm_sound_remove_volume_changed_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 
-	ret = mm_sound_client_remove_volume_changed_callback();
+	ret = mm_sound_client_remove_volume_changed_callback(g_subs_id_volume);
+	if (ret < 0) {
+		debug_error("Can not remove volume changed callback, ret = %x\n", ret);
+	}
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_remove_volume_changed_callback2(unsigned int subs_id)
+{
+	int ret = MM_ERROR_NONE;
+
+	ret = mm_sound_client_remove_volume_changed_callback(subs_id);
 	if (ret < 0) {
 		debug_error("Can not remove volume changed callback, ret = %x\n", ret);
 	}
@@ -816,17 +853,17 @@ int mm_sound_test(int a, int b, int* getv)
 }
 
 EXPORT_API
-int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data)
+int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_log("mm_sound_add_test_callback enter");
-	if (!func) {
+	if (!func || !subs_id) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_add_test_callback(func, user_data);
+	ret = mm_sound_client_add_test_callback(func, user_data, subs_id);
 	if (ret < 0) {
 		debug_error("Can not add test callback, ret = %x\n", ret);
 	}
@@ -836,12 +873,12 @@ int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data)
 }
 
 EXPORT_API
-int mm_sound_remove_test_callback(void)
+int mm_sound_remove_test_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_log("mm_sound_remove_test_callback enter");
-	ret = mm_sound_client_remove_test_callback();
+	ret = mm_sound_client_remove_test_callback(subs_id);
 	if (ret < 0) {
 		debug_error("Can not remove test callback, ret = %x\n", ret);
 	}
