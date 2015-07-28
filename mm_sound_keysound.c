@@ -115,8 +115,7 @@ int mm_sound_play_keysound(const char *filename, int volume_config)
 	int fd = -1;
 	int size = 0;
 	ipc_t data = {{0,},{0,},{0,}};
-	int capture_status = 0;
-	char *role = NULL;
+	const char *role = NULL;
 	const char *vol_gain_type = NULL;
 
 	if (!filename)

@@ -102,17 +102,17 @@ void test_callback(void *data, int id)
 void mm_sound_test_cb1(int a, void *user_data)
 {
 	debug_log("dbus test user callback called: param(%d), userdata(%d)\n", a, (int)user_data);
-	g_print("my callback pid : %u  tid : %u\n", getpid(), pthread_self());
+	g_print("my callback pid : %u  tid : %ld\n", getpid(), pthread_self());
 }
 void device_connected_cb (MMSoundDevice_t device_h, bool is_connected, void *user_data)
 {
 	int ret = 0;
-	int device_type = 0;
-	int io_direction = 0;
-	int state = 0;
+	mm_sound_device_type_e device_type = 0;
+	mm_sound_device_io_direction_e io_direction = 0;
+	mm_sound_device_state_e state = 0;
 	int id = 0;
 	char *name = NULL;
-	debug_log("*** device_connected_cb is called, device_h[0x%x], is_connected[%d], user_date[0x%x]\n", device_h, is_connected, user_data);
+	debug_log("*** device_connected_cb is called, device_h[%p], is_connected[%d], user_date[%p]\n", device_h, is_connected, user_data);
 	ret = mm_sound_get_device_type(device_h, &device_type);
 	if (ret) {
 		debug_error("failed to mm_sound_get_device_type()\n");
@@ -138,12 +138,12 @@ void device_connected_cb (MMSoundDevice_t device_h, bool is_connected, void *use
 void device_info_changed_cb (MMSoundDevice_t device_h, int changed_info_type, void *user_data)
 {
 	int ret = 0;
-	int device_type = 0;
-	int io_direction = 0;
-	int state = 0;
+	mm_sound_device_type_e device_type = 0;
+	mm_sound_device_io_direction_e io_direction = 0;
+	mm_sound_device_state_e state = 0;
 	int id = 0;
 	char *name = NULL;
-	debug_log("*** device_info_changed_cb is called, device_h[0x%x], changed_info_type[%d], user_date[0x%x]\n", device_h, changed_info_type, user_data);
+	debug_log("*** device_info_changed_cb is called, device_h[%p], changed_info_type[%d], user_date[%p]\n", device_h, changed_info_type, user_data);
 	ret = mm_sound_get_device_type(device_h, &device_type);
 	if (ret) {
 		debug_error("failed to mm_sound_get_device_type()\n");
@@ -175,7 +175,7 @@ void focus_cb0 (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e st
 	else
 		_state = "ACQUIRED";
 	debug_log("*** focus_cb0 is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
-			index, type, _state, reason_for_change, additional_info, user_data);
+			index, type, _state, reason_for_change, additional_info, (char*)user_data);
 }
 void focus_cb1 (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
 {
@@ -185,7 +185,7 @@ void focus_cb1 (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e st
 	else
 		_state = "ACQUIRED";
 	debug_log("*** focus_cb1 is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
-			index, type, _state, reason_for_change, additional_info, user_data);
+			index, type, _state, reason_for_change, additional_info, (char*)user_data);
 }
 void focus_watch_cb (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
 {
@@ -195,7 +195,7 @@ void focus_watch_cb (int index, mm_sound_focus_type_e type, mm_sound_focus_state
 	else
 		_state = "ACQUIRED";
 	debug_log("*** focus_watch_cb is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
-			index, type, _state, reason_for_change, additional_info, user_data);
+			index, type, _state, reason_for_change, additional_info, (char*)user_data);
 }
 #endif
 void quit_program()
@@ -319,14 +319,17 @@ gboolean timeout_quit_program(void* data)
 
 gboolean input (GIOChannel *channel)
 {
-    char buf[MAX_STRING_LEN + 3];
-    gsize read;
+	GError *err = NULL;
+	gsize read;
+	char buf[MAX_STRING_LEN + 3];
 
-    g_io_channel_read(channel, buf, MAX_STRING_LEN, &read);
-    buf[read] = '\0';
-    g_strstrip(buf);
-    interpret (buf);
-    return TRUE;
+	g_io_channel_read_chars(channel, buf, MAX_STRING_LEN, &read, &err);
+	buf[read] = '\0';
+	g_strstrip(buf);
+
+	interpret (buf);
+
+	return TRUE;
 }
 
 
@@ -413,7 +416,7 @@ static void __mm_sound_active_device_changed_cb (mm_sound_device_in device_in, m
 static void __mm_sound_signal_cb1 (mm_sound_signal_name_t signal, int value, void *user_data)
 {
 	int _value = 0;
-	g_print ("[%s] signal[%d], value[%d], user_data[0x%x]]\n", __func__, signal, value, user_data);
+	g_print ("[%s] signal[%d], value[%d], user_data[%p]]\n", __func__, signal, value, user_data);
 	mm_sound_get_signal_value (signal, &_value);
 	g_print (" -- get value : %d\n", _value);
 }
@@ -421,7 +424,7 @@ static void __mm_sound_signal_cb1 (mm_sound_signal_name_t signal, int value, voi
 static void __mm_sound_signal_cb2 (mm_sound_signal_name_t signal, int value, void *user_data)
 {
 	int _value = 0;
-	g_print ("[%s] signal[%d], value[%d], user_data[0x%x]]\n", __func__, signal, value, user_data);
+	g_print ("[%s] signal[%d], value[%d], user_data[%p]]\n", __func__, signal, value, user_data);
 	mm_sound_get_signal_value (signal, &_value);
 	g_print (" -- get value : %d\n", _value);
 }
@@ -444,12 +447,12 @@ static void interpret (char *cmd)
 				if(ret < 0)
 					debug_log("mm_sound_subscribe_signal() failed with 0x%x\n", ret);
 				else
-					debug_log("id: %u, callback:0x%x\n", g_subscribe_id1, __mm_sound_signal_cb1);
+					debug_log("id: %u, callback:%p\n", g_subscribe_id1, __mm_sound_signal_cb1);
 				ret = mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &g_subscribe_id2, __mm_sound_signal_cb2, NULL);
 				if(ret < 0)
 					debug_log("mm_sound_subscribe_signal() failed with 0x%x\n", ret);
 				else
-					debug_log("id: %u, callback:0x%x\n", g_subscribe_id2, __mm_sound_signal_cb2);
+					debug_log("id: %u, callback:%p\n", g_subscribe_id2, __mm_sound_signal_cb2);
 			}
 
 			else if(strncmp(cmd, "DU", 2) ==0) {
@@ -464,14 +467,14 @@ static void interpret (char *cmd)
 				if(ret < 0)
 					debug_log("mm_sound_send_signal() failed with 0x%x\n", ret);
 				else
-					debug_log("mm_sound_send_signal for signal[%s], value[%d] is success\n", MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 1);
+					debug_log("mm_sound_send_signal for signal[%d], value[%d] is success\n", MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 1);
 				mm_sound_get_signal_value (MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &value);
 				g_print (" -- get value of RELEASE_INTERNAL_FOCUS : %d\n", value);
 				ret = mm_sound_send_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 0);
 				if(ret < 0)
 					debug_log("mm_sound_send_signal() failed with 0x%x\n", ret);
 				else
-					debug_log("mm_sound_send_signal for signal[%s], value[%d] is success\n", MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 0);
+					debug_log("mm_sound_send_signal for signal[%d], value[%d] is success\n", MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 0);
 				mm_sound_get_signal_value (MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &value);
 				g_print (" -- get value of RELEASE_INTERNAL_FOCUS : %d\n", value);
 			}
@@ -526,11 +529,11 @@ static void interpret (char *cmd)
 				else if(flag_2 == '0') { stream_type = "voice_recognition"; }
 				else { stream_type = "media"; }
 
-				ret = mm_sound_register_focus(id, stream_type, (id == 0)? focus_cb0 : focus_cb1, user_data);
+				ret = mm_sound_register_focus(id, stream_type, (id == 0)? focus_cb0 : focus_cb1, (void*)user_data);
 				if (ret) {
 					g_print("failed to mm_sound_register_focus(), ret[0x%x]\n", ret);
 				} else {
-					g_print("id[%d], stream_type[%s], callback fun[0x%x]\n", id, stream_type, (id == 0)? focus_cb0 : focus_cb1);
+					g_print("id[%d], stream_type[%s], callback fun[%p]\n", id, stream_type, (id == 0)? focus_cb0 : focus_cb1);
 				}
 			}
 
@@ -622,7 +625,6 @@ static void interpret (char *cmd)
 				char input_string[128];
 				char flag_1;
 				int type = 0;
-				char *stream_type = NULL;
 				const char *user_data = "this is user data for watch";
 
 				fflush(stdin);
@@ -640,11 +642,11 @@ static void interpret (char *cmd)
 				else if(flag_1 == '2') { type = 2; }
 				else if(flag_1 == '3') { type = 3; }
 				else { type = 1; }
-				ret = mm_sound_set_focus_watch_callback(type, focus_watch_cb, user_data, &g_focus_watch_index);
+				ret = mm_sound_set_focus_watch_callback(type, focus_watch_cb, (void*)user_data, &g_focus_watch_index);
 				if (ret) {
 					g_print("failed to mm_sound_set_focus_watch_callback(), ret[0x%x]\n", ret);
 				} else {
-					g_print("index[%d], type[%d], callback fun[0x%x]\n", g_focus_watch_index, type, focus_watch_cb);
+					g_print("index[%d], type[%d], callback fun[%p]\n", g_focus_watch_index, type, focus_watch_cb);
 				}
 			}
 
@@ -680,7 +682,7 @@ static void interpret (char *cmd)
 			    int ret = 0;
 			    int user_data = 3;
 			    g_print("dbus method test add callback\n");
-			    g_print("my testsuite pid : %u  tid : %u\n", getpid(), pthread_self());
+			    g_print("my testsuite pid : %u  tid : %ld\n", getpid(), pthread_self());
 			    ret = mm_sound_add_test_callback(mm_sound_test_cb1, (void *)user_data);
 			    if (ret) {
 				g_print("failed to mm_sound_add_test_callback(), ret[0x%x]\n", ret);
@@ -699,7 +701,8 @@ static void interpret (char *cmd)
 			}
 			else if (strncmp(cmd, "gap", 3) == 0) {
 				int ret = 0;
-				int device_in=0, device_out=0;
+				mm_sound_device_in device_in = 0;
+				mm_sound_device_out device_out = 0;
 				ret = mm_sound_get_audio_path(&device_in, &device_out);
 				if (ret == MM_ERROR_NONE) {
 				    g_print ("### mm_sound_get_audio_path() Success (%X,%X)\n\n", device_in, device_out);
@@ -1500,9 +1503,9 @@ static void interpret (char *cmd)
 			int ret = 0;
 			mm_sound_device_flags_e flags = MM_SOUND_DEVICE_ALL_FLAG;
 			MMSoundDeviceList_t device_list;
-			int device_type = 0;
-			int io_direction = 0;
-			int state = 0;
+			mm_sound_device_type_e device_type = 0;
+			mm_sound_device_io_direction_e io_direction = 0;
+			mm_sound_device_state_e state = 0;
 			int id = 0;
 			char *name = NULL;
 			MMSoundDevice_t device_h = NULL;
@@ -1512,7 +1515,7 @@ static void interpret (char *cmd)
 			if (ret) {
 				g_print("failed to mm_sound_get_current_device_list(), ret[0x%x]\n", ret);
 			} else {
-				g_print("device_list[0x%x], device_h[0x%x]\n", device_list, device_h);
+				g_print("device_list[%p], device_h[%p]\n", device_list, device_h);
 				do {
 					dret = mm_sound_get_next_device (device_list, &device_h);
 					if (dret) {
@@ -1629,7 +1632,7 @@ static void interpret (char *cmd)
 			if (ret) {
 				g_print("failed to mm_sound_add_device_connected_callback(), ret[0x%x]\n", ret);
 			} else {
-				g_print("device_flags[0x%x], callback fun[0x%x]\n", device_flag_1|device_flag_2|device_flag_3, device_connected_cb);
+				g_print("device_flags[0x%x], callback fun[%p]\n", device_flag_1|device_flag_2|device_flag_3, device_connected_cb);
 			}
 		}
 
@@ -1696,7 +1699,7 @@ static void interpret (char *cmd)
 			if (ret) {
 				g_print("failed to mm_sound_add_device_information_changed_callback(), ret[0x%x]\n", ret);
 			} else {
-				g_print("device_flags[0x%x], callback fun[0x%x]\n", device_flag_1|device_flag_2|device_flag_3, device_info_changed_cb);
+				g_print("device_flags[0x%x], callback fun[%p]\n", device_flag_1|device_flag_2|device_flag_3, device_info_changed_cb);
 			}
 		}
 

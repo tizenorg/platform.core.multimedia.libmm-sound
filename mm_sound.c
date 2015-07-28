@@ -87,7 +87,7 @@ typedef struct _subscribe_cb {
 	unsigned int id;
 } subscribe_cb_t;
 
-static char* _get_volume_str (volume_type_t type)
+static const char* _get_volume_str (volume_type_t type)
 {
 	static const char *volume_type_str[VOLUME_TYPE_MAX] =
 		{ "SYSTEM", "NOTIFICATION", "ALARM", "RINGTONE", "MEDIA", "CALL", "VOIP", "VOICE", "FIXED"};
@@ -273,7 +273,6 @@ int mm_sound_volume_get_value(volume_type_t type, unsigned int *value)
 EXPORT_API
 int mm_sound_volume_primary_type_set(volume_type_t type)
 {
-	pid_t mypid;
 	int ret = MM_ERROR_NONE;
 
 	/* Check input param */
@@ -320,7 +319,6 @@ int mm_sound_volume_primary_type_get(volume_type_t *type)
 EXPORT_API
 int mm_sound_volume_primary_type_clear(void)
 {
-	pid_t mypid;
 	int ret = MM_ERROR_NONE;
 
 	if (vconf_set_int(VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE, -1)) {
@@ -850,30 +848,7 @@ int mm_sound_remove_test_callback(void)
 	return ret;
 }
 
-static void signal_callback(GDBusConnection *conn,
-							   const gchar *sender_name,
-							   const gchar *object_path,
-							   const gchar *interface_name,
-							   const gchar *signal_name,
-							   GVariant *parameters,
-							   gpointer user_data)
-{
-	int value=0;
-	const GVariantType* value_type;
-
-	debug_msg ("sender : %s, object : %s, interface : %s, signal : %s",
-			sender_name, object_path, interface_name, signal_name);
-	if(g_variant_is_of_type(parameters, G_VARIANT_TYPE("(i)"))) {
-		g_variant_get(parameters, "(i)",&value);
-		debug_msg(" - value : %d\n", value);
-		_dbus_signal_callback (signal_name, value, user_data);
-	} else	{
-		value_type = g_variant_get_type(parameters);
-		debug_warning("signal type is %s", value_type);
-	}
-}
-
-int _convert_signal_name_str_to_enum (const char *name_str, mm_sound_signal_name_t *name_enum) {
+static int _convert_signal_name_str_to_enum (const char *name_str, mm_sound_signal_name_t *name_enum) {
 	int ret = MM_ERROR_NONE;
 
 	if (!name_str || !name_enum)
@@ -888,7 +863,7 @@ int _convert_signal_name_str_to_enum (const char *name_str, mm_sound_signal_name
 	return ret;
 }
 
-void _dbus_signal_callback (const char *signal_name, int value, void *user_data)
+static void _dbus_signal_callback (const char *signal_name, int value, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 	mm_sound_signal_name_t signal;
@@ -917,6 +892,29 @@ void _dbus_signal_callback (const char *signal_name, int value, void *user_data)
 	debug_fleave();
 
 	return;
+}
+
+static void signal_callback(GDBusConnection *conn,
+							   const gchar *sender_name,
+							   const gchar *object_path,
+							   const gchar *interface_name,
+							   const gchar *signal_name,
+							   GVariant *parameters,
+							   gpointer user_data)
+{
+	int value=0;
+	const GVariantType* value_type;
+
+	debug_msg ("sender : %s, object : %s, interface : %s, signal : %s",
+			sender_name, object_path, interface_name, signal_name);
+	if (g_variant_is_of_type(parameters, G_VARIANT_TYPE("(i)"))) {
+		g_variant_get(parameters, "(i)",&value);
+		debug_msg(" - value : %d\n", value);
+		_dbus_signal_callback(signal_name, value, user_data);
+	} else	{
+		value_type = g_variant_get_type(parameters);
+		debug_warning("signal type is %s", value_type);
+	}
 }
 
 EXPORT_API
@@ -1005,7 +1003,7 @@ void mm_sound_unsubscribe_signal(unsigned int subscribe_id)
 
 	debug_fenter();
 
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_subscribe_cb_list_mutex, MM_ERROR_SOUND_INTERNAL);
+	MMSOUND_ENTER_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
 
 	if (g_dbus_conn_mmsound && subscribe_id) {
 		g_dbus_connection_signal_unsubscribe(g_dbus_conn_mmsound, subscribe_id);

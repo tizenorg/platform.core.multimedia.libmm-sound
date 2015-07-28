@@ -231,7 +231,7 @@ static const GDBusErrorEntry mm_sound_error_entries[] =
 ******************************************************************************************/
 
 
-static int _parse_error_msg(const char *full_err_msg, char **err_name, char **err_msg)
+static int _parse_error_msg(char *full_err_msg, char **err_name, char **err_msg)
 {
 	char *save_p, *domain, *_err_name, *_err_msg;
 
@@ -310,7 +310,7 @@ int __convert_volume_type_to_str(int volume_type, char **volume_type_str)
 	return ret;
 }
 
-int __convert_volume_type_to_int(char *volume_type_str, unsigned int *volume_type)
+static int __convert_volume_type_to_int(char *volume_type_str, volume_type_t *volume_type)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -602,10 +602,7 @@ static void _sound_server_dbus_signal_callback (GDBusConnection  *connection,
                                      GVariant         *params,
                                      gpointer          user_data)
 {
-	struct user_callback* user_cb = NULL;
-	GVariantIter *iter = NULL;
-
-	user_cb = (struct user_callback*) user_data;
+	struct user_callback* user_cb = (struct user_callback*) user_data;
 
 	if (!user_cb || !user_cb->cb) {
 		debug_error("User callback data Null");
@@ -680,7 +677,6 @@ static int _sound_server_dbus_signal_subscribe(sound_server_signal_t signaltype,
 {
 	GDBusConnection *conn = NULL;
 	guint subs_id = 0;
-	int instance = 0;
 	struct user_callback *user_cb  = NULL;
 
 	if (!cb) {
@@ -722,7 +718,6 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 {
 	GDBusConnection *conn = NULL;
 	guint subs_id = 0;
-	int instance = 0;
 	struct user_callback *user_cb  = NULL;
 	const char *object, *interface;
 
@@ -789,12 +784,14 @@ static int _sound_server_dbus_signal_unsubscribe(sound_server_signal_t signaltyp
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
-		_dbus_unsubscribe_signal(conn, g_dbus_subs_ids[signaltype]);
-	} else {
+	if (!(conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
 		debug_error("Get Dbus Connection Error");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
+
+	_dbus_unsubscribe_signal(conn, g_dbus_subs_ids[signaltype]);
+
+	return MM_ERROR_NONE;
 }
 
 static int _pulseaudio_dbus_set_property(pulseaudio_property_t property, GVariant* args, GVariant **result)
@@ -923,7 +920,6 @@ int mm_sound_client_dbus_get_current_connected_device_list(int device_flags, GLi
 	GVariant *params;
 	GVariantIter iter;
 	mm_sound_device_t* device_item;
-	GList* g_device_list = NULL;
 	const gchar *device_name_tmp = NULL, *device_type_tmp = NULL;
 
 	debug_fenter();
@@ -1056,7 +1052,7 @@ int mm_sound_client_dbus_set_volume_by_type(const int volume_type, const unsigne
 
 	debug_fenter();
 
-	if (ret = __convert_volume_type_to_str(volume_type, &type_str) != MM_ERROR_NONE) {
+	if ((ret = __convert_volume_type_to_str(volume_type, &type_str)) != MM_ERROR_NONE) {
 		debug_error("volume type convert failed");
 		return ret;
 	}
@@ -1225,7 +1221,7 @@ cleanup:
 
 }
 
-int mm_sound_client_dbus_play_sound(char* filename, int tone, int repeat, int volume, int volume_config,
+int mm_sound_client_dbus_play_sound(const char* filename, int tone, int repeat, int volume, int volume_config,
 			   int priority, int session_type, int session_options, int client_pid, int handle_route,
 			   bool enable_session, int *codechandle, char *stream_type, int stream_index)
 {
@@ -1268,8 +1264,8 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_dbus_play_sound_with_stream_info(char* filename, int repeat, int volume,
-			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index)
+int mm_sound_client_dbus_play_sound_with_stream_info(const char* filename, int repeat, int volume,
+				int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index)
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
@@ -1283,7 +1279,7 @@ int mm_sound_client_dbus_play_sound_with_stream_info(char* filename, int repeat,
 	debug_fenter();
 
 	params = g_variant_new("(siiiiisi)", filename, repeat, volume,
-		      priority, client_pid, handle_route, stream_type, stream_index);
+			priority, client_pid, handle_route, stream_type, stream_index);
 	if (params) {
 		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_FILE_START_WITH_STREAM_INFO, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus play file failed");
@@ -1588,7 +1584,7 @@ static int _focus_find_index_by_handle(int handle)
 	return -1;
 }
 
-static bool _focus_callback_handler(gpointer d)
+static gboolean _focus_callback_handler(gpointer d)
 {
 	GPollFD *data = (GPollFD*)d;
 	int count;
@@ -1828,6 +1824,7 @@ void _focus_close_callback(int index, bool is_for_watching)
 
 #ifdef CONFIG_ENABLE_RETCB
 	char *filename2;
+	int written;
 
 	if (is_for_watching) {
 		filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", g_focus_sound_handle[index].focus_tid);
@@ -1847,7 +1844,7 @@ void _focus_close_callback(int index, bool is_for_watching)
 			filename2, g_focus_sound_handle[index].focus_tid, tmpfd, filename2, errno, str_error);
 	} else {
 		debug_msg("write MM_ERROR_NONE(tid:%d) for waiting server", g_focus_sound_handle[index].focus_tid);
-		write(tmpfd, &buf, sizeof(buf));
+		written = write(tmpfd, &buf, sizeof(buf));
 		close(tmpfd);
 	}
 
@@ -1928,7 +1925,6 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 static bool _focus_remove_sound_callback(int index, gushort events)
 {
 	bool ret = true;
-	gboolean gret = TRUE;
 
 	debug_fenter();
 
@@ -1937,7 +1933,7 @@ static bool _focus_remove_sound_callback(int index, gushort events)
 		g_focus_sound_handle[index].focus_lock = NULL;
 	}
 
-	GSourceFunc *g_src_funcs = g_focus_sound_handle[index].g_src_funcs;
+	GSourceFuncs *g_src_funcs = g_focus_sound_handle[index].g_src_funcs;
 	GPollFD *g_poll_fd = g_focus_sound_handle[index].g_poll_fd;	/* store file descriptor */
 	if (!g_poll_fd) {
 		debug_error("g_poll_fd is null..");

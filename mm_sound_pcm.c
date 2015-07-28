@@ -1266,15 +1266,15 @@ EXPORT_API
 int mm_sound_pcm_get_latency(MMSoundPcmHandle_t handle, int *latency)
 {
 	mm_sound_pcm_t *pcmHandle = (mm_sound_pcm_t*)handle;
-	int result = MM_ERROR_NONE;
 	int mlatency = 0;
 
 	/* Check input param */
 	if (latency == NULL)
 		return MM_ERROR_INVALID_ARGUMENT;
 
-	if(MM_ERROR_NONE != mm_sound_pa_get_latency(pcmHandle->handle, &mlatency)) {
+	if (MM_ERROR_NONE != mm_sound_pa_get_latency(pcmHandle->handle, &mlatency)) {
 		debug_error("Get Latency Error");
+		/* FIXME : is this correct return value? */
 		return MM_ERROR_SOUND_DEVICE_NOT_OPENED;
 	}
 
