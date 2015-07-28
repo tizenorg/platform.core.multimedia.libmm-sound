@@ -214,11 +214,8 @@ int mm_sound_util_get_dock_type (int *type)
 EXPORT_API
 bool mm_sound_util_is_recording (void)
 {
-	int capture_status = 0;
-	bool result = false;
-
-    /* FIXME */
-	return result;
+	    /* FIXME : is this function needs anymore ??? */
+	return false;
 }
 
 EXPORT_API

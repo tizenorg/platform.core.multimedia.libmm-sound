@@ -39,7 +39,6 @@
 #include "../include/mm_sound_msg.h"
 //#include "include/mm_sound_thread_pool.h"
 #include "include/mm_sound_mgr_codec.h"
-#include "include/mm_sound_mgr_device.h"
 #include "include/mm_sound_mgr_asm.h"
 #include <mm_error.h>
 #include <mm_debug.h>
@@ -49,10 +48,6 @@
 #include <gio/gio.h>
 
 #define SHM_OPEN
-
-#ifdef PULSE_CLIENT
-#include "include/mm_sound_mgr_pulse.h"
-#endif
 
 /* workaround for AF volume gain tuning */
 #define MM_SOUND_AF_FILE_PREFIX "/opt/ug/res/sounds/ug-camera-efl/sounds/af_"

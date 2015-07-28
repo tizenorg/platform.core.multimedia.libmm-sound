@@ -40,7 +40,6 @@
 #include <mm_debug.h>
 
 #include "include/mm_sound_mgr_asm.h"
-#include "include/mm_sound_mgr_session.h"
 #include "include/mm_sound_mgr_ipc.h"
 #include "../include/mm_sound_utils.h"
 
@@ -68,6 +67,41 @@ pthread_mutex_t g_mutex_asm = PTHREAD_MUTEX_INITIALIZER;
 #include <audio-session-manager.h>
 #include <string.h>
 #include <errno.h>
+
+/* for temporal : copied from mgr_session.c */
+typedef enum
+{
+       SESSION_END = 0,
+       SESSION_START,
+} session_state_t;
+
+typedef enum
+{
+       SESSION_MEDIA = 0,
+       SESSION_VOICECALL,
+       SESSION_VIDEOCALL,
+       SESSION_VOIP,
+       SESSION_FMRADIO,
+       SESSION_NOTIFICATION,
+       SESSION_ALARM,
+       SESSION_EMERGENCY,
+       SESSION_VOICE_RECOGNITION,
+       SESSION_NUM
+} session_t;
+
+typedef enum
+{
+       SUBSESSION_VOICE = 0,
+       SUBSESSION_RINGTONE,
+       SUBSESSION_MEDIA,
+       SUBSESSION_INIT,
+       SUBSESSION_VR_NORMAL,
+       SUBSESSION_VR_DRIVE,
+       SUBSESSION_RECORD_STEREO,
+       SUBSESSION_RECORD_MONO,
+       SUBSESSION_NUM
+} subsession_t;
+/* -------------- */
 
 #define USE_SYSTEM_SERVER_PROCESS_MONITORING
 

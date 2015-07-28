@@ -48,14 +48,7 @@
 #include "include/mm_sound_mgr_codec.h"
 #include "include/mm_sound_mgr_ipc.h"
 #include "include/mm_sound_mgr_ipc_dbus.h"
-//#include "include/mm_sound_mgr_pulse.h"
 #include "include/mm_sound_mgr_asm.h"
-//#include "include/mm_sound_mgr_session.h"
-//#include "include/mm_sound_mgr_device.h"
-//#include "include/mm_sound_mgr_device_headset.h"
-//#include "include/mm_sound_mgr_device_dock.h"
-//#include "include/mm_sound_mgr_device_hdmi.h"
-//#include "include/mm_sound_mgr_device_wfd.h"
 #include <audio-session-manager.h>
 
 #include <glib.h>
@@ -64,38 +57,19 @@
 
 #define PLUGIN_ENV "MM_SOUND_PLUGIN_PATH"
 #define PLUGIN_MAX 30
-
-#define HIBERNATION_SOUND_CHECK_PATH	"/tmp/hibernation/sound_ready"
-#define USE_SYSTEM_SERVER_PROCESS_MONITORING
-
-#define VCONFKEY_CHECK_INTERVAL	10000
-
 #define MAX_PLUGIN_DIR_PATH_LEN	256
+
+#define USE_SYSTEM_SERVER_PROCESS_MONITORING
 
 typedef struct {
     char plugdir[MAX_PLUGIN_DIR_PATH_LEN];
     int startserver;
     int printlist;
     int testmode;
-    int poweroff;
-    int soundreset;
 } server_arg;
 
-static char *str_errormsg[] = {
-    "Operation is success.",
-    "Handle Init Fail",
-    "Path Init Fail",
-    "Handle Fini Fail",
-    "Path Fini Fail",
-    "Handle Reset Fail",
-    "Path Reset Fail",
-    "Handle Dump Fail",
-    "Path Dump Fail",
-    "Sync Dump Fail",
-};
-
 static int getOption(int argc, char **argv, server_arg *arg);
-static int usgae(int argc, char **argv);
+static int _usage(int argc, char **argv);
 
 static struct sigaction sigint_action;  /* Backup pointer of SIGINT handler */
 static struct sigaction sigabrt_action; /* Backup pointer of SIGABRT signal handler */
@@ -106,40 +80,13 @@ static void _exit_handler(int sig);
 
 GMainLoop *g_mainloop;
 
-void* pulse_handle;
-
-void mainloop_run()
+static void _mainloop_run()
 {
 	g_mainloop = g_main_loop_new(NULL, TRUE);
-	if(g_mainloop == NULL) {
+	if (g_mainloop == NULL) {
 		debug_error("g_main_loop_new() failed\n");
 	}
 	g_main_loop_run(g_mainloop);
-}
-
-static int _handle_power_off ()
-{
-	debug_warning ("not supported\n");
-	return 0;
-}
-
-static int _handle_sound_reset ()
-{
-	debug_warning ("not supported\n");
-	return 0;
-}
-
-static void _pa_disconnect_cb (void *user_data)
-{
-	debug_warning ("g_mainloop = %p, user_data = %p", g_mainloop, user_data);
-
-	if (pulse_handle) {
-		free(pulse_handle);
-		pulse_handle = NULL;
-	}
-
-	if (g_mainloop)
-		g_main_loop_quit(g_mainloop);
 }
 
 static sem_t* sem_create_n_wait()
@@ -160,10 +107,6 @@ int main(int argc, char **argv)
 	sem_t* sem = NULL;
 	server_arg serveropt;
 	struct sigaction action;
-#ifdef USE_HIBERNATION
-	int heynotifd = -1;
-#endif
-	int volumes[VOLUME_TYPE_MAX] = {0, };
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
 	int pid;
 #endif
@@ -185,23 +128,6 @@ int main(int argc, char **argv)
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
 		daemon(0,0); //chdir to ("/"), and close stdio
 #endif
-	}
-	if (serveropt.poweroff) {
-		if (_handle_power_off() == 0) {
-			debug_log("_handle_power_off success!!\n");
-		} else {
-			debug_error("_handle_power_off failed..\n");
-		}
-		return 0;
-	}
-
-	if (serveropt.soundreset) {
-		if (_handle_sound_reset() == 0) {
-			debug_log("_handle_sound_reset success!!\n");
-		} else {
-			debug_error("_handle_sound_reset failed..\n");
-		}
-		return 0;
 	}
 
 	/* Sound Server Starts!!!*/
@@ -238,17 +164,8 @@ int main(int argc, char **argv)
 		MMSoundThreadPoolInit();
 		MMSoundMgrRunInit(serveropt.plugdir);
 		MMSoundMgrCodecInit(serveropt.plugdir);
-
 		MMSoundMgrDbusInit();
-
-//		pulse_handle = MMSoundMgrPulseInit(_pa_disconnect_cb, g_mainloop);
 		MMSoundMgrASMInit();
-//		_mm_sound_mgr_device_init();
-//		MMSoundMgrHeadsetInit();
-//		MMSoundMgrDockInit();
-//		MMSoundMgrHdmiInit();
-//		MMSoundMgrWfdInit();
-//		MMSoundMgrSessionInit();
 	}
 
 	debug_warning("sound_server [%d] initialization complete...now, start running!!\n", getpid());
@@ -266,9 +183,9 @@ int main(int argc, char **argv)
 				debug_msg ("Ready to play booting sound!!!!");
 			}
 		}
-		/* Start Ipc mgr */
 
-		mainloop_run();
+		/* Start MainLoop */
+		_mainloop_run();
 	}
 
 	debug_warning("sound_server [%d] terminating \n", getpid());
@@ -280,20 +197,7 @@ int main(int argc, char **argv)
 		MMSoundMgrRunFini();
 		MMSoundThreadPoolFini();
 
-//		MMSoundMgrWfdFini();
-//		MMSoundMgrHdmiFini();
-//		MMSoundMgrDockFini();
-//		MMSoundMgrHeadsetFini();
-//		MMSoundMgrSessionFini();
-//		_mm_sound_mgr_device_fini();
 		MMSoundMgrASMFini();
-//		MMSoundMgrPulseFini(pulse_handle);
-#ifdef USE_HIBERNATION
-		if(heynoti_unsubscribe(heynotifd, "HIBERNATION_LEAVE", NULL)) {
-			debug_error("heynoti_unsubscribe failed..\n");
-		}
-		heynoti_close(heynotifd);
-#endif
 	}
 
 	debug_warning("sound_server [%d] exit ----------------- END \n", getpid());
@@ -307,8 +211,6 @@ static int getOption(int argc, char **argv, server_arg *arg)
 	char *plugin_env_dir = NULL;
 	static struct option long_options[] = {
 		{"start", 0, 0, 'S'},
-		{"poweroff", 0, 0, 'F'},
-		{"soundreset", 0, 0, 'R'},
 		{"list", 0, 0, 'L'},
 		{"help", 0, 0, 'H'},
 		{"plugdir", 1, 0, 'P'},
@@ -338,12 +240,6 @@ static int getOption(int argc, char **argv, server_arg *arg)
 		case 'S': /* Start daemon */
 			arg->startserver = 1;
 			break;
-		case 'F': /* Poweroff */
-			arg->poweroff = 1;
-			break;
-		case 'R': /* SoundReset */
-			arg->soundreset = 1;
-			break;
 		case 'L': /* list of plugins */
 			arg->printlist = 1;
 			break;
@@ -355,11 +251,11 @@ static int getOption(int argc, char **argv, server_arg *arg)
 			break;
 		case 'H': /* help msg */
 		default:
-		return usgae(argc, argv);
+		return _usage(argc, argv);
 		}
 	}
 	if (argc == 1)
-		return usgae(argc, argv);
+		return _usage(argc, argv);
 	return 0;
 }
 
@@ -403,17 +299,11 @@ static void _exit_handler(int sig)
 	raise(sig);
 }
 
-static int usgae(int argc, char **argv)
+static int _usage(int argc, char **argv)
 {
 	fprintf(stderr, "Usage: %s [Options]\n", argv[0]);
 	fprintf(stderr, "\t%-20s: start sound server.\n", "--start,-S");
-	fprintf(stderr, "\t%-20s: handle poweroff\n", "--poweroff,-F");
-	fprintf(stderr, "\t%-20s: handle soundreset\n", "--soundreset,-R");
 	fprintf(stderr, "\t%-20s: help message.\n", "--help,-H");
-#if 0 /* currently not in use */
-	fprintf(stderr, "\t%-20s: print plugin list.\n", "--list,-L");
-	fprintf(stderr, "\t%-20s: print this message.\n", "--plugdir,-P");
-#endif
 
 	return 1;
 }

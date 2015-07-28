@@ -4,14 +4,7 @@ bin_PROGRAMS = sound_server
 sound_server_SOURCES = mm_sound_mgr_codec.c \
 						mm_sound_mgr_ipc.c \
 						mm_sound_mgr_ipc_dbus.c \
-						mm_sound_mgr_pulse.c \
 						mm_sound_mgr_asm.c \
-						mm_sound_mgr_device.c \
-						mm_sound_mgr_device_headset.c \
-						mm_sound_mgr_device_dock.c \
-						mm_sound_mgr_device_hdmi.c \
-						mm_sound_mgr_device_wfd.c \
-						mm_sound_mgr_session.c \
 						mm_sound_mgr_run.c \
 						mm_sound_plugin.c \
 						mm_sound_server.c \
@@ -28,8 +21,7 @@ sound_server_CFLAGS = -I$(srcdir)/../include \
 			  		  $(AUDIOSESSIONMGR_CFLAGS) \
 			  		  $(VCONF_CFLAGS) \
 			  		  $(GLIB2_CFLAGS) \
-			  		  $(GIO_CFLAGS) \
-			  		  $(HEYNOTI_CFLAGS)
+			  		  $(GIO_CFLAGS)
 
 sound_server_LDADD = $(MMLOGSVR_LIBS) \
 		     -ldl -lrt \
@@ -39,7 +31,6 @@ sound_server_LDADD = $(MMLOGSVR_LIBS) \
 		     $(GLIB2_LIBS) \
 		     $(GIO_LIBS) \
 		     $(VCONF_LIBS) \
-		     $(HEYNOTI_LIBS) \
 		     $(srcdir)/../libmmfsound.la \
 		     $(srcdir)/../common/libmmfsoundcommon.la
 
