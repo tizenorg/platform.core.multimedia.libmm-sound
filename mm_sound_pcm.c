@@ -1150,7 +1150,6 @@ int mm_sound_pcm_play_write(MMSoundPcmHandle_t handle, void* ptr, unsigned int l
 	int ret = 0;
 	static int written_byte = 0;
 	mm_sound_pcm_t *pcmHandle = (mm_sound_pcm_t*)handle;
-	int vr_state = 0;
 
 	/* Check input param */
 	if(pcmHandle == NULL) {
