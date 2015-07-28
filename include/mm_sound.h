@@ -2171,7 +2171,7 @@ typedef enum {
 } mm_sound_signal_name_t;
 
 typedef void (* mm_sound_signal_callback) (mm_sound_signal_name_t signal, int value, void *user_data);
-int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subscribe_id, mm_sound_signal_callback callback, void *user_data);
+int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int* subscribe_id, mm_sound_signal_callback callback, void *user_data);
 void mm_sound_unsubscribe_signal(unsigned int subscribe_id);
 int mm_sound_send_signal(mm_sound_signal_name_t signal, int value);
 int mm_sound_get_signal_value(mm_sound_signal_name_t signal, int *value);

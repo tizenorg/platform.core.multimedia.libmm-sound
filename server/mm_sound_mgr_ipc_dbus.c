@@ -907,6 +907,7 @@ static void handle_method_get_bt_a2dp_status(GDBusMethodInvocation* invocation)
 
 	debug_fenter();
 
+	/* FIXME */
 //	ret = MMSoundMgrPulseHandleIsBtA2DPOnReq(&is_bt_on, &bt_name);
 
 send_reply:
@@ -952,12 +953,14 @@ send_reply:
 static void handle_method_get_audio_path(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
-	int device_in = 0, device_out = 0;
+	mm_sound_device_in device_in = 0;
+	mm_sound_device_out device_out = 0;
 
 	debug_fenter();
 
 	ret = __mm_sound_mgr_ipc_get_audio_path(&device_in, &device_out);
 
+	/* FIXME */
 send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("(ii)", device_in, device_out));
@@ -971,7 +974,7 @@ send_reply:
 static void handle_method_get_connected_device_list(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant *params = NULL, *reply_v = NULL;
+	GVariant *params = NULL;
 	GVariantBuilder reply_builder;
 	int mask_flags = 0;
 	int devices_num = 0, device_idx = 0;
@@ -1038,7 +1041,7 @@ static char* _get_container_from_cookie(GVariant* cookie_data)
 static void handle_method_asm_register_sound(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
-	int pid = 0, handle = 0, sound_event = 0, request_id = 0, sound_state = 0, resource = 0;
+	int handle = 0, sound_event = 0, request_id = 0, sound_state = 0, resource = 0;
 	int pid_r = 0, alloc_handle_r = 0, cmd_handle_r = 0, request_id_r = 0, sound_command_r = 0, sound_state_r = 0;
 	GVariant *params = NULL;
 #ifdef SUPPORT_CONTAINER
@@ -1047,6 +1050,8 @@ static void handle_method_asm_register_sound(GDBusMethodInvocation* invocation)
 #ifdef USE_SECURITY
 	GVariant* cookie_data;
 #endif /* USE_SECURITY */
+#else
+	int pid = 0;
 #endif /* SUPPORT_CONTAINER */
 
 	debug_fenter();
@@ -1117,7 +1122,7 @@ send_reply:
 static void handle_method_asm_register_watcher(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
-	int pid = 0, handle = 0, sound_event = 0, request_id = 0, sound_state = 0, resource = 0;
+	int handle = 0, sound_event = 0, request_id = 0, sound_state = 0, resource = 0;
 	int pid_r = 0, alloc_handle_r = 0, cmd_handle_r = 0, request_id_r = 0, sound_command_r = 0, sound_state_r = 0;
 	GVariant *params = NULL;
 #ifdef SUPPORT_CONTAINER
@@ -1126,6 +1131,8 @@ static void handle_method_asm_register_watcher(GDBusMethodInvocation* invocation
 #ifdef USE_SECURITY
 	GVariant* cookie_data;
 #endif /* USE_SECURITY */
+#else
+	int pid = 0;
 #endif /* SUPPORT_CONTAINER */
 
 	debug_fenter();
@@ -1197,7 +1204,7 @@ static void handle_method_asm_get_mystate(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int pid = 0, handle = 0, sound_event = 0, request_id = 0, sound_state = 0, resource = 0;
-	int pid_r = 0, alloc_handle_r = 0, cmd_handle_r = 0, request_id_r = 0, sound_command_r = 0, sound_state_r = 0;
+	int pid_r = 0, alloc_handle_r = 0, cmd_handle_r = 0, request_id_r = 0, sound_state_r = 0;
 	GVariant *params = NULL;
 
 	debug_fenter();
@@ -1257,7 +1264,7 @@ static void handle_method_asm_get_state(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int pid = 0, handle = 0, sound_event = 0, request_id = 0, sound_state = 0, resource = 0;
-	int pid_r = 0, alloc_handle_r = 0, cmd_handle_r = 0, request_id_r = 0, sound_command_r = 0, sound_state_r = 0;
+	int pid_r = 0, alloc_handle_r = 0, cmd_handle_r = 0, request_id_r = 0, sound_state_r = 0;
 	GVariant *params = NULL;
 
 	debug_fenter();

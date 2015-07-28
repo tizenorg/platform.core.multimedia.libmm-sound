@@ -803,6 +803,8 @@ static container_info_t* __get_container_info(int instance_id)
 		}
 		temp_list = temp_list->next;
 	}
+
+	return NULL;
 }
 #endif /* SUPPORT_CONTAINER */
 
@@ -813,6 +815,10 @@ static char* __get_asm_pipe_path(int instance_id, int handle, const char* postfi
 
 #ifdef SUPPORT_CONTAINER
 	container_info_t* container_info = __get_container_info(instance_id);
+	if (container_info == NULL) {
+		debug_error("error getting container info!!!");
+		return NULL;
+	}
 
 	if (instance_id == container_info->pid) {
 		debug_error ("This might be in the HOST(%s)[%d], let's form normal path",
@@ -1730,8 +1736,6 @@ gboolean __need_to_compare_again(ASM_sound_events_t current_playing_event, int c
 	case ASM_CASE_1PAUSE_2PLAY:
 	{
 		int ret = MM_ERROR_NONE;
-		mm_sound_device_out device_out_wired_accessory = MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY;
-		mm_sound_device_in device_in = MM_SOUND_DEVICE_IN_NONE;
 		bool available = false;
 
 		if (incoming_playing_event == ASM_EVENT_NOTIFY && (mm_sound_util_is_recording() || mm_sound_util_is_mute_policy()) ) {
@@ -1754,7 +1758,6 @@ gboolean __need_to_compare_again(ASM_sound_events_t current_playing_event, int c
 	{
 		int ret = MM_ERROR_NONE;
 		mm_sound_device_out device_out = MM_SOUND_DEVICE_OUT_NONE;
-		mm_sound_device_in device_in = MM_SOUND_DEVICE_IN_NONE;
 
 		if (__is_media_session(current_playing_event) && __is_media_session(incoming_playing_event)) {
 			if ((!(g_handle_info[current_playing_handle].option_flags & ASM_SESSION_OPTION_UNINTERRUPTIBLE)) &&
@@ -2554,6 +2557,7 @@ int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sou
 	int ret = MM_ERROR_NONE;
 	session_t cur_session;
 
+	/* FIXME */
 //	MMSoundMgrSessionGetSession(&cur_session);
 	debug_warning (" cur_session[%d] (0:MEDIA 1:VC 2:VT 3:VOIP 4:FM 5:NOTI 6:ALARM 7:EMER 8:VR)\n",cur_session);
 	if (is_for_recovery) {

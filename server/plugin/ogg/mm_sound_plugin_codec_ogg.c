@@ -105,8 +105,6 @@ void _pcm_out_func(void *data)
 	unsigned char* ogg_buf;
 	unsigned int ogg_remain;
 	int err;
-	mm_sound_device_in device_in_after = MM_SOUND_DEVICE_IN_NONE;
-	mm_sound_device_out device_out_after = MM_SOUND_DEVICE_OUT_NONE;
 
 	debug_enter("\n");
 

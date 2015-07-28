@@ -356,17 +356,13 @@ static void _runing(void *param)
 	char *org_cur = NULL;
 	int org_size = 0;
 	char *dummy = NULL;
-	int ret;
-	unsigned int volume_value = 0;
 	int size;
 
 	pa_sample_spec ss;
-	 mm_sound_handle_route_info route_info;
+	mm_sound_handle_route_info route_info;
 
 	mm_sound_device_in device_in_before = MM_SOUND_DEVICE_IN_NONE;
-	mm_sound_device_in device_in_after = MM_SOUND_DEVICE_IN_NONE;
 	mm_sound_device_out device_out_before = MM_SOUND_DEVICE_OUT_NONE;
-	mm_sound_device_out device_out_after = MM_SOUND_DEVICE_OUT_NONE;
 
 	if (p == NULL) {
 		debug_error("[CODEC WAV] param is null\n");

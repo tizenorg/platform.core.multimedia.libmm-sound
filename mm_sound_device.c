@@ -28,6 +28,7 @@
 
 #include "include/mm_sound.h"
 #include "include/mm_sound_device.h"
+#include "include/mm_sound_client.h"
 
 #define VOLUME_TYPE_LEN 64
 
@@ -189,7 +190,6 @@ int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 {
 	int ret = MM_ERROR_NONE;
 	mm_sound_device_list_t *device_list_t = NULL;
-	mm_sound_device_t *device_h = NULL;
 	GList *node = NULL;
 	if (!device_list || !device) {
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -219,7 +219,6 @@ int mm_sound_get_prev_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 {
 	int ret = MM_ERROR_NONE;
 	mm_sound_device_list_t *device_list_t = NULL;
-	mm_sound_device_t *device_h = NULL;
 	GList *node = NULL;
 	if (!device_list || !device) {
 		return MM_ERROR_INVALID_ARGUMENT;

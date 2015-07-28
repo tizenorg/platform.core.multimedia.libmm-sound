@@ -28,6 +28,7 @@
 #include <sys/msg.h>
 #include <assert.h>
 #include <errno.h>
+#include <stdio.h>
 
 #include <mm_error.h>
 #include <mm_debug.h>
@@ -68,7 +69,7 @@ typedef struct _mm_sound_handle_t {
 
     int period; /* open api retrun value.*/
 
-    int stream_idx;
+    unsigned int stream_idx;
     int source_type;
 } mm_sound_handle_t;
 
@@ -211,15 +212,13 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
     pa_channel_map maps;
     pa_buffer_attr attr;
 
-    int vol_conf_type, vol_conf_gain;
+    int vol_conf_type;
     int prop_vol_type, prop_gain_type;
 
     int err = MM_ERROR_SOUND_INTERNAL;
     int period_time = PA_SIMPLE_PERIOD_TIME_FOR_MID_LATENCY_MSEC;
     int samples_per_period = PA_SIMPLE_SAMPLES_PER_PERIOD_DEFAULT;
     int periods_per_buffer = PA_SIMPLE_PERIODS_PER_BUFFER_DEFAULT;
-
-    const char *prop_policy = NULL;
 
     unsigned long latency = 0;
     int handle_mode = mode;
@@ -896,6 +895,7 @@ int mm_sound_pa_get_volume_level(int handle, const int type, int* level)
 
     pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
 
+    return MM_ERROR_NONE;
 }
 
 EXPORT_API
@@ -923,6 +923,8 @@ int mm_sound_pa_set_volume_level(int handle, const int type, int level)
         pa_operation_unref(o);
 
     pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
+
+    return MM_ERROR_NONE;
 }
 
 EXPORT_API
@@ -959,6 +961,8 @@ int mm_sound_pa_get_mute(int handle, const int type, int direction, int* mute)
         pa_operation_unref(o);
 
     pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
+
+    return MM_ERROR_NONE;
 }
 
 EXPORT_API
@@ -987,6 +991,7 @@ int mm_sound_pa_set_mute(int handle, const int type, int direction, int mute)
 
     pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
 
+    return MM_ERROR_NONE;
 }
 
 EXPORT_API

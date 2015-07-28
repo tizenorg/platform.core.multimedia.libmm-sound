@@ -1010,7 +1010,6 @@ _mm_get_CurIndex(TONE _TONE, int *CurArrayPlayCnt, int *CurIndex)
 
 static void _running_tone(void *param)
 {
-	int result = MM_ERROR_NONE;
 	char *ptoneBuf = NULL;
 	char filename[100];
 

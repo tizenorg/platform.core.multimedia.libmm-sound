@@ -179,8 +179,8 @@ static int _play_keytone(const char *filename, int volume_config)
 	int fd = -1;
 	ipc_t data = {{0,},{0,},{0,}};
 	int ret = MM_ERROR_NONE;
-	char *role = NULL;
-	char *vol_gain_type = NULL;
+	const char *role = NULL;
+	const char *vol_gain_type = NULL;
 
 	debug_msg("filepath=[%s], volume_config=[0x%x]\n", filename, volume_config);
 
@@ -303,10 +303,6 @@ int MMSoundPlugRunKeytoneControlRun(void)
 	int fd = -1;
 	ipc_type data;
 	int size = 0;
-	mmsound_codec_info_t info = {0,};
-	MMSourceType source = {0,};
-
-	buf_param_t buf_param = {NULL, NULL};
 
 	debug_enter("\n");
 
@@ -341,7 +337,6 @@ int MMSoundPlugRunKeytoneControlRun(void)
 	}
 	/* While loop is always on */
 	stop_flag = MMSOUND_TRUE;
-	source.ptr = NULL;
 
 	debug_msg("Start IPC with pipe\n");
 	size = sizeof(ipc_type);

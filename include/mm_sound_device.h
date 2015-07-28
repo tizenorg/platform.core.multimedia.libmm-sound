@@ -34,8 +34,8 @@
 
 #ifdef __cplusplus
 	extern "C" {
-#endif
 
+#endif
 #define MAX_DEVICE_NAME_NUM 256
 #define MAX_DEVICE_TYPE_STR_LEN 30
 typedef struct {
