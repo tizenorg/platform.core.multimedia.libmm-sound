@@ -49,7 +49,7 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 int mm_sound_client_dbus_unset_focus_watch_callback(int id);
 #endif
 
-int mm_sound_client_dbus_add_test_callback(mm_sound_test_cb func, void* user_data);
+int mm_sound_client_dbus_add_test_callback(unsigned int *id, mm_sound_test_cb func, void* user_data);
 int mm_sound_client_dbus_remove_test_callback(void);
 int mm_sound_client_dbus_test(int a, int b, int* get);
 

@@ -2160,7 +2160,7 @@ int mm_sound_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *
 
 typedef void (*mm_sound_test_cb) (int a, void *user_data);
 int mm_sound_test(int a, int b, int* get);
-int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data);
+int mm_sound_add_test_callback(unsigned int *id, mm_sound_test_cb func, void *user_data);
 int mm_sound_remove_test_callback(void);
 
 void mm_sound_convert_volume_type_to_stream_type(int volume_type, char *stream_type);
