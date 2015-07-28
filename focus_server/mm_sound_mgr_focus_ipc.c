@@ -45,7 +45,7 @@
 
 #ifdef SUPPORT_CONTAINER
 // method + add callback
-int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, char* stream_type, const char* container_name, int container_pid)
+int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type, const char* container_name, int container_pid)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
@@ -62,7 +62,7 @@ int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, char*
 	return ret;
 }
 #else
-int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, char* stream_type)
+int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;

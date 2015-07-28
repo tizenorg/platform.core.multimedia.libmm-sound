@@ -354,7 +354,7 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 	}
 
 	if (is_focus_registered)
-		param->skip_session == true;
+		param->skip_session = true;
 
 	if (param->skip_session == false) {
 		if(MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options))
