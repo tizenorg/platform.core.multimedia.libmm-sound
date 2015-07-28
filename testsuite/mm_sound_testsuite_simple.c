@@ -434,6 +434,7 @@ static void interpret (char *cmd)
 	int value = 0;
 	static int handle = -1;
 	MMSoundPlayParam soundparam = {0,};
+	unsigned int subs_id = 0;
 
 	switch (g_menu_state)
 	{
@@ -681,11 +682,11 @@ static void interpret (char *cmd)
 			    int user_data = 3;
 			    g_print("dbus method test add callback\n");
 			    g_print("my testsuite pid : %u  tid : %u\n", getpid(), pthread_self());
-			    ret = mm_sound_add_test_callback(mm_sound_test_cb1, (void *)user_data);
+			    ret = mm_sound_add_test_callback(&subs_id, mm_sound_test_cb1, (void *)user_data);
 			    if (ret) {
 				g_print("failed to mm_sound_add_test_callback(), ret[0x%x]\n", ret);
 			    } else {
-				g_print("add test callback success\n");
+				g_print("add test callback success, return id = %d \n", subs_id);
 			    }
 			} else if (strcmp(cmd, "dbus-r") == 0) {
 			    int ret = 0;

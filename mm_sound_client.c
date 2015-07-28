@@ -714,13 +714,13 @@ int mm_sound_client_unset_focus_watch_callback(int id)
 #endif
 
 
-int mm_sound_client_add_test_callback(mm_sound_test_cb func, void* user_data)
+int mm_sound_client_add_test_callback(unsigned int *id, mm_sound_test_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_add_test_callback(func, user_data);
+	ret = mm_sound_client_dbus_add_test_callback(id, func, user_data);
 
 	debug_fleave();
 	return ret;

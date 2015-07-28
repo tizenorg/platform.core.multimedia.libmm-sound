@@ -68,7 +68,7 @@ int mm_sound_client_is_bt_a2dp_on (bool *connected, char** bt_name);
 int mm_sound_client_set_active_route_auto(void);
 int mm_sound_client_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
-int mm_sound_client_add_test_callback(mm_sound_test_cb func, void* user_data);
+int mm_sound_client_add_test_callback(unsigned int *id, mm_sound_test_cb func, void* user_data);
 int mm_sound_client_remove_test_callback(void);
 int mm_sound_client_test(int a, int b, int* get);
 
