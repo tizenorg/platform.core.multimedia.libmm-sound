@@ -20,6 +20,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "include/mm_sound_mgr_focus.h"
 #include "../include/mm_sound_common.h"
@@ -32,6 +33,7 @@
 #include <fcntl.h>
 
 #include "include/mm_sound_mgr_focus_ipc.h"
+#include "include/mm_sound_mgr_focus_dbus.h"
 #include "../include/mm_sound_utils.h"
 #include <sys/time.h>
 #include <sys/stat.h>
@@ -104,6 +106,7 @@ static container_info_t* __get_container_info(int instance_id)
 			return &node->container;
 		}
 	}
+	return NULL;
 }
 #endif /* SUPPORT_CONTAINER */
 
@@ -114,7 +117,10 @@ static char* __get_focus_pipe_path(int instance_id, int handle, const char* post
 
 #ifdef SUPPORT_CONTAINER
 	container_info_t* container_info = __get_container_info(instance_id);
-
+	if (!container_info) {
+		debug_error ("__get_container_info failed");
+		return NULL;
+	}
 	if (instance_id == container_info->pid) {
 		debug_error ("This might be in the HOST(%s)[%d], let's form normal path",
 					container_info->name, instance_id);
@@ -185,7 +191,7 @@ static int _mm_sound_mgr_focus_get_priority_from_stream_type(int *priority, cons
 }
 
 static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_command_e command,
-												focus_node_t *my_node, _mm_sound_mgr_focus_param_t *param)
+												focus_node_t *my_node, const _mm_sound_mgr_focus_param_t *param)
 {
 	char *filename = NULL;
 	char *filename2 = NULL;
@@ -201,9 +207,6 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 
 	GList *list = NULL;
 	focus_node_t *node = NULL;
-
-	int i = 0;
-
 	focus_cb_data cb_data;
 
 	debug_fenter();
@@ -338,7 +341,7 @@ fail:
 	return -1;
 }
 
-int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victim_node, _mm_sound_mgr_focus_param_t *assaulter_param, const char *assaulter_stream_type)
+int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victim_node, const _mm_sound_mgr_focus_param_t *assaulter_param, const char *assaulter_stream_type)
 {
 	char *filename = NULL;
 	char *filename2 = NULL;
@@ -487,7 +490,7 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	}
 	if(ret == victim_node->handle_id) {
 		/* return from client is success, ret will be its handle_id */
-		victim_node->status = (command == FOCUS_COMMAND_RELEASE) ? (victim_node->status &= ~(cb_data.type)) : (victim_node->status |= cb_data.type);
+		victim_node->status = (command == FOCUS_COMMAND_RELEASE) ? (victim_node->status & ~(cb_data.type)) : (victim_node->status | cb_data.type);
 	} else {
 		victim_node->status = FOCUS_STATUS_DEACTIVATED;
 	}
@@ -575,7 +578,7 @@ static void _mm_sound_mgr_focus_fill_info_from_msg (focus_node_t *node, const _m
 }
 
 #ifdef SUPPORT_CONTAINER
-void _mm_sound_mgr_focus_update_container_data(int pid,int handle, const char* container_name, int container_pid)
+void mm_sound_mgr_focus_update_container_data(int pid,int handle, const char* container_name, int container_pid)
 {
 	__set_container_data(pid, handle, container_name, container_pid);
 	//__temp_print_list(NULL);
@@ -795,7 +798,7 @@ int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param
 			if (my_node->status == FOCUS_STATUS_DEACTIVATED) {
 				ret = MM_ERROR_SOUND_INVALID_STATE;
 				goto FINISH;
-			} else if ((my_node->status != FOCUS_STATUS_ACTIVATED_BOTH) && (my_node->status != param->request_type)) {
+			} else if ((my_node->status != FOCUS_STATUS_ACTIVATED_BOTH) && (my_node->status != (focus_status_e)param->request_type)) {
 				ret = MM_ERROR_SOUND_INVALID_STATE;
 				goto FINISH;
 			}

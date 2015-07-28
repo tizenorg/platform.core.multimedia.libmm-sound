@@ -43,6 +43,7 @@
 
 #include "../include/mm_sound_common.h"
 #include "../include/mm_sound_utils.h"
+#include "include/mm_sound_mgr_focus.h"
 #include "include/mm_sound_mgr_focus_ipc.h"
 #include "include/mm_sound_mgr_focus_dbus.h"
 
@@ -199,8 +200,6 @@ static int getOption(int argc, char **argv, server_arg *arg)
 //__attribute__ ((destructor))
 static void _exit_handler(int sig)
 {
-	int ret = MM_ERROR_NONE;
-
 	switch(sig)
 	{
 	case SIGINT:
