@@ -34,9 +34,9 @@ typedef struct container_info
 
 //int __mm_sound_mgr_ipc_create_focus_node(mm_ipc_msg_t *msg);
 #ifdef SUPPORT_CONTAINER
-int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, char* stream_type ,const char* container_name, int container_pid);
+int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type ,const char* container_name, int container_pid);
 #else
-int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, char* stream_type);
+int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type);
 #endif
 //int __mm_sound_mgr_ipc_destroy_focus_node(mm_ipc_msg_t *msg);
 int __mm_sound_mgr_focus_ipc_unregister_focus(int pid, int handle_id);

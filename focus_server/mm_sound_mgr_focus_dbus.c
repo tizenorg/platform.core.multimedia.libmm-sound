@@ -204,48 +204,6 @@ static const char* _convert_error_code(int err_code)
 	return "org.tizen.multimedia.common.Unknown";
 }
 
-
-static int mm_sound_mgr_focus_dbus_send_signal(int signal_type, GVariant *parameter)
-{
-	int ret = MM_ERROR_NONE;
-	GDBusConnection *conn = NULL;
-	GError* err = NULL;
-	gboolean emit_success = FALSE;
-
-	if (signal_type < 0 || signal_type >= SIGNAL_MAX || !parameter) {
-		debug_error("Invalid Argument");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	debug_log("Signal Emit : %s", signals[signal_type].info.name);
-
-	if (!conn_g) {
-		conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
-		if (!conn && err) {
-			debug_error ("g_bus_get_sync() error (%s) ", err->message);
-			g_error_free (err);
-			return MM_ERROR_SOUND_INTERNAL;
-		}
-		conn_g = conn;
-	}
-/*
-	if (!g_variant_is_of_type(parameter, G_VARIANT_TYPE(signals[signal_type].info.argument))) {
-		debug_error("Invalid Signal Parameter");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-	*/
-
-	emit_success = g_dbus_connection_emit_signal(conn_g, NULL, OBJECT_FOCUS_SERVER, INTERFACE_FOCUS_SERVER,
-												signals[signal_type].info.name, parameter, &err);
-	if (!emit_success && err) {
-		debug_error("Emit signal (%s) failed, (%s)", signals[signal_type].info.name, err->message);
-		g_error_free(err);
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return ret;
-}
-
 static int _get_sender_pid(GDBusMethodInvocation* invocation)
 {
 	GVariant* value;
@@ -291,7 +249,7 @@ static void _method_call_return_error(GDBusMethodInvocation *invocation, int ret
 static void handle_method_register_focus(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
-	int pid = 0, handle_id = 0;
+	int handle_id = 0;
 	const char* stream_type = NULL;
 	GVariant *params = NULL;
 #ifdef SUPPORT_CONTAINER
@@ -300,6 +258,8 @@ static void handle_method_register_focus(GDBusMethodInvocation* invocation)
 #ifdef USE_SECURITY
 	GVariant* cookie_data;
 #endif /* USE_SECURITY */
+#else
+	int pid = 0;
 #endif /* SUPPORT_CONTAINER */
 
 
@@ -427,7 +387,7 @@ send_reply:
 static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
-	int pid = 0, handle_id = 0, focus_type = 0;
+	int handle_id = 0, focus_type = 0;
 	GVariant *params = NULL;
 #ifdef SUPPORT_CONTAINER
 	int container_pid = -1;
@@ -435,6 +395,8 @@ static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 #ifdef USE_SECURITY
 	GVariant* cookie_data;
 #endif /* USE_SECURITY */
+#else
+	int pid = 0;
 #endif /* SUPPORT_CONTAINER */
 
 	debug_fenter();
@@ -593,7 +555,6 @@ static void handle_signal(GDBusConnection  *connection,
 static void on_bus_acquired(GDBusConnection *connection, const gchar *name, gpointer user_data)
 {
 	guint reg_id;
-	guint subs_id;
 	debug_log("Bus Acquired (%s)", name);
 
 	conn_g = connection;
@@ -608,15 +569,6 @@ static void on_bus_acquired(GDBusConnection *connection, const gchar *name, gpoi
 		debug_error("Register object(%s) failed", OBJECT_FOCUS_SERVER);
 		return ;
 	}
-#if 0
-	subs_id = g_dbus_connection_signal_subscribe(connection, NULL, INTERFACE_ASM, "EmergentExit", OBJECT_ASM, \
-			 NULL, G_DBUS_SIGNAL_FLAGS_NONE, handle_signal, NULL, NULL );
-
-	if (!subs_id) {
-		debug_error ("g_dbus_connection_signal_subscribe() failed ");
-		return;
-	}
-#endif
 }
 
 static void on_name_acquired(GDBusConnection *connection, const gchar *name, gpointer user_data)
@@ -667,8 +619,6 @@ int __mm_sound_mgr_focus_dbus_get_stream_list(stream_list_t* stream_list)
 	GDBusConnection *conn = NULL;
 	GError *err = NULL;
 	int i = 0;
-
-	g_type_init();
 
 	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 	if (!conn && err) {
