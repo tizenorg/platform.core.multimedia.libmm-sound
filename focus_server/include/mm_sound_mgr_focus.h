@@ -89,6 +89,9 @@ int mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param
 int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param);
 int mm_sound_mgr_focus_set_watch_cb (const _mm_sound_mgr_focus_param_t *param);
 int mm_sound_mgr_focus_unset_watch_cb (const _mm_sound_mgr_focus_param_t *param);
+#ifdef SUPPORT_CONTAINER
+void mm_sound_mgr_focus_update_container_data(int pid,int handle, const char* container_name, int container_pid);
+#endif
 
 
 #endif /* __MM_SOUND_MGR_FOCUS_H__ */
