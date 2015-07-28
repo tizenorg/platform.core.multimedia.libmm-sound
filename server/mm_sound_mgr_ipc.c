@@ -89,7 +89,7 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 	param.volume_config = volume_config;
 	param.priority = priority;
 	mm_session_type = session_type;
-	param.param = client_pid;
+	param.param = (void*)client_pid;
 	param.source = source;
 	param.handle_route = handle_route;
 	param.enable_session = enable_session;
@@ -178,7 +178,7 @@ int _MMSoundMgrIpcClearFocus(int pid)
 	return MM_ERROR_NONE;
 }
 
-_MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
+int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index)
 {
 	mmsound_mgr_codec_param_t param = {0,};
@@ -205,7 +205,7 @@ _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 	param.repeat_count = repeat;
 	param.volume = volume;
 	param.priority = priority;
-	param.param = client_pid;
+	param.param = (void*)client_pid;
 	param.source = source;
 	param.handle_route = handle_route;
 	param.stream_index = stream_index;
@@ -245,7 +245,7 @@ int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 	param.volume = volume;
 	param.volume_config = volume_config;
 	param.priority = 0;
-	param.param = client_pid;
+	param.param = (void*)client_pid;
 	param.session_options = session_options;
 	param.enable_session = enable_session;
 	param.stream_index = stream_index;
@@ -309,7 +309,7 @@ int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume, int c
 	param.repeat_count = repeat;
 	param.volume = volume;
 	param.priority = 0;
-	param.param = client_pid;
+	param.param = (void*)client_pid;
 	param.stream_index = stream_index;
 	strncpy(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
 
@@ -334,12 +334,14 @@ int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume, int c
 int __mm_sound_mgr_ipc_set_sound_path_for_active_device(mm_sound_device_in _device_in, mm_sound_device_out _device_out)
 {
 	int ret = MM_ERROR_NONE;
+#if 0 /* FIXME */
 	mm_sound_device_in device_in = MM_SOUND_DEVICE_IN_NONE;
 	mm_sound_device_out device_out = MM_SOUND_DEVICE_OUT_NONE;
 
 	device_in = _device_in;
 	device_out = _device_out;
-//	ret = _mm_sound_mgr_device_set_sound_path_for_active_device(device_out, device_in);
+	ret = _mm_sound_mgr_device_set_sound_path_for_active_device(device_out, device_in);
+#endif
 
 	return ret;
 }

@@ -33,6 +33,7 @@
 
 #include "include/mm_sound_mgr_common.h"
 #include "include/mm_sound_mgr_codec.h"
+#include "include/mm_sound_mgr_ipc.h"
 #include "include/mm_sound_plugin_codec.h"
 #include "include/mm_sound_thread_pool.h"
 #include "include/mm_sound_pa_client.h"
@@ -66,9 +67,7 @@ static mmsound_codec_interface_t g_plugins[MM_SOUND_SUPPORTED_CODEC_NUM];
 static pthread_mutex_t g_slot_mutex;
 static pthread_mutex_t codec_wave_mutex;
 static int _MMSoundMgrCodecStopCallback(int param);
-static int _MMSoundMgrCodecFindKeytoneSlot(int *slotid);
 static int _MMSoundMgrCodecGetEmptySlot(int *slotid);
-static int _MMSoundMgrCodecFindLocaleSlot(int *slotid);
 static int _MMSoundMgrCodecRegisterInterface(MMSoundPluginType *plugin);
 
 #define STATUS_IDLE 0
@@ -180,7 +179,6 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 	mmsound_codec_info_t info;
 	mmsound_codec_param_t codec_param;
 	int err = MM_ERROR_NONE;
-	int errorcode = 0;
 	int need_focus_unregister = 0;
 
 #ifdef DEBUG_DETAIL
@@ -348,7 +346,6 @@ int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param
 	mmsound_codec_info_t info;
 	mmsound_codec_param_t codec_param;
 	int err = MM_ERROR_NONE;
-	int errorcode = 0;
 
 #ifdef DEBUG_DETAIL
 	debug_enter("\n");
@@ -437,7 +434,6 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 	mmsound_codec_info_t info;
 	mmsound_codec_param_t codec_param;
 	int err = MM_ERROR_NONE;
-	int errorcode = 0;
 	int need_focus_unregister = 0;
 
 #ifdef DEBUG_DETAIL
@@ -598,14 +594,13 @@ cleanup:
 	return err;
 }
 
-MMSoundMgrCodecPlayDtmfWithStreamInfo(int *slotid, const mmsound_mgr_codec_param_t *param)
+int MMSoundMgrCodecPlayDtmfWithStreamInfo(int *slotid, const mmsound_mgr_codec_param_t *param)
 {
 	int count = 0;
 	int *codec_type;
 	mmsound_codec_info_t info;
 	mmsound_codec_param_t codec_param;
 	int err = MM_ERROR_NONE;
-	int errorcode = 0;
 
 #ifdef DEBUG_DETAIL
 	debug_enter("\n");
@@ -756,15 +751,15 @@ int MMSoundMgrCodecClearFocus(int pid)
 						}
 						if(mm_sound_unregister_focus(g_slots[slotid].focus_handle) || err) {
 							debug_error("Focus clean up failed [0x%x]", err);
-							pthread_mutex_unlock(&g_slot_mutex);
-							return MM_ERROR_POLICY_INTERNAL;
+							err = MM_ERROR_POLICY_INTERNAL;
+							goto cleanup;
 						}
 					} else if (~(g_slots[slotid].session_options & MM_SESSION_OPTION_PAUSE_OTHERS)) {
 						err = mm_sound_unset_focus_watch_callback(g_slots[slotid].focus_wcb_id);
 						if (err) {
 							debug_error("mm_sound_unset_focus_watch_callback failed [0x%x]", err);
-							pthread_mutex_unlock(&g_slot_mutex);
-							return MM_ERROR_POLICY_INTERNAL;
+							err = MM_ERROR_POLICY_INTERNAL;
+							goto cleanup;
 						}
 					}
 				}
@@ -795,8 +790,6 @@ static int _MMSoundMgrCodecStopCallback(int param)
 	/*
 	 * Unregister FOCUS here
 	 */
-
-	int errorcode = 0;
 	debug_msg("[CODEC MGR] enable_session %d ",g_slots[param].enable_session);
 
 	if (g_slots[param].focus_handle || g_slots[param].focus_wcb_id) {

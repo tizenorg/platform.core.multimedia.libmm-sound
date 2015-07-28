@@ -65,7 +65,7 @@ static mm_sound_device_list_t g_device_list_t;
 static pthread_mutex_t g_device_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_id_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int g_focus_signal_handle = 0;
+guint g_focus_signal_handle = 0;
 
 int mm_sound_client_initialize(void)
 {
@@ -85,10 +85,10 @@ int mm_sound_client_finalize(void)
 
 	debug_fenter();
 
-	mm_sound_client_dbus_finalize();
+	ret = mm_sound_client_dbus_finalize();
 
 	debug_fleave();
-	return MM_ERROR_NONE;
+	return ret;
 }
 
 int mm_sound_client_is_route_available(mm_sound_route route, bool *is_available)
@@ -419,7 +419,7 @@ int mm_sound_client_play_sound_with_stream_info(MMSoundPlayParam *param, int *ha
 		goto failed;
 	}
 	if (param->callback) {
-		ret = mm_sound_client_dbus_add_play_sound_end_callback(param->callback, param->data, *handle);
+		ret = mm_sound_client_dbus_add_play_sound_end_callback(*handle, param->callback, param->data);
 		if (ret != MM_ERROR_NONE) {
 			debug_error("Add callback for play sound(%d) Failed", *handle);
 		}
@@ -499,7 +499,7 @@ int mm_sound_client_get_current_connected_device_list(int device_flags, mm_sound
 		return ret;
 	}
 
-	if((ret = mm_sound_client_dbus_get_current_connected_device_list(device_flags, &g_device_list_t))!=MM_ERROR_NONE){
+	if ((ret = mm_sound_client_dbus_get_current_connected_device_list(device_flags, &g_device_list_t.list)) != MM_ERROR_NONE) {
 		debug_error("[Client] failed to get current connected device list with dbus, ret[0x%x]", ret);
 		goto failed;
 	}
