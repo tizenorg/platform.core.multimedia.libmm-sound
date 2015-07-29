@@ -434,6 +434,7 @@ static void interpret (char *cmd)
 	int value = 0;
 	static int handle = -1;
 	MMSoundPlayParam soundparam = {0,};
+	unsigned int subs_id[5] = {0,};
 
 	switch (g_menu_state)
 	{
@@ -681,16 +682,16 @@ static void interpret (char *cmd)
 			    int user_data = 3;
 			    g_print("dbus method test add callback\n");
 			    g_print("my testsuite pid : %u  tid : %u\n", getpid(), pthread_self());
-			    ret = mm_sound_add_test_callback(mm_sound_test_cb1, (void *)user_data);
+			    ret = mm_sound_add_test_callback(&subs_id[0], mm_sound_test_cb1, (void *)user_data);
 			    if (ret) {
 				g_print("failed to mm_sound_add_test_callback(), ret[0x%x]\n", ret);
 			    } else {
-				g_print("add test callback success\n");
+				g_print("add test callback success, return id = %d \n", subs_id[0]);
 			    }
 			} else if (strcmp(cmd, "dbus-r") == 0) {
 			    int ret = 0;
 			    g_print("dbus method test remove callback\n");
-			    ret = mm_sound_remove_test_callback();
+			    ret = mm_sound_remove_test_callback(subs_id[0]);
 			    if (ret) {
 				g_print("failed to mm_sound_remove_test_callback(), ret[0x%x]\n", ret);
 			    } else {
@@ -1625,7 +1626,7 @@ static void interpret (char *cmd)
 			else if(flag_3 == '7') { device_flag_3 = MM_SOUND_DEVICE_STATE_ACTIVATED_FLAG; }
 			else if(flag_3 == '8') { device_flag_3 = MM_SOUND_DEVICE_ALL_FLAG; }
 
-			ret = mm_sound_add_device_connected_callback(device_flag_1|device_flag_2|device_flag_3, device_connected_cb, NULL);
+			ret = mm_sound_add_device_connected_callback(&subs_id[1], device_flag_1|device_flag_2|device_flag_3, device_connected_cb, NULL);
 			if (ret) {
 				g_print("failed to mm_sound_add_device_connected_callback(), ret[0x%x]\n", ret);
 			} else {
@@ -1635,7 +1636,7 @@ static void interpret (char *cmd)
 
 		else if(strncmp(cmd, "D", 1) ==0) {
 			int ret = 0;
-			ret = mm_sound_remove_device_connected_callback();
+			ret = mm_sound_remove_device_connected_callback(subs_id[1]);
 			if (ret) {
 				g_print("failed to mm_sound_remove_device_connected_callback(), ret[0x%x]\n", ret);
 			}
@@ -1692,7 +1693,7 @@ static void interpret (char *cmd)
 			else if(flag_3 == '7') { device_flag_3 = MM_SOUND_DEVICE_STATE_ACTIVATED_FLAG; }
 			else if(flag_3 == '8') { device_flag_3 = MM_SOUND_DEVICE_ALL_FLAG; }
 
-			ret = mm_sound_add_device_information_changed_callback(device_flag_1|device_flag_2|device_flag_3, device_info_changed_cb, NULL);
+			ret = mm_sound_add_device_information_changed_callback(&subs_id[2], device_flag_1|device_flag_2|device_flag_3, device_info_changed_cb, NULL);
 			if (ret) {
 				g_print("failed to mm_sound_add_device_information_changed_callback(), ret[0x%x]\n", ret);
 			} else {
@@ -1702,7 +1703,7 @@ static void interpret (char *cmd)
 
 		else if(strncmp(cmd, "W", 1) ==0) {
 			int ret = 0;
-			ret = mm_sound_remove_device_information_changed_callback();
+			ret = mm_sound_remove_device_information_changed_callback(subs_id[2]);
 			if (ret) {
 				g_print("failed to mm_sound_remove_device_information_changed_callback(), ret[0x%x]\n", ret);
 			}
@@ -1737,6 +1738,7 @@ void volume_change_callback(volume_type_t type, unsigned int volume, void *user_
 int main(int argc, char *argv[])
 {
 	int ret = 0;
+	int subs_id = 0;
 
 	stdin_channel = g_io_channel_unix_new(0);
 	g_io_add_watch(stdin_channel, G_IO_IN, (GIOFunc)input, NULL);
@@ -1752,7 +1754,7 @@ int main(int argc, char *argv[])
 	if(ret < 0) {
 		g_print("mm_sound_volume_get_value 0x%x\n", ret);
 	}
-	mm_sound_add_volume_changed_callback(volume_change_callback, (void*) &g_volume_type);
+	mm_sound_add_volume_changed_callback(&subs_id, volume_change_callback, (void*) &g_volume_type);
 
 	displaymenu();
 	g_main_loop_run (g_loop);
