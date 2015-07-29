@@ -46,14 +46,14 @@ int mm_sound_client_remove_active_device_changed_callback(const char *name);
 int mm_sound_client_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void* user_data);
 int mm_sound_client_remove_available_route_changed_callback(void);
 int mm_sound_client_set_volume_by_type(const int volume_type, const unsigned int volume_level);
-int mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data);
-int mm_sound_client_remove_volume_changed_callback(void);
+int mm_sound_client_add_volume_changed_callback(unsigned int *id, mm_sound_volume_changed_cb func, void* user_data);
+int mm_sound_client_remove_volume_changed_callback(unsigned int id);
 int mm_sound_client_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in);
 int mm_sound_client_get_current_connected_device_list(int device_flgas, mm_sound_device_list_t **device_list);
-int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data);
-int mm_sound_client_remove_device_connected_callback(void);
-int mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data);
-int mm_sound_client_remove_device_info_changed_callback(void);
+int mm_sound_client_add_device_connected_callback(unsigned int *id, int device_flags, mm_sound_device_connected_cb func, void* user_data);
+int mm_sound_client_remove_device_connected_callback(unsigned int id);
+int mm_sound_client_add_device_info_changed_callback(unsigned int *id, int device_flags, mm_sound_device_info_changed_cb func, void* user_data);
+int mm_sound_client_remove_device_info_changed_callback(unsigned int id);
 #ifdef USE_FOCUS
 int mm_sound_client_get_uniq_id(int *id);
 int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
@@ -68,8 +68,8 @@ int mm_sound_client_is_bt_a2dp_on (bool *connected, char** bt_name);
 int mm_sound_client_set_active_route_auto(void);
 int mm_sound_client_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
-int mm_sound_client_add_test_callback(mm_sound_test_cb func, void* user_data);
-int mm_sound_client_remove_test_callback(void);
+int mm_sound_client_add_test_callback(unsigned int *id, mm_sound_test_cb func, void* user_data);
+int mm_sound_client_remove_test_callback(unsigned int id);
 int mm_sound_client_test(int a, int b, int* get);
 
 #endif /* __MM_SOUND_CLIENT_H__ */
