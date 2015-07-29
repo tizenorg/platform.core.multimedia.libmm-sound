@@ -258,8 +258,6 @@ static int _init_dbus_keytone ()
 
 	debug_fenter ();
 
-	g_type_init();
-
 	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 	if (!conn && err) {
 		debug_error ("g_bus_get_sync() error (%s) ", err->message);
