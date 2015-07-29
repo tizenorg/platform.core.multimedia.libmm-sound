@@ -942,8 +942,6 @@ int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subsc
 	}
 	memset(subscribe_cb, 0, sizeof(subscribe_cb_t));
 
-	g_type_init();
-
 	g_dbus_conn_mmsound = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 	if (!g_dbus_conn_mmsound && err) {
 		debug_error ("g_bus_get_sync() error (%s) ", err->message);
