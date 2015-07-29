@@ -72,7 +72,6 @@ int mm_sound_client_initialize(void)
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	g_type_init();
 	mm_sound_client_dbus_initialize();
 
 	debug_fleave();
