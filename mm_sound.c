@@ -189,7 +189,7 @@ int mm_sound_volume_remove_callback(volume_type_t type)
 }
 
 EXPORT_API
-int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data)
+int mm_sound_add_volume_changed_callback(unsigned int *id, mm_sound_volume_changed_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -198,7 +198,7 @@ int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* 
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_add_volume_changed_callback(func, user_data);
+	ret = mm_sound_client_add_volume_changed_callback(id, func, user_data);
 	if (ret < 0) {
 		debug_error("Can not add volume changed callback, ret = %x\n", ret);
 	}
@@ -814,7 +814,7 @@ int mm_sound_test(int a, int b, int* getv)
 }
 
 EXPORT_API
-int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data)
+int mm_sound_add_test_callback(unsigned int *id, mm_sound_test_cb func, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -824,7 +824,7 @@ int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_add_test_callback(func, user_data);
+	ret = mm_sound_client_add_test_callback(id, func, user_data);
 	if (ret < 0) {
 		debug_error("Can not add test callback, ret = %x\n", ret);
 	}
