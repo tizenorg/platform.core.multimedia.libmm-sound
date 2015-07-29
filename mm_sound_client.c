@@ -516,48 +516,48 @@ failed:
 	return ret;
 }
 
-int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data)
+int mm_sound_client_add_device_connected_callback(unsigned int *id, int device_flags, mm_sound_device_connected_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_add_device_connected_callback(device_flags, func, user_data);
+	ret = mm_sound_client_dbus_add_device_connected_callback(id, device_flags, func, user_data);
 
 	debug_fleave();
 	return ret;
 
 }
 
-int mm_sound_client_remove_device_connected_callback(void)
+int mm_sound_client_remove_device_connected_callback(unsigned int id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_remove_device_connected_callback();
+	ret = mm_sound_client_dbus_remove_device_connected_callback(id);
 
 	debug_fleave();
 	return ret;
 }
 
-int mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data)
+int mm_sound_client_add_device_info_changed_callback(unsigned int *id, int device_flags, mm_sound_device_info_changed_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_add_device_info_changed_callback(device_flags, func, user_data);
+	ret = mm_sound_client_dbus_add_device_info_changed_callback(id, device_flags, func, user_data);
 
 	debug_fleave();
 	return ret;
 }
 
-int mm_sound_client_remove_device_info_changed_callback(void)
+int mm_sound_client_remove_device_info_changed_callback(unsigned int id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret =  mm_sound_client_dbus_remove_device_info_changed_callback();
+	ret =  mm_sound_client_dbus_remove_device_info_changed_callback(id);
 
 	debug_fleave();
 	return ret;
@@ -587,24 +587,24 @@ int mm_sound_client_set_volume_by_type(const int volume_type, const unsigned int
 	return ret;
 }
 
-int mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data)
+int mm_sound_client_add_volume_changed_callback(unsigned int *id, mm_sound_volume_changed_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_add_volume_changed_callback(func, user_data);
+	ret = mm_sound_client_dbus_add_volume_changed_callback(id, func, user_data);
 
 	debug_fleave();
 	return ret;
 }
 
-int mm_sound_client_remove_volume_changed_callback(void)
+int mm_sound_client_remove_volume_changed_callback(unsigned int id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_remove_volume_changed_callback();
+	ret = mm_sound_client_dbus_remove_volume_changed_callback(id);
 
 	debug_fleave();
 	return ret;
@@ -713,24 +713,24 @@ int mm_sound_client_unset_focus_watch_callback(int id)
 #endif
 
 
-int mm_sound_client_add_test_callback(mm_sound_test_cb func, void* user_data)
+int mm_sound_client_add_test_callback(unsigned int *id, mm_sound_test_cb func, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_add_test_callback(func, user_data);
+	ret = mm_sound_client_dbus_add_test_callback(id, func, user_data);
 
 	debug_fleave();
 	return ret;
 }
 
-int mm_sound_client_remove_test_callback(void)
+int mm_sound_client_remove_test_callback(unsigned int id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_remove_test_callback();
+	ret = mm_sound_client_dbus_remove_test_callback(id);
 
 	debug_fleave();
 	return ret;
