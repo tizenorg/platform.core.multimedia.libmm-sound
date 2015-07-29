@@ -77,7 +77,7 @@ typedef struct {
 	GPollFD* g_poll_fd;
 	GSource* focus_src;
 	bool is_used;
-	GMutex* focus_lock;
+	GMutex focus_lock;
 	mm_sound_focus_changed_cb focus_callback;
 	mm_sound_focus_changed_watch_cb watch_callback;
 	void* user_data;
@@ -1616,9 +1616,7 @@ static gboolean _focus_callback_handler(gpointer d)
 			return FALSE;
 		}
 
-		if (g_focus_sound_handle[focus_index].focus_lock) {
-			g_mutex_lock(g_focus_sound_handle[focus_index].focus_lock);
-		}
+		g_mutex_lock(&g_focus_sound_handle[focus_index].focus_lock);
 
 		tid = g_focus_sound_handle[focus_index].focus_tid;
 
@@ -1643,9 +1641,7 @@ static gboolean _focus_callback_handler(gpointer d)
 					strerror_r(errno, str_error, sizeof(str_error));
 					debug_error("[RETCB][Failed(May Server Close First)]tid(%d) fd(%d) %s errno=%d(%s)\n", tid, tmpfd, filename2, errno, str_error);
 					g_free(filename2);
-					if (g_focus_sound_handle[focus_index].focus_lock) {
-						g_mutex_unlock(g_focus_sound_handle[focus_index].focus_lock);
-					}
+					g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
 					return FALSE;
 				}
 				buf = cb_data.handle;
@@ -1656,10 +1652,7 @@ static gboolean _focus_callback_handler(gpointer d)
 #endif
 	}
 
-
-	if (g_focus_sound_handle[focus_index].focus_lock) {
-		g_mutex_unlock(g_focus_sound_handle[focus_index].focus_lock);
-	}
+	g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
 
 	return TRUE;
 }
@@ -1695,10 +1688,8 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 			return FALSE;
 		}
 
-		if (g_focus_sound_handle[focus_index].focus_lock) {
-			debug_error("lock focus_lock = %p",g_focus_sound_handle[focus_index].focus_lock);
-			g_mutex_lock(g_focus_sound_handle[focus_index].focus_lock);
-		}
+		debug_error("lock focus_lock = %p", &g_focus_sound_handle[focus_index].focus_lock);
+		g_mutex_lock(&g_focus_sound_handle[focus_index].focus_lock);
 
 		tid = g_focus_sound_handle[focus_index].focus_tid;
 
@@ -1706,9 +1697,7 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 
 		if (g_focus_sound_handle[focus_index].watch_callback == NULL) {
 			debug_msg("callback is null..");
-			if (g_focus_sound_handle[focus_index].focus_lock) {
-				g_mutex_unlock(g_focus_sound_handle[focus_index].focus_lock);
-			}
+			g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
 			return FALSE;
 		}
 
@@ -1728,9 +1717,7 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 				strerror_r(errno, str_error, sizeof(str_error));
 				debug_error("[RETCB][Failed(May Server Close First)]tid(%d) fd(%d) %s errno=%d(%s)\n", tid, tmpfd, filename2, errno, str_error);
 				g_free(filename2);
-				if (g_focus_sound_handle[focus_index].focus_lock) {
-					g_mutex_unlock(g_focus_sound_handle[focus_index].focus_lock);
-				}
+				g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
 				return FALSE;
 			}
 			buf = cb_data.handle;
@@ -1743,10 +1730,8 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 
 	}
 
-	if (g_focus_sound_handle[focus_index].focus_lock) {
-		debug_error("unlock focus_lock = %p",g_focus_sound_handle[focus_index].focus_lock);
-		g_mutex_unlock(g_focus_sound_handle[focus_index].focus_lock);
-	}
+	debug_error("unlock focus_lock = %p", &g_focus_sound_handle[focus_index].focus_lock);
+	g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
 
 	debug_fleave();
 
@@ -1866,11 +1851,7 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 
 	debug_fenter();
 
-	g_focus_sound_handle[index].focus_lock = g_mutex_new();
-	if (!g_focus_sound_handle[index].focus_lock) {
-		debug_error("failed to g_mutex_new() for index(%d)", index);
-		return false;
-	}
+	g_mutex_init(&g_focus_sound_handle[index].focus_lock);
 
 	/* 1. make GSource Object */
 	g_src_funcs = (GSourceFuncs *)g_malloc(sizeof(GSourceFuncs));
@@ -1928,10 +1909,7 @@ static bool _focus_remove_sound_callback(int index, gushort events)
 
 	debug_fenter();
 
-	if (g_focus_sound_handle[index].focus_lock) {
-		g_mutex_free(g_focus_sound_handle[index].focus_lock);
-		g_focus_sound_handle[index].focus_lock = NULL;
-	}
+	g_mutex_clear(&g_focus_sound_handle[index].focus_lock);
 
 	GSourceFuncs *g_src_funcs = g_focus_sound_handle[index].g_src_funcs;
 	GPollFD *g_poll_fd = g_focus_sound_handle[index].g_poll_fd;	/* store file descriptor */
@@ -1955,7 +1933,7 @@ init_handle:
 	if (g_focus_sound_handle[index].focus_src) {
 		g_source_destroy(g_focus_sound_handle[index].focus_src);
 		if (!g_source_is_destroyed (g_focus_sound_handle[index].focus_src)) {
-			debug_warning(" failed to g_source_destroy(), asm_src(0x%p)", g_focus_sound_handle[index].focus_src);
+			debug_warning(" failed to g_source_destroy(), focus_src(0x%p)", g_focus_sound_handle[index].focus_src);
 		}
 	}
 	debug_log(" g_free : g_src_funcs(%#X), g_poll_fd(%#X)", g_src_funcs, g_poll_fd);
@@ -1985,12 +1963,12 @@ static void _focus_add_callback(int index, bool is_for_watching)
 	debug_fenter();
 	if (!is_for_watching) {
 		if (!_focus_add_sound_callback(index, g_focus_sound_handle[index].focus_fd, (gushort)POLLIN | POLLPRI, _focus_callback_handler)) {
-			debug_error("failed to __ASM_add_sound_callback(asm_callback_handler)");
+			debug_error("failed to _focus_add_sound_callback()");
 			//return false;
 		}
 	} else { // need to check if it's necessary
 		if (!_focus_add_sound_callback(index, g_focus_sound_handle[index].focus_fd, (gushort)POLLIN | POLLPRI, _focus_watch_callback_handler)) {
-			debug_error("failed to __ASM_add_sound_callback(watch_callback_handler)");
+			debug_error("failed to _focus_add_sound_callback()");
 			//return false;
 		}
 	}
@@ -2080,7 +2058,7 @@ int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_soun
 			GMainContext* focus_context = g_main_context_new ();
 			g_focus_loop = g_main_loop_new (focus_context, FALSE);
 			g_main_context_unref(focus_context);
-			g_focus_thread = g_thread_create(_focus_thread_func, NULL, TRUE, NULL);
+			g_focus_thread = g_thread_new("focus-register-thread", _focus_thread_func, NULL);
 			if (g_focus_thread == NULL) {
 				debug_error ("could not create thread..");
 				g_main_loop_unref(g_focus_loop);
@@ -2124,15 +2102,15 @@ int mm_sound_client_dbus_unregister_focus(int id)
 	instance = getpid();
 	index = _focus_find_index_by_handle(id);
 
-	if (g_focus_sound_handle[index].focus_lock) {
-		if (!g_mutex_trylock(g_focus_sound_handle[index].focus_lock)) {
-			debug_warning("maybe focus_callback is being called, try one more time..");
-			usleep(2500000); // 2.5 sec
-			if (g_mutex_trylock(g_focus_sound_handle[index].focus_lock)) {
-				debug_msg("finally got asm_lock");
-			}
+
+	if (!g_mutex_trylock(&g_focus_sound_handle[index].focus_lock)) {
+		debug_warning("maybe focus_callback is being called, try one more time..");
+		usleep(2500000); // 2.5 sec
+		if (g_mutex_trylock(&g_focus_sound_handle[index].focus_lock)) {
+			debug_msg("finally got focus_lock");
 		}
 	}
+
 
 	params = g_variant_new("(ii)", instance, id);
 	if (params) {
@@ -2155,9 +2133,7 @@ int mm_sound_client_dbus_unregister_focus(int id)
 
 cleanup:
 	//pthread_mutex_unlock(&g_thread_mutex2);
-	if (g_focus_sound_handle[index].focus_lock) {
-		g_mutex_unlock(g_focus_sound_handle[index].focus_lock);
-	}
+	g_mutex_unlock(&g_focus_sound_handle[index].focus_lock);
 
 	_focus_destroy_callback(index, false);
 	g_focus_sound_handle[index].focus_fd = 0;
@@ -2314,7 +2290,7 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 			GMainContext* focus_context = g_main_context_new ();
 			g_focus_loop = g_main_loop_new (focus_context, FALSE);
 			g_main_context_unref(focus_context);
-			g_focus_thread = g_thread_create(_focus_thread_func, NULL, TRUE, NULL);
+			g_focus_thread = g_thread_new("focus-watch-thread", _focus_thread_func, NULL);
 			if (g_focus_thread == NULL) {
 				debug_error ("could not create thread..");
 				g_main_loop_unref(g_focus_loop);
@@ -2364,9 +2340,7 @@ int mm_sound_client_dbus_unset_focus_watch_callback(int id)
 		return FALSE;
 	}
 
-	if (g_focus_sound_handle[index].focus_lock) {
-		g_mutex_lock(g_focus_sound_handle[index].focus_lock);
-	}
+	g_mutex_lock(&g_focus_sound_handle[index].focus_lock);
 
 	params = g_variant_new("(ii)", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	if (params) {
@@ -2388,9 +2362,8 @@ int mm_sound_client_dbus_unset_focus_watch_callback(int id)
 cleanup:
 	//pthread_mutex_unlock(&g_thread_mutex2);
 
-	if (g_focus_sound_handle[index].focus_lock) {
-		g_mutex_unlock(g_focus_sound_handle[index].focus_lock);
-	}
+	g_mutex_unlock(&g_focus_sound_handle[index].focus_lock);
+
 	_focus_destroy_callback(index, true);
 	g_focus_sound_handle[index].focus_fd = 0;
 	g_focus_sound_handle[index].focus_tid = 0;

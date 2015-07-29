@@ -668,8 +668,6 @@ int __mm_sound_mgr_focus_dbus_get_stream_list(stream_list_t* stream_list)
 	GError *err = NULL;
 	int i = 0;
 
-	g_type_init();
-
 	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 	if (!conn && err) {
 		LOGE("g_bus_get_sync() error (%s)", err->message);
