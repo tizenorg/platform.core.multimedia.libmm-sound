@@ -55,6 +55,8 @@ int mm_sound_client_remove_device_connected_callback(unsigned int subs_id);
 int mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data, unsigned int *subs_id);
 int mm_sound_client_remove_device_info_changed_callback(unsigned int subs_id);
 #ifdef USE_FOCUS
+void mm_sound_client_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback, void* user_data);
+int mm_sound_client_unset_session_interrupt_callback(void);
 int mm_sound_client_get_uniq_id(int *id);
 int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
 int mm_sound_client_unregister_focus(int id);

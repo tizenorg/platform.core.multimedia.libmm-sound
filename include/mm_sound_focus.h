@@ -57,6 +57,10 @@ typedef void (*mm_sound_focus_changed_watch_cb) (int id, mm_sound_focus_type_e f
 int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data, int *id);
 int mm_sound_unset_focus_watch_callback(int id);
 
+typedef void (*mm_sound_focus_session_interrupt_cb) (mm_sound_focus_state_e state, const char *reason_for_change, bool is_wcb, void *user_data);
+void mm_sound_focus_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback, void *user_data);
+int mm_sound_focus_unset_session_interrupt_callback(void);
+
 
 #ifdef __cplusplus
 }
