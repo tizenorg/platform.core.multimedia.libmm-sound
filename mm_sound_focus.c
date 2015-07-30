@@ -27,6 +27,7 @@
 #include <mm_debug.h>
 
 #include "include/mm_sound.h"
+#include "include/mm_sound_client.h"
 #include "include/mm_sound_focus.h"
 #include "focus_server/include/mm_sound_mgr_focus.h"
 
