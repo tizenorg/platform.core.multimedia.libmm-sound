@@ -32,6 +32,38 @@
 #include "focus_server/include/mm_sound_mgr_focus.h"
 
 EXPORT_API
+int mm_sound_focus_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback, void *user_data)
+{
+	int ret = MM_ERROR_NONE;
+	debug_fenter();
+
+	if (!callback)
+		return MM_ERROR_INVALID_ARGUMENT;
+
+	ret = mm_sound_client_set_session_interrupt_callback (callback, user_data);
+
+	debug_fleave();
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_focus_unset_session_interrupt_callback(void)
+{
+	int ret = MM_ERROR_NONE;
+	debug_fenter();
+
+	ret = mm_sound_client_unset_session_interrupt_callback ();
+	if (ret) {
+		debug_error("Failed to mm_sound_client_unset_session_interrupt_callback(), ret[0x%x]\n", ret);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
+EXPORT_API
 int mm_sound_focus_get_id(int *id)
 {
 	int ret = MM_ERROR_NONE;
