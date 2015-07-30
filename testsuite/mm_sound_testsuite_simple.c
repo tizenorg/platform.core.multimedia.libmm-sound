@@ -320,14 +320,15 @@ gboolean timeout_quit_program(void* data)
 gboolean input (GIOChannel *channel)
 {
 	GError *err = NULL;
-	gsize read;
-	char buf[MAX_STRING_LEN + 3];
+	gsize read, term_pos;
+	char *buf = NULL;
 
-	g_io_channel_read_chars(channel, buf, MAX_STRING_LEN, &read, &err);
-	buf[read] = '\0';
-	g_strstrip(buf);
-
-	interpret (buf);
+	g_io_channel_read_line(channel, &buf, &read, &term_pos, &err);
+	if (read > 1) {
+		g_strstrip(buf);
+		interpret(buf);
+	}
+	g_free(buf);
 
 	return TRUE;
 }
