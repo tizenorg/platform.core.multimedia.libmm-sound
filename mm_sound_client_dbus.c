@@ -92,10 +92,15 @@ typedef struct {
 	char name [MM_SOUND_NAME_NUM];
 } focus_cb_data_lib;
 
+typedef struct {
+	bool is_registered;
+	mm_sound_focus_session_interrupt_cb user_cb;
+}focus_session_interrupt_info_t;
 
 GThread *g_focus_thread;
 GMainLoop *g_focus_loop;
 focus_sound_info_t g_focus_sound_handle[FOCUS_HANDLE_MAX];
+focus_session_interrupt_info_t g_focus_session_interrupt_info = {false, NULL};
 guint g_dbus_subs_ids[SIGNAL_MAX];
 guint g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MAX];
 
@@ -1628,6 +1633,10 @@ static gboolean _focus_callback_handler(gpointer d)
 			debug_error("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].focus_callback);
 			(g_focus_sound_handle[focus_index].focus_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
 			debug_error("[CALLBACK END]");
+			if(g_focus_session_interrupt_info.is_registered) {
+				debug_error("sending session interrupt callback(%p)",g_focus_session_interrupt_info.user_cb);
+				(g_focus_session_interrupt_info.user_cb)(cb_data.state, cb_data.stream_type, false);
+			}
 		}
 #ifdef CONFIG_ENABLE_RETCB
 
@@ -1704,6 +1713,10 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 		debug_msg("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].watch_callback);
 		(g_focus_sound_handle[focus_index].watch_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
 		debug_msg("[CALLBACK END]");
+		if(g_focus_session_interrupt_info.is_registered) {
+			debug_error("sending session interrupt callback(%p)",g_focus_session_interrupt_info.user_cb);
+			(g_focus_session_interrupt_info.user_cb)(cb_data.state, cb_data.stream_type, true);
+		}
 
 #ifdef CONFIG_ENABLE_RETCB
 
@@ -1999,6 +2012,34 @@ static void _focus_destroy_callback(int index, bool is_for_watching)
 	_focus_remove_callback(index);
 	_focus_close_callback(index, is_for_watching);
 	debug_fleave();
+}
+
+void mm_sound_client_dbus_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback)
+{
+	debug_fenter();
+
+	if (!g_focus_session_interrupt_info.is_registered)
+		g_focus_session_interrupt_info.is_registered = true;
+
+	g_focus_session_interrupt_info.user_cb = callback;
+
+	debug_enter();
+	return;
+}
+
+int mm_sound_client_dbus_unset_session_interrupt_callback(void)
+{
+	debug_fenter();
+	if (!g_focus_session_interrupt_info.is_registered) {
+		debug_error("no callback to unset");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	g_focus_session_interrupt_info.is_registered = false;
+	g_focus_session_interrupt_info.user_cb = NULL;
+
+	debug_enter();
+	return MM_ERROR_NONE;
 }
 
 int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
