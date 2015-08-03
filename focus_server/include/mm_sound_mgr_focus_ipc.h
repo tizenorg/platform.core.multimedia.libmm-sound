@@ -53,5 +53,8 @@ int __mm_sound_mgr_focus_ipc_watch_focus(int pid, int handle_id, int focus_type)
 //int __mm_sound_mgr_ipc_unset_focus_watch_cb(mm_ipc_msg_t *msg);
 int __mm_sound_mgr_focus_ipc_unwatch_focus(int pid, int handle_id);
 
+bool __mm_sound_mgr_focus_ipc_is_pid_registerd(int pid);
+
+
 #endif /* __MM_SOUND_MGR_FOCUS_IPC_H__ */
 

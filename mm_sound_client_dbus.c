@@ -159,6 +159,9 @@ const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_UNWATCH_FOCUS] = {
 		.name = "UnwatchFocus",
 	},
+	[METHOD_CALL_CHECK_FOCUS_PID] = {
+		.name = "CheckFocusPid",
+	},
 };
 
 const struct mm_sound_dbus_signal_info g_signals[SIGNAL_MAX] = {
@@ -2042,7 +2045,7 @@ int mm_sound_client_dbus_unset_session_interrupt_callback(void)
 	return MM_ERROR_NONE;
 }
 
-int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
+int mm_sound_client_dbus_register_focus(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 	int instance;
@@ -2056,7 +2059,7 @@ int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_soun
 
 //	pthread_mutex_lock(&g_thread_mutex2);
 
-	instance = getpid();
+	instance = pid;
 
 	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
 		if (g_focus_sound_handle[index].is_used == false) {
@@ -2410,6 +2413,42 @@ cleanup:
 	g_focus_sound_handle[index].focus_tid = 0;
 	g_focus_sound_handle[index].handle = 0;
 	g_focus_sound_handle[index].is_used = false;
+
+	if (result) {
+		g_variant_unref(result);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
+int mm_sound_client_dbus_check_focus_pid(int pid, bool *is_registerd)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant* params = NULL, *result = NULL;
+
+	debug_fenter();
+
+	params = g_variant_new("(i)", pid);
+	if (params) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_CHECK_FOCUS_PID, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus check focus pid failed");
+			goto cleanup;
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+	}
+
+	if (ret == MM_ERROR_NONE) {
+		g_variant_get(result, "(b)", is_registerd);
+		debug_msg("[Client] Success to check focus pid\n");
+	} else {
+		g_variant_get(result, "(i)", &ret);
+		debug_error("[Client] Error occurred : %d \n", ret);
+	}
+
+cleanup:
 
 	if (result) {
 		g_variant_unref(result);

@@ -278,6 +278,7 @@ static void displaymenu()
 		g_print("DS : signal subscribe for stream info\t");
 		g_print("DU : signal unsubscribe for stream info\n");
 		g_print("SS : Send signal for stream info\n");
+		g_print("CP : Check Focus pid\t");
 		g_print("GU : Get Focus id\n");
 		g_print("SF : Set Focus Callback\t");
 		g_print("UF : Unset Focus Callback\n");
@@ -488,6 +489,15 @@ static void interpret (char *cmd)
 					debug_log("mm_sound_focus_get_id() failed with 0x%x\n", ret);
 				else
 					debug_log("id : %d\n", id);
+			}
+
+			else if(strncmp(cmd, "CP", 2) ==0) {
+				bool is_registerd = false;
+				ret = mm_sound_check_focus_pid(getpid(), &is_registerd);
+				if(ret < 0)
+					debug_log("mm_sound_check_focus_pid() failed with 0x%x\n", ret);
+				else
+					debug_log("is_registered : %d\n", is_registerd);
 			}
 
 			else if(strncmp(cmd, "SF", 2) ==0) {

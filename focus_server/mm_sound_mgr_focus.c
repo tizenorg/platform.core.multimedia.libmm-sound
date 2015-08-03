@@ -585,6 +585,29 @@ void mm_sound_mgr_focus_update_container_data(int pid,int handle, const char* co
 }
 #endif
 
+bool mm_sound_mgr_focus_is_pid_registerd(int pid)
+{
+	GList *list = NULL;
+	focus_node_t *node = NULL;
+
+	for (list = g_focus_node_list; list != NULL; list = list->next) {
+		node = (focus_node_t *)list->data;
+#ifdef SUPPORT_CONTAINER
+		if (node->container.pid == pid) {
+			debug_log("[%d] focus is registered already", pid);
+			return true;
+		}	
+#else
+		if (node->pid == pid) {
+			debug_log("[%d] focus is registered already", pid);
+			return true;
+		}
+#endif
+	}
+	debug_log("[%d] focus is not registered", pid);
+	return false;
+}
+
 int mm_sound_mgr_focus_create_node (const _mm_sound_mgr_focus_param_t *param)
 {
 	int ret = MM_ERROR_NONE;
