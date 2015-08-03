@@ -49,6 +49,7 @@ int mm_sound_focus_get_id(int *id);
 
 typedef void (*mm_sound_focus_changed_cb) (int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data);
 int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data);
+int mm_sound_register_focus_with_pid(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data);
 int mm_sound_unregister_focus(int id);
 int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info);
 int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info);
@@ -56,6 +57,7 @@ int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char 
 typedef void (*mm_sound_focus_changed_watch_cb) (int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data);
 int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data, int *id);
 int mm_sound_unset_focus_watch_callback(int id);
+int mm_sound_check_focus_pid(int pid, bool* is_registerd);
 
 typedef void (*mm_sound_focus_session_interrupt_cb) (mm_sound_focus_state_e state, const char *reason_for_change, bool is_wcb);
 void mm_sound_focus_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback);

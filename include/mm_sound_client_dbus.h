@@ -45,12 +45,13 @@ int mm_sound_client_dbus_get_audio_path(mm_sound_device_in *device_in, mm_sound_
 #ifdef USE_FOCUS
 void mm_sound_client_dbus_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback);
 int mm_sound_client_dbus_unset_session_interrupt_callback(void);
-int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
+int mm_sound_client_dbus_register_focus(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
 int mm_sound_client_dbus_unregister_focus(int id);
 int mm_sound_client_dbus_acquire_focus(int id, mm_sound_focus_type_e type, const char *option);
 int mm_sound_client_dbus_release_focus(int id, mm_sound_focus_type_e type, const char *option);
 int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, void* user_data, int *id);
 int mm_sound_client_dbus_unset_focus_watch_callback(int id);
+int mm_sound_client_dbus_check_focus_pid(int pid, bool *is_registerd);
 #endif
 
 int mm_sound_client_dbus_add_test_callback(mm_sound_test_cb func, void* user_data);

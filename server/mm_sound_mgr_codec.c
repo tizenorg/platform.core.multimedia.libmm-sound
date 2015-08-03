@@ -242,7 +242,7 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 		if ((param->session_options & MM_SESSION_OPTION_PAUSE_OTHERS) || param->session_type == MM_SESSION_TYPE_ALARM || param->session_type == MM_SESSION_TYPE_NOTIFY || param->session_type == MM_SESSION_TYPE_EMERGENCY) {
 			debug_warning("session option is PAUSE_OTHERS -> acquire focus");
 			err = mm_sound_focus_get_id((int *)(&param->focus_handle));
-			err = mm_sound_register_focus(param->focus_handle, "media", sound_codec_focus_callback, (void*)*slotid);
+			err = mm_sound_register_focus_with_pid(param->focus_handle, (int)param->param, "media", sound_codec_focus_callback, (void*)*slotid);
 			if (err) {
 				debug_error("mm_sound_register_focus failed [0x%x]", err);
 				pthread_mutex_unlock(&g_slot_mutex);
@@ -498,7 +498,7 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 		if ((param->session_options & MM_SESSION_OPTION_PAUSE_OTHERS) || param->session_type == MM_SESSION_TYPE_ALARM || param->session_type == MM_SESSION_TYPE_NOTIFY || param->session_type == MM_SESSION_TYPE_EMERGENCY) {
 			debug_warning("session option is PAUSE_OTHERS -> acquire focus");
 			err = mm_sound_focus_get_id((int *)(&param->focus_handle));
-			err = mm_sound_register_focus(param->focus_handle, "media", sound_codec_focus_callback, (void*)*slotid);
+			err = mm_sound_register_focus_with_pid(param->focus_handle, (int)param->param, "media", sound_codec_focus_callback, (void*)*slotid);
 			if (err) {
 				debug_error("mm_sound_register_focus failed [0x%x]", err);
 				pthread_mutex_unlock(&g_slot_mutex);
