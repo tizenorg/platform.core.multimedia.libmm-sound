@@ -73,6 +73,10 @@
   "      <arg name='pid' type='i' direction='in'/>"
   "      <arg name='handle_id' type='i' direction='in'/>"
   "    </method>"
+  "    <method name='CheckFocusPid'>"
+  "      <arg name='pid' type='i' direction='in'/>"
+  "      <arg name='is_registerd' type='b' direction='out'/>"
+  "    </method>"
   "  </interface>"
   "</node>";
 GDBusConnection* conn_g;
@@ -96,6 +100,7 @@ static void handle_method_acquire_focus(GDBusMethodInvocation* invocation);
 static void handle_method_release_focus(GDBusMethodInvocation* invocation);
 static void handle_method_watch_focus(GDBusMethodInvocation* invocation);
 static void handle_method_unwatch_focus(GDBusMethodInvocation* invocation);
+static void handle_method_check_focus_pid(GDBusMethodInvocation* invocation);
 
 /* Currently , Just using method's name and handler */
 /* TODO : generate introspection xml automatically, with these value include argument and reply */
@@ -137,6 +142,12 @@ struct mm_sound_mgr_focus_dbus_method methods[METHOD_CALL_MAX] = {
 			.name = "UnwatchFocus",
 		},
 		.handler = handle_method_unwatch_focus
+	},
+	[METHOD_CALL_CHECK_FOCUS_PID] = {
+		.info = {
+			.name = "CheckFocusPid",
+		},
+		.handler = handle_method_check_focus_pid
 	},
 };
 
@@ -463,6 +474,35 @@ send_reply:
 
 	debug_fleave();
 }
+
+static void handle_method_check_focus_pid(GDBusMethodInvocation* invocation)
+{
+	int ret = MM_ERROR_NONE;
+	int pid = 0;
+	bool is_registerd = false;
+	GVariant *params = NULL;
+
+	debug_fenter();
+
+	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
+		debug_error("Parameter for Method is NULL");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto send_reply;
+	}
+
+	g_variant_get(params, "(i)", &pid);
+	is_registerd = __mm_sound_mgr_focus_ipc_is_pid_registerd(pid);
+
+send_reply:
+	if (ret == MM_ERROR_NONE) {
+		_method_call_return_value(invocation, g_variant_new("(b)", is_registerd));
+	} else {
+		_method_call_return_error(invocation, ret);
+	}
+
+	debug_fleave();
+}
+
 
 /**********************************************************************************/
 static void handle_method_call(GDBusConnection *connection,

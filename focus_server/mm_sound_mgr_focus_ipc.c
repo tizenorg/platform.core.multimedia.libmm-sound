@@ -174,5 +174,10 @@ int __mm_sound_mgr_focus_ipc_unwatch_focus(int pid, int handle_id)
 
 	return ret;
 }
+
+bool __mm_sound_mgr_focus_ipc_is_pid_registerd(int pid)
+{
+	return mm_sound_mgr_focus_is_pid_registerd(pid);
+}
 #endif
 

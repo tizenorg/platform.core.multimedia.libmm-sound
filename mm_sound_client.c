@@ -276,7 +276,7 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 	ret = mm_sound_get_signal_value(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &is_focus_registered);
 	if (ret) {
 		debug_error("mm_sound_get_signal_value failed [0x%x]", ret);
-		return MM_ERROR_POLICY_INTERNAL;
+		return ret;
 	}
 
 	if (is_focus_registered)
@@ -349,7 +349,7 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 	ret = mm_sound_get_signal_value(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &is_focus_registered);
 	if (ret) {
 		debug_error("mm_sound_get_signal_value failed [0x%x]", ret);
-		return MM_ERROR_POLICY_INTERNAL;
+		return ret;
 	}
 
 	if (is_focus_registered)
@@ -645,12 +645,12 @@ int mm_sound_client_get_uniq_id(int *id)
 	return ret;
 }
 
-int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
+int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_register_focus(id, stream_type, callback, user_data);
+	ret = mm_sound_client_dbus_register_focus(id, pid, stream_type, callback, user_data);
 
 	debug_fleave();
 	return ret;
@@ -710,6 +710,18 @@ int mm_sound_client_unset_focus_watch_callback(int id)
 	debug_fleave();
 	return ret;
 }
+
+int mm_sound_client_check_focus_pid(int pid, bool* is_registerd)
+{
+	int ret = MM_ERROR_NONE;
+	debug_fenter();
+
+	ret = mm_sound_client_dbus_check_focus_pid(pid, is_registerd);
+
+	debug_fleave();
+	return ret;
+}
+
 #endif
 
 

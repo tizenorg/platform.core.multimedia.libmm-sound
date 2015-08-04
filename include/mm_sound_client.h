@@ -56,12 +56,13 @@ int mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_
 int mm_sound_client_remove_device_info_changed_callback(void);
 #ifdef USE_FOCUS
 int mm_sound_client_get_uniq_id(int *id);
-int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
+int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
 int mm_sound_client_unregister_focus(int id);
 int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option);
 int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char *option);
 int mm_sound_client_set_focus_watch_callback(mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, void* user_data, int *id);
 int mm_sound_client_unset_focus_watch_callback(int id);
+int mm_sound_client_check_focus_pid(int pid, bool* is_registerd);
 #endif
 
 int mm_sound_client_is_bt_a2dp_on (bool *connected, char** bt_name);
