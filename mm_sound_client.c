@@ -262,7 +262,6 @@ void _mm_sound_client_focus_signal_callback(mm_sound_signal_name_t signal, int v
 int mm_sound_client_play_tone(int number, int volume_config, double volume, int time, int *handle, bool enable_session)
 {
 	int ret = MM_ERROR_NONE;
-//	 int instance = -1; 	/* instance is unique to communicate with server : client message queue filter type */
 	int volume_type = MM_SOUND_VOLUME_CONFIG_TYPE(volume_config);
 	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = {0, };
 
@@ -272,6 +271,7 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 	int session_type = MM_SESSION_TYPE_MEDIA;
 	int session_options = 0;
 	int is_focus_registered = 0;
+	bool is_registerd = false;
 
 	ret = mm_sound_get_signal_value(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &is_focus_registered);
 	if (ret) {
@@ -279,7 +279,13 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 		return ret;
 	}
 
-	if (is_focus_registered)
+	ret = mm_sound_check_focus_pid(getpid(),&is_registerd);
+	if (ret) {
+		debug_error("check focus pid failed [0x%x]", ret);
+		return ret;
+	}
+
+	if (is_focus_registered || is_registerd)
 		enable_session = false;
 
 	if (enable_session)
@@ -297,12 +303,7 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 		}
 	}
 
-	 // instance = getpid();
-	 //debug_log("[Client] pid for client ::: [%d]\n", instance);
-
-	 /* Send msg */
-	 debug_msg("[Client] Input number : %d\n", number);
-	 /* Send req memory */
+	debug_msg("[Client] Input number : %d\n", number);
 
 	mm_sound_convert_volume_type_to_stream_type(volume_type, stream_type);
 	ret = mm_sound_client_dbus_play_tone(number, time, volume, volume_config,
@@ -338,7 +339,7 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 	int session_type = MM_SESSION_TYPE_MEDIA;
 	int session_options = 0;
 	int is_focus_registered = 0;
-//	int instance = -1; 	/* instance is unique to communicate with server : client message queue filter type */
+	bool is_registerd = false;
 	int volume_type = MM_SOUND_VOLUME_CONFIG_TYPE(param->volume_config);
 	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = {0, };
 
@@ -352,7 +353,13 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 		return ret;
 	}
 
-	if (is_focus_registered)
+	ret = mm_sound_check_focus_pid(getpid(),&is_registerd);
+	if (ret) {
+		debug_error("check focus pid failed [0x%x]", ret);
+		return ret;
+	}
+
+	if (is_focus_registered || is_registerd)
 		param->skip_session = true;
 
 	if (param->skip_session == false) {
@@ -368,9 +375,6 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 			}
 		}
 	}
-
-//	instance = getpid();
-// 	debug_msg("[Client] pid for client ::: [%d]\n", instance);
 
 	/* Send msg */
 	if ((param->mem_ptr && param->mem_size))

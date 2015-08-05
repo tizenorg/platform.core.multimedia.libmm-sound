@@ -109,33 +109,6 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 			(int)param.param, param.source->type, param.source->ptr, param.keytone, param.handle_route, param.enable_session);
 			*/
 
-	//convert mm_session_type to asm_event_type
-	switch(mm_session_type)
-	{
-	case MM_SESSION_TYPE_MEDIA:
-		param.session_type = ASM_EVENT_MEDIA_MMSOUND;
-		break;
-	case MM_SESSION_TYPE_NOTIFY:
-		param.session_type = ASM_EVENT_NOTIFY;
-		break;
-	case MM_SESSION_TYPE_ALARM:
-		param.session_type = ASM_EVENT_ALARM;
-		break;
-	case MM_SESSION_TYPE_EMERGENCY:
-		param.session_type = ASM_EVENT_EMERGENCY;
-		break;
-	case MM_SESSION_TYPE_VIDEOCALL:
-		param.session_type = ASM_EVENT_VIDEOCALL;
-		break;
-	case MM_SESSION_TYPE_VOIP:
-		param.session_type = ASM_EVENT_VOIP;
-		break;
-	default:
-		debug_error("Unknown session type - use default shared type. %s %d\n", __FUNCTION__, __LINE__);
-		param.session_type = ASM_EVENT_MEDIA_MMSOUND;
-		break;
-	}
-
 	ret = MMSoundMgrCodecPlay(codechandle, &param);
 	if (ret != MM_ERROR_NONE) {
 		debug_error("Will be closed a sources, codechandle : 0x%08X\n", *codechandle);
@@ -250,36 +223,6 @@ int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 	param.enable_session = enable_session;
 	param.stream_index = stream_index;
 	strncpy(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
-
-	//convert mm_session_type to asm_event_type
-	switch(session_type)
-	{
-		case MM_SESSION_TYPE_MEDIA:
-			param.session_type = ASM_EVENT_MEDIA_MMSOUND;
-			break;
-		case MM_SESSION_TYPE_NOTIFY:
-			param.session_type = ASM_EVENT_NOTIFY;
-			break;
-		case MM_SESSION_TYPE_ALARM:
-			param.session_type = ASM_EVENT_ALARM;
-			break;
-		case MM_SESSION_TYPE_EMERGENCY:
-			param.session_type = ASM_EVENT_EMERGENCY;
-			break;
-		case MM_SESSION_TYPE_CALL:
-			param.session_type = ASM_EVENT_CALL;
-			break;
-		case MM_SESSION_TYPE_VIDEOCALL:
-			param.session_type = ASM_EVENT_VIDEOCALL;
-			break;
-		case MM_SESSION_TYPE_VOIP:
-			param.session_type = ASM_EVENT_VOIP;
-			break;
-		default:
-			debug_error("Unknown session type - use default media type. %s %d\n", __FUNCTION__, __LINE__);
-			param.session_type = ASM_EVENT_MEDIA_MMSOUND;
-			break;
-	}
 
 	debug_msg("DTMF %d\n", param.tone);
 	debug_msg("Loop %d\n", param.repeat_count);
