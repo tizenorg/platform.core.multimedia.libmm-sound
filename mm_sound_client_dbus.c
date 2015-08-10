@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include <mm_error.h>
 #include <mm_debug.h>
@@ -49,6 +50,13 @@
 #define FOCUS_HANDLE_INIT_VAL -1
 
 #define CONFIG_ENABLE_RETCB
+
+struct sigaction FOCUS_int_old_action;
+struct sigaction FOCUS_abrt_old_action;
+struct sigaction FOCUS_segv_old_action;
+struct sigaction FOCUS_term_old_action;
+struct sigaction FOCUS_sys_old_action;
+struct sigaction FOCUS_xcpu_old_action;
 
 enum {
 	DBUS_TO_SOUND_SERVER,
@@ -158,6 +166,9 @@ const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	},
 	[METHOD_CALL_UNWATCH_FOCUS] = {
 		.name = "UnwatchFocus",
+	},
+	[METHOD_CALL_EMERGENT_EXIT_FOCUS] = {
+		.name = "EmergentExitFocus",
 	},
 };
 
@@ -376,6 +387,7 @@ static int _dbus_method_call(GDBusConnection* conn, const char* bus_name, const 
 	if (dbus_reply && !err) {
 		debug_log("Method Call '%s.%s' Success", intf, method);
 		*result = dbus_reply;
+
 	} else {
 		char *err_name = NULL, *err_msg = NULL;
 		debug_log("Method Call '%s.%s' Failed, %s", intf, method, err->message);
@@ -1626,6 +1638,8 @@ static gboolean _focus_callback_handler(gpointer d)
 			debug_error("Got and start CB : TID(%d), handle(%d), type(%d), state(%d,(DEACTIVATED(0)/ACTIVATED(1)), trigger(%s)", tid, cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type);
 			if (g_focus_sound_handle[focus_index].focus_callback== NULL) {
 					debug_error("callback is null..");
+					g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
+					return FALSE;
 			}
 			debug_error("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].focus_callback);
 			(g_focus_sound_handle[focus_index].focus_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
@@ -2418,6 +2432,82 @@ cleanup:
 	return ret;
 }
 
+void _focus_signal_handler(int signo)
+{
+	int ret = MM_ERROR_NONE;
+	int exit_pid = 0;
+	int index = 0;
+	GVariant* params = NULL, *result = NULL;
+	sigset_t old_mask, all_mask;
+
+	debug_error("Got signal : signo(%d)", signo);
+
+	/* signal block */
+
+	sigfillset(&all_mask);
+	sigprocmask(SIG_BLOCK, &all_mask, &old_mask);
+
+	exit_pid = getpid();
+
+	/* need implementation */
+	//send exit pid to focus server and focus server will clear focus or watch if necessary.
+
+	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
+		if (g_focus_sound_handle[index].is_used == true && g_focus_sound_handle[index].focus_tid == exit_pid) {
+			params = g_variant_new("(i)", exit_pid);
+			if (params) {
+				if ((ret =_dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_EMERGENT_EXIT_FOCUS, params, &result)) != MM_ERROR_NONE) {
+					debug_error("dbus unset watch focus failed");
+				}
+			} else {
+				debug_error("Construct Param for method call failed");
+			}
+			break;
+		}
+	}
+
+	if (ret == MM_ERROR_NONE) {
+		debug_msg("[Client] Success to emergnet_exit_focus\n");
+	} else {
+		g_variant_get(result, "(i)",  &ret);
+		debug_error("[Client] Error occurred : %d \n",ret);
+	}
+
+	sigprocmask(SIG_SETMASK, &old_mask, NULL);
+	/* signal unblock */
+
+	switch (signo) {
+	case SIGINT:
+		sigaction(SIGINT, &FOCUS_int_old_action, NULL);
+		raise( signo);
+		break;
+	case SIGABRT:
+		sigaction(SIGABRT, &FOCUS_abrt_old_action, NULL);
+		raise( signo);
+		break;
+	case SIGSEGV:
+		sigaction(SIGSEGV, &FOCUS_segv_old_action, NULL);
+		raise( signo);
+		break;
+	case SIGTERM:
+		sigaction(SIGTERM, &FOCUS_term_old_action, NULL);
+		raise( signo);
+		break;
+	case SIGSYS:
+		sigaction(SIGSYS, &FOCUS_sys_old_action, NULL);
+		raise( signo);
+		break;
+	case SIGXCPU:
+		sigaction(SIGXCPU, &FOCUS_xcpu_old_action, NULL);
+		raise( signo);
+		break;
+	default:
+		break;
+	}
+
+	debug_error("signal handling end");
+}
+
 #endif /* USE_FOCUS */
 /*------------------------------------------ FOCUS --------------------------------------------------*/
 
@@ -2426,7 +2516,26 @@ int mm_sound_client_dbus_initialize(void)
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
+
+#ifdef USE_FOCUS
+
+	struct sigaction FOCUS_action;
+	FOCUS_action.sa_handler = _focus_signal_handler;
+	FOCUS_action.sa_flags = SA_NOCLDSTOP;
+
+	sigemptyset(&FOCUS_action.sa_mask);
+
+	sigaction(SIGINT, &FOCUS_action, &FOCUS_int_old_action);
+	sigaction(SIGABRT, &FOCUS_action, &FOCUS_abrt_old_action);
+	sigaction(SIGSEGV, &FOCUS_action, &FOCUS_segv_old_action);
+	sigaction(SIGTERM, &FOCUS_action, &FOCUS_term_old_action);
+	sigaction(SIGSYS, &FOCUS_action, &FOCUS_sys_old_action);
+	sigaction(SIGXCPU, &FOCUS_action, &FOCUS_xcpu_old_action);
+
+#endif
+
 	debug_fleave();
+
 	return ret;
 }
 
@@ -2436,6 +2545,27 @@ int mm_sound_client_dbus_finalize(void)
 
 	debug_fenter();
 
+#ifdef USE_FOCUS
+
+	int index = 0;
+	int exit_pid = 0;
+	GVariant* params = NULL;
+
+	exit_pid = getpid();
+	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
+		if (g_focus_sound_handle[index].is_used == true && g_focus_sound_handle[index].focus_tid == exit_pid) {
+			params = g_variant_new("(i)", exit_pid);
+			if (params) {
+				if ((_dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_EMERGENT_EXIT_FOCUS, params, NULL)) != MM_ERROR_NONE) {
+					debug_error("dbus unset watch focus failed");
+				}
+			} else {
+				debug_error("Construct Param for method call failed");
+			}
+			break;
+		}
+	}
+
 	if (g_focus_thread) {
 		g_main_loop_quit(g_focus_loop);
 		g_thread_join(g_focus_thread);
@@ -2443,6 +2573,16 @@ int mm_sound_client_dbus_finalize(void)
 		g_main_loop_unref(g_focus_loop);
 		g_focus_thread = NULL;
 	}
+
+	/* is it necessary? */
+	sigaction(SIGINT, &FOCUS_int_old_action, NULL);
+	sigaction(SIGABRT, &FOCUS_abrt_old_action, NULL);
+	sigaction(SIGSEGV, &FOCUS_segv_old_action, NULL);
+	sigaction(SIGTERM, &FOCUS_term_old_action, NULL);
+	sigaction(SIGSYS, &FOCUS_sys_old_action, NULL);
+	sigaction(SIGXCPU, &FOCUS_xcpu_old_action, NULL);
+
+#endif
 
 	debug_fleave();
 

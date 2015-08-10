@@ -174,5 +174,18 @@ int __mm_sound_mgr_focus_ipc_unwatch_focus(int pid, int handle_id)
 
 	return ret;
 }
+
+int __mm_sound_mgr_focus_ipc_emergent_exit(int pid)
+{
+	_mm_sound_mgr_focus_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+	param.pid = pid;
+
+	ret = mm_sound_mgr_focus_emergent_exit(&param);
+
+	return ret;
+}
 #endif
 
