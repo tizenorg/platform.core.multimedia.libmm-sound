@@ -73,6 +73,9 @@
   "      <arg name='pid' type='i' direction='in'/>"
   "      <arg name='handle_id' type='i' direction='in'/>"
   "    </method>"
+  "    <method name='EmergentExitFocus'>"
+  "      <arg name='pid' type='i' direction='in'/>"
+  "    </method>"
   "  </interface>"
   "</node>";
 GDBusConnection* conn_g;
@@ -96,6 +99,7 @@ static void handle_method_acquire_focus(GDBusMethodInvocation* invocation);
 static void handle_method_release_focus(GDBusMethodInvocation* invocation);
 static void handle_method_watch_focus(GDBusMethodInvocation* invocation);
 static void handle_method_unwatch_focus(GDBusMethodInvocation* invocation);
+static void handle_method_emergent_exit_focus (GDBusMethodInvocation* invocation);
 
 /* Currently , Just using method's name and handler */
 /* TODO : generate introspection xml automatically, with these value include argument and reply */
@@ -137,6 +141,12 @@ struct mm_sound_mgr_focus_dbus_method methods[METHOD_CALL_MAX] = {
 			.name = "UnwatchFocus",
 		},
 		.handler = handle_method_unwatch_focus
+	},
+	[METHOD_CALL_EMERGENT_EXIT_FOCUS] = {
+		.info = {
+			.name = "EmergentExitFocus",
+		},
+		.handler = handle_method_emergent_exit_focus
 	},
 };
 
@@ -453,6 +463,34 @@ static void handle_method_unwatch_focus (GDBusMethodInvocation* invocation)
 
 	g_variant_get(params, "(ii)", &pid, &handle_id);
 	ret = __mm_sound_mgr_focus_ipc_unwatch_focus(_get_sender_pid(invocation), handle_id);
+
+send_reply:
+	if (ret == MM_ERROR_NONE) {
+		_method_call_return_value(invocation, g_variant_new("()"));
+	} else {
+		_method_call_return_error(invocation, ret);
+	}
+
+	debug_fleave();
+}
+
+static void handle_method_emergent_exit_focus (GDBusMethodInvocation* invocation)
+{
+	int ret = MM_ERROR_NONE;
+	int pid = 0;
+	GVariant *params = NULL;
+
+	debug_fenter();
+
+	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
+		debug_error("Parameter for Method is NULL");
+		goto send_reply;
+	}
+
+	g_variant_get(params, "(i)", &pid);
+	ret = __mm_sound_mgr_focus_ipc_emergent_exit(_get_sender_pid(invocation));
+	if(ret)
+		debug_error("__mm_sound_mgr_focus_ipc_emergent_exit faild : 0x%x", ret);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
