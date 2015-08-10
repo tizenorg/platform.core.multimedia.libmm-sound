@@ -31,6 +31,13 @@
 #include "include/mm_sound_focus.h"
 #include "focus_server/include/mm_sound_mgr_focus.h"
 
+struct sigaction FOCUS_int_old_action;
+struct sigaction FOCUS_abrt_old_action;
+struct sigaction FOCUS_segv_old_action;
+struct sigaction FOCUS_term_old_action;
+struct sigaction FOCUS_sys_old_action;
+struct sigaction FOCUS_xcpu_old_action;
+
 EXPORT_API
 int mm_sound_focus_get_id(int *id)
 {
@@ -180,4 +187,61 @@ int mm_sound_unset_focus_watch_callback(int id)
 	debug_fleave();
 
 	return ret;
+}
+
+void __FOCUS_signal_handler(int signo)
+{
+	int exit_pid = 0;
+	sigset_t old_mask, all_mask;
+
+	debug_error("Got signal : signo(%d)", signo);
+
+	/* signal block */
+
+	sigfillset(&all_mask);
+	sigprocmask(SIG_BLOCK, &all_mask, &old_mask);
+
+	exit_pid = getpid();
+
+	/* need implementation */
+	//send exit pid to focus server and focus server will clear focus or watch if necessary.
+}
+
+void __attribute__((constructor)) __FOCUS_init_module(void)
+{
+	struct sigaction FOCUS_action;
+	FOCUS_action.sa_handler = __FOCUS_signal_handler;
+	FOCUS_action.sa_flags = SA_NOCLDSTOP;
+
+	debug_fenter();
+
+	sigemptyset(&FOCUS_action.sa_mask);
+
+	sigaction(SIGINT, &FOCUS_action, &FOCUS_int_old_action);
+	sigaction(SIGABRT, &FOCUS_action, &FOCUS_abrt_old_action);
+	sigaction(SIGSEGV, &FOCUS_action, &FOCUS_segv_old_action);
+	sigaction(SIGTERM, &FOCUS_action, &FOCUS_term_old_action);
+	sigaction(SIGSYS, &FOCUS_action, &FOCUS_sys_old_action);
+	sigaction(SIGXCPU, &FOCUS_action, &FOCUS_xcpu_old_action);
+
+	debug_fleave();
+
+	
+}
+
+void __attribute__((destructor)) __FOCUS_fini_module(void)
+{
+
+	debug_fenter();
+
+	/* is it necessary? */
+	sigaction(SIGINT, &FOCUS_int_old_action, NULL);
+	sigaction(SIGABRT, &FOCUS_abrt_old_action, NULL);
+	sigaction(SIGSEGV, &FOCUS_segv_old_action, NULL);
+	sigaction(SIGTERM, &FOCUS_term_old_action, NULL);
+	sigaction(SIGSYS, &FOCUS_sys_old_action, NULL);
+	sigaction(SIGXCPU, &FOCUS_xcpu_old_action, NULL);
+
+	debug_fleaver();
+
 }
