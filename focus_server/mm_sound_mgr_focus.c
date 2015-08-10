@@ -930,6 +930,91 @@ FINISH:
 	return ret;
 }
 
+int mm_sound_mgr_focus_emergent_exit(const _mm_sound_mgr_focus_param_t *param)
+{
+	int ret = MM_ERROR_NONE;
+	GList *list = NULL;
+	GList *list_s =NULL;
+	focus_node_t *node = NULL;
+	focus_node_t *my_node = NULL;
+	int i;
+
+	debug_fenter();
+
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_focus_node_list_mutex, MM_ERROR_SOUND_INTERNAL);
+
+	/* Update list for dead process */
+	g_list_foreach (g_focus_node_list, (GFunc)_clear_focus_node_list_func, NULL);
+	
+	for (list = g_focus_node_list; list != NULL; list = list->next) {
+		node = (focus_node_t *)list->data;
+		if (node && (node->pid == param->pid)) {
+			if(node->is_for_watch) {
+				debug_log("clearing watch cb of pid(%d) handle(%d)", node->pid, node->handle_id);
+				g_focus_node_list = g_list_remove(g_focus_node_list, node);
+				g_free(node);
+			} else if (node->status == FOCUS_STATUS_DEACTIVATED) {
+				debug_log("clearing deactivated focus node of pid(%d) hande(%d)", node->pid, node->handle_id);
+				g_focus_node_list = g_list_remove(g_focus_node_list, node);
+				g_free(node);
+				/* update info of nodes that are lost their focus by the process exited */
+				for (list_s = g_focus_node_list; list_s != NULL; list_s = list_s->next) {
+					node = (focus_node_t *)list_s->data;
+					for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+						if (node && (node->taken_by_id[i].pid == param->pid)) {
+							node->taken_by_id[i].pid = 0;
+							node->taken_by_id[i].handle_id = 0;
+						}
+					}
+				}
+			} else { /* node that acquired focus */
+				bool need_to_trigger_watch_cb = true;
+				_mm_sound_mgr_focus_param_t param_s;
+				debug_log("clearing activated focus node of pid(%d) handle(%d)", node->pid, node->handle_id);
+
+				my_node = node;
+				memset(&param_s, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+				param_s.pid = my_node->pid;
+				param_s.handle_id = my_node->handle_id;
+				param_s.request_type = my_node->status;
+				for (list_s = g_focus_node_list; list_s != NULL; list_s = list_s->next) {
+					node = (focus_node_t *)list_s->data;
+					if (my_node == node || node->is_for_watch) {
+						/* skip */
+					} else {
+						for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+							if (my_node->status & (i+1)) {
+								if (node && (node->taken_by_id[i].pid == param_s.pid && node->taken_by_id[i].handle_id == param_s.handle_id)) {
+									/* do callback for resumption */
+									ret = _mm_sound_mgr_focus_do_callback(FOCUS_COMMAND_ACQUIRE, node, &param_s, my_node->stream_type);
+									if (ret) {
+										debug_error("Fail to _focus_do_callback for COMMAND ACQUIRE to node[%x], ret[0x%x]\n", node, ret);
+									}
+									if (!strncmp(my_node->stream_type, node->stream_type, MAX_STREAM_TYPE_LEN)) {
+										need_to_trigger_watch_cb = false;
+									}
+								}
+							}
+						}
+					}
+				}
+				if (need_to_trigger_watch_cb)
+						_mm_sound_mgr_focus_do_watch_callback((focus_type_e)param_s.request_type, FOCUS_COMMAND_RELEASE, my_node, &param_s);
+				g_focus_node_list = g_list_remove(g_focus_node_list, my_node);
+			}
+		}
+	}
+
+	_mm_sound_mgr_focus_list_dump();
+	_mm_sound_mgr_focus_watch_list_dump ();
+
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_focus_node_list_mutex);
+
+	debug_fleave();
+	return ret;
+
+}
+
 int MMSoundMgrFocusInit(void)
 {
 	int ret = MM_ERROR_NONE;
