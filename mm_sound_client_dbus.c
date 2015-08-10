@@ -50,6 +50,13 @@
 
 #define CONFIG_ENABLE_RETCB
 
+struct sigaction FOCUS_int_old_action;
+struct sigaction FOCUS_abrt_old_action;
+struct sigaction FOCUS_segv_old_action;
+struct sigaction FOCUS_term_old_action;
+struct sigaction FOCUS_sys_old_action;
+struct sigaction FOCUS_xcpu_old_action;
+
 enum {
 	DBUS_TO_SOUND_SERVER,
 	DBUS_TO_PULSE_MODULE_DEVICE_MANAGER,
@@ -2379,6 +2386,24 @@ cleanup:
 	return ret;
 }
 
+void _focus_signal_handler(int signo)
+{
+	int exit_pid = 0;
+	sigset_t old_mask, all_mask;
+
+	debug_error("Got signal : signo(%d)", signo);
+
+	/* signal block */
+
+	sigfillset(&all_mask);
+	sigprocmask(SIG_BLOCK, &all_mask, &old_mask);
+
+	exit_pid = getpid();
+
+	/* need implementation */
+	//send exit pid to focus server and focus server will clear focus or watch if necessary.
+}
+
 #endif /* USE_FOCUS */
 /*------------------------------------------ FOCUS --------------------------------------------------*/
 
@@ -2387,7 +2412,28 @@ int mm_sound_client_dbus_initialize(void)
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
+
+#ifdef USE_FOCUS
+
+	struct sigaction FOCUS_action;
+	FOCUS_action.sa_handler = _focus_signal_handler;
+	FOCUS_action.sa_flags = SA_NOCLDSTOP;
+
+
+
+	sigemptyset(&FOCUS_action.sa_mask);
+
+	sigaction(SIGINT, &FOCUS_action, &FOCUS_int_old_action);
+	sigaction(SIGABRT, &FOCUS_action, &FOCUS_abrt_old_action);
+	sigaction(SIGSEGV, &FOCUS_action, &FOCUS_segv_old_action);
+	sigaction(SIGTERM, &FOCUS_action, &FOCUS_term_old_action);
+	sigaction(SIGSYS, &FOCUS_action, &FOCUS_sys_old_action);
+	sigaction(SIGXCPU, &FOCUS_action, &FOCUS_xcpu_old_action);
+
+#endif
+
 	debug_fleave();
+
 	return ret;
 }
 
@@ -2397,6 +2443,8 @@ int mm_sound_client_dbus_finalize(void)
 
 	debug_fenter();
 
+#ifdef USE_FOCUS
+
 	if (g_focus_thread) {
 		g_main_loop_quit(g_focus_loop);
 		g_thread_join(g_focus_thread);
@@ -2404,6 +2452,16 @@ int mm_sound_client_dbus_finalize(void)
 		g_main_loop_unref(g_focus_loop);
 		g_focus_thread = NULL;
 	}
+
+	/* is it necessary? */
+	sigaction(SIGINT, &FOCUS_int_old_action, NULL);
+	sigaction(SIGABRT, &FOCUS_abrt_old_action, NULL);
+	sigaction(SIGSEGV, &FOCUS_segv_old_action, NULL);
+	sigaction(SIGTERM, &FOCUS_term_old_action, NULL);
+	sigaction(SIGSYS, &FOCUS_sys_old_action, NULL);
+	sigaction(SIGXCPU, &FOCUS_xcpu_old_action, NULL);
+
+#endif
 
 	debug_fleave();
 
