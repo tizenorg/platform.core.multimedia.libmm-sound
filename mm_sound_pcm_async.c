@@ -1345,13 +1345,14 @@ static int mm_sound_pa_open(mm_sound_pcm_async_t* handle, int is_capture, int po
             break;
         }
     }
+#if 0 /* no use anymore */
     pa_proplist_sets(proplist, PA_PROP_MEDIA_POLICY, prop_policy);
 
     if (priority) {
         debug_msg("Set HIGH priority [%d]", priority);
         pa_proplist_sets(proplist, PA_PROP_MEDIA_ROLE, "solo");
     }
-
+#endif
     /* ---------- create Stream ------------ */
     _pa_stream_create (handle, is_capture, ss, channel_map, proplist, callback, userdata);
     if (!handle->s) {
