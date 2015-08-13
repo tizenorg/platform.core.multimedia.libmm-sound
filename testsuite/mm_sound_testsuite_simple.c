@@ -49,7 +49,7 @@
 #include <audio-session-manager-types.h>
 
 #define POWERON_FILE	"/usr/share/feedback/sound/operation/power_on.wav"
-#define KEYTONE_FILE	"/opt/usr/share/settings/Previews/touch.wav"
+#define KEYTONE_FILE	"/usr/share/feedback/sound/operation/operation.wav"
 
 
 // For testsuite status

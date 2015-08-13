@@ -76,9 +76,10 @@ libmmfkeysound_la_SOURCES = mm_sound_keysound.c
 libmmfkeysound_la_CFLAGS = -I$(srcdir)/include \
 			$(MMCOMMON_CFLAGS) \
 			$(VCONF_CFLAGS) \
+			$(GIO_CFLAGS) \
 			-D_USE_INTERNAL_SOUND_PATH_
 
-libmmfkeysound_la_LIBADD = $(MMCOMMON_LIBS) $(VCONF_LIBS)
+libmmfkeysound_la_LIBADD = $(MMCOMMON_LIBS) $(VCONF_LIBS) $(GIO_LIBS)
 libmmfkeysound_la_CFLAGS += $(MMLOGSVR_CFLAGS) -DMMF_LOG_OWNER=0x020 -DMMF_DEBUG_PREFIX=\"MMF-SOUND\"
 libmmfkeysound_la_LIBADD += $(MMLOGSVR_LIBS)
 
