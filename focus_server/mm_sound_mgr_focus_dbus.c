@@ -40,6 +40,7 @@
   "      <arg name='pid' type='i' direction='in'/>"
   "      <arg name='handle_id' type='i' direction='in'/>"
   "      <arg name='stream_type' type='s' direction='in'/>"
+  "      <arg name='is_for_session' type='b' direction='in'/>"
   "    </method>"
   "    <method name='UnregisterFocus'>"
   "      <arg name='pid' type='i' direction='in'/>"
@@ -261,6 +262,7 @@ static void handle_method_register_focus(GDBusMethodInvocation* invocation)
 	int ret = MM_ERROR_NONE;
 	int handle_id = 0;
 	const char* stream_type = NULL;
+	gboolean is_for_session;
 	GVariant *params = NULL;
 #ifdef SUPPORT_CONTAINER
 	int container_pid = -1;
@@ -283,20 +285,20 @@ static void handle_method_register_focus(GDBusMethodInvocation* invocation)
 
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
-	g_variant_get(params, "(@ayiis)", &cookie_data, &container_pid, &handle_id, &stream_type);
+	g_variant_get(params, "(@ayiisb)", &cookie_data, &container_pid, &handle_id, &stream_type, &is_for_session);
 	container = _get_container_from_cookie(cookie_data);
-	ret = __mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, container, container_pid);
+	ret = __mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, is_for_session, container, container_pid);
 
 	if (container)
 		free(container);
 #else /* USE_SECURITY */
-	g_variant_get(params, "(siis)", &container, &container_pid, &handle_id, &stream_type);
-	ret = __mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, container, container_pid);
+	g_variant_get(params, "(siisb)", &container, &container_pid, &handle_id, &stream_type, &is_for_session);
+	ret = __mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, is_for_session, container, container_pid);
 
 #endif /* USE_SECURITY */
 #else /* SUPPORT_CONTAINER */
-	g_variant_get(params, "(iis)", &pid, &handle_id, &stream_type);
-	ret = __mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type);
+	g_variant_get(params, "(iisb)", &pid, &handle_id, &stream_type, &is_for_session);
+	ret = __mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, is_for_session);
 
 #endif /* SUPPORT_CONTAINER */
 
