@@ -58,7 +58,7 @@ int mm_sound_client_remove_device_info_changed_callback(unsigned int subs_id);
 int mm_sound_client_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback, void* user_data);
 int mm_sound_client_unset_session_interrupt_callback(void);
 int mm_sound_client_get_uniq_id(int *id);
-int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data);
+int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data);
 int mm_sound_client_unregister_focus(int id);
 int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option);
 int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char *option);
