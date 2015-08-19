@@ -45,7 +45,7 @@
 
 #ifdef SUPPORT_CONTAINER
 // method + add callback
-int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type, const char* container_name, int container_pid)
+int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type, bool is_for_session, const char* container_name, int container_pid)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
@@ -53,8 +53,8 @@ int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const
 	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
 	param.pid = client_pid;
 	param.handle_id = handle_id;
+	param.is_for_session = is_for_session;
 	memcpy(param.stream_type, stream_type, MAX_STREAM_TYPE_LEN);
-
 	ret = mm_sound_mgr_focus_create_node(&param);
 
 	mm_sound_mgr_focus_update_container_data(client_pid, handle_id, container_name, container_pid);
@@ -62,7 +62,7 @@ int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const
 	return ret;
 }
 #else
-int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type)
+int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type, bool is_for_session)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
@@ -70,6 +70,7 @@ int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const
 	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
 	param.pid = client_pid;
 	param.handle_id = handle_id;
+	param.is_for_session = is_for_session;
 	memcpy(param.stream_type, stream_type, MAX_STREAM_TYPE_LEN);
 
 	ret = mm_sound_mgr_focus_create_node(&param);
