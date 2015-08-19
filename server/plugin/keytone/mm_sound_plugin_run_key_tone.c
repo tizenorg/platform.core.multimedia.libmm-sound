@@ -52,7 +52,7 @@
 
 #define MAX_BUFFER_SIZE 1920
 #define KEYTONE_PATH "/tmp/keytone"		/* Keytone pipe path */
-#define KEYTONE_PATH_TMP "/tmp/keytone"		/* Keytone pipe path (it will be deprecated)*/
+#define KEYTONE_PATH_TMP "/tmp/keytone_tmp"		/* Keytone pipe path (it will be deprecated)*/
 #define KEYTONE_GROUP	6526			/* Keytone group : assigned by security */
 #define FILE_FULL_PATH 1024				/* File path lenth */
 #define ROLE_NAME_LEN 64				/* Role name length */
@@ -205,7 +205,7 @@ static int _play_keytone(const char *filename, int volume_config)
 			ret = MM_ERROR_SOUND_INTERNAL;
 		}
 	} else {
-		debug_error("Fail to open pipe\n");
+		debug_error("Fail to open pipe, err=%d,%s", errno, strerror(errno));
 		ret = MM_ERROR_SOUND_FILE_NOT_FOUND;
 	}
 
