@@ -672,12 +672,12 @@ int mm_sound_client_get_uniq_id(int *id)
 	return ret;
 }
 
-int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
+int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_register_focus(id, stream_type, callback, user_data);
+	ret = mm_sound_client_dbus_register_focus(id, stream_type, callback, is_for_session, user_data);
 
 	debug_fleave();
 	return ret;

@@ -2053,7 +2053,7 @@ int mm_sound_client_dbus_unset_session_interrupt_callback(void)
 	return MM_ERROR_NONE;
 }
 
-int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void* user_data)
+int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 	int instance;
@@ -2083,15 +2083,15 @@ int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_soun
 
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
-	params = g_variant_new("(@ayiis)", _get_cookie_variant(), instance, id, stream_type);
+	params = g_variant_new("(@ayiisb)", _get_cookie_variant(), instance, id, stream_type, is_for_session);
 #else /* USE_SECURITY */
 	gethostname(container, sizeof(container));
 	debug_error("container = %s", container);
-	params = g_variant_new("(siis)", container, instance, id, stream_type);
+	params = g_variant_new("(siisb)", container, instance, id, stream_type, is_for_session);
 #endif /* USE_SECURITY */
 
 #else /* SUPPORT_CONTAINER */
-	params = g_variant_new("(iis)", instance, id, stream_type);
+	params = g_variant_new("(iisb)", instance, id, stream_type, is_for_session);
 
 #endif /* SUPPORT_CONTAINER */
 
