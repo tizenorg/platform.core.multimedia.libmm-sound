@@ -92,7 +92,7 @@ int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_chan
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_register_focus(id, stream_type, callback, user_data);
+	ret = mm_sound_client_register_focus(id, stream_type, callback, false, user_data);
 	if (ret) {
 		debug_error("Could not register focus, ret[0x%x]\n", ret);
 	}
@@ -101,6 +101,29 @@ int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_chan
 
 	return ret;
 }
+
+EXPORT_API
+int mm_sound_register_focus_for_session(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (id < 0 || callback == NULL) {
+		debug_error("argument is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = mm_sound_client_register_focus(id, stream_type, callback, true, user_data);
+	if (ret) {
+		debug_error("Could not register focus, ret[0x%x]\n", ret);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
 
 EXPORT_API
 int mm_sound_unregister_focus(int id)

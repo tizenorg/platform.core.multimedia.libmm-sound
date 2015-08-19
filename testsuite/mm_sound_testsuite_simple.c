@@ -282,6 +282,7 @@ static void displaymenu()
 		g_print("SS : Send signal for stream info\n");
 		g_print("GU : Get Focus id\n");
 		g_print("SF : Set Focus Callback\t");
+		g_print("FFS : Set Focus Callback for session\t");
 		g_print("UF : Unset Focus Callback\n");
 		g_print("AF : Acquire Focus\t");
 		g_print("RF : Release Focus\n");
@@ -536,6 +537,55 @@ static void interpret (char *cmd)
 				ret = mm_sound_register_focus(id, stream_type, (id == 0)? focus_cb0 : focus_cb1, (void*)user_data);
 				if (ret) {
 					g_print("failed to mm_sound_register_focus(), ret[0x%x]\n", ret);
+				} else {
+					g_print("id[%d], stream_type[%s], callback fun[%p]\n", id, stream_type, (id == 0)? focus_cb0 : focus_cb1);
+				}
+			}
+
+			else if(strncmp(cmd, "FFS", 3) ==0) {
+				int ret = 0;
+				char input_string[128];
+				char flag_1, flag_2;
+				int id = 0;
+				char *stream_type = NULL;
+				const char *user_data = "this is user data";
+
+				fflush(stdin);
+				g_print ("1. Media\n");
+				g_print ("2. Alarm\n");
+				g_print ("3. Notification\n");
+				g_print ("4. Emergency\n");
+				g_print ("5. TTS\n");
+				g_print ("6. Ringtone\n");
+				g_print ("7. Call\n");
+				g_print ("8. VOIP\n");
+				g_print ("0. Voice Recognition\n");
+				g_print("> select id and stream type: (eg. 0 3)");
+
+				if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+					g_print ("### fgets return  NULL\n");
+				}
+				flag_1 = input_string[0];
+				flag_2 = input_string[2];
+
+				if(flag_1 == '0') { id = 0; }
+				else if(flag_1 == '1') { id = 1; }
+				else if(flag_1 == '2') { id = 2; }
+				else { id = 2; }
+				if(flag_2 == '1') { stream_type = "media"; }
+				else if(flag_2 == '2') { stream_type = "alarm"; }
+				else if(flag_2 == '3') { stream_type = "notification"; }
+				else if(flag_2 == '4') { stream_type = "emergency"; }
+				else if(flag_2 == '5') { stream_type = "tts"; }
+				else if(flag_2 == '6') { stream_type = "ringtone"; }
+				else if(flag_2 == '7') { stream_type = "call"; }
+				else if(flag_2 == '8') { stream_type = "voip"; }
+				else if(flag_2 == '0') { stream_type = "voice_recognition"; }
+				else { stream_type = "media"; }
+
+				ret = mm_sound_register_focus_for_session(id, stream_type, (id == 0)? focus_cb0 : focus_cb1, (void*)user_data);
+				if (ret) {
+					g_print("failed to mm_sound_register_focus_for_session(), ret[0x%x]\n", ret);
 				} else {
 					g_print("id[%d], stream_type[%s], callback fun[%p]\n", id, stream_type, (id == 0)? focus_cb0 : focus_cb1);
 				}
