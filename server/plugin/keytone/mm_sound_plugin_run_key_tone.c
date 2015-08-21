@@ -51,8 +51,7 @@
 #define ENV_KEYTONE_TIMEOUT "KEYTONE_TIMEOUT"
 
 #define MAX_BUFFER_SIZE 1920
-#define KEYTONE_PATH "/tmp/keytone"		/* Keytone pipe path */
-#define KEYTONE_PATH_TMP "/tmp/keytone"		/* Keytone pipe path (it will be deprecated)*/
+#define KEYTONE_PATH "/tmp/keytone"		/* Keytone pipe path, this is the pipe for pulseaudio module-sound-player */
 #define KEYTONE_GROUP	6526			/* Keytone group : assigned by security */
 #define FILE_FULL_PATH 1024				/* File path lenth */
 #define ROLE_NAME_LEN 64				/* Role name length */
@@ -104,7 +103,6 @@ static int (*g_thread_pool_func)(void*, void (*)(void*)) = NULL;
 
 static int _MMSoundKeytoneInit(void);
 static int _MMSoundKeytoneFini(void);
-static keytone_info_t g_keytone;
 static int stop_flag = 0;
 
 #ifdef SUPPORT_DBUS_KEYTONE
@@ -248,6 +246,7 @@ static void _on_changed_receive(GDBusConnection *conn,
 	if (_is_mute_sound ()) {
 		debug_log ("Skip playing keytone due to mute sound mode");
 	} else {
+		/* request to play to pulseaudio module-sound-player */
 		_play_keytone (DBUS_HW_KEYTONE, VOLUME_TYPE_SYSTEM | VOLUME_GAIN_TOUCH);
 	}
 }
@@ -293,82 +292,30 @@ static void _deinit_dbus_keytone ()
 }
 #endif /* SUPPORT_DBUS_KEYTONE */
 
-static
-int MMSoundPlugRunKeytoneControlRun(void)
+static int MMSoundPlugRunKeytoneControlRun(void)
 {
-	int pre_mask;
 	int ret = MM_ERROR_NONE;
-	int fd = -1;
-	ipc_type data;
-	int size = 0;
 
 	debug_enter("\n");
-
-	/* INIT IPC */
-	pre_mask = umask(0);
-	if (mknod(KEYTONE_PATH_TMP,S_IFIFO|0660,0)<0) {
-		debug_warning ("mknod failed. errno=[%d][%s]\n", errno, strerror(errno));
-	}
-	umask(pre_mask);
-
-	fd = open(KEYTONE_PATH_TMP, O_RDWR);
-	if (fd == -1) {
-		debug_warning("Check ipc node %s\n", KEYTONE_PATH);
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	/* change access mode so group can use keytone pipe */
-	if (fchmod (fd, 0666) == -1) {
-		debug_warning("Changing keytone access mode is failed. errno=[%d][%s]\n", errno, strerror(errno));
-	}
-
-	/* change group due to security request */
-	if (fchown (fd, -1, KEYTONE_GROUP) == -1) {
-		debug_warning("Changing keytone group is failed. errno=[%d][%s]\n", errno, strerror(errno));
-	}
-
-	/* Init Audio Handle & internal buffer */
-	ret = _MMSoundKeytoneInit();	/* Create two thread and open device */
-	if (ret != MM_ERROR_NONE) {
-		debug_critical("Cannot create keytone\n");
-
-	}
 	/* While loop is always on */
 	stop_flag = MMSOUND_TRUE;
 
-	debug_msg("Start IPC with pipe\n");
-	size = sizeof(ipc_type);
-
 #ifdef SUPPORT_DBUS_KEYTONE
+	/* We receive the signal for HW back key here temporarily */
+	/* It'll be moved to some other place soon */
 	_init_dbus_keytone();
 #endif /* SUPPORT_DBUS_KEYTONE */
 
 	while (stop_flag) {
-		memset(&data, 0, sizeof(ipc_type));
-#if defined(_DEBUG_VERBOS_)
-		debug_log("Start to read from pipe\n");
-#endif
-		ret = read(fd, (void *)&data, size);
-		if (ret == -1) {
-			debug_error("Fail to read file\n");
-			continue;
-		}
-#if defined(_DEBUG_VERBOS_)
-		debug_log("Read returns\n");
-#endif
+		usleep(100000);
 	}
 
-	if (fd > -1)
-		close(fd);
-
-	_MMSoundKeytoneFini();
 	debug_leave("\n");
 
 	return MM_ERROR_NONE;
 }
 
-static
-int MMSoundPlugRunKeytoneControlStop(void)
+static int MMSoundPlugRunKeytoneControlStop(void)
 {
 	stop_flag = MMSOUND_FALSE; /* No impl. Don`t stop */
 
@@ -379,8 +326,7 @@ int MMSoundPlugRunKeytoneControlStop(void)
 	return MM_ERROR_NONE;
 }
 
-static
-int MMSoundPlugRunKeytoneSetThreadPool(int (*func)(void*, void (*)(void*)))
+static int MMSoundPlugRunKeytoneSetThreadPool(int (*func)(void*, void (*)(void*)))
 {
 	debug_enter("(func : %p)\n", func);
 	g_thread_pool_func = func;
@@ -406,39 +352,4 @@ int MMSoundGetPluginType(void)
 	debug_enter("\n");
 	debug_leave("\n");
 	return MM_SOUND_PLUGIN_TYPE_RUN;
-}
-
-static int _MMSoundKeytoneInit(void)
-{
-	debug_enter("\n");
-
-	/* Set audio FIXED param */
-	memset(&g_keytone, 0x00, sizeof(g_keytone));
-	if (pthread_mutex_init(&(g_keytone.sw_lock), NULL)) {
-		debug_error("pthread_mutex_init() failed\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-	if (pthread_cond_init(&g_keytone.sw_cond,NULL)) {
-		debug_error("pthread_cond_init() failed\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-static int _MMSoundKeytoneFini(void)
-{
-	g_keytone.handle = -1;
-
-	if (pthread_mutex_destroy(&(g_keytone.sw_lock))) {
-		debug_error("Fail to destroy mutex\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-	debug_msg("destroy\n");
-
-	if (pthread_cond_destroy(&g_keytone.sw_cond)) {
-		debug_error("Fail to destroy cond\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-	return MM_ERROR_NONE;
 }
