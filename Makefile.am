@@ -33,6 +33,7 @@ libmmfsound_la_CFLAGS = -I$(srcdir)/include \
 			-I$(srcdir)/servertype/include \
 			$(GLIB2_CFLAGS) \
 			$(GIO_CFLAGS) \
+			$(GIO_UNIX_CFLAGS) \
 			$(MMSESSION_CFLAGS) \
 			$(AUDIOSESSIONMGR_CFLAGS) \
 			-D_USE_INTERNAL_SOUND_PATH_ \
@@ -49,6 +50,7 @@ libmmfsound_la_LIBADD = $(MMCOMMON_LIBS) \
 			$(AUDIOSESSIONMGR_LIBS) \
 			$(GLIB2_LIBS) \
 			$(GIO_LIBS) \
+			$(GIO_UNIX_LIBS) \
 			$(srcdir)/common/libmmfsoundcommon.la \
 			$(PASIMPLE_LIBS) \
 			$(PA_LIBS) \

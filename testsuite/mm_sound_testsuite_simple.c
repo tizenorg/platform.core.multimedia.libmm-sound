@@ -742,6 +742,13 @@ static void interpret (char *cmd)
 					g_print("failed to mm_sound_unset_focus_watch_callback(), ret[0x%x]\n", ret);
 				}
 			}
+			else if(strncmp(cmd, "SOC", 3) ==0) {
+				int ret = 0;
+				ret = mm_sound_test_socket("hello");
+				if (ret) {
+					g_print("failed to mm_sound_socket_test(), ret[0x%x]\n", ret);
+				}
+			}
 			else if(strncmp(cmd, "k", 1) == 0)
 #else
 			if(strncmp(cmd, "k", 1) == 0)

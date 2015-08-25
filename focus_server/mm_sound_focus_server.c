@@ -46,6 +46,7 @@
 #include "include/mm_sound_mgr_focus.h"
 #include "include/mm_sound_mgr_focus_ipc.h"
 #include "include/mm_sound_mgr_focus_dbus.h"
+#include "include/mm_sound_mgr_focus_socket.h"
 
 #include <glib.h>
 
@@ -84,6 +85,7 @@ int main(int argc, char **argv)
 {
 	server_arg serveropt;
 	struct sigaction action;
+	mgr_focus_socket_data *mgr_socket_data= NULL;
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
 	int pid;
 #endif
@@ -136,6 +138,7 @@ int main(int argc, char **argv)
 
 	if (serveropt.startserver) {
 		MMSoundMgrFocusDbusInit();
+		MMSoundMgrFocusSocketInit(&mgr_socket_data);
 		MMSoundMgrFocusInit();
 	}
 
@@ -151,6 +154,7 @@ int main(int argc, char **argv)
 
 	if (serveropt.startserver) {
 		MMSoundMgrFocusDbusFini();
+		MMSoundMgrFocusSocketFini(mgr_socket_data);
 		MMSoundMgrFocusFini();
 	}
 

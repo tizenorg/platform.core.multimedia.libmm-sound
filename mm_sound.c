@@ -42,6 +42,7 @@
 #include "include/mm_sound_pa_client.h"
 #include "include/mm_ipc.h"
 #include "include/mm_sound_common.h"
+#include "include/mm_sound_socket.h"
 
 
 #define VOLUME_MAX_MULTIMEDIA	16
@@ -1103,6 +1104,29 @@ int mm_sound_get_signal_value(mm_sound_signal_name_t signal, int *value)
 
 	debug_fleave();
 
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_test_socket(const char *msg)
+{
+	int ret = MM_ERROR_NONE;
+	debug_fenter();
+	mm_sound_socket_client *socket_client = NULL;
+	mm_sound_socket_connection *socket_conn = NULL;
+	if(mm_sound_socket_client_new(&socket_client, "test1") < 0) {
+		debug_error("socket client new failed");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error;
+	}
+	if(mm_sound_socket_client_connect(socket_client, "/run/focus-server/focus-server.socket", &socket_conn) <0) {
+		debug_error("socket client connect failed");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error;
+	}
+
+error:
+	debug_fleave();
 	return ret;
 }
 

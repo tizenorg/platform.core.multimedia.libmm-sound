@@ -1,6 +1,7 @@
 bin_PROGRAMS = focus_server
 focus_server_SOURCES = mm_sound_mgr_focus_ipc.c \
 						mm_sound_mgr_focus_dbus.c \
+						mm_sound_mgr_focus_socket.c \
 						mm_sound_focus_server.c \
 						mm_sound_mgr_focus.c
 
