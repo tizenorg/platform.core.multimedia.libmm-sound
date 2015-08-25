@@ -46,6 +46,7 @@
 #include "include/mm_sound_client_dbus.h"
 #include "include/mm_sound_common.h"
 #include "include/mm_sound_device.h"
+#include "include/mm_sound_proxy.h"
 #ifdef USE_FOCUS
 #include "include/mm_sound_focus.h"
 #endif
@@ -200,6 +201,7 @@ int mm_sound_client_initialize(void)
 	debug_fenter();
 
 	mm_sound_client_dbus_initialize();
+	mm_sound_proxy_initialize();
 
 #ifdef USE_FOCUS
 
@@ -229,6 +231,7 @@ int mm_sound_client_finalize(void)
 
 	debug_fenter();
 
+	mm_sound_proxy_finalize();
 	ret = mm_sound_client_dbus_finalize();
 
 
@@ -1808,5 +1811,19 @@ int mm_sound_client_test(int a, int b, int* getv)
 
 	debug_fleave();
 
+	return ret;
+}
+
+int mm_sound_client_test_socket(int a, int b, int *getv)
+{
+	int ret = MM_ERROR_NONE;
+	int sum = 0;
+	debug_fenter();
+
+	mm_sound_proxy_test(1, 2, getv);
+	debug_log("test_socket : %d * %d -> result : %d", a, b, *getv);
+
+error:
+	debug_fleave();
 	return ret;
 }

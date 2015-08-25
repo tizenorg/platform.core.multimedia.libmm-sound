@@ -46,6 +46,8 @@
 #include "include/mm_sound_mgr_focus.h"
 #include "include/mm_sound_mgr_focus_ipc.h"
 #include "include/mm_sound_mgr_focus_dbus.h"
+#include "include/mm_sound_mgr_focus_socket.h"
+#include "include/mm_sound_mgr_focus_connector.h"
 
 #include <glib.h>
 
@@ -137,6 +139,7 @@ int main(int argc, char **argv)
 	if (serveropt.startserver) {
 		MMSoundMgrFocusDbusInit();
 		MMSoundMgrFocusInit();
+		mm_sound_mgr_connector_init();
 	}
 
 	debug_warning("focus_server [%d] initialization complete...now, start running!!\n", getpid());
@@ -152,6 +155,7 @@ int main(int argc, char **argv)
 	if (serveropt.startserver) {
 		MMSoundMgrFocusDbusFini();
 		MMSoundMgrFocusFini();
+		mm_sound_mgr_connector_fini();
 	}
 
 	debug_warning("focus_server [%d] exit ----------------- END \n", getpid());

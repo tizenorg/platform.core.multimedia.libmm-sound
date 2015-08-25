@@ -19,7 +19,9 @@ libmmfsound_la_SOURCES = mm_sound.c \
 			mm_sound_client_dbus.c \
 			mm_sound_device.c \
 			mm_sound_pcm.c \
-			mm_sound_pa_client.c
+			mm_sound_pa_client.c \
+			mm_sound_proxy.c \
+			mm_sound_pcm_async.c
 if USE_FOCUS
 libmmfsound_la_SOURCES += mm_sound_focus.c
 endif
@@ -32,6 +34,7 @@ libmmfsound_la_CFLAGS = -I$(srcdir)/include \
 			-I$(srcdir)/servertype/include \
 			$(GLIB2_CFLAGS) \
 			$(GIO_CFLAGS) \
+			$(GIO_UNIX_CFLAGS) \
 			$(MMSESSION_CFLAGS) \
 			$(AUDIOSESSIONMGR_CFLAGS) \
 			-D_USE_INTERNAL_SOUND_PATH_ \
@@ -48,6 +51,7 @@ libmmfsound_la_LIBADD = $(MMCOMMON_LIBS) \
 			$(AUDIOSESSIONMGR_LIBS) \
 			$(GLIB2_LIBS) \
 			$(GIO_LIBS) \
+			$(GIO_UNIX_LIBS) \
 			$(srcdir)/common/libmmfsoundcommon.la \
 			$(PASIMPLE_LIBS) \
 			$(PA_LIBS) \

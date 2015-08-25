@@ -42,6 +42,7 @@
 #include "include/mm_sound_pa_client.h"
 #include "include/mm_ipc.h"
 #include "include/mm_sound_common.h"
+#include "include/mm_sound_socket.h"
 
 
 #define VOLUME_MAX_MULTIMEDIA	16
@@ -1103,6 +1104,20 @@ int mm_sound_get_signal_value(mm_sound_signal_name_t signal, int *value)
 
 	debug_fleave();
 
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_test_socket(int a, int b, int *sum)
+{
+	int ret = MM_ERROR_NONE;
+	debug_fenter();
+
+	mm_sound_proxy_test(1, 2, sum);
+	debug_warning("test_socket result : %d", *sum);
+
+error:
+	debug_fleave();
 	return ret;
 }
 

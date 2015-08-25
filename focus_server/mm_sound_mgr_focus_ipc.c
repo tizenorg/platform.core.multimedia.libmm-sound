@@ -199,5 +199,43 @@ int __mm_sound_mgr_focus_ipc_emergent_exit(int pid)
 
 	return ret;
 }
+
+#if 0
+int register_focus_handler() {
+	_mm_sound_mgr_focus_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+	param.pid = client_pid;
+	param.handle_id = handle_id;
+	param.is_for_session = is_for_session;
+	memcpy(param.stream_type, stream_type, MAX_STREAM_TYPE_LEN);
+
+	ret = mm_sound_mgr_focus_create_node(&param);
+
+	return ret;
+}
+
+int __mm_sound_mgr_focus_ipc_add_register_focus_handler(int client_pid, int handle_id, const char* stream_type, bool is_for_session)
+{
+	mm_sound_connection_add_handler(focus_conn, METHOD_CALL_REGISTER_FOCUS, register_focus_handle, g_free, cb_data);
+//    mm_sound_connection_add_event_callback(focus_conn, SIGNAL_FOCUS_CHANGED, focus_event_callback, params, g_free, callback_id, cb_data);
+	return ret;
+}
+
+int __mm_sound_mgr_focus_ipc_notify_focus_changed(int instance, int handle, int type, int state, char *stream_type, char *name)
+{
+	GVariant *params = NULL, *result = NULL;
+	int ret = MM_ERROR_NONE;
+
+	params = g_variant_new("(iiiiss)", instance, handle, type, state, stream_type, name);
+//	mm_sound_connection_send_signal(focus_conn, SIGNAL_FOCUS_CHANGED, params);
+	mm_sound_connection_send_signal_with_return(focus_conn, SIGNAL_FOCUS_CHANGED, params, &result);
+	g_variant_get("(i)", &ret);
+
+	return 0;
+}
+#endif
+
 #endif
 

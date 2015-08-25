@@ -172,6 +172,12 @@ typedef enum sound_server_signal {
         SIGNAL_MAX
 } sound_server_signal_t;
 
+typedef enum audio_service {
+        AUDIO_SERVICE_SOUND_SERVER,
+        AUDIO_SERVICE_FOCUS_SERVER,
+        AUDIO_SERVICE_PULSEAUDIO,
+} audio_service_t;
+
 typedef enum pulseaudio_property {
         PULSEAUDIO_PROP_AUDIO_BALANCE,
         PULSEAUDIO_PROP_MONO_AUDIO,
@@ -195,6 +201,20 @@ struct mm_sound_dbus_signal_info{
 struct pulseaudio_dbus_property_info {
         const char* name;
 };
+
+typedef enum msg_type {
+        MSG_TYPE_REQUEST,
+        MSG_TYPE_RESPONSE,
+        MSG_TYPE_SIGNAL,
+        MSG_TYPE_SUBSCRIBE,
+} msg_type_t;
+
+typedef struct mm_sound_msg {
+    msg_type_t msg_type; // request or response ..
+    int type;
+    GVariant *params;
+} mm_sound_msg;
+
 
 #define DSIZE sizeof(mm_ipc_msg_t)-sizeof(long)	/* data size for rcv & snd */
 

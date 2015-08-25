@@ -2176,6 +2176,7 @@ void mm_sound_unsubscribe_signal(unsigned int subscribe_id);
 int mm_sound_send_signal(mm_sound_signal_name_t signal, int value);
 int mm_sound_get_signal_value(mm_sound_signal_name_t signal, int *value);
 
+int mm_sound_test_socket(int a, int b, int *sum);
 /**
 	@}
  */
