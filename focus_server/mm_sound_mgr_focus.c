@@ -161,6 +161,32 @@ static void _clear_focus_node_list_func (focus_node_t *node, gpointer user_data)
 	CLEAR_DEAD_NODE_LIST(g_focus_node_list);
 }
 
+static void __clear_focus_pipe(focus_node_t *node)
+{
+	char *filename = NULL;
+	char *filename2 = NULL;
+
+	debug_fenter();
+
+	if(!node->is_for_watch) {
+		filename = __get_focus_pipe_path(node->pid, node->handle_id, NULL, false);
+		filename2 = __get_focus_pipe_path(node->pid, node->handle_id, "r", false);
+		remove(filename);
+		remove(filename2);
+		free(filename);
+		free(filename2);
+	} else {
+		filename = __get_focus_pipe_path(node->pid, -1, NULL, true);
+		filename2 = __get_focus_pipe_path(node->pid, -1, "r", true);
+		remove(filename);
+		remove(filename2);
+		free(filename);
+		free(filename2);
+	}
+
+	debug_fleave();
+}
+
 static int _mm_sound_mgr_focus_get_priority_from_stream_type(int *priority, const char *stream_type)
 {
 	int ret = MM_ERROR_NONE;
@@ -656,6 +682,7 @@ int mm_sound_mgr_focus_destroy_node (const _mm_sound_mgr_focus_param_t *param)
 		node = (focus_node_t *)list->data;
 		if (node && !node->is_for_watch && (node->pid == param->pid) && (node->handle_id == param->handle_id)) {
 			debug_log("found the node of pid[%d]/handle_id[%d]\n", param->pid, param->handle_id);
+			__clear_focus_pipe(node);
 			g_focus_node_list = g_list_remove(g_focus_node_list, node);
 			g_free(node);
 			ret = MM_ERROR_NONE;
@@ -910,6 +937,7 @@ int mm_sound_mgr_focus_unset_watch_cb (const _mm_sound_mgr_focus_param_t *param)
 		node = (focus_node_t *)list->data;
 		if (node && (node->pid == param->pid) && (node->handle_id == param->handle_id) && (node->is_for_watch)) {
 			debug_log("found the node of pid[%d]/handle_id[%d] for watch focus\n", param->pid, param->handle_id);
+			__clear_focus_pipe(node);
 			g_focus_node_list = g_list_remove(g_focus_node_list, node);
 			g_free(node);
 			ret = MM_ERROR_NONE;
@@ -953,11 +981,13 @@ int mm_sound_mgr_focus_emergent_exit(const _mm_sound_mgr_focus_param_t *param)
 			debug_log("found pid node");
 			if(node->is_for_watch) {
 				debug_log("clearing watch cb of pid(%d) handle(%d)", node->pid, node->handle_id);
+				__clear_focus_pipe(node);
 				g_focus_node_list = g_list_remove(g_focus_node_list, node);
 				list = g_focus_node_list;
 				g_free(node);
 			} else if (node->status == FOCUS_STATUS_DEACTIVATED) {
 				debug_log("clearing deactivated focus node of pid(%d) hande(%d)", node->pid, node->handle_id);
+				__clear_focus_pipe(node);
 				g_focus_node_list = g_list_remove(g_focus_node_list, node);
 				list = g_focus_node_list;
 				g_free(node);
@@ -1008,6 +1038,7 @@ int mm_sound_mgr_focus_emergent_exit(const _mm_sound_mgr_focus_param_t *param)
 						debug_error("Fail to _focus_do_watch_callback, ret[0x%x]\n", ret);
 					}
 				}
+				__clear_focus_pipe(node);
 				g_focus_node_list = g_list_remove(g_focus_node_list, my_node);
 				list = g_focus_node_list;
 			}
