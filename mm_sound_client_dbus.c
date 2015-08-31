@@ -2552,7 +2552,7 @@ int mm_sound_client_dbus_finalize(void)
 
 	int index = 0;
 	int exit_pid = 0;
-	GVariant* params = NULL;
+	GVariant* params = NULL, *result = NULL;
 
 	exit_pid = getpid();
 	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
