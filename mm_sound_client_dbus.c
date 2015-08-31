@@ -2552,14 +2552,14 @@ int mm_sound_client_dbus_finalize(void)
 
 	int index = 0;
 	int exit_pid = 0;
-	GVariant* params = NULL;
+	GVariant* params = NULL, *result = NULL;
 
 	exit_pid = getpid();
 	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
 		if (g_focus_sound_handle[index].is_used == true && g_focus_sound_handle[index].focus_tid == exit_pid) {
 			params = g_variant_new("(i)", exit_pid);
 			if (params) {
-				if ((_dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_EMERGENT_EXIT_FOCUS, params, NULL)) != MM_ERROR_NONE) {
+				if ((_dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_EMERGENT_EXIT_FOCUS, params, &result)) != MM_ERROR_NONE) {
 					debug_error("dbus unset watch focus failed");
 				}
 			} else {
