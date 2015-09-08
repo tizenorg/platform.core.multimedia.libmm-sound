@@ -672,12 +672,12 @@ int mm_sound_client_get_uniq_id(int *id)
 	return ret;
 }
 
-int mm_sound_client_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data)
+int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_register_focus(id, stream_type, callback, is_for_session, user_data);
+	ret = mm_sound_client_dbus_register_focus(id, (is_for_session)? pid : getpid(), stream_type, callback, is_for_session, user_data);
 
 	debug_fleave();
 	return ret;
@@ -716,12 +716,12 @@ int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char
 	return ret;
 }
 
-int mm_sound_client_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void* user_data, int *id)
+int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, bool is_for_session, void* user_data, int *id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = mm_sound_client_dbus_set_focus_watch_callback(focus_type, callback, user_data, id);
+	ret = mm_sound_client_dbus_set_focus_watch_callback((is_for_session)? pid : getpid(), focus_type, callback, is_for_session, user_data, id);
 
 	debug_fleave();
 	return ret;

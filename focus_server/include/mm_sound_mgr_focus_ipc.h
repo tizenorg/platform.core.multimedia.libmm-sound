@@ -46,9 +46,9 @@ int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_typ
 int __mm_sound_mgr_focus_ipc_release_focus(int pid, int handle_id, int focus_type, const char* name);
 //int __mm_sound_mgr_ipc_set_focus_watch_cb(mm_ipc_msg_t *msg);
 #ifdef SUPPORT_CONTAINER
-int __mm_sound_mgr_focus_ipc_watch_focus(int pid, int handle_id, int focus_type, const char* container_name, int container_pid);
+int __mm_sound_mgr_focus_ipc_watch_focus(int pid, int handle_id, int focus_type, bool is_for_session, const char* container_name, int container_pid);
 #else
-int __mm_sound_mgr_focus_ipc_watch_focus(int pid, int handle_id, int focus_type);
+int __mm_sound_mgr_focus_ipc_watch_focus(int pid, int handle_id, int focus_type, bool is_for_session);
 #endif
 //int __mm_sound_mgr_ipc_unset_focus_watch_cb(mm_ipc_msg_t *msg);
 int __mm_sound_mgr_focus_ipc_unwatch_focus(int pid, int handle_id);
