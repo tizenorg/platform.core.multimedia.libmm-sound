@@ -92,7 +92,7 @@ int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_chan
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_register_focus(id, stream_type, callback, false, user_data);
+	ret = mm_sound_client_register_focus(id, -1, stream_type, callback, false, user_data);
 	if (ret) {
 		debug_error("Could not register focus, ret[0x%x]\n", ret);
 	}
@@ -103,7 +103,7 @@ int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_chan
 }
 
 EXPORT_API
-int mm_sound_register_focus_for_session(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data)
+int mm_sound_register_focus_for_session(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -114,7 +114,7 @@ int mm_sound_register_focus_for_session(int id, const char *stream_type, mm_soun
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_register_focus(id, stream_type, callback, true, user_data);
+	ret = mm_sound_client_register_focus(id, pid, stream_type, callback, true, user_data);
 	if (ret) {
 		debug_error("Could not register focus for session, ret[0x%x]\n", ret);
 	}
@@ -210,7 +210,28 @@ int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	ret = mm_sound_client_set_focus_watch_callback(focus_type, callback, user_data, id);
+	ret = mm_sound_client_set_focus_watch_callback(-1, focus_type, callback, false, user_data, id);
+	if (ret) {
+		debug_error("Could not set focus watch callback, ret[0x%x]\n", ret);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_set_focus_watch_callback_for_session(int pid, mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data, int *id)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (callback == NULL || id == NULL) {
+		debug_error("argument is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+	ret = mm_sound_client_set_focus_watch_callback(pid, focus_type, callback, true, user_data, id);
 	if (ret) {
 		debug_error("Could not set focus watch callback, ret[0x%x]\n", ret);
 	}

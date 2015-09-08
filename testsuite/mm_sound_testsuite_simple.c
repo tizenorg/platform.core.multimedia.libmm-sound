@@ -583,7 +583,7 @@ static void interpret (char *cmd)
 				else if(flag_2 == '0') { stream_type = "voice-recognition"; }
 				else { stream_type = "media"; }
 
-				ret = mm_sound_register_focus_for_session(id, stream_type, (id == 0)? focus_cb0 : focus_cb1, (void*)user_data);
+				ret = mm_sound_register_focus_for_session(id, getpid(), stream_type, (id == 0)? focus_cb0 : focus_cb1, (void*)user_data);
 				if (ret) {
 					g_print("failed to mm_sound_register_focus_for_session(), ret[0x%x]\n", ret);
 				} else {
