@@ -31,6 +31,7 @@ int mm_sound_client_dbus_remove_available_route_changed_callback(void);
 int mm_sound_client_dbus_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in);
 int mm_sound_client_dbus_set_active_route_auto(void);
 int mm_sound_client_dbus_add_play_sound_end_callback(int handle, mm_sound_stop_callback_func stop_cb, void* userdata, unsigned int *subs_id);
+int mm_sound_client_dbus_remove_play_sound_end_callback(unsigned int subs_id);
 int mm_sound_client_dbus_get_current_connected_device_list(int device_flags, GList** device_list);
 int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data, unsigned int *subs_id);
 int mm_sound_client_dbus_remove_device_connected_callback(unsigned int subs_id);
