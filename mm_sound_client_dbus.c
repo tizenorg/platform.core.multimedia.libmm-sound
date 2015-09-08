@@ -46,6 +46,8 @@
 #define DBUS_SIGNATURE_MAX              32
 #define ERR_MSG_MAX                     100
 
+#define CODEC_HANDLE_MAX 256
+
 #define FOCUS_HANDLE_MAX 512
 #define FOCUS_HANDLE_INIT_VAL -1
 
@@ -110,6 +112,7 @@ GMainLoop *g_focus_loop;
 focus_sound_info_t g_focus_sound_handle[FOCUS_HANDLE_MAX];
 focus_session_interrupt_info_t g_focus_session_interrupt_info = {NULL, NULL};
 guint g_dbus_subs_ids[SIGNAL_MAX];
+guint g_dbus_play_file_end_subs_ids[CODEC_HANDLE_MAX];
 guint g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MAX];
 
 const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
@@ -683,6 +686,8 @@ static void _sound_server_dbus_signal_callback (GDBusConnection  *connection,
 		if (ended_handle == user_cb->mask) {
 			debug_log("Interested playing handle end : %d", ended_handle);
 			((mm_sound_stop_callback_func)(user_cb->cb))(user_cb->userdata, ended_handle);
+			 if(mm_sound_client_dbus_remove_play_file_end_callback(g_dbus_play_file_end_subs_ids[ended_handle]) != MM_ERROR_NONE)
+			 	debug_error("mm_sound_client_dbus_remove_play_file_end_callback failed");
 		} else {
 			debug_log("Not interested playing handle : %d", ended_handle);
 		}
@@ -785,6 +790,9 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 		} else {
 			if (subs_id)
 				*subs_id = (unsigned int)_subs_id;
+			else if(signaltype == SIGNAL_PLAY_FILE_END) {
+				g_dbus_play_file_end_subs_ids[mask] = _subs_id;
+			}
 		}
 	} else {
 		debug_error("Get Dbus Connection Error");
@@ -1125,6 +1133,18 @@ int mm_sound_client_dbus_remove_volume_changed_callback(unsigned int subs_id)
 	return ret;
 }
 
+int mm_sound_client_dbus_remove_play_file_end_callback(unsigned int subs_id)
+{
+	int ret = MM_ERROR_NONE;
+	debug_fenter();
+
+	if ((ret = _sound_server_dbus_signal_unsubscribe(subs_id)) != MM_ERROR_NONE) {
+		debug_error("Remove Play File End callback failed");
+	}
+
+	debug_fleave();
+	return ret;
+}
 
 int mm_sound_client_dbus_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
 {
