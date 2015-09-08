@@ -40,6 +40,7 @@ int mm_sound_client_dbus_is_bt_a2dp_on (bool *connected, char** bt_name);
 int mm_sound_client_dbus_set_volume_by_type(const int volume_type, const unsigned int volume_level);
 int mm_sound_client_dbus_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data, unsigned int *subs_id);
 int mm_sound_client_dbus_remove_volume_changed_callback(unsigned int subs_id);
+int mm_sound_client_dbus_remove_play_file_end_callback(unsigned int subs_id);
 int mm_sound_client_dbus_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
 #ifdef USE_FOCUS
