@@ -581,14 +581,14 @@ static int _mm_sound_mgr_focus_watch_list_dump ()
 	GList *list = NULL;
 	focus_node_t *node = NULL;
 
-	debug_log("========================================== focus watch node list : start =============================================\n");
+	debug_log("============================================= focus watch node list : start =================================================\n");
 	for (list = g_focus_node_list; list != NULL; list = list->next) {
 		node = (focus_node_t *)list->data;
 		if (node && node->is_for_watch) {
-			debug_log("*** pid[%5d]/handle_id[%d]/watch on focus status[%s]\n", node->pid, node->handle_id, focus_status_str[node->status]);
+			debug_log("*** pid[%5d]/handle_id[%d]/watch on focus status[%s]/for_session[%d]\n", node->pid, node->handle_id, focus_status_str[node->status], node->is_for_session);
 		}
 	}
-	debug_log("========================================== focus watch node list : end ===============================================\n");
+	debug_log("============================================= focus watch node list : end ===================================================\n");
 
 	return ret;
 }
