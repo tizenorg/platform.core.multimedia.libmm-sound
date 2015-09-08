@@ -69,6 +69,7 @@
   "      <arg name='pid' type='i' direction='in'/>"
   "      <arg name='handle_id' type='i' direction='in'/>"
   "      <arg name='focus_type' type='i' direction='in'/>"
+  "      <arg name='is_for_session' type='b' direction='in'/>"
   "    </method>"
   "    <method name='UnwatchFocus'>"
   "      <arg name='pid' type='i' direction='in'/>"
@@ -400,6 +401,7 @@ static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int handle_id = 0, focus_type = 0;
+	gboolean is_for_session;
 	GVariant *params = NULL;
 #ifdef SUPPORT_CONTAINER
 	int container_pid = -1;
@@ -421,20 +423,20 @@ static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
-	g_variant_get(params, "(@ayiii)", &cookie_data, &container_pid, &handle_id, &focus_type);
+	g_variant_get(params, "(@ayiiib)", &cookie_data, &container_pid, &handle_id, &focus_type, &is_for_session);
 	container = _get_container_from_cookie(cookie_data);
-	ret = __mm_sound_mgr_focus_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, container, container_pid);
+	ret = __mm_sound_mgr_focus_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, is_for_session, container, container_pid);
 
 	if (container)
 		free(container);
 #else /* USE_SECURITY */
-	g_variant_get(params, "(siii)", &container, &container_pid, &handle_id, &focus_type);
-	ret = __mm_sound_mgr_focus_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, container, container_pid);
+	g_variant_get(params, "(siiib)", &container, &container_pid, &handle_id, &focus_type, &is_for_session);
+	ret = __mm_sound_mgr_focus_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, is_for_session, container, container_pid);
 
 #endif /* USE_SECURITY */
 #else /* SUPPORT_CONTAINER */
-	g_variant_get(params, "(iii)", &pid, &handle_id, &focus_type);
-	ret = __mm_sound_mgr_focus_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type);
+	g_variant_get(params, "(iiib)", &pid, &handle_id, &focus_type, &is_for_session);
+	ret = __mm_sound_mgr_focus_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, is_for_session);
 
 #endif /* SUPPORT_CONTAINER */
 
