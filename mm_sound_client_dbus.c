@@ -2073,7 +2073,7 @@ int mm_sound_client_dbus_unset_session_interrupt_callback(void)
 	return MM_ERROR_NONE;
 }
 
-int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data)
+int mm_sound_client_dbus_register_focus(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
 	int instance;
@@ -2087,7 +2087,10 @@ int mm_sound_client_dbus_register_focus(int id, const char *stream_type, mm_soun
 
 //	pthread_mutex_lock(&g_thread_mutex2);
 
-	instance = getpid();
+	if(is_for_session)
+		instance = pid;
+	else
+		instance = getpid();
 
 	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
 		if (g_focus_sound_handle[index].is_used == false) {
@@ -2302,7 +2305,7 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, void* user_data, int *id)
+int mm_sound_client_dbus_set_focus_watch_callback(int pid, mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, bool is_for_session, void* user_data, int *id)
 {
 	int ret = MM_ERROR_NONE;
 	int instance;
@@ -2319,7 +2322,10 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 
 	//pthread_mutex_lock(&g_thread_mutex2);
 
-	instance = getpid();
+	if(is_for_session)
+		instance = pid;
+	else
+		instance = getpid();
 
 	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
 		if (g_focus_sound_handle[index].is_used == false) {
@@ -2335,15 +2341,15 @@ int mm_sound_client_dbus_set_focus_watch_callback(mm_sound_focus_type_e type, mm
 
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
-	params = g_variant_new("(@ayiii)", _get_cookie_variant(), instance, g_focus_sound_handle[index].handle, type);
+	params = g_variant_new("(@ayiiib)", _get_cookie_variant(), instance, g_focus_sound_handle[index].handle, type, is_for_session);
 #else /* USE_SECURITY */
 	gethostname(container, sizeof(container));
 	debug_error("container = %s", container);
-	params = g_variant_new("(siii)", container, instance, g_focus_sound_handle[index].handle, type);
+	params = g_variant_new("(siiib)", container, instance, g_focus_sound_handle[index].handle, type, is_for_session);
 #endif /* USE_SECURITY */
 
 #else /* SUPPORT_CONTAINER */
-	params = g_variant_new("(iii)", instance, g_focus_sound_handle[index].handle, type);
+	params = g_variant_new("(iiib)", instance, g_focus_sound_handle[index].handle, type, is_for_session);
 
 #endif /* SUPPORT_CONTAINER */
 

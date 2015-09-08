@@ -287,6 +287,7 @@ static void displaymenu()
 		g_print("AF : Acquire Focus\t");
 		g_print("RF : Release Focus\n");
 		g_print("WS : Set Focus Watch Callback\t");
+		g_print("WFS : Set Focus Watch Callback for session\t");
 		g_print("WU : Unset Focus Watch Callback\n");
 		g_print("==================================================================\n");
 #endif
@@ -583,7 +584,7 @@ static void interpret (char *cmd)
 				else if(flag_2 == '0') { stream_type = "voice-recognition"; }
 				else { stream_type = "media"; }
 
-				ret = mm_sound_register_focus_for_session(id, stream_type, (id == 0)? focus_cb0 : focus_cb1, (void*)user_data);
+				ret = mm_sound_register_focus_for_session(id, getpid(), stream_type, (id == 0)? focus_cb0 : focus_cb1, (void*)user_data);
 				if (ret) {
 					g_print("failed to mm_sound_register_focus_for_session(), ret[0x%x]\n", ret);
 				} else {
@@ -671,6 +672,36 @@ static void interpret (char *cmd)
 				ret = mm_sound_release_focus(id, type, "additional_info. for release");
 				if (ret) {
 					g_print("failed to mm_sound_release_focus(), ret[0x%x]\n", ret);
+				}
+			}
+
+			else if(strncmp(cmd, "WFS", 3) ==0) {
+				int ret = 0;
+				char input_string[128];
+				char flag_1;
+				int type = 0;
+				const char *user_data = "this is user data for watch";
+
+				fflush(stdin);
+				g_print ("1. playback\n");
+				g_print ("2. recording\n");
+				g_print ("3. both\n");
+				g_print("> select interest focus type:");
+
+				if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+					g_print ("### fgets return  NULL\n");
+				}
+				flag_1 = input_string[0];
+
+				if(flag_1 == '1') { type = 1; }
+				else if(flag_1 == '2') { type = 2; }
+				else if(flag_1 == '3') { type = 3; }
+				else { type = 1; }
+				ret = mm_sound_set_focus_watch_callback_for_session(9999, type, focus_watch_cb, (void*)user_data, &g_focus_watch_index);
+				if (ret) {
+					g_print("failed to mm_sound_set_focus_watch_callback(), ret[0x%x]\n", ret);
+				} else {
+					g_print("index[%d], type[%d], callback fun[%p]\n", g_focus_watch_index, type, focus_watch_cb);
 				}
 			}
 
