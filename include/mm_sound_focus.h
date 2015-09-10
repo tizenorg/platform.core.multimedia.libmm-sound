@@ -40,7 +40,8 @@ typedef enum {
 } mm_sound_focus_state_e;
 
 typedef enum {
-	FOCUS_FOR_PLAYBACK = 1,
+	FOCUS_NONE,
+	FOCUS_FOR_PLAYBACK,
 	FOCUS_FOR_CAPTURE,
 	FOCUS_FOR_BOTH,
 } mm_sound_focus_type_e;
