@@ -68,6 +68,12 @@ typedef struct {
 	} \
 }while(0)
 
+#define UPDATE_FOCUS_TAKEN_INFO(x, y, z, q) \
+	debug_warning ("updating node[%p]'s taken info : pid = [%d], handle_id = [%d], is_for_session = [%d]",x, y, z, q); \
+	x->taken_by_id[i].pid = y; \
+	x->taken_by_id[i].handle_id = z; \
+	x->taken_by_id[i].by_session = q; \
+
 #ifdef SUPPORT_CONTAINER
 static void __set_container_data(int pid, int handle, const char* container_name, int container_pid)
 {
@@ -515,9 +521,7 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 				debug_error("skip updating victim node");
 				continue;
 			}
-			victim_node->taken_by_id[i].pid = taken_pid;
-			victim_node->taken_by_id[i].handle_id = taken_hid;
-			victim_node->taken_by_id[i].by_session = taken_by_session;
+			UPDATE_FOCUS_TAKEN_INFO(victim_node, taken_pid, taken_hid, taken_by_session);
 		}
 	}
 	if(ret == victim_node->handle_id) {
@@ -706,36 +710,50 @@ int mm_sound_mgr_focus_destroy_node (const _mm_sound_mgr_focus_param_t *param)
 	if(my_node->is_for_session) {
 		for (list = g_focus_node_list; list != NULL; list = list->next) {
 			node = (focus_node_t *)list->data;
-			if (node->pid == my_node->pid && node->is_for_session) {
-				debug_error("focus for session for this pid stil remains, skip updating victim focus nodes");
-				need_to_trigger = false;
-				break;
+			if (my_node == node || node->is_for_watch) {
+				/* skip */
+			} else {
+				if (node->pid == my_node->pid && node->is_for_session) {
+					debug_error("focus for session for this pid still remains, skip updating victim focus nodes");
+					need_to_trigger = false;
+					break;
+				}
 			}
 		}
 	}
 
-	/* Destroy my node */
-	__clear_focus_pipe(my_node);
-	g_focus_node_list = g_list_remove(g_focus_node_list, my_node);
-	g_free(my_node);
-
 	if(need_to_trigger) {
 		for (list = g_focus_node_list; list != NULL; list = list->next) {
 			node = (focus_node_t *)list->data;
-			for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
-				if (node && (node->taken_by_id[i].pid == param->pid)) {
-					if (node->taken_by_id[i].by_session && !node->status) {
-						node->taken_by_id[i].pid = 0;
-						node->taken_by_id[i].handle_id = 0;
-						node->taken_by_id[i].by_session = false;
-					} else if (node->taken_by_id[i].handle_id == param->handle_id) {
-						node->taken_by_id[i].pid = 0;
-						node->taken_by_id[i].handle_id = 0;
+			if (my_node == node || node->is_for_watch) {
+				/* skip */
+			} else {
+				for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+					if (node && (node->taken_by_id[i].pid == param->pid)) {
+						if(my_node->taken_by_id[i].pid) {
+						/* If exists update the taken focus info to my victim node */
+							if (node->taken_by_id[i].by_session && !node->status) {
+								UPDATE_FOCUS_TAKEN_INFO(node, my_node->taken_by_id[i].pid, my_node->taken_by_id[i].handle_id, my_node->taken_by_id[i].by_session);
+							} else if (node->taken_by_id[i].handle_id == param->handle_id) {
+								UPDATE_FOCUS_TAKEN_INFO(node, my_node->taken_by_id[i].pid, my_node->taken_by_id[i].handle_id, false);
+							}
+						} else {
+							if (node->taken_by_id[i].by_session && !node->status) {
+								UPDATE_FOCUS_TAKEN_INFO(node, 0, 0, false);
+							} else if (node->taken_by_id[i].handle_id == param->handle_id) {
+								UPDATE_FOCUS_TAKEN_INFO(node, 0, 0, false);
+							}
+						}
 					}
 				}
 			}
 		}
 	}
+
+	/* Destroy my node  */
+	__clear_focus_pipe(my_node);
+	g_focus_node_list = g_list_remove(g_focus_node_list, my_node);
+	g_free(my_node);
 
 	_mm_sound_mgr_focus_list_dump();
 FINISH:
@@ -753,6 +771,7 @@ int mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param
 	focus_node_t *my_node = NULL;
 	bool need_to_trigger_cb = false;
 	bool need_to_trigger_watch_cb = true;
+	int i;
 
 	debug_fenter();
 
@@ -832,6 +851,14 @@ int mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param
 		if (need_to_trigger_watch_cb)
 			_mm_sound_mgr_focus_do_watch_callback((focus_type_e)param->request_type, FOCUS_COMMAND_ACQUIRE, my_node, param);
 	}
+
+	/* update taken information */
+	for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+		if (param->request_type & (i+1) && my_node->taken_by_id[i].pid) {
+			UPDATE_FOCUS_TAKEN_INFO(my_node, 0, 0, false);
+		}
+	}
+
 	_mm_sound_mgr_focus_list_dump();
 	_mm_sound_mgr_focus_watch_list_dump ();
 FINISH:
@@ -1057,8 +1084,7 @@ int mm_sound_mgr_focus_emergent_exit(const _mm_sound_mgr_focus_param_t *param)
 					node = (focus_node_t *)list_s->data;
 					for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
 						if (node && (node->taken_by_id[i].pid == param->pid)) {
-							node->taken_by_id[i].pid = 0;
-							node->taken_by_id[i].handle_id = 0;
+							UPDATE_FOCUS_TAKEN_INFO(node, 0, 0, false);
 						}
 					}
 				}
