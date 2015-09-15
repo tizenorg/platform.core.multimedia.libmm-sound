@@ -74,4 +74,9 @@ int mm_sound_client_add_test_callback(mm_sound_test_cb func, void* user_data, un
 int mm_sound_client_remove_test_callback(unsigned int subs_id);
 int mm_sound_client_test(int a, int b, int* get);
 
+typedef void (*mm_sound_volume_changed_wrapper_cb)(const char *direction, const char *volume_type_str, int volume_level, void *userdata);
+typedef void (*mm_sound_device_connected_wrapper_cb)(int device_id, const char *device_type, int io_direction, int state, const char *name, gboolean is_connected, void *userdata);
+typedef void (*mm_sound_device_info_changed_wrapper_cb)(int device_id, const char *device_type, int io_direction, int state, const char *name, int changed_device_info_type, void *userdata);
+typedef void (*mm_sound_stop_callback_wrapper_func)(int id, void *userdata);
+
 #endif /* __MM_SOUND_CLIENT_H__ */
