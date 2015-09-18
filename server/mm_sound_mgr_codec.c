@@ -38,6 +38,7 @@
 #include "include/mm_sound_thread_pool.h"
 #include "include/mm_sound_pa_client.h"
 #include "../include/mm_sound_focus.h"
+#include "../include/mm_sound_device.h"
 
 
 
@@ -57,6 +58,7 @@ typedef struct {
 	int session_options;
 	int focus_handle;
 	int focus_wcb_id;
+	unsigned int subs_id;
 	mm_sound_focus_type_e current_focus_type;
 
 	bool enable_session;
@@ -120,6 +122,41 @@ void sound_codec_focus_watch_callback(int id, mm_sound_focus_type_e focus_type, 
 
 	}
 	return;
+}
+
+void sound_codec_device_connected_callback(MMSoundDevice_t device, bool is_connected, void *user_data)
+{
+	int slotid = (int)user_data;
+	int result = MM_ERROR_NONE;
+	mm_sound_device_type_e type;
+
+	debug_warning ("device_connected_callback called");
+
+	if (mm_sound_get_device_type (device, &type) != MM_ERROR_NONE) {
+		debug_error("getting device type failed");
+	} else {
+		switch (type) {
+			case MM_SOUND_DEVICE_TYPE_AUDIOJACK:
+			case MM_SOUND_DEVICE_TYPE_BLUETOOTH:
+			case MM_SOUND_DEVICE_TYPE_HDMI:
+			case MM_SOUND_DEVICE_TYPE_MIRRORING:
+			case MM_SOUND_DEVICE_TYPE_USB_AUDIO:
+				if (!is_connected) {
+					debug_warning("sound device unplugged");
+					result = MMSoundMgrCodecStop(slotid);
+					if (result != MM_ERROR_NONE) {
+						debug_error("MMSoundMgrCodecStop error %d\n", result);
+					}
+					result = mm_sound_remove_device_connected_callback(g_slots[slotid].subs_id);
+					if (result != MM_ERROR_NONE) {
+						debug_error("mm_sound_remove_device_connected_callback error %d\n", result);
+					}
+				}
+				break;
+			default:
+				break;
+		}
+	}
 }
 
 int MMSoundMgrCodecInit(const char *targetdir)
@@ -241,6 +278,16 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 		param->priority != HANDLE_PRIORITY_SOLO &&
 		param->enable_session) {
 
+		unsigned int subs_id = 0;
+
+		err = mm_sound_add_device_connected_callback(MM_SOUND_DEVICE_ALL_FLAG, (mm_sound_device_connected_cb)sound_codec_device_connected_callback, *slotid, &subs_id);
+		if (err) {
+			debug_error("mm_sound_add_device_connected_callback failed [0x%x]", err);
+			pthread_mutex_unlock(&g_slot_mutex);
+			return MM_ERROR_POLICY_INTERNAL;
+		}
+		g_slots[*slotid].subs_id = subs_id;
+
 		if ((param->session_options & MM_SESSION_OPTION_PAUSE_OTHERS) || param->session_type == MM_SESSION_TYPE_ALARM || param->session_type == MM_SESSION_TYPE_NOTIFY || param->session_type == MM_SESSION_TYPE_EMERGENCY) {
 			debug_warning("session option is PAUSE_OTHERS -> acquire focus");
 			err = mm_sound_focus_get_id((int *)(&param->focus_handle));
@@ -266,7 +313,6 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 			err = mm_sound_set_focus_watch_callback_for_session((int)param->param, FOCUS_FOR_BOTH, sound_codec_focus_watch_callback, (void*)*slotid, (int *)(&param->focus_wcb_id));
 			if (err) {
 				debug_error("mm_sound_set_focus_watch_callback_for_session failed [0x%x]", err);
-				err = mm_sound_unregister_focus(param->focus_handle);
 				pthread_mutex_unlock(&g_slot_mutex);
 				return MM_ERROR_POLICY_INTERNAL;
 			}
@@ -283,6 +329,7 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 	g_slots[*slotid].focus_wcb_id = param->focus_wcb_id;
 	g_slots[*slotid].enable_session = true;
 	g_slots[*slotid].pid = (int)param->param;
+
 
 	debug_msg("Using Slotid : [%d] Slot Status : [%d]\n", *slotid, g_slots[*slotid].status);
 
@@ -496,7 +543,17 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 		param->session_type != MM_SESSION_TYPE_VIDEOCALL &&
 		param->session_type != MM_SESSION_TYPE_VOIP &&
 		param->session_type != MM_SESSION_TYPE_VOICE_RECOGNITION &&
-		param->enable_session)	{
+		param->enable_session) {
+
+		unsigned int subs_id = 0;
+
+		err = mm_sound_add_device_connected_callback(MM_SOUND_DEVICE_ALL_FLAG, (mm_sound_device_connected_cb)sound_codec_device_connected_callback, *slotid, &subs_id);
+		if (err) {
+			debug_error("mm_sound_add_device_connected_callback failed [0x%x]", err);
+			pthread_mutex_unlock(&g_slot_mutex);
+			return MM_ERROR_POLICY_INTERNAL;
+		}
+		g_slots[*slotid].subs_id = subs_id;
 
 		if ((param->session_options & MM_SESSION_OPTION_PAUSE_OTHERS) || param->session_type == MM_SESSION_TYPE_ALARM || param->session_type == MM_SESSION_TYPE_NOTIFY || param->session_type == MM_SESSION_TYPE_EMERGENCY) {
 			debug_warning("session option is PAUSE_OTHERS -> acquire focus");
@@ -523,7 +580,6 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 			err = mm_sound_set_focus_watch_callback_for_session((int)param->param, FOCUS_FOR_BOTH, sound_codec_focus_watch_callback, (void*)*slotid, (int *)(&param->focus_wcb_id));
 			if (err) {
 				debug_error("mm_sound_set_focus_watch_callback failed [0x%x]", err);
-				err = mm_sound_unregister_focus(param->focus_handle);
 				pthread_mutex_unlock(&g_slot_mutex);
 				return MM_ERROR_POLICY_INTERNAL;
 			}
@@ -767,8 +823,11 @@ int MMSoundMgrCodecClearFocus(int pid)
 						}
 					}
 				}
+				if(mm_sound_remove_device_connected_callback(g_slots[slotid].subs_id) != MM_ERROR_NONE)
+					debug_error("mm_sound_remove_device_connected_callback() failed");
 				g_slots[slotid].focus_handle = 0;
 				g_slots[slotid].focus_wcb_id = 0;
+				g_slots[slotid].subs_id = 0;
 			}
 		}
 	}
@@ -823,6 +882,8 @@ static int _MMSoundMgrCodecStopCallback(int param)
 				}
 			}
 		}
+		if(mm_sound_remove_device_connected_callback(g_slots[param].subs_id) != MM_ERROR_NONE)
+			debug_error("mm_sound_remove_device_connected_callback() failed");
 	}
 
 	__mm_sound_mgr_ipc_notify_play_file_end(param);
