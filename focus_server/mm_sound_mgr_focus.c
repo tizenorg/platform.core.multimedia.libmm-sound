@@ -911,7 +911,7 @@ int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param
 	if(my_node->is_for_session) {
 		for (list = g_focus_node_list; list != NULL; list = list->next) {
 			node = (focus_node_t *)list->data;
-			if (node != my_node && node->pid == my_node->pid && node->is_for_session
+			if (node != my_node && node->pid == my_node->pid && node->is_for_session && !node->is_for_watch
 				&& my_node->status & node->status) {
 				debug_error("focus for session for this pid is active, skip callbacks");
 				need_to_trigger_watch_cb = false;
