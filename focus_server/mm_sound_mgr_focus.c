@@ -818,7 +818,7 @@ int mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param
 	}
 
 	if (need_to_trigger_cb) {
-		_mm_sound_mgr_focus_param_t *param_s = param;
+		_mm_sound_mgr_focus_param_t *param_s = (_mm_sound_mgr_focus_param_t *)param;
 		param_s->is_for_session = my_node->is_for_session;
 		for (list = g_focus_node_list; list != NULL; list = list->next) {
 			node = (focus_node_t *)list->data;
@@ -922,7 +922,7 @@ int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param
 	}
 
 	if (need_to_trigger_cb) {
-		_mm_sound_mgr_focus_param_t *param_s = param;
+		_mm_sound_mgr_focus_param_t *param_s = (_mm_sound_mgr_focus_param_t *)param;
 		param_s->is_for_session = my_node->is_for_session;
 		for (list = g_focus_node_list; list != NULL; list = list->next) {
 			node = (focus_node_t *)list->data;
@@ -1075,19 +1075,24 @@ int mm_sound_mgr_focus_emergent_exit(const _mm_sound_mgr_focus_param_t *param)
 				g_free(node);
 			} else if (node->status == FOCUS_STATUS_DEACTIVATED) {
 				debug_log("clearing deactivated focus node of pid(%d) hande(%d)", node->pid, node->handle_id);
-				__clear_focus_pipe(node);
-				g_focus_node_list = g_list_remove(g_focus_node_list, node);
-				list = g_focus_node_list;
-				g_free(node);
+				my_node = node;
 				/* update info of nodes that are lost their focus by the process exited */
 				for (list_s = g_focus_node_list; list_s != NULL; list_s = list_s->next) {
 					node = (focus_node_t *)list_s->data;
 					for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
 						if (node && (node->taken_by_id[i].pid == param->pid)) {
-							UPDATE_FOCUS_TAKEN_INFO(node, 0, 0, false);
+							if (my_node->taken_by_id[i].pid) {
+								UPDATE_FOCUS_TAKEN_INFO(node, my_node->taken_by_id[i].pid, my_node->taken_by_id[i].handle_id, my_node->taken_by_id[i].by_session);
+							} else {
+								UPDATE_FOCUS_TAKEN_INFO(node, 0, 0, false);
+							}
 						}
 					}
 				}
+				__clear_focus_pipe(my_node);
+				g_focus_node_list = g_list_remove(g_focus_node_list, my_node);
+				list = g_focus_node_list;
+				g_free(my_node);
 			} else { /* node that acquired focus */
 				bool need_to_trigger_watch_cb = true;
 				_mm_sound_mgr_focus_param_t param_s;

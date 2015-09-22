@@ -91,11 +91,12 @@ typedef struct {
 	GPollFD* g_poll_fd;
 	GSource* focus_src;
 	bool is_used;
-	bool is_for_session;
 	GMutex focus_lock;
 	mm_sound_focus_changed_cb focus_callback;
 	mm_sound_focus_changed_watch_cb watch_callback;
 	void* user_data;
+
+	bool is_for_session;	/* will be removed when the session concept is completely left out*/
 } focus_sound_info_t;
 
 typedef struct {
@@ -457,8 +458,8 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 	if (is_focus_registered)
 		enable_session = false;
 
-	if (enable_session)
-	{
+	if (enable_session) {
+		int index;
 		if (MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options))
 		{
 			debug_warning("[Client] Read Session Information failed. use default \"media\" type\n");
@@ -470,6 +471,14 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 				return MM_ERROR_POLICY_INTERNAL;
 			}
 		}
+		for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
+			if (g_focus_sound_handle[index].is_used == false) {
+				g_focus_sound_handle[index].is_used = true;
+				break;
+			}
+		}
+
+		g_focus_sound_handle[index].focus_tid = getpid();
 	}
 
 	 // instance = getpid();
@@ -552,6 +561,7 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 		param->skip_session = true;
 
 	if (param->skip_session == false) {
+		int index;
 		if(MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options))
 		{
 			debug_warning("[Client] Read MMSession Type failed. use default \"media\" type\n");
@@ -563,10 +573,15 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 				return MM_ERROR_POLICY_INTERNAL;
 			}
 		}
-	}
+		for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
+			if (g_focus_sound_handle[index].is_used == false) {
+				g_focus_sound_handle[index].is_used = true;
+				break;
+			}
+		}
 
-//	instance = getpid();
-// 	debug_msg("[Client] pid for client ::: [%d]\n", instance);
+		g_focus_sound_handle[index].focus_tid = getpid();
+	}
 
 	/* Send msg */
 	if ((param->mem_ptr && param->mem_size))

@@ -280,7 +280,7 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 
 		unsigned int subs_id = 0;
 
-		err = mm_sound_add_device_connected_callback(MM_SOUND_DEVICE_ALL_FLAG, (mm_sound_device_connected_cb)sound_codec_device_connected_callback, *slotid, &subs_id);
+		err = mm_sound_add_device_connected_callback(MM_SOUND_DEVICE_STATE_ACTIVATED_FLAG, (mm_sound_device_connected_cb)sound_codec_device_connected_callback, *slotid, &subs_id);
 		if (err) {
 			debug_error("mm_sound_add_device_connected_callback failed [0x%x]", err);
 			pthread_mutex_unlock(&g_slot_mutex);
@@ -547,7 +547,7 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 
 		unsigned int subs_id = 0;
 
-		err = mm_sound_add_device_connected_callback(MM_SOUND_DEVICE_ALL_FLAG, (mm_sound_device_connected_cb)sound_codec_device_connected_callback, *slotid, &subs_id);
+		err = mm_sound_add_device_connected_callback(MM_SOUND_DEVICE_STATE_ACTIVATED_FLAG, (mm_sound_device_connected_cb)sound_codec_device_connected_callback, *slotid, &subs_id);
 		if (err) {
 			debug_error("mm_sound_add_device_connected_callback failed [0x%x]", err);
 			pthread_mutex_unlock(&g_slot_mutex);
