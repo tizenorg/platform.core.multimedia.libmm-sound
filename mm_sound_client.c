@@ -91,11 +91,12 @@ typedef struct {
 	GPollFD* g_poll_fd;
 	GSource* focus_src;
 	bool is_used;
-	bool is_for_session;
 	GMutex focus_lock;
 	mm_sound_focus_changed_cb focus_callback;
 	mm_sound_focus_changed_watch_cb watch_callback;
 	void* user_data;
+
+	bool is_for_session;	/* will be removed when the session concept is completely left out*/
 } focus_sound_info_t;
 
 typedef struct {
