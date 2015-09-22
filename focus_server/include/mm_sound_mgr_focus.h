@@ -52,12 +52,12 @@ typedef enum
 typedef struct {
 	int pid;
 	int handle_id;
-	bool is_for_session;
 	char stream_type[MAX_STREAM_TYPE_LEN];
 	char option[MM_SOUND_NAME_NUM];
 	focus_type_e request_type;
 	void *callback;
 	void *cbdata;
+	bool is_for_session;
 } _mm_sound_mgr_focus_param_t;
 
 typedef struct _taken_by_id
@@ -72,12 +72,12 @@ typedef struct {
 	int handle_id;
 	int priority;
 	bool is_for_watch;
-	bool is_for_session;
 	char stream_type[MAX_STREAM_TYPE_LEN];
 	focus_status_e status;
 	_focus_taken_by_id_t taken_by_id[NUM_OF_STREAM_IO_TYPE];
 	void *callback;
 	void *cbdata;
+	bool is_for_session;
 
 #ifdef SUPPORT_CONTAINER
 	container_info_t container;
