@@ -91,11 +91,12 @@ typedef struct {
 	GPollFD* g_poll_fd;
 	GSource* focus_src;
 	bool is_used;
-	bool is_for_session;
 	GMutex focus_lock;
 	mm_sound_focus_changed_cb focus_callback;
 	mm_sound_focus_changed_watch_cb watch_callback;
 	void* user_data;
+
+	bool is_for_session;	/* will be removed when the session concept is completely left out*/
 } focus_sound_info_t;
 
 typedef struct {
@@ -457,15 +458,12 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 	if (is_focus_registered)
 		enable_session = false;
 
-	if (enable_session)
-	{
-		if (MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options))
-		{
+	if (enable_session) {
+		if (MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options)) {
 			debug_warning("[Client] Read Session Information failed. use default \"media\" type\n");
 			session_type = MM_SESSION_TYPE_MEDIA;
 
-			if(MM_ERROR_NONE != mm_session_init(session_type))
-			{
+			if(MM_ERROR_NONE != mm_session_init(session_type)) {
 				debug_critical("[Client] MMSessionInit() failed\n");
 				return MM_ERROR_POLICY_INTERNAL;
 			}
@@ -552,25 +550,19 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 		param->skip_session = true;
 
 	if (param->skip_session == false) {
-		if(MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options))
-		{
+		if(MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options)) {
 			debug_warning("[Client] Read MMSession Type failed. use default \"media\" type\n");
 			session_type = MM_SESSION_TYPE_MEDIA;
 
-			if(MM_ERROR_NONE != mm_session_init(session_type))
-			{
+			if(MM_ERROR_NONE != mm_session_init(session_type)) {
 				debug_critical("[Client] MMSessionInit() failed\n");
 				return MM_ERROR_POLICY_INTERNAL;
 			}
 		}
 	}
 
-//	instance = getpid();
-// 	debug_msg("[Client] pid for client ::: [%d]\n", instance);
-
 	/* Send msg */
-	if ((param->mem_ptr && param->mem_size))
-	{
+	if ((param->mem_ptr && param->mem_size)) {
 		// Play memory, deprecated
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
