@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.9.264
+Version:    0.9.265
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -173,6 +173,7 @@ ln -sf ../focus-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/focu
 %{_includedir}/mmf/mm_sound.h
 %{_includedir}/mmf/mm_sound_pcm_async.h
 %{_includedir}/mmf/mm_sound_focus.h
+%{_includedir}/mmf/mm_sound_device.h
 %exclude %{_includedir}/mmf/mm_sound_pa_client.h
 %{_libdir}/pkgconfig/mm-keysound.pc
 %{_libdir}/pkgconfig/mm-bootsound.pc
