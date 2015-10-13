@@ -49,13 +49,6 @@
 #define MM_SOUND_CHANNEL_MIN                1
 #define MM_SOUND_CHANNEL_MAX                6
 
-#define MEDIA_POLICY_AUTO                   "auto"
-#define MEDIA_POLICY_PHONE                  "phone"
-#define MEDIA_POLICY_ALL                    "all"
-#define MEDIA_POLICY_VOIP                   "voip"
-#define MEDIA_POLICY_MIRRORING              "mirroring"
-#define MEDIA_POLICY_HIGH_LATENCY           "high-latency"
-
 typedef struct _mm_sound_handle_t {
     uint32_t handle;
 
@@ -132,18 +125,6 @@ static struct {
             debug_msg("waiting DONE"); \
         } \
     } while(0);
-
-static const pa_tizen_volume_type_t mm_sound_volume_type_to_pa[VOLUME_TYPE_MAX] = {
-	[VOLUME_TYPE_SYSTEM] = PA_TIZEN_VOLUME_TYPE_SYSTEM,
-	[VOLUME_TYPE_NOTIFICATION] = PA_TIZEN_VOLUME_TYPE_NOTIFICATION,
-	[VOLUME_TYPE_ALARM] = PA_TIZEN_VOLUME_TYPE_ALARM,
-	[VOLUME_TYPE_RINGTONE] = PA_TIZEN_VOLUME_TYPE_RINGTONE,
-	[VOLUME_TYPE_MEDIA] = PA_TIZEN_VOLUME_TYPE_MEDIA,
-	[VOLUME_TYPE_CALL] = PA_TIZEN_VOLUME_TYPE_CALL,
-	[VOLUME_TYPE_VOIP] = PA_TIZEN_VOLUME_TYPE_VOIP,
-	[VOLUME_TYPE_VOICE] = PA_TIZEN_VOLUME_TYPE_VOICE,
-	[VOLUME_TYPE_FIXED] = PA_TIZEN_VOLUME_TYPE_FIXED,
-};
 
 #define PA_SIMPLE_FADE_INTERVAL_USEC						20000
 
@@ -257,9 +238,7 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
     /* Set volume type of stream */
     if(volume_config > 0) {
         debug_log("setting gain type");
-        vol_conf_type = volume_config & 0x000000FF;
-        prop_vol_type = mm_sound_volume_type_to_pa[vol_conf_type];
-//          pa_proplist_setf(proplist, PA_PROP_MEDIA_TIZEN_VOLUME_TYPE, "%d", prop_vol_type);
+        prop_vol_type = 0; /* not used, set it system(0) temporarily */
 
         /* Set gain type of stream */
         prop_gain_type = (volume_config >> 8) & 0x000000FF;

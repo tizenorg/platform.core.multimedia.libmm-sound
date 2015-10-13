@@ -26,7 +26,6 @@
 #include <pulse/proplist.h>
 #include <pulse/channelmap.h>
 #include <pulse/pulseaudio.h>
-#include <pulse/ext-policy.h>
 #include "include/mm_sound.h"
 
 typedef enum {
