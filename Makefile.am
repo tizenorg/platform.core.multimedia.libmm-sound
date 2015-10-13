@@ -11,7 +11,6 @@ includelibmmfsounddir = $(includedir)/mmf
 includelibmmfsound_HEADERS = include/mm_sound.h \
 							include/mm_sound_private.h \
 							include/mm_sound_pa_client.h \
-							include/mm_sound_pcm_async.h \
 							include/mm_sound_focus.h \
 							include/mm_sound_device.h
 
@@ -20,8 +19,7 @@ libmmfsound_la_SOURCES = mm_sound.c \
 			mm_sound_client_dbus.c \
 			mm_sound_device.c \
 			mm_sound_pcm.c \
-			mm_sound_pa_client.c \
-			mm_sound_pcm_async.c
+			mm_sound_pa_client.c
 if USE_FOCUS
 libmmfsound_la_SOURCES += mm_sound_focus.c
 endif

@@ -456,8 +456,6 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
         goto fail;
     }
 
-    mm_sound_pa_set_mute(handle->handle, prop_vol_type, handle_inout, 0);
-
     debug_msg("created handle[%d]. mode(%d), policy(%d), volumetype(%d), gain(%d), rate(%d), channels(%d), format(%d), stream_idx(%d), s(%x), source_type(%d) handle_inout(%d)",
         handle->handle, handle->mode, handle->policy, handle->volume_type, handle->gain_type,
         handle->rate, handle->channels, ss->format, handle->stream_idx, handle->s, handle->source_type, handle_inout);
@@ -751,27 +749,6 @@ static void __mm_sound_pa_success_cb(pa_context *c, int success, void *userdata)
 	pa_threaded_mainloop_signal(mainloop, 0);
 }
 
-EXPORT_API
-int mm_sound_pa_set_call_mute(const int type, const int mute, int direction)
-{
-    pa_operation *o = NULL;
-
-    CHECK_VOLUME_TYPE_RANGE(type);
-    CHECK_CONNECT_TO_PULSEAUDIO();
-
-    pa_threaded_mainloop_lock(mm_sound_handle_mgr.mainloop);
-
-    o = pa_ext_policy_set_mute(mm_sound_handle_mgr.context, -1, type, direction, mute, __mm_sound_pa_success_cb, (void *)mm_sound_handle_mgr.mainloop);
-    WAIT_PULSEAUDIO_OPERATION(mm_sound_handle_mgr, o);
-
-    if(o)
-        pa_operation_unref(o);
-
-    pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-
-    return MM_ERROR_NONE;
-}
-
 typedef struct _get_volume_max_userdata_t
 {
     pa_threaded_mainloop* mainloop;
@@ -788,144 +765,6 @@ static void __mm_sound_pa_get_cb(pa_context *c, uint32_t value, void *userdata)
     u->value = value;
 
     pa_threaded_mainloop_signal(u->mainloop, 0);
-}
-
-
-EXPORT_API
-int mm_sound_pa_get_volume_level(int handle, const int type, int* level)
-{
-    mm_sound_handle_t* phandle = NULL;
-    get_volume_max_userdata_t userdata;
-    pa_operation *o = NULL;
-
-    CHECK_HANDLE_RANGE(handle);
-    CHECK_VOLUME_TYPE_RANGE(type);
-    CHECK_CONNECT_TO_PULSEAUDIO();
-
-    GET_HANDLE_DATA(phandle, mm_sound_handle_mgr.handles, &handle, __mm_sound_handle_comparefunc);
-    if(phandle == NULL) {
-        debug_msg("phandle is null");
-        return MM_ERROR_SOUND_INTERNAL;
-    }
-
-    pa_threaded_mainloop_lock(mm_sound_handle_mgr.mainloop);
-
-    userdata.mainloop = mm_sound_handle_mgr.mainloop;
-    userdata.value = -1;
-
-    o = pa_ext_policy_get_volume_level(mm_sound_handle_mgr.context, phandle->stream_idx, type, __mm_sound_pa_get_cb, (void *)&userdata);
-    WAIT_PULSEAUDIO_OPERATION(mm_sound_handle_mgr, o);
-
-    if(userdata.value < 0) {
-        debug_error("pa_ext_policy_get_volume_level() failed");
-        *level = -1;
-        pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-        return MM_ERROR_SOUND_INTERNAL;
-    } else
-        pa_operation_unref(o);
-
-
-    *level = userdata.value;
-
-    pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-
-    return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int mm_sound_pa_set_volume_level(int handle, const int type, int level)
-{
-    mm_sound_handle_t* phandle = NULL;
-    pa_operation *o = NULL;
-
-    CHECK_HANDLE_RANGE(handle);
-    CHECK_VOLUME_TYPE_RANGE(type);
-    CHECK_CONNECT_TO_PULSEAUDIO();
-
-    GET_HANDLE_DATA(phandle, mm_sound_handle_mgr.handles, &handle, __mm_sound_handle_comparefunc);
-    if(phandle == NULL) {
-        debug_msg("phandle is null");
-        return MM_ERROR_SOUND_INTERNAL;
-    }
-
-    pa_threaded_mainloop_lock(mm_sound_handle_mgr.mainloop);
-
-    o = pa_ext_policy_set_volume_level(mm_sound_handle_mgr.context, phandle->stream_idx, type, level, __mm_sound_pa_success_cb, (void *)mm_sound_handle_mgr.mainloop);
-    WAIT_PULSEAUDIO_OPERATION(mm_sound_handle_mgr, o);
-
-    if(o)
-        pa_operation_unref(o);
-
-    pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-
-    return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int mm_sound_pa_get_mute(int handle, const int type, int direction, int* mute)
-{
-    mm_sound_handle_t* phandle = NULL;
-    get_volume_max_userdata_t userdata;
-    pa_operation *o = NULL;
-
-    CHECK_HANDLE_RANGE(handle);
-    CHECK_VOLUME_TYPE_RANGE(type);
-    CHECK_CONNECT_TO_PULSEAUDIO();
-
-    GET_HANDLE_DATA(phandle, mm_sound_handle_mgr.handles, &handle, __mm_sound_handle_comparefunc);
-    if(phandle == NULL) {
-        debug_msg("phandle is null");
-        return MM_ERROR_SOUND_INTERNAL;
-    }
-
-    pa_threaded_mainloop_lock(mm_sound_handle_mgr.mainloop);
-
-    userdata.mainloop = mm_sound_handle_mgr.mainloop;
-    userdata.value = -1;
-
-    o = pa_ext_policy_get_mute(mm_sound_handle_mgr.context, phandle->stream_idx, type, direction, __mm_sound_pa_get_cb, (void *)&userdata);
-    WAIT_PULSEAUDIO_OPERATION(mm_sound_handle_mgr, o);
-
-    if(userdata.value < 0) {
-        debug_error("mm_sound_pa_get_mute() failed");
-        *mute = -1;
-        pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-        return MM_ERROR_SOUND_INTERNAL;
-    } else
-        pa_operation_unref(o);
-
-    pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-
-    return MM_ERROR_NONE;
-}
-
-EXPORT_API
-int mm_sound_pa_set_mute(int handle, const int type, int direction, int mute)
-{
-    mm_sound_handle_t* phandle = NULL;
-    pa_operation *o = NULL;
-
-    CHECK_HANDLE_RANGE(handle);
-    CHECK_VOLUME_TYPE_RANGE(type);
-    CHECK_CONNECT_TO_PULSEAUDIO();
-
-    GET_HANDLE_DATA(phandle, mm_sound_handle_mgr.handles, &handle, __mm_sound_handle_comparefunc);
-    if(phandle == NULL) {
-        debug_msg("phandle is null");
-        return MM_ERROR_SOUND_INTERNAL;
-    }
-
-    pa_threaded_mainloop_lock(mm_sound_handle_mgr.mainloop);
-
-    o = pa_ext_policy_set_mute(mm_sound_handle_mgr.context, phandle->stream_idx, type, direction, mute, __mm_sound_pa_success_cb, (void *)mm_sound_handle_mgr.mainloop);
-    WAIT_PULSEAUDIO_OPERATION(mm_sound_handle_mgr, o);
-
-    if(o)
-        pa_operation_unref(o);
-
-    pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-
-    return MM_ERROR_NONE;
 }
 
 EXPORT_API
