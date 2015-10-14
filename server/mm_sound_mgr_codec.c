@@ -78,10 +78,29 @@ static int _MMSoundMgrCodecRegisterInterface(MMSoundPluginType *plugin);
 
 #define SOUND_SLOT_START 0
 
+gboolean _focus_release_thread (gpointer *data)
+{
+	int slotid = (int)data;
+
+	debug_warning ("enter _focus_release_thread");
+
+	if(mm_sound_release_focus(g_slots[slotid].focus_handle, g_slots[slotid].current_focus_type, NULL) != MM_ERROR_NONE) {
+		debug_error("mm_sound_release_focus in focus_callback failed");
+		return false;
+	} else {
+		debug_warning ("mm_sound_release_focus in focus_callback success");
+		g_slots[slotid].current_focus_type = FOCUS_NONE;
+		return true;
+	}
+
+	debug_warning ("leave _focus_release_thread");
+}
+
 void sound_codec_focus_callback(int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e focus_state, const char *reason_for_change, const char *additional_info, void *user_data)
 {
 
 	int slotid = (int)user_data;
+	int ids;
 	int result = MM_ERROR_NONE;
 
 	debug_warning ("focus callback called -> focus_stae(%d), reasoun_for_change(%s)", focus_state, reason_for_change ? reason_for_change : "N/A");
@@ -93,6 +112,7 @@ void sound_codec_focus_callback(int id, mm_sound_focus_type_e focus_type, mm_sou
 	if (focus_state == FOCUS_IS_RELEASED) {
 		g_slots[slotid].current_focus_type = FOCUS_FOR_BOTH&(~focus_type);
 		debug_warning ("focus is released -> stop playing");
+		g_idle_add((GSourceFunc)_focus_release_thread, (gpointer)slotid);
 		result = MMSoundMgrCodecStop(slotid);
 		if (result != MM_ERROR_NONE) {
 			debug_log("result error %d\n", result);
