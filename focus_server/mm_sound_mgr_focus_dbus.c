@@ -29,6 +29,9 @@
   static const gchar introspection_xml[] =
   "<node>"
   "  <interface name='org.tizen.FocusServer1'>"
+  "    <method name='GetUniqueId'>"
+  "      <arg name='id' type='i' direction='out'/>"
+  "    </method>"
   "    <method name='RegisterFocus'>"
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
@@ -99,6 +102,7 @@ struct mm_sound_mgr_focus_dbus_signal{
 	dbus_signal_sender sender;
 };
 
+static void handle_method_get_unique_id(GDBusMethodInvocation* invocation);
 static void handle_method_register_focus(GDBusMethodInvocation* invocation);
 static void handle_method_unregister_focus(GDBusMethodInvocation* invocation);
 static void handle_method_acquire_focus(GDBusMethodInvocation* invocation);
@@ -112,6 +116,12 @@ static void handle_method_emergent_exit_focus (GDBusMethodInvocation* invocation
 /* TODO : argument check with these information */
 /* TODO : divide object and interface with features (ex. play, path, device, focus, asm) */
 struct mm_sound_mgr_focus_dbus_method methods[METHOD_CALL_MAX] = {
+	[METHOD_CALL_GET_UNIQUE_ID] = {
+	.info = {
+		.name = "GetUniqueId",
+	},
+	.handler = handle_method_get_unique_id
+	},
 	[METHOD_CALL_REGISTER_FOCUS] = {
 		.info = {
 			.name = "RegisterFocus",
@@ -261,6 +271,16 @@ static void _method_call_return_error(GDBusMethodInvocation *invocation, int ret
 	g_dbus_method_invocation_return_dbus_error(invocation, err_name, "failed");
 }
 
+static void handle_method_get_unique_id(GDBusMethodInvocation* invocation)
+{
+	static int unique_id = 0;
+
+	debug_fenter();
+
+	_method_call_return_value(invocation, g_variant_new("(i)", ++unique_id));
+
+	debug_fleave();
+}
 
 static void handle_method_register_focus(GDBusMethodInvocation* invocation)
 {
@@ -319,7 +339,6 @@ send_reply:
 
 static void handle_method_unregister_focus(GDBusMethodInvocation* invocation)
 {
-
 	int ret = MM_ERROR_NONE;
 	int pid = 0, handle_id = 0;
 	gboolean is_for_session;
@@ -532,7 +551,7 @@ static void handle_method_call(GDBusConnection *connection,
 	}
 	debug_log("Method Call, obj : %s, intf : %s, method : %s", object_path, interface_name, method_name);
 
-	for (method_idx = METHOD_CALL_REGISTER_FOCUS; method_idx < METHOD_CALL_MAX; method_idx++) {
+	for (method_idx = METHOD_CALL_GET_UNIQUE_ID; method_idx < METHOD_CALL_MAX; method_idx++) {
 		if (!g_strcmp0(method_name, methods[method_idx].info.name)) {
 			methods[method_idx].handler(invocation);
 		}

@@ -100,6 +100,9 @@ const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_GET_CONNECTED_DEVICE_LIST] = {
 		.name = "GetConnectedDeviceList",
 	},
+	[METHOD_CALL_GET_UNIQUE_ID] = {
+		.name = "GetUniqueId",
+	},
 	[METHOD_CALL_REGISTER_FOCUS] = {
 		.name = "RegisterFocus",
 	},
@@ -410,20 +413,20 @@ static int _dbus_method_call_to(int dbus_to, int method_type, GVariant *args, GV
 		interface = INTERFACE_SOUND_SERVER;
 	} else if (dbus_to == DBUS_TO_PULSE_MODULE_DEVICE_MANAGER) {
 		bus_name = BUS_NAME_PULSEAUDIO;
-        object = OBJECT_PULSE_MODULE_DEVICE_MANAGER;
-        interface = INTERFACE_PULSE_MODULE_DEVICE_MANAGER;
+		object = OBJECT_PULSE_MODULE_DEVICE_MANAGER;
+		interface = INTERFACE_PULSE_MODULE_DEVICE_MANAGER;
 	} else if (dbus_to == DBUS_TO_PULSE_MODULE_STREAM_MANAGER) {
 		bus_name = BUS_NAME_PULSEAUDIO;
 		object = OBJECT_PULSE_MODULE_STREAM_MANAGER;
 		interface = INTERFACE_PULSE_MODULE_STREAM_MANAGER;
 	} else if (dbus_to == DBUS_TO_PULSE_MODULE_POLICY) {
 		bus_name = BUS_NAME_PULSEAUDIO;
-        object = OBJECT_PULSE_MODULE_POLICY;
-        interface = INTERFACE_PULSE_MODULE_POLICY;
+		object = OBJECT_PULSE_MODULE_POLICY;
+		interface = INTERFACE_PULSE_MODULE_POLICY;
 	} else if (dbus_to == DBUS_TO_FOCUS_SERVER) {
 		bus_name = BUS_NAME_FOCUS_SERVER;
-        object = OBJECT_FOCUS_SERVER;
-        interface = INTERFACE_FOCUS_SERVER;
+		object = OBJECT_FOCUS_SERVER;
+		interface = INTERFACE_FOCUS_SERVER;
 	} else {
 		debug_error("Invalid case, dbus_to %d", dbus_to);
 		return MM_ERROR_SOUND_INTERNAL;
@@ -1317,6 +1320,30 @@ static GVariant* _get_cookie_variant ()
 
 #endif /* USE_SECURITY */
 #endif /* SUPPORT_CONTAINER */
+
+int mm_sound_client_dbus_get_unique_id(int *id)
+{
+	int ret = MM_ERROR_NONE;
+	int res = 0;
+	GVariant *result = NULL;
+
+	debug_fenter();
+
+	if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_GET_UNIQUE_ID, NULL, &result)) != MM_ERROR_NONE) {
+		debug_error("dbus get unique id failed");
+	}
+
+	if (result) {
+		g_variant_get(result, "(i)", &res);
+		*id = res;
+		debug_msg("got unique id(%d)", *id);
+		g_variant_unref(result);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
 
 int mm_sound_client_dbus_register_focus(int id, int instance, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data)
 {
