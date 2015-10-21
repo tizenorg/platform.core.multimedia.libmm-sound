@@ -70,9 +70,9 @@ int mm_sound_focus_get_id(int *id)
 
 	debug_fenter();
 
-	ret = mm_sound_client_get_uniq_id(id);
+	ret = mm_sound_client_get_unique_id(id);
 	if (ret) {
-		debug_error("Failed to mm_sound_client_get_uniq_id(), ret[0x%x]\n", ret);
+		debug_error("Failed to mm_sound_client_get_unique_id(), ret[0x%x]\n", ret);
 	}
 
 	debug_fleave();
