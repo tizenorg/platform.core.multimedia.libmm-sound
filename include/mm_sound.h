@@ -1897,6 +1897,7 @@ int mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e fla
 int mm_sound_remove_device_information_changed_callback(unsigned int subs_id);
 
 int mm_sound_get_current_device_list(mm_sound_device_flags_e device_mask, MMSoundDeviceList_t *device_list);
+void mm_sound_free_device_list(MMSoundDeviceList_t device_list);
 int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *device);
 int mm_sound_get_prev_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *device);
 int mm_sound_get_device_type(MMSoundDevice_t device_h, mm_sound_device_type_e *type);

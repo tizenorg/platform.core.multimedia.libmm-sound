@@ -121,9 +121,6 @@ focus_sound_info_t g_focus_sound_handle[FOCUS_HANDLE_MAX];
 focus_session_interrupt_info_t g_focus_session_interrupt_info = {NULL, NULL};
 
 /* global variables for device list */
-//static GList *g_device_list = NULL;
-static mm_sound_device_list_t g_device_list_t;
-static pthread_mutex_t g_device_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_id_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 guint g_focus_signal_handle = 0;
@@ -646,22 +643,6 @@ int mm_sound_client_stop_sound(int handle)
 	return ret;
 }
 
-static int _mm_sound_client_device_list_clear ()
-{
-	int ret = MM_ERROR_NONE;
-
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_device_list_mutex, MM_ERROR_SOUND_INTERNAL);
-
-	if (g_device_list_t.list) {
-		g_list_free_full(g_device_list_t.list, g_free);
-		g_device_list_t.list = NULL;
-	}
-
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_device_list_mutex);
-
-	return ret;
-}
-
 static int _mm_sound_client_device_list_dump (GList *device_list)
 {
 	int ret = MM_ERROR_NONE;
@@ -686,29 +667,21 @@ static int _mm_sound_client_device_list_dump (GList *device_list)
 	return ret;
 }
 
-int mm_sound_client_get_current_connected_device_list(int device_flags, mm_sound_device_list_t **device_list)
+int mm_sound_client_get_current_connected_device_list(int device_flags, mm_sound_device_list_t *device_list)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret = _mm_sound_client_device_list_clear();
-	if (ret) {
-		debug_error("[Client] failed to __mm_sound_client_device_list_clear(), ret[0x%x]\n", ret);
-		return ret;
-	}
-
-	if ((ret = mm_sound_client_dbus_get_current_connected_device_list(device_flags, &g_device_list_t.list)) != MM_ERROR_NONE) {
+	if ((ret = mm_sound_client_dbus_get_current_connected_device_list(device_flags, &device_list->list)) != MM_ERROR_NONE) {
 		debug_error("[Client] failed to get current connected device list with dbus, ret[0x%x]", ret);
 		goto failed;
 	}
-	if (!g_device_list_t.list) {
+	if (!device_list->list) {
 		debug_error("Got device list null");
 		ret = MM_ERROR_SOUND_NO_DATA;
 		goto failed;
 	}
-//		g_device_list_t.list = g_device_list;
-	_mm_sound_client_device_list_dump(g_device_list_t.list);
-	*device_list = &g_device_list_t;
+	_mm_sound_client_device_list_dump(device_list->list);
 
 failed:
 	debug_fleave();

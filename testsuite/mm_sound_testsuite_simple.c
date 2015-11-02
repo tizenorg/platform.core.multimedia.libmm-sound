@@ -1658,6 +1658,8 @@ static void interpret (char *cmd)
 						debug_log("*** --- [PREV DEVICE] type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", device_type, id, io_direction, state, name);
 					}
 				} while (dret == MM_ERROR_NONE);
+				mm_sound_free_device_list(device_list);
+				debug_log("device list freed\n");
 			}
 		}
 

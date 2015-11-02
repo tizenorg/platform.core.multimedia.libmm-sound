@@ -168,21 +168,41 @@ EXPORT_API
 int mm_sound_get_current_device_list(mm_sound_device_flags_e flags, MMSoundDeviceList_t *device_list)
 {
 	int ret = MM_ERROR_NONE;
+	mm_sound_device_list_t *_device_list;
 
 	if (!device_list) {
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	ret = _check_for_valid_mask(flags);
+
+	if (!(_device_list = g_malloc0(sizeof(mm_sound_device_list_t)))) {
+		debug_error("[Client] Allocate device list failed");
+		ret = MM_ERROR_SOUND_INTERNAL;
+	}
+
 	if (ret == MM_ERROR_NONE) {
-		ret = mm_sound_client_get_current_connected_device_list(flags, (mm_sound_device_list_t**)device_list);
+		ret = mm_sound_client_get_current_connected_device_list(flags, _device_list);
 		if (ret < 0) {
 			debug_error("Could not get current connected device list, ret = %x\n", ret);
+			g_free(_device_list);
 		} else {
-			g_is_new_device_list = true;
+			*device_list = _device_list;
 		}
 	}
 
 	return ret;
+}
+
+EXPORT_API
+void mm_sound_free_device_list(MMSoundDeviceList_t device_list)
+{
+	mm_sound_device_list_t *device_list_t = NULL;
+
+	if (!device_list)
+		return;
+	device_list_t = (mm_sound_device_list_t*) device_list;
+	g_list_free_full(device_list_t->list, g_free);
+	g_free(device_list_t);
 }
 
 EXPORT_API
