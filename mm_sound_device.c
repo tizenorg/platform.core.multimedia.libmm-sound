@@ -32,7 +32,6 @@
 
 #define VOLUME_TYPE_LEN 64
 
-bool g_is_new_device_list = true;
 
 static int _check_for_valid_mask (mm_sound_device_flags_e flags)
 {
@@ -168,21 +167,46 @@ EXPORT_API
 int mm_sound_get_current_device_list(mm_sound_device_flags_e flags, MMSoundDeviceList_t *device_list)
 {
 	int ret = MM_ERROR_NONE;
+	mm_sound_device_list_t *_device_list;
 
 	if (!device_list) {
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	ret = _check_for_valid_mask(flags);
+
+	if (!(_device_list = g_malloc0(sizeof(mm_sound_device_list_t)))) {
+		debug_error("[Client] Allocate device list failed");
+		ret = MM_ERROR_SOUND_INTERNAL;
+	}
+
+	_device_list->is_new_device_list = true;
+
 	if (ret == MM_ERROR_NONE) {
-		ret = mm_sound_client_get_current_connected_device_list(flags, (mm_sound_device_list_t**)device_list);
+		ret = mm_sound_client_get_current_connected_device_list(flags, _device_list);
 		if (ret < 0) {
 			debug_error("Could not get current connected device list, ret = %x\n", ret);
+			g_free(_device_list);
 		} else {
-			g_is_new_device_list = true;
+			*device_list = _device_list;
 		}
 	}
 
 	return ret;
+}
+
+EXPORT_API
+int mm_sound_free_device_list(MMSoundDeviceList_t device_list)
+{
+	mm_sound_device_list_t *device_list_t = NULL;
+
+	if (!device_list) {
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+	device_list_t = (mm_sound_device_list_t*) device_list;
+	g_list_free_full(device_list_t->list, g_free);
+	g_free(device_list_t);
+
+	return MM_ERROR_NONE;
 }
 
 EXPORT_API
@@ -195,7 +219,7 @@ int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	device_list_t = (mm_sound_device_list_t*) device_list;
-	if (g_is_new_device_list) {
+	if (device_list_t->is_new_device_list) {
 		node = g_list_first(device_list_t->list);
 	} else {
 		node = g_list_next(device_list_t->list);
@@ -203,8 +227,8 @@ int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 	if (!node) {
 		ret = MM_ERROR_SOUND_NO_DATA;
 	} else {
-		if (g_is_new_device_list) {
-			g_is_new_device_list = false;
+		if (device_list_t->is_new_device_list) {
+			device_list_t->is_new_device_list = false;
 		} else {
 			device_list_t->list = node;
 		}

@@ -48,6 +48,7 @@ typedef struct {
 
 typedef struct {
 	GList *list;
+	bool is_new_device_list;
 } mm_sound_device_list_t;
 
 typedef enum {
