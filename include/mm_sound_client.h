@@ -49,7 +49,7 @@ int mm_sound_client_set_volume_by_type(const int volume_type, const unsigned int
 int mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data, unsigned int *subs_id);
 int mm_sound_client_remove_volume_changed_callback(unsigned int subs_id);
 int mm_sound_client_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in);
-int mm_sound_client_get_current_connected_device_list(int device_flgas, mm_sound_device_list_t **device_list);
+int mm_sound_client_get_current_connected_device_list(int device_flgas, mm_sound_device_list_t *device_list);
 int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data, unsigned int *subs_id);
 int mm_sound_client_remove_device_connected_callback(unsigned int subs_id);
 int mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void* user_data, unsigned int *subs_id);
