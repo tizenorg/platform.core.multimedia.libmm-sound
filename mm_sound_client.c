@@ -1187,9 +1187,9 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 			return FALSE;
 		}
 
-		focus_index = cb_data.handle - 1;
-		if (focus_index < 0) {
-			debug_error("index is not valid, %d", focus_index);
+		focus_index = _focus_find_index_by_handle(cb_data.handle);
+		if (focus_index == -1) {
+			debug_error("Could not find index");
 			return FALSE;
 		}
 
@@ -1202,16 +1202,14 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 
 		if (g_focus_sound_handle[focus_index].watch_callback == NULL) {
 			debug_msg("callback is null..");
-			g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
-			return FALSE;
-		}
-
-		debug_msg("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].watch_callback);
-		(g_focus_sound_handle[focus_index].watch_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
-		debug_msg("[CALLBACK END]");
-		if (g_focus_session_interrupt_info.user_cb) {
-			debug_error("sending session interrupt callback(%p)", g_focus_session_interrupt_info.user_cb);
-			(g_focus_session_interrupt_info.user_cb)(cb_data.state, cb_data.stream_type, true, g_focus_session_interrupt_info.user_data);
+		} else {
+			debug_msg("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].watch_callback);
+			(g_focus_sound_handle[focus_index].watch_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
+			debug_msg("[CALLBACK END]");
+			if (g_focus_session_interrupt_info.user_cb) {
+				debug_error("sending session interrupt callback(%p)", g_focus_session_interrupt_info.user_cb);
+				(g_focus_session_interrupt_info.user_cb)(cb_data.state, cb_data.stream_type, true, g_focus_session_interrupt_info.user_data);
+			}
 		}
 
 #ifdef CONFIG_ENABLE_RETCB
@@ -1558,7 +1556,7 @@ int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_
 			GMainContext* focus_context = g_main_context_new ();
 			g_focus_loop = g_main_loop_new (focus_context, FALSE);
 			g_main_context_unref(focus_context);
-			g_focus_thread = g_thread_new("focus-register-thread", _focus_thread_func, NULL);
+			g_focus_thread = g_thread_new("focus-callback-thread", _focus_thread_func, NULL);
 			if (g_focus_thread == NULL) {
 				debug_error ("could not create thread..");
 				g_main_loop_unref(g_focus_loop);
@@ -1712,7 +1710,7 @@ int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e focu
 			GMainContext* focus_context = g_main_context_new ();
 			g_focus_loop = g_main_loop_new (focus_context, FALSE);
 			g_main_context_unref(focus_context);
-			g_focus_thread = g_thread_new("focus-watch-thread", _focus_thread_func, NULL);
+			g_focus_thread = g_thread_new("focus-callback-thread", _focus_thread_func, NULL);
 			if (g_focus_thread == NULL) {
 				debug_error ("could not create thread..");
 				g_main_loop_unref(g_focus_loop);
