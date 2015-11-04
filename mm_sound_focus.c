@@ -31,11 +31,26 @@
 #include "include/mm_sound_focus.h"
 #include "focus_server/include/mm_sound_mgr_focus.h"
 
+#define RETURN_ERROR_IF_FOCUS_CB_THREAD(x_thread) \
+{ \
+	int ret = MM_ERROR_NONE; \
+	bool result = false; \
+	ret = mm_sound_client_is_focus_cb_thread(x_thread, &result); \
+	if (ret) \
+		return ret; \
+	else if (result) { \
+		debug_error("it might be called in the thread of focus callback, it is not allowed\n"); \
+		return MM_ERROR_SOUND_INVALID_OPERATION; \
+	} \
+} \
+
 EXPORT_API
 int mm_sound_focus_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
+
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
 
 	if (!callback)
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -52,6 +67,8 @@ int mm_sound_focus_unset_session_interrupt_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
+
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
 
 	ret = mm_sound_client_unset_session_interrupt_callback ();
 	if (ret) {
@@ -70,9 +87,29 @@ int mm_sound_focus_get_id(int *id)
 
 	debug_fenter();
 
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
+
 	ret = mm_sound_client_get_unique_id(id);
 	if (ret) {
 		debug_error("Failed to mm_sound_client_get_unique_id(), ret[0x%x]\n", ret);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_focus_is_cb_thread(bool *result)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	ret = mm_sound_client_is_focus_cb_thread(g_thread_self(), result);
+	if (!ret) {
+		if (*result)
+			debug_error("it might be called in the thread of focus callback, it is not allowed\n");
 	}
 
 	debug_fleave();
@@ -86,6 +123,8 @@ int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_chan
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
+
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
 
 	if (id < 0 || callback == NULL) {
 		debug_error("argument is not valid\n");
@@ -109,6 +148,8 @@ int mm_sound_register_focus_for_session(int id, int pid, const char *stream_type
 
 	debug_fenter();
 
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
+
 	if (id < 0 || callback == NULL) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -124,13 +165,14 @@ int mm_sound_register_focus_for_session(int id, int pid, const char *stream_type
 	return ret;
 }
 
-
 EXPORT_API
 int mm_sound_unregister_focus(int id)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
+
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
 
 	if (id < 0) {
 		debug_error("argument is not valid\n");
@@ -153,6 +195,8 @@ int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char 
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
+
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
 
 	if (id < 0) {
 		debug_error("argument is not valid\n");
@@ -180,6 +224,8 @@ int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char 
 
 	debug_fenter();
 
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
+
 	if (id < 0) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -206,6 +252,8 @@ int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound
 
 	debug_fenter();
 
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
+
 	if (callback == NULL || id == NULL) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -227,6 +275,8 @@ int mm_sound_set_focus_watch_callback_for_session(int pid, mm_sound_focus_type_e
 
 	debug_fenter();
 
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
+
 	if (callback == NULL || id == NULL) {
 		debug_error("argument is not valid\n");
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -247,6 +297,8 @@ int mm_sound_unset_focus_watch_callback(int id)
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
+
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
 
 	ret = mm_sound_client_unset_focus_watch_callback(id);
 	if (ret) {
