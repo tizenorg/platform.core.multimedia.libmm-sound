@@ -1526,6 +1526,26 @@ int mm_sound_client_get_unique_id(int *id)
 	return ret;
 }
 
+int mm_sound_client_is_focus_cb_thread(GThread *mine, bool *result)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (!mine || !result)
+		ret = MM_ERROR_INVALID_ARGUMENT;
+	else {
+		if (mine == g_focus_thread)
+			*result = true;
+		else
+			*result = false;
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
 int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data)
 {
 	int ret = MM_ERROR_NONE;
@@ -1625,6 +1645,7 @@ int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char
 	int ret = MM_ERROR_NONE;
 	int instance;
 	int index = -1;
+
 	debug_fenter();
 
 	index = _focus_find_index_by_handle(id);
