@@ -1136,46 +1136,22 @@ int mm_sound_client_dbus_clear_focus(int pid)
 
 int mm_sound_client_dbus_is_route_available(mm_sound_route route, bool *is_available)
 {
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
-
-	return ret;
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 int mm_sound_client_dbus_foreach_available_route_cb(mm_sound_available_route_cb avail_cb, void *user_data)
 {
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
-
-	return ret;
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 int mm_sound_client_dbus_set_active_route(mm_sound_route route, bool need_broadcast)
 {
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
-
-	return ret;
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 int mm_sound_client_dbus_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
 {
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
-
-	return ret;
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 int mm_sound_client_dbus_add_play_sound_end_callback(mm_sound_stop_callback_wrapper_func stop_cb, void* userdata, unsigned int *subs_id)
@@ -1208,68 +1184,32 @@ int mm_sound_client_dbus_remove_play_sound_end_callback(unsigned int subs_id)
 
 int mm_sound_client_dbus_add_active_device_changed_callback(const char *name, mm_sound_active_device_changed_cb func, void* user_data)
 {
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
-
-	return ret;
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 int mm_sound_client_dbus_remove_active_device_changed_callback(const char *name)
 {
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
-
-	return ret;
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 int mm_sound_client_dbus_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void* user_data)
 {
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
-
-	return ret;
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 int mm_sound_client_dbus_remove_available_route_changed_callback(void)
 {
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
-
-	return ret;
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 int mm_sound_client_dbus_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in)
 {
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
-
-	return ret;
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 int mm_sound_client_dbus_set_active_route_auto(void)
 {
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
-	debug_fleave();
-
-	return ret;
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 /*------------------------------------------ FOCUS --------------------------------------------------*/
