@@ -222,7 +222,7 @@ int mm_sound_remove_volume_changed_callback(unsigned int subs_id)
 EXPORT_API
 int mm_sound_volume_get_step(volume_type_t type, int *step)
 {
-	return MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 EXPORT_API
