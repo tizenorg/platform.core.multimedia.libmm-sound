@@ -47,6 +47,7 @@ typedef enum {
 } mm_sound_focus_type_e;
 
 int mm_sound_focus_get_id(int *id);
+int mm_sound_focus_check_thread_self(bool *focus_cb_thread);
 
 typedef void (*mm_sound_focus_changed_cb) (int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data);
 int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data);

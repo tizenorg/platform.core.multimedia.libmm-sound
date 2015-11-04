@@ -57,7 +57,7 @@ typedef struct {
     int testmode;
 } server_arg;
 
-static int getOption(int argc, char **argv, server_arg *arg);
+static int get_option(int argc, char **argv, server_arg *arg);
 static int usage(int argc, char **argv);
 
 static struct sigaction sigint_action;  /* Backup pointer of SIGINT handler */
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 	action.sa_flags = 0;
 	sigemptyset(&action.sa_mask);
 
-	if (getOption(argc, argv, &serveropt))
+	if (get_option(argc, argv, &serveropt))
 		return 1;
 
 	debug_warning("focus_server [%d] init \n", getpid());
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-static int getOption(int argc, char **argv, server_arg *arg)
+static int get_option(int argc, char **argv, server_arg *arg)
 {
 	int c;
 	static struct option long_options[] = {
