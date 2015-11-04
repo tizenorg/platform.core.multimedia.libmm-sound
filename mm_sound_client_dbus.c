@@ -1139,7 +1139,7 @@ int mm_sound_client_dbus_is_route_available(mm_sound_route route, bool *is_avail
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+	ret = MM_ERROR_NOT_SUPPORT_API;
 	debug_fleave();
 
 	return ret;
@@ -1150,7 +1150,7 @@ int mm_sound_client_dbus_foreach_available_route_cb(mm_sound_available_route_cb 
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+	ret = MM_ERROR_NOT_SUPPORT_API;
 	debug_fleave();
 
 	return ret;
@@ -1161,7 +1161,7 @@ int mm_sound_client_dbus_set_active_route(mm_sound_route route, bool need_broadc
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+	ret = MM_ERROR_NOT_SUPPORT_API;
 	debug_fleave();
 
 	return ret;
@@ -1172,7 +1172,7 @@ int mm_sound_client_dbus_get_active_device(mm_sound_device_in *device_in, mm_sou
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+	ret = MM_ERROR_NOT_SUPPORT_API;
 	debug_fleave();
 
 	return ret;
@@ -1211,7 +1211,7 @@ int mm_sound_client_dbus_add_active_device_changed_callback(const char *name, mm
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+	ret = MM_ERROR_NOT_SUPPORT_API;
 	debug_fleave();
 
 	return ret;
@@ -1222,7 +1222,7 @@ int mm_sound_client_dbus_remove_active_device_changed_callback(const char *name)
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+	ret = MM_ERROR_NOT_SUPPORT_API;
 	debug_fleave();
 
 	return ret;
@@ -1233,7 +1233,7 @@ int mm_sound_client_dbus_add_available_route_changed_callback(mm_sound_available
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+	ret = MM_ERROR_NOT_SUPPORT_API;
 	debug_fleave();
 
 	return ret;
@@ -1244,7 +1244,7 @@ int mm_sound_client_dbus_remove_available_route_changed_callback(void)
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+	ret = MM_ERROR_NOT_SUPPORT_API;
 	debug_fleave();
 
 	return ret;
@@ -1255,7 +1255,7 @@ int mm_sound_client_dbus_set_sound_path_for_active_device(mm_sound_device_out de
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+	ret = MM_ERROR_NOT_SUPPORT_API;
 	debug_fleave();
 
 	return ret;
@@ -1266,7 +1266,7 @@ int mm_sound_client_dbus_set_active_route_auto(void)
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
-	ret = MM_ERROR_SOUND_NOT_SUPPORTED_OPERATION;
+	ret = MM_ERROR_NOT_SUPPORT_API;
 	debug_fleave();
 
 	return ret;
