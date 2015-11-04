@@ -1130,7 +1130,7 @@ int mm_sound_mgr_focus_emergent_exit(const _mm_sound_mgr_focus_param_t *param)
 						debug_error("Fail to _focus_do_watch_callback, ret[0x%x]\n", ret);
 					}
 				}
-				__clear_focus_pipe(node);
+				__clear_focus_pipe(my_node);
 				g_focus_node_list = g_list_remove(g_focus_node_list, my_node);
 				list = g_focus_node_list;
 			}
