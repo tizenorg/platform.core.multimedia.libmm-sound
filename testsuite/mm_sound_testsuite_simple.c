@@ -284,6 +284,7 @@ static void displaymenu()
 		g_print("SF : Set Focus Callback\t");
 		g_print("FFS : Set Focus Callback for session\t");
 		g_print("UF : Unset Focus Callback\n");
+		g_print("DF : Disable Auto Focus Reacquirement\t");
 		g_print("AF : Acquire Focus\t");
 		g_print("RF : Release Focus\n");
 		g_print("WS : Set Focus Watch Callback\t");
@@ -448,7 +449,7 @@ static void interpret (char *cmd)
 	{
 		case CURRENT_STATUS_MAINMENU:
 #ifdef USE_FOCUS
-			if(strncmp(cmd, "DS", 2) ==0) {
+			if(strncmp(cmd, "DS", 2) == 0) {
 				ret = mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &g_subscribe_id1, __mm_sound_signal_cb1, NULL);
 				if(ret < 0)
 					debug_log("mm_sound_subscribe_signal() failed with 0x%x\n", ret);
@@ -461,14 +462,14 @@ static void interpret (char *cmd)
 					debug_log("id: %u, callback:%p\n", g_subscribe_id2, __mm_sound_signal_cb2);
 			}
 
-			else if(strncmp(cmd, "DU", 2) ==0) {
+			else if(strncmp(cmd, "DU", 2) == 0) {
 				mm_sound_unsubscribe_signal(g_subscribe_id1);
 				debug_log("unsubscribe_signal for id[%d]\n", g_subscribe_id1);
 				mm_sound_unsubscribe_signal(g_subscribe_id2);
 				debug_log("unsubscribe_signal for id[%d]\n", g_subscribe_id2);
 			}
 
-			else if(strncmp(cmd, "SS", 2) ==0) {
+			else if(strncmp(cmd, "SS", 2) == 0) {
 				ret = mm_sound_send_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, 1);
 				if(ret < 0)
 					debug_log("mm_sound_send_signal() failed with 0x%x\n", ret);
@@ -485,7 +486,7 @@ static void interpret (char *cmd)
 				g_print (" -- get value of RELEASE_INTERNAL_FOCUS : %d\n", value);
 			}
 
-			else if(strncmp(cmd, "GU", 2) ==0) {
+			else if(strncmp(cmd, "GU", 2) == 0) {
 				int id = 0;
 				ret = mm_sound_focus_get_id(&id);
 				if(ret < 0)
@@ -494,7 +495,7 @@ static void interpret (char *cmd)
 					debug_log("id : %d\n", id);
 			}
 
-			else if(strncmp(cmd, "SF", 2) ==0) {
+			else if(strncmp(cmd, "SF", 2) == 0) {
 				int ret = 0;
 				char input_string[128];
 				char flag_1, flag_2;
@@ -543,7 +544,7 @@ static void interpret (char *cmd)
 				}
 			}
 
-			else if(strncmp(cmd, "FFS", 3) ==0) {
+			else if(strncmp(cmd, "FFS", 3) == 0) {
 				int ret = 0;
 				char input_string[128];
 				char flag_1, flag_2;
@@ -592,7 +593,7 @@ static void interpret (char *cmd)
 				}
 			}
 
-			else if(strncmp(cmd, "UF", 2) ==0) {
+			else if(strncmp(cmd, "UF", 2) == 0) {
 				int ret = 0;
 				char input_string[128];
 				char flag_1;
@@ -613,7 +614,37 @@ static void interpret (char *cmd)
 				}
 			}
 
-			else if(strncmp(cmd, "AF", 2) ==0) {
+			else if(strncmp(cmd, "DF", 2) == 0) {
+				int ret = 0;
+				char input_string[128];
+				char flag_1, flag_2;
+				int id = 0;
+				bool reacquisition = true;
+				fflush(stdin);
+				g_print ("1. inable auto reacquirement\n");
+				g_print ("2. disable auto reacquirement\n");
+				g_print("> select id and option: (eg. 0 1)");
+				if (fgets(input_string, sizeof(input_string)-1, stdin)) {
+					g_print ("### fgets return  NULL\n");
+				}
+				flag_1 = input_string[0];
+				flag_2 = input_string[2];
+
+				if(flag_1 == '0') { id = 0; }
+				else if(flag_1 == '1') { id = 1; }
+				else if(flag_1 == '2') { id = 2; }
+				else { id = 2; }
+
+				if(flag_2 == '1') { reacquisition = true; }
+				else if(flag_2 == '2') { reacquisition = false; }
+				else { reacquisition = true; }
+				ret = mm_sound_set_focus_reacquisition(id, reacquisition);
+				if (ret) {
+					g_print("failed to mm_sound_disable_focus_reacquirement(), ret[0x%x]\n", ret);
+				}
+			}
+
+			else if(strncmp(cmd, "AF", 2) == 0) {
 				int ret = 0;
 				char input_string[128];
 				char flag_1, flag_2;
@@ -644,7 +675,7 @@ static void interpret (char *cmd)
 				}
 			}
 
-			else if(strncmp(cmd, "RF", 2) ==0) {
+			else if(strncmp(cmd, "RF", 2) == 0) {
 				int ret = 0;
 				char input_string[128];
 				char flag_1, flag_2;
@@ -675,7 +706,7 @@ static void interpret (char *cmd)
 				}
 			}
 
-			else if(strncmp(cmd, "WFS", 3) ==0) {
+			else if(strncmp(cmd, "WFS", 3) == 0) {
 				int ret = 0;
 				char input_string[128];
 				char flag_1;
@@ -705,7 +736,7 @@ static void interpret (char *cmd)
 				}
 			}
 
-			else if(strncmp(cmd, "WS", 2) ==0) {
+			else if(strncmp(cmd, "WS", 2) == 0) {
 				int ret = 0;
 				char input_string[128];
 				char flag_1;
@@ -735,7 +766,7 @@ static void interpret (char *cmd)
 				}
 			}
 
-			else if(strncmp(cmd, "WU", 2) ==0) {
+			else if(strncmp(cmd, "WU", 2) == 0) {
 				int ret = 0;
 				ret = mm_sound_unset_focus_watch_callback(g_focus_watch_index);
 				if (ret) {
@@ -1515,38 +1546,38 @@ static void interpret (char *cmd)
 			}
 	}
 
-		else if(strncmp(cmd, "z", 1) ==0) {
+		else if(strncmp(cmd, "z", 1) == 0) {
 			if(MM_ERROR_NONE != mm_session_init(MM_SESSION_TYPE_CALL))
 			{
 				g_print("Call session init failed\n");
 			}
 		}
-		else if(strncmp(cmd, "Z", 1) ==0) {
+		else if(strncmp(cmd, "Z", 1) == 0) {
 			if(MM_ERROR_NONE != mm_session_init(MM_SESSION_TYPE_VIDEOCALL))
 			{
 				g_print("VideoCall session init failed\n");
 			}
 		}
-		else if(strncmp(cmd, "N", 1) ==0) {
+		else if(strncmp(cmd, "N", 1) == 0) {
 			if(MM_ERROR_NONE != mm_session_init(MM_SESSION_TYPE_NOTIFY))
 			{
 				g_print("Notify session init failed\n");
 			}
 		}
-		else if(strncmp(cmd, "n", 1) ==0) {
+		else if(strncmp(cmd, "n", 1) == 0) {
 			if(MM_ERROR_NONE != mm_session_init(MM_SESSION_TYPE_VOIP))
 			{
 				g_print("VOIP session init failed\n");
 			}
 		}
-		else if(strncmp(cmd, "v", 1) ==0) {
+		else if(strncmp(cmd, "v", 1) == 0) {
 			if(MM_ERROR_NONE != mm_session_finish())
 			{
 				g_print("Call session finish failed\n");
 			}
 		}
 
-		else if(strncmp(cmd, "V", 1) ==0) {
+		else if(strncmp(cmd, "V", 1) == 0) {
 			int value;
 			if(vconf_get_int(SOUND_STATUS_KEY, &value)) {
 				g_print("Can not get %s\n", SOUND_STATUS_KEY);
@@ -1584,7 +1615,7 @@ static void interpret (char *cmd)
 			}
 		}
 
-		else if(strncmp(cmd, "L", 1) ==0) {
+		else if(strncmp(cmd, "L", 1) == 0) {
 			int ret = 0;
 			mm_sound_device_flags_e flags = MM_SOUND_DEVICE_ALL_FLAG;
 			MMSoundDeviceList_t device_list;
@@ -1661,7 +1692,7 @@ static void interpret (char *cmd)
 			}
 		}
 
-		else if(strncmp(cmd, "C", 1) ==0) {
+		else if(strncmp(cmd, "C", 1) == 0) {
 			int ret = 0;
 			char input_string[128];
 			mm_sound_device_flags_e device_flag_1 = MM_SOUND_DEVICE_ALL_FLAG;
@@ -1721,14 +1752,14 @@ static void interpret (char *cmd)
 			}
 		}
 
-		else if(strncmp(cmd, "D", 1) ==0) {
+		else if(strncmp(cmd, "D", 1) == 0) {
 			int ret = 0;
 			ret = mm_sound_remove_device_connected_callback(g_subs_id_device_conn);
 			if (ret) {
 				g_print("failed to mm_sound_remove_device_connected_callback(), ret[0x%x]\n", ret);
 			}
 		}
-		else if(strncmp(cmd, "Q", 1) ==0) {
+		else if(strncmp(cmd, "Q", 1) == 0) {
 			int ret = 0;
 			char input_string[128];
 			mm_sound_device_flags_e device_flag_1 = MM_SOUND_DEVICE_ALL_FLAG;
@@ -1788,7 +1819,7 @@ static void interpret (char *cmd)
 			}
 		}
 
-		else if(strncmp(cmd, "W", 1) ==0) {
+		else if(strncmp(cmd, "W", 1) == 0) {
 			int ret = 0;
 			ret = mm_sound_remove_device_information_changed_callback(g_subs_id_device_info);
 			if (ret) {
