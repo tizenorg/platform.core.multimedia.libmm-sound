@@ -52,6 +52,7 @@ typedef void (*mm_sound_focus_changed_cb) (int id, mm_sound_focus_type_e focus_t
 int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data);
 int mm_sound_register_focus_for_session(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data);
 int mm_sound_unregister_focus(int id);
+int mm_sound_disable_focus_reacquirement(int id, bool no_reacquirement);
 int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info);
 int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info);
 
