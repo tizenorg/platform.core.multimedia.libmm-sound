@@ -384,7 +384,7 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	int endtime = 0;
 	int fd_FOCUS_R = -1;
 	int fd_FOCUS = -1;
-	int ret = -1;
+	unsigned int ret;
 	struct pollfd pfd;
 	int pret = 0;
 	int pollingTimeout = 2500; /* NOTE : This is temporary code, because of Deadlock issues. If you fix that issue, remove this comment */
@@ -394,6 +394,8 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	int flag_for_taken_index = 0;
 	int taken_pid = 0;
 	int taken_hid = 0;
+	int ret_handle = -1;
+	bool auto_reacuire = true;
 	bool taken_by_session = false;
 
 	focus_cb_data cb_data;
@@ -493,6 +495,9 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	g_free(filename2);
 	filename2 = NULL;
 
+	ret_handle = (int)(ret & 0x0000ffff);
+	auto_reacuire = (bool)((ret >> 16) & 0xf);
+
 	/* Calculate endtime and display*/
 	gettimeofday(&time, NULL);
 	endtime = time.tv_sec * 1000000 + time.tv_usec;
@@ -509,23 +514,25 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	}
 	//debug_log("[RETCB] Return value 0x%x\n", buf);
 
-	/* update victim node */
-	taken_pid = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->pid : 0;
-	taken_hid = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->handle_id : 0;
-	taken_by_session = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->is_for_session : false;
-	flag_for_taken_index = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->request_type & victim_node->status : assaulter_param->request_type;
-	for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
-		if (flag_for_taken_index & (i+1)) {
-			if (command == FOCUS_COMMAND_ACQUIRE && (victim_node->taken_by_id[i].pid != assaulter_param->pid || (victim_node->taken_by_id[i].handle_id != assaulter_param->handle_id && !(victim_node->taken_by_id[i].by_session & assaulter_param->is_for_session)))) {
-				/* skip */
-				debug_error("skip updating victim node");
-				continue;
+	if(auto_reacuire) {
+		/* update victim node */
+		taken_pid = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->pid : 0;
+		taken_hid = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->handle_id : 0;
+		taken_by_session = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->is_for_session : false;
+		flag_for_taken_index = (command == FOCUS_COMMAND_RELEASE) ? assaulter_param->request_type & victim_node->status : assaulter_param->request_type;
+		for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+			if (flag_for_taken_index & (i+1)) {
+				if (command == FOCUS_COMMAND_ACQUIRE && (victim_node->taken_by_id[i].pid != assaulter_param->pid || (victim_node->taken_by_id[i].handle_id != assaulter_param->handle_id && !(victim_node->taken_by_id[i].by_session & assaulter_param->is_for_session)))) {
+					/* skip */
+					debug_error("skip updating victim node");
+					continue;
+				}
+				UPDATE_FOCUS_TAKEN_INFO(victim_node, taken_pid, taken_hid, taken_by_session);
 			}
-			UPDATE_FOCUS_TAKEN_INFO(victim_node, taken_pid, taken_hid, taken_by_session);
 		}
 	}
-	if(ret == victim_node->handle_id) {
-		/* return from client is success, ret will be its handle_id */
+	if(ret_handle == victim_node->handle_id) {
+		/* return from client is success, ret_handle will be its handle_id */
 		victim_node->status = (command == FOCUS_COMMAND_RELEASE) ? (victim_node->status & ~(cb_data.type)) : (victim_node->status | cb_data.type);
 	} else {
 		victim_node->status = FOCUS_STATUS_DEACTIVATED;
