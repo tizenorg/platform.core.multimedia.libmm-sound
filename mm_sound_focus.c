@@ -148,6 +148,28 @@ int mm_sound_unregister_focus(int id)
 }
 
 EXPORT_API
+int mm_sound_disable_focus_reacquirement(int id, bool no_reacquirement)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (id < 0) {
+			debug_error("argument is not valid\n");
+			return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = mm_sound_client_disalbe_focus_reacquirement(id, no_reacquirement);
+	if (ret) {
+		debug_error("Could not disable focus reacquirement, ret[0x%x]\n", ret);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
+EXPORT_API
 int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info)
 {
 	int ret = MM_ERROR_NONE;

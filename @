@@ -1,0 +1,314 @@
+[general]
+#Current profile name which should match a profile section name
+#profile = profile.slp
+#profile = profile.tizen_2.2.1
+#profile = profile.spin
+#profile = profile.tizenmb_v2.3
+#profile = profile.tv_2.4
+profile = profile.public_mobile
+#profile = profile.adv_tizen2.4_migration
+
+[profile.slp]
+#Common authentication info for whole profile
+user = i_bc.kim
+#CAUTION: please use the key name "passwd" to reset plaintext password
+passwdx = 1qasw23ed
+obs = obs.slp
+#Comma separated list of repositories
+#repos = repo.slp_latest_build
+#repos = repo.slp_local
+#repos = repo.slp_latest_standard
+#repos = repo.slp_latest_release
+#repos = repo.slp_local,repo.slp_latest_build
+#repos = repo.slp_snapshot
+#repos = repo.slp_latest_lte-jpn-dcm
+#repos = repo.slp_latest_lte-eur-ora 
+#repos = repo.slp_latest_cis-open 
+#repos = repo.slp_latest_jpn-dcm
+#repos = repo.slp_latest_eur-open
+#repos = repo.tizendev_latest
+#repos = repo.slp_ME2
+#repos = repo.slp.Z910F
+#repos = repo.slp.R380
+#repos = repo.slp.R380_emul
+repos = repo.slp.kiran
+
+
+[profile.rsa]
+user = i_bc.kim
+passwdx = 1qasw23ed
+obs = obs.slp
+
+repos = repo.tizendev_latest
+
+[profile.rsa_emul]
+user = i_bc.kim
+passwdx = 1qasw23ed
+obs = obs.slp
+repos = repo.tizendev_emul_latest
+
+[obs.slp]
+#OBS API URL pointing to a remote OBS.
+url = http://slp-build.sec.samsung.net:81
+#Optional user and password, set if differ from profile's user and password
+#user = i_bc.kim	
+#passwd = 1qasw23ed
+
+[repo.slp_latest_build]
+#Build against repo's URL
+url = http://slp-build.sec.samsung.net:8008/snapshots/build/latest
+#Optional user and password, set if differ from profile's user and password
+#user = i_bc.kim	
+#passwd = 1qasw23ed
+
+[repo.slp_latest_standard]
+url = http://slp-build.sec.samsung.net:8008/snapshots/standard/latest
+
+[repo.slp_latest_release]
+url = http://slp-build.sec.samsung.net:8008/snapshots/release/latest
+
+[repo.slp_snapshot]
+url = http://165.213.148.151/snapshots/standard/SLP_20121128.002
+#url = http://165.213.148.149:8008/snapshots/standard/SLP_20121128.002
+
+# Redwood(LTE) EUROPE ORANGE
+[repo.slp_latest_lte-eur-ora]
+url = http://slp-build.sec.samsung.net:8008/snapshots/prod/redwoodlte/eur-ora/latest
+
+# Redwood(3G) CIS OPEN
+[repo.slp_latest_cis-open]
+url = http://slp-build.sec.samsung.net:8008/snapshots/prod/redwood/cis-open/latest
+
+# Redwood(3G) JAPAN DOCOMO
+[repo.slp_latest_jpn-dcm] 
+url = http://slp-build.sec.samsung.net:8008/snapshots/prod/redwood/jpn-dcm/latest
+
+# Redwood(3G) EUROPE OPEN
+[repo.slp_latest_eur-open]
+url = http://slp-build.sec.samsung.net:8008/snapshots/prod/redwood/eur-open/latest
+
+[repo.slp_ME2]
+url = http://165.213.148.149:8008/snapshots/rel/redwoodlte/eur-ora/RelRedwoodLTEEURORA_20130511.008
+
+[repo.slp_local]
+url = /home/gilbok/snapshot/SLP_20130320
+
+[repo.tizendev_latest]
+url = https://download.tizendev.org/snapshots/tizen-2.2/common/latest
+ 
+[repo.tizendev_emul_latest]
+url = https://download.tizendev.org/snapshots/tizen-2.2-emul/common/latest/[general]
+#Current profile name which should match a profile section name
+profile = profile.slp
+
+#repo for your local packages
+#url = /path_to_your_local_repo
+#url = http://local_server/path_to_repo
+
+[repo.slp.Z910F]
+#url = http://slp-build.sec.samsung.net:8008/snapshots/redwood/SM-Z910F_EUR_XX/build/latest
+url = http://slp-build.sec.samsung.net:8008/snapshots/redwood/SM-Z910F_EUR_XX/release/latest
+
+[repo.slp.R380]
+url = http://slp-build.sec.samsung.net:8008/snapshots/rinato/SM-R380_EUR_XX/release/latest
+
+[repo.slp.R380_emul]
+url = http://165.213.148.149:8008/snapshots/rinato/SM-R380_EUR_XX-EMULATOR/release/latest
+
+[repo.slp.kiran]
+#url = http://10.252.248.23:8008/snapshots/ponte/SM-R750_EUR_XX/release/latest
+#url = http://10.251.52.177/tizenrepo/eur-open/PtnZ910FXX_20140827.003
+url = http://10.252.248.23:8008/snapshots/kiran/SM-Z130H_SWA_DD/daily/latest_successful/repos/slp-release/armv7l/packages/
+
+# tizen TV
+[profile.tizen_2.2.1]
+obs = obs.tizentv
+#repos = repo.tizentv_local_2.2.1, repo.tztv_2.2.1_product, repo.tztv_2.2.1_profile, repo.tztv_2.2.1_product_i586, repo.tztv_2.2.1_profile_i586, repo.tizen_2.2.1
+#repos = repo.tztv_2.2.1_product, repo.tztv_2.2.1_profile, repo.tztv_2.2.1_product_i586, repo.tztv_2.2.1_profile_i586, repo.tizen_2.2.1
+#repos = repo.tztv_2.2.1_hawk_profile, repo.tztv_2.2.1_hawk_product
+#repos = repo.tztv_preHawk, repo.tztv_preHawk_profile, repo.hawk_base_4.8, repo.hawk_main_4.8, repo.tztv_2.2.1_hawk_product
+repos = repo.tztv, repo.tizen
+
+[obs.tizentv]
+url = https://168.219.241.169:81
+user = obs_viewer
+passwdx = obs_viewer_169
+
+
+[repo.tizentv_local_2.2.1]
+url=/home/benecand/GBS-ROOT/local/repos/tizentv
+
+[repo.tztv_2.2.1_product]
+url=http://168.219.241.168/snapshots/tztv-2.2.1/product/latest/repos/product/armv7l/packages/
+
+[repo.tztv_2.2.1_profile]
+url=http://168.219.241.168/snapshots/tztv-2.2.1/product/latest/repos/profile/armv7l/packages/
+
+[repo.tztv_2.2.1_product_i586]
+url=http://168.219.241.168/snapshots/tztv-2.2.1/product/latest/repos/product/ia32/packages/
+
+[repo.tztv_2.2.1_profile_i586]
+url=http://168.219.241.168/snapshots/tztv-2.2.1/product/latest/repos/profile/ia32/packages/
+
+[repo.tizen_2.2.1]
+#url=http://168.219.241.168/tizen-rsa/tizen-2.2.1-update/tizen-2.2_20140102.1
+url=http://168.219.241.168/tizen-rsa/tizen-2.2.1-vd-4.5/standard/tizen-2.2.1-vd-4.5_20140614.2
+
+[repo.tztv_2.2.1_hawk_profile]
+#url=http://168.219.241.168/snapshots/tztv-2.2.1-hwak/product/latest/repos/profile/armv7l/packages/
+url = http://168.219.241.168/tizen-rsa/tizen-2.2.1-vd-4.8/standard/latest/
+
+[repo.tztv_2.2.1_hawk_product]
+#url=http://168.219.241.168/snapshots/tztv-2.2.1-hawk/product/latest/repos/product/armv7l/packages/
+#url = http://168.219.241.168/snapshots/tztv-2.2.1-hawk-p/product/Hawk-P_ATSC/latest/
+url = http://168.219.241.168/snapshots/tztv-2.2.1-prehawk/product/PreHawk_ATSC/latest/
+
+[repo.tztv_preHawk]
+url = http://168.219.244.109/snapshots/tztv-2.2.1-prehawk/product/PreHawk_ATSC/latest/repos/product/armv7l/packages/
+
+[repo.tztv_preHawk_profile]
+url = http://168.219.244.109/snapshots/tztv-2.2.1-prehawk/product/PreHawk_ATSC/latest/repos/profile/armv7l/packages/
+
+[repo.local_preHawk]
+url = /home/benecand/GBS-ROOT-prehawk/local/repos/preHawk_atsc
+
+[repo.hawk_base_4.8]
+url=http://168.219.244.109/tizen-rsa/tizen-2.2.1-vd-4.8/standard/latest/repos/base/armv7l/packages/
+
+[repo.hawk_main_4.8]
+url = http://168.219.244.109/tizen-rsa/tizen-2.2.1-vd-4.8/standard/latest/repos/main/armv7l/packages/
+
+[repo.tztv]
+url = http://168.219.244.109/snapshots/tztv-2.2.1-hawk-p/product/Hawk-P/latest/
+
+[repo.tizen]
+url = http://168.219.244.109/tizen-rsa/tizen-2.2.1-vd-4.8/standard/latest/
+
+##############################################################################
+#SPIN######################################
+[profile.spin]
+obs = obs.spin
+#repos = repo.devel-gcc49-base, repo.spin_2.4mobile, repo.spin_2.4emul
+repos = repo.spin_2.4_base_standard, repo.spin_2.4mobile, repo.spin_2.4emul
+#repos = repo.spin_2.3w
+#repos = repo.3.0
+
+user = i_bc.kim
+passwdx = QlpoOTFBWSZTWeDF3fMAAAAJgABAAuAEACAAIhhoMAEWmF3JFOFCQ4MXd8w=
+
+[obs.spin]
+url = http://168.219.209.58:81
+
+[repo.spin_2.3w]
+#url = http://168.219.209.55/download/snapshots/2.3-wearable/common/latest/repos/emulator/packages/
+#url = http://168.219.209.55/download/snapshots/2.3-wearable/common/latest/repos/target-b3/packages/
+#url = http://168.219.209.55/download/snapshots/2.3-mobile/common/latest/repos/target/packages/
+url = http://165.213.149.200/download/snapshots/2.3-mobile/common/tizen-2.3-mobile_20150702.6/repos/target/packages/
+
+[repo.spin_2.3i]
+url = http://165.213.149.200/download/snapshots/2.3-mobile/common/latest/repos/target/packages/
+
+[repo.spin_2.4tv]
+url = http://165.213.149.200/download/snapshots/2.4-TV/common/latest/repos/standard/packages/
+
+[repo.spin_2.4mobile]
+url = http://165.213.149.200/download/snapshots/2.4-mobile/common/latest/repos/target-TM1/packages/
+#url = http://168.219.209.55/download/snapshots/2.4-mobile/common/tizen-2.4-mobile_20150803.1/repos/target/packages/
+
+[repo.spin_2.4emul]
+url = http://165.213.149.200/download/snapshots/2.4-mobile/common/latest/repos/emulator/packages/
+#url = http://168.219.209.55/download/snapshots/2.4-mobile/common/tizen-2.4-mobile_20150514.10/repos/emulator/packages/
+
+[repo.spin_2.4emul_w]
+url = http://165.213.149.200/download/snapshots/2.4-wearable/common/latest/repos/emulator/packages/
+
+[repo.spin_2.4w]
+url = http://165.213.149.200/download/snapshots/2.4-wearable/common/latest/repos/target/packages/
+
+[repo.devel-gcc49-base]
+url = http://165.213.149.200/download/live/devel:/gcc49:/Base:/Backup/standard/
+#url = http://168.219.209.55/download/live/devel:/gcc49:/Base/standard/
+
+[repo.spin_2.4_base_standard]
+url = http://165.213.149.200/download/snapshots/2.4-base/common/latest/repos/standard/packages/
+
+[repo.3.0]
+url = http://download.tizen.org/snapshots/tizen/common/latest/repos/arm-wayland/packages/
+##############################################################################################
+
+#2.4 TV######################################################################################
+
+[profile.tv_2.4]
+obs = obs.tv_2.4
+repos = repo.tv_2.4, repo.spin_devel_gcc49, repo.adv_tizen2.4_base_migration
+
+[repo.tv_2.4]
+url = http://168.219.209.55/download/snapshots/2.4-tv/common/latest/repos/target/packages/
+
+[repo.adv_tizen2.4_base_migration]
+#url = http://168.219.244.109/snapshots/adv-tztv-2.4-product-migration-hawk/product/Hawk-P/latest/repos/product/armv7l/packages/
+url = http://168.219.244.109/tizen-rsa/adv-tztv-2.4-base-migration/standard/tztv-2.4-base-migration_20150604.1/repos/base/armv7l/packages/
+
+[repo.spin_devel_gcc49]
+#url = http://168.219.209.55/download/live/devel:/gcc49:/Base/standard/
+url = http://168.219.209.55/download/live/devel:/gcc49:/Base:/Backup/standard/
+
+[obs.tv_2.4]
+url = http://168.219.209.58:81
+###############################################################################################
+
+############################################################
+#  adv_tizen2.4_migration
+############################################################
+[profile.adv_tizen2.4_migration]
+obs = obs.tizentv
+repos = repo.local_adv_tizen2.4_product_migration, repo.adv_tizen2.4_product_migration, repo.adv_tizen2.4_base_migration 
+ 
+[repo.local_adv_tizen2.4_product_migration]
+url = ~/GBS-ROOT/local/repos/tizen2.4_product_migration
+  [repo.adv_tizen2.4_base_migration]
+url = http://168.219.244.109/tizen-rsa/adv-tztv-2.4-base-migration/standard/tztv-2.4-base-migration_20150604.1/repos/base/armv7l/packages/
+
+[repo.adv_tizen2.4_product_migration]
+url = http://168.219.244.109/snapshots/adv-tztv-2.4-product-migration-hawk/product/Hawk-P/latest/repos/product/armv7l/packages/
+
+[obs.tizentv]
+url = https://168.219.241.169:81
+user = obs_viewer
+passwdx = obs_viewer_169
+
+#3.0#######################################################################
+
+[profile.public_mobile]
+obs = obs.tizen_public
+repos = repo.public_3.0_mobile
+
+[repo.public_3.0_mobile]
+#url=http://download.tizen.org/snapshots/tizen/mobile/latest/repos/arm-wayland/packages/
+url=http://10.252.81.117/snapshots/mobile/latest/repos/arm-wayland/packages/
+
+[obs.tizen_public]
+url = https://api.tizen.org
+user = obs_viewer
+passwdx = QlpoOTFBWSZTWWV18UwAAAKDgAAAkiCZgCAAMQZMQQDJ6jQwAvxdyRThQkGV18Uw 
+
+#################################################################
+
+[profile.tizenmb_v2.3]
+obs = obs.tizenmb
+# The order is IMPORTANT!
+repos = repo.tizenmb_supplement_v2.3, repo.tizenmb_supplement_chromium_v2.3, repo.tizenmb_base_v2.3
+buildroot=~/GBS-ROOT-2.3
+
+[repo.tizenmb_supplement_v2.3]
+url = http://10.251.52.177/tizenrepo/eur-open/supplement_v2.3
+
+[repo.tizenmb_base_v2.3]
+url = http://10.251.52.177/tizenrepo/eur-open/PtnZ910FXX_20140827.003
+
+# Supplementary repo for chromium
+[repo.tizenmb_supplement_chromium_v2.3]
+url = http://10.251.52.177/tizenrepo/eur-open/supplement_mobile_chromium_orange_v2.3
+
+
+
