@@ -91,6 +91,7 @@ typedef struct {
 	GPollFD* g_poll_fd;
 	GSource* focus_src;
 	bool is_used;
+	bool auto_reacquire;
 	GMutex focus_lock;
 	mm_sound_focus_changed_cb focus_callback;
 	mm_sound_focus_changed_watch_cb watch_callback;
@@ -1138,7 +1139,7 @@ static gboolean _focus_callback_handler(gpointer d)
 
 				int rett = 0;
 				int tmpfd = -1;
-				int buf = 0;
+				unsigned int buf = 0;
 				char *filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", g_focus_sound_handle[focus_index].focus_tid, cb_data.handle);
 				tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
 				if (tmpfd < 0) {
@@ -1150,6 +1151,7 @@ static gboolean _focus_callback_handler(gpointer d)
 					return FALSE;
 				}
 				buf = cb_data.handle;
+				buf = (unsigned int)((0x0000ffff & cb_data.handle) |(g_focus_sound_handle[focus_index].auto_reacquire << 16));
 				rett = write(tmpfd, &buf, sizeof(buf));
 				close(tmpfd);
 				g_free(filename2);
@@ -1615,6 +1617,25 @@ int mm_sound_client_unregister_focus(int id)
 	g_focus_sound_handle[index].focus_tid = 0;
 	g_focus_sound_handle[index].handle = 0;
 	g_focus_sound_handle[index].is_used = false;
+
+	debug_fleave();
+	return ret;
+}
+
+int mm_sound_client_disalbe_focus_reacquirement(int id, bool no_reacquirement)
+{
+	int ret = MM_ERROR_NONE;
+	int index = -1;
+
+	debug_fenter();
+
+	index = _focus_find_index_by_handle(id);
+	if (index == -1) {
+		debug_error("Could not find index");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	g_focus_sound_handle[index].auto_reacquire = (no_reacquirement)? false : true;
 
 	debug_fleave();
 	return ret;
