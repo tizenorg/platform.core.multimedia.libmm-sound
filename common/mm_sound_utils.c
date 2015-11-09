@@ -165,10 +165,7 @@ int mm_sound_util_volume_set_value_by_type(volume_type_t type, unsigned int valu
 	/* Set volume value to VCONF */
 	if ((ret = vconf_set_int(g_volume_vconf[type], vconf_value)) != 0) {
 		debug_error ("vconf_set_int(%s) failed..ret[%d]\n", g_volume_vconf[type], ret);
-		if (ret == -EPERM || ret == -EACCES)
-			return MM_ERROR_SOUND_PERMISSION_DENIED;
-		else
-			return MM_ERROR_SOUND_INTERNAL;
+		return MM_ERROR_SOUND_INTERNAL;
 	}
 	return ret;
 }
