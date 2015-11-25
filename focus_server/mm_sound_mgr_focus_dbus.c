@@ -50,6 +50,11 @@
   "      <arg name='handle_id' type='i' direction='in'/>"
   "      <arg name='is_for_session' type='b' direction='in'/>"
   "    </method>"
+  "    <method name='SetFocusReacquisition'>"
+  "      <arg name='pid' type='i' direction='in'/>"
+  "      <arg name='handle_id' type='i' direction='in'/>"
+  "      <arg name='reacquisition' type='b' direction='in'/>"
+  "    </method>"
   "    <method name='AcquireFocus'>"
   "      <arg name='pid' type='i' direction='in'/>"
   "      <arg name='handle_id' type='i' direction='in'/>"
@@ -105,6 +110,7 @@ struct mm_sound_mgr_focus_dbus_signal{
 static void handle_method_get_unique_id(GDBusMethodInvocation* invocation);
 static void handle_method_register_focus(GDBusMethodInvocation* invocation);
 static void handle_method_unregister_focus(GDBusMethodInvocation* invocation);
+static void handle_method_set_focus_reacquisition(GDBusMethodInvocation* invocation);
 static void handle_method_acquire_focus(GDBusMethodInvocation* invocation);
 static void handle_method_release_focus(GDBusMethodInvocation* invocation);
 static void handle_method_watch_focus(GDBusMethodInvocation* invocation);
@@ -133,6 +139,12 @@ struct mm_sound_mgr_focus_dbus_method methods[METHOD_CALL_MAX] = {
 			.name = "UnregisterFocus",
 		},
 		.handler = handle_method_unregister_focus
+	},
+	[METHOD_CALL_SET_FOCUS_REACQUISITION] = {
+		.info = {
+			.name = "SetFocusReacquisition",
+		},
+		.handler = handle_method_set_focus_reacquisition
 	},
 	[METHOD_CALL_ACQUIRE_FOCUS] = {
 		.info = {
@@ -354,6 +366,34 @@ static void handle_method_unregister_focus(GDBusMethodInvocation* invocation)
 
 	g_variant_get(params, "(iib)", &pid, &handle_id, &is_for_session);
 	ret = __mm_sound_mgr_focus_ipc_unregister_focus((is_for_session) ? pid : _get_sender_pid(invocation), handle_id);
+
+send_reply:
+	if (ret == MM_ERROR_NONE) {
+		_method_call_return_value(invocation, g_variant_new("()"));
+	} else {
+		_method_call_return_error(invocation, ret);
+	}
+
+	debug_fleave();
+}
+
+static void handle_method_set_focus_reacquisition(GDBusMethodInvocation* invocation)
+{
+	int ret = MM_ERROR_NONE;
+	int pid = 0, handle_id = 0;
+	gboolean reacquisition;
+	GVariant *params = NULL;
+
+	debug_fenter();
+
+	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
+		debug_error("Parameter for Method is NULL");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto send_reply;
+	}
+
+	g_variant_get(params, "(iib)", &pid, &handle_id, &reacquisition);
+	ret = __mm_sound_mgr_focus_ipc_set_focus_reacquisition(_get_sender_pid(invocation), handle_id, reacquisition);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {

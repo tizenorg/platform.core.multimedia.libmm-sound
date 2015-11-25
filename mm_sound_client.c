@@ -1641,7 +1641,9 @@ int mm_sound_client_unregister_focus(int id)
 int mm_sound_client_set_focus_reacquisition(int id, bool reacquisition)
 {
 	int ret = MM_ERROR_NONE;
+	int instance;
 	int index = -1;
+	bool result;
 
 	debug_fenter();
 
@@ -1650,11 +1652,29 @@ int mm_sound_client_set_focus_reacquisition(int id, bool reacquisition)
 		debug_error("Could not find index");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
+	instance = g_focus_sound_handle[index].focus_tid;
+
+	ret = mm_sound_client_is_focus_cb_thread(g_thread_self(), &result);
+	if (ret) {
+		debug_error("[Client] mm_sound_client_is_focus_cb_thread failed");
+		goto cleanup;
+	} else if (!result) {
+		ret = mm_sound_client_dbus_set_foucs_reacquisition(instance, id, reacquisition);
+		if (ret == MM_ERROR_NONE) {
+			debug_msg("[Client] Success to set focus reacquisition\n");
+		} else {
+			debug_error("[Client] Error occurred : %d \n",ret);
+			goto cleanup;
+		}
+	} else {
+		debug_warning("[Client] Inside the focus cb thread, bypassing dbus method call");
+	}
 
 	g_focus_sound_handle[index].auto_reacquire = reacquisition;
 
-	debug_fleave();
+cleanup:
 
+	debug_fleave();
 	return ret;
 }
 
@@ -1679,7 +1699,6 @@ int mm_sound_client_get_focus_reacquisition(int id, bool *reacquisition)
 	*reacquisition = g_focus_sound_handle[index].auto_reacquire;
 
 	debug_fleave();
-
 	return ret;
 }
 
