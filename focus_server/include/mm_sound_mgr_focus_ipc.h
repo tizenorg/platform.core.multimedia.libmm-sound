@@ -41,6 +41,8 @@ int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const
 //int __mm_sound_mgr_ipc_destroy_focus_node(mm_ipc_msg_t *msg);
 int __mm_sound_mgr_focus_ipc_unregister_focus(int pid, int handle_id);
 
+int __mm_sound_mgr_focus_ipc_set_focus_reacquisition(int pid, int handle_id, bool reacquisition);
+
 int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_type, const char* name );
 
 int __mm_sound_mgr_focus_ipc_release_focus(int pid, int handle_id, int focus_type, const char* name);

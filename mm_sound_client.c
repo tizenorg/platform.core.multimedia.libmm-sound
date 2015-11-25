@@ -1641,7 +1641,9 @@ int mm_sound_client_unregister_focus(int id)
 int mm_sound_client_set_focus_reacquisition(int id, bool reacquisition)
 {
 	int ret = MM_ERROR_NONE;
+	int instance;
 	int index = -1;
+	bool result;
 
 	debug_fenter();
 
@@ -1652,6 +1654,16 @@ int mm_sound_client_set_focus_reacquisition(int id, bool reacquisition)
 	}
 
 	g_focus_sound_handle[index].auto_reacquire = reacquisition;
+
+	if(!mm_sound_client_is_focus_cb_thread(g_thread_self(), &result)) { 
+		if (!result) {
+			ret = mm_sound_client_dbus_set_foucs_reacquisition(instance, id, reacquisition);
+			if (ret == MM_ERROR_NONE)
+				debug_msg("[Client] Success to set focus reacquisition\n");
+			else
+				debug_error("[Client] Error occurred : %d \n",ret);
+		}
+	}
 
 	debug_fleave();
 

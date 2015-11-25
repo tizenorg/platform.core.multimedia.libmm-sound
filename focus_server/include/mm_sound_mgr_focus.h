@@ -57,6 +57,7 @@ typedef struct {
 	focus_type_e request_type;
 	void *callback;
 	void *cbdata;
+	bool reacquisition;
 
 	bool is_for_session;	/* will be removed when the session concept is completely left out*/
 } _mm_sound_mgr_focus_param_t;
@@ -78,6 +79,7 @@ typedef struct {
 	_focus_taken_by_id_t taken_by_id[NUM_OF_STREAM_IO_TYPE];
 	void *callback;
 	void *cbdata;
+	bool reacquisition;
 
 	bool is_for_session;	/* will be removed when the session concept is completely left out*/
 
@@ -90,6 +92,7 @@ int MMSoundMgrFocusInit(void);
 int MMSoundMgrFocusFini(void);
 int mm_sound_mgr_focus_create_node (const _mm_sound_mgr_focus_param_t *param);
 int mm_sound_mgr_focus_destroy_node (const _mm_sound_mgr_focus_param_t *param);
+int mm_sound_mgr_focus_set_reacquisition (const _mm_sound_mgr_focus_param_t *param);
 int mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param);
 int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param);
 int mm_sound_mgr_focus_set_watch_cb (const _mm_sound_mgr_focus_param_t *param);
