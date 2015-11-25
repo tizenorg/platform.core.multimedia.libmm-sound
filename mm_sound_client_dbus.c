@@ -109,6 +109,9 @@ const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_UNREGISTER_FOCUS] = {
 		.name = "UnregisterFocus",
 	},
+	[METHOD_CALL_SET_FOCUS_REACQUISITION] = {
+		.name = "SetFocusReacquisition",
+	},
 	[METHOD_CALL_ACQUIRE_FOCUS] = {
 		.name = "AcquireFocus",
 	},
@@ -1351,6 +1354,31 @@ int mm_sound_client_dbus_unregister_focus(int instance, int id, bool is_for_sess
 
 	debug_fleave();
 
+	return ret;
+}
+
+int mm_sound_client_dbus_set_foucs_reacquisition(int instance, int id, bool reacquisition)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant* params = NULL, *result = NULL;
+
+	debug_fenter();
+
+	params = g_variant_new("(iib)", instance, id, reacquisition);
+	if (params) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_SET_FOCUS_REACQUISITION, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus set focus reacquisition failed");
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+	}
+
+	if (ret != MM_ERROR_NONE)
+		g_variant_get(result, "(i)",  &ret);
+	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
 	return ret;
 }
 

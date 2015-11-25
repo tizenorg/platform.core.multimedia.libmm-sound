@@ -99,6 +99,22 @@ int __mm_sound_mgr_focus_ipc_unregister_focus(int pid, int handle_id)
 }
 
 // method -> callback
+int __mm_sound_mgr_focus_ipc_set_focus_reacquisition(int pid, int handle_id, bool reacquisition)
+{
+	_mm_sound_mgr_focus_param_t param;
+	int ret = MM_ERROR_NONE;
+
+	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
+	param.pid = pid;
+	param.handle_id = handle_id;
+	param.reacquisition = reacquisition;
+
+	ret = mm_sound_mgr_focus_set_reacquisition(&param);
+
+	return ret;
+}
+
+// method -> callback
 int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_type, const char* name )
 {
 	_mm_sound_mgr_focus_param_t param;
