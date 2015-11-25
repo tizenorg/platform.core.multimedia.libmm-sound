@@ -513,31 +513,43 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	}
 	//debug_log("[RETCB] Return value 0x%x\n", buf);
 
-	if (auto_reacquire) {
-		/* update victim node */
-		if (command == FOCUS_COMMAND_RELEASE) {
-			taken_pid = assaulter_param->pid;
-			taken_hid = assaulter_param->handle_id;
-			taken_by_session = assaulter_param->is_for_session;
-			flag_for_taken_index = assaulter_param->request_type & victim_node->status;
-		} else {
-			taken_pid = 0;
-			taken_hid = 0;
-			taken_by_session = false;
-			flag_for_taken_index = assaulter_param->request_type;
-		}
+	/* update victim node */
+	if (command == FOCUS_COMMAND_RELEASE) {
+		taken_pid = assaulter_param->pid;
+		taken_hid = assaulter_param->handle_id;
+		taken_by_session = assaulter_param->is_for_session;
+		flag_for_taken_index = assaulter_param->request_type & victim_node->status;
+	} else {
+		taken_pid = 0;
+		taken_hid = 0;
+		taken_by_session = false;
+		flag_for_taken_index = assaulter_param->request_type;
+	}
 
-		for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
-			if (flag_for_taken_index & (i+1)) {
-				if (command == FOCUS_COMMAND_ACQUIRE && (victim_node->taken_by_id[i].pid != assaulter_param->pid || (victim_node->taken_by_id[i].handle_id != assaulter_param->handle_id && !(victim_node->taken_by_id[i].by_session & assaulter_param->is_for_session)))) {
-					/* skip */
-					debug_error("skip updating victim node");
-					continue;
+	for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+		if (flag_for_taken_index & (i+1)) {
+			if (command == FOCUS_COMMAND_ACQUIRE && (victim_node->taken_by_id[i].pid != assaulter_param->pid || (victim_node->taken_by_id[i].handle_id != assaulter_param->handle_id && !(victim_node->taken_by_id[i].by_session & assaulter_param->is_for_session)))) {
+				/* skip */
+				debug_error("skip updating victim node");
+				continue;
+			}
+			if (!auto_reacquire) {
+				GList *list = NULL;
+				focus_node_t *node = NULL;
+				for (list = g_focus_node_list; list != NULL; list = list->next) {
+					node = (focus_node_t *)list->data;
+					for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+						if (node && (node->taken_by_id[i].pid == victim_node->pid)) {
+							UPDATE_FOCUS_TAKEN_INFO(node, taken_pid, taken_hid, taken_by_session);
+						}
+					}
 				}
+			} else {
 				UPDATE_FOCUS_TAKEN_INFO(victim_node, taken_pid, taken_hid, taken_by_session);
 			}
 		}
 	}
+
 	if (ret_handle == victim_node->handle_id) {
 		/* return from client is success, ret_handle will be its handle_id */
 		victim_node->status = (command == FOCUS_COMMAND_RELEASE) ? (victim_node->status & ~(cb_data.type)) : (victim_node->status | cb_data.type);
