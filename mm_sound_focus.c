@@ -236,6 +236,29 @@ int mm_sound_get_focus_reacquisition(int id, bool *reacquisition)
 }
 
 EXPORT_API
+int mm_sound_get_stream_type_of_acquired_focus(int focus_type, char **stream_type, char **additional_info)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	if (stream_type == NULL) {
+		debug_error("argument is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = mm_sound_client_get_acquired_focus_stream_type(focus_type, stream_type, additional_info);
+
+	if (ret) {
+		debug_error("Could not get acquired focus stream type, ret[0x%x]\n", ret);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
+EXPORT_API
 int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info)
 {
 	int ret = MM_ERROR_NONE;

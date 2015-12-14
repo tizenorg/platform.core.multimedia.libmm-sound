@@ -75,6 +75,7 @@ typedef struct {
 	int priority;
 	bool is_for_watch;
 	char stream_type[MAX_STREAM_TYPE_LEN];
+	char option[NUM_OF_STREAM_IO_TYPE][MM_SOUND_NAME_NUM];
 	focus_status_e status;
 	_focus_taken_by_id_t taken_by_id[NUM_OF_STREAM_IO_TYPE];
 	void *callback;
@@ -93,6 +94,7 @@ int MMSoundMgrFocusFini(void);
 int mm_sound_mgr_focus_create_node (const _mm_sound_mgr_focus_param_t *param);
 int mm_sound_mgr_focus_destroy_node (const _mm_sound_mgr_focus_param_t *param);
 int mm_sound_mgr_focus_set_reacquisition (const _mm_sound_mgr_focus_param_t *param);
+int mm_sound_mgr_focus_get_stream_type_of_acquired_focus(focus_type_e focus_type, char **stream_type, char **additional_info);
 int mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param);
 int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param);
 int mm_sound_mgr_focus_set_watch_cb (const _mm_sound_mgr_focus_param_t *param);

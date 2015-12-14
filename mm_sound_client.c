@@ -105,8 +105,8 @@ typedef struct {
 	int handle;
 	int type;
 	int state;
-	char stream_type [MAX_STREAM_TYPE_LEN];
-	char name [MM_SOUND_NAME_NUM];
+	char stream_type[MAX_STREAM_TYPE_LEN];
+	char name[MM_SOUND_NAME_NUM];
 } focus_cb_data_lib;
 
 typedef struct {
@@ -155,7 +155,7 @@ void _focus_signal_handler(int signo)
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to emergnet_exit_focus\n");
 	else
-		debug_error("[Client] Error occurred : %d \n",ret);
+		debug_error("[Client] Error occurred : 0x%x \n",ret);
 
 	sigprocmask(SIG_SETMASK, &old_mask, NULL);
 	/* signal unblock */
@@ -1563,7 +1563,7 @@ int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_
 			}
 		}
 	} else {
-		debug_error("[Client] Error occurred : %d \n",ret);
+		debug_error("[Client] Error occurred : 0x%x \n",ret);
 		g_focus_sound_handle[index].is_used = false;
 		goto cleanup;
 	}
@@ -1603,7 +1603,7 @@ int mm_sound_client_unregister_focus(int id)
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to unregister focus\n");
 	else
-		debug_error("[Client] Error occurred : %d \n",ret);
+		debug_error("[Client] Error occurred : 0x%x \n",ret);
 
 	g_mutex_unlock(&g_focus_sound_handle[index].focus_lock);
 
@@ -1642,7 +1642,7 @@ int mm_sound_client_set_focus_reacquisition(int id, bool reacquisition)
 		if (ret == MM_ERROR_NONE) {
 			debug_msg("[Client] Success to set focus reacquisition\n");
 		} else {
-			debug_error("[Client] Error occurred : %d \n",ret);
+			debug_error("[Client] Error occurred : 0x%x \n",ret);
 			goto cleanup;
 		}
 	} else {
@@ -1681,6 +1681,22 @@ int mm_sound_client_get_focus_reacquisition(int id, bool *reacquisition)
 	return ret;
 }
 
+int mm_sound_client_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **additional_info)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	ret = mm_sound_client_dbus_get_acquired_focus_stream_type(focus_type, stream_type, additional_info);
+	if (ret == MM_ERROR_NONE)
+		debug_msg("[Client] Success to get stream type of acquired focus, stream_type(%s), additional_info(%s)\n", *stream_type, *additional_info);
+	else
+		debug_error("[Client] Error occurred : 0x%x \n",ret);
+
+	debug_fleave();
+	return ret;
+}
+
 int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option)
 {
 	int ret = MM_ERROR_NONE;
@@ -1701,7 +1717,7 @@ int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to acquire focus\n");
 	else
-		debug_error("[Client] Error occurred : %d \n",ret);
+		debug_error("[Client] Error occurred : 0x%x \n",ret);
 
 	debug_fleave();
 	return ret;
@@ -1726,7 +1742,7 @@ int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to release focus\n");
 	else
-		debug_error("[Client] Error occurred : %d \n",ret);
+		debug_error("[Client] Error occurred : 0x%x \n",ret);
 
 
 	debug_fleave();
@@ -1781,7 +1797,7 @@ int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e focu
 			}
 		}
 	} else {
-		debug_error("[Client] Error occurred : %d",ret);
+		debug_error("[Client] Error occurred : 0x%x",ret);
 		goto cleanup;
 	}
 
@@ -1816,7 +1832,7 @@ int mm_sound_client_unset_focus_watch_callback(int id)
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to unwatch focus\n");
 	else
-		debug_error("[Client] Error occurred : %d \n",ret);
+		debug_error("[Client] Error occurred : 0x%x \n",ret);
 
 
 	g_mutex_unlock(&g_focus_sound_handle[index].focus_lock);
