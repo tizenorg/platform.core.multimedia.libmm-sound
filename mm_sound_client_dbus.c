@@ -112,6 +112,9 @@ const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_SET_FOCUS_REACQUISITION] = {
 		.name = "SetFocusReacquisition",
 	},
+	[METHOD_CALL_GET_ACQUIRED_FOCUS_STREAM_TYPE] = {
+		.name = "GetAcquiredFocusStreamType",
+	},
 	[METHOD_CALL_ACQUIRE_FOCUS] = {
 		.name = "AcquireFocus",
 	},
@@ -1376,6 +1379,31 @@ int mm_sound_client_dbus_set_foucs_reacquisition(int instance, int id, bool reac
 	if (ret != MM_ERROR_NONE)
 		g_variant_get(result, "(i)",  &ret);
 	if (result)
+		g_variant_unref(result);
+
+	debug_fleave();
+	return ret;
+}
+
+int mm_sound_client_dbus_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **additional_info)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant* params = NULL, *result = NULL;
+
+	debug_fenter();
+
+	params = g_variant_new("(i)", focus_type);
+	if (params) {
+		if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_GET_ACQUIRED_FOCUS_STREAM_TYPE, params, &result)) != MM_ERROR_NONE) {
+			debug_error("dbus get stream type of acquired focus failed");
+		}
+	} else {
+		debug_error("Construct Param for method call failed");
+	}
+
+	if (ret == MM_ERROR_NONE && result)
+		g_variant_get(result, "(ss)", stream_type, additional_info);
+	else
 		g_variant_unref(result);
 
 	debug_fleave();

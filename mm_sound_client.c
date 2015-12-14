@@ -105,8 +105,8 @@ typedef struct {
 	int handle;
 	int type;
 	int state;
-	char stream_type [MAX_STREAM_TYPE_LEN];
-	char name [MM_SOUND_NAME_NUM];
+	char stream_type[MAX_STREAM_TYPE_LEN];
+	char name[MM_SOUND_NAME_NUM];
 } focus_cb_data_lib;
 
 typedef struct {
@@ -1676,6 +1676,22 @@ int mm_sound_client_get_focus_reacquisition(int id, bool *reacquisition)
 	}
 
 	*reacquisition = g_focus_sound_handle[index].auto_reacquire;
+
+	debug_fleave();
+	return ret;
+}
+
+int mm_sound_client_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **additional_info)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	ret = mm_sound_client_dbus_get_acquired_focus_stream_type(focus_type, stream_type, additional_info);
+	if (ret == MM_ERROR_NONE)
+		debug_msg("[Client] Success to get stream type of acquired focus, stream_type(%s), additional_info(%s)\n", *stream_type, *additional_info);
+	else
+		debug_error("[Client] Error occurred : %d \n",ret);
 
 	debug_fleave();
 	return ret;

@@ -55,6 +55,11 @@
   "      <arg name='handle_id' type='i' direction='in'/>"
   "      <arg name='reacquisition' type='b' direction='in'/>"
   "    </method>"
+  "    <method name='GetAcquiredFocusStreamType'>"
+  "      <arg name='focus_type' type='i' direction='in'/>"
+  "      <arg name='stream_type' type='s' direction='out'/>"
+  "      <arg name='additional_info' type='s' direction='out'/>"
+  "    </method>"
   "    <method name='AcquireFocus'>"
   "      <arg name='pid' type='i' direction='in'/>"
   "      <arg name='handle_id' type='i' direction='in'/>"
@@ -111,6 +116,7 @@ static void handle_method_get_unique_id(GDBusMethodInvocation* invocation);
 static void handle_method_register_focus(GDBusMethodInvocation* invocation);
 static void handle_method_unregister_focus(GDBusMethodInvocation* invocation);
 static void handle_method_set_focus_reacquisition(GDBusMethodInvocation* invocation);
+static void handle_method_get_acquired_focus_stream_type(GDBusMethodInvocation* invocation);
 static void handle_method_acquire_focus(GDBusMethodInvocation* invocation);
 static void handle_method_release_focus(GDBusMethodInvocation* invocation);
 static void handle_method_watch_focus(GDBusMethodInvocation* invocation);
@@ -145,6 +151,12 @@ struct mm_sound_mgr_focus_dbus_method methods[METHOD_CALL_MAX] = {
 			.name = "SetFocusReacquisition",
 		},
 		.handler = handle_method_set_focus_reacquisition
+	},
+	[METHOD_CALL_SET_FOCUS_REACQUISITION] = {
+		.info = {
+			.name = "GetAcquiredFocusStreamType",
+		},
+		.handler = handle_method_get_acquired_focus_stream_type
 	},
 	[METHOD_CALL_ACQUIRE_FOCUS] = {
 		.info = {
@@ -398,6 +410,35 @@ static void handle_method_set_focus_reacquisition(GDBusMethodInvocation* invocat
 send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
+	} else {
+		_method_call_return_error(invocation, ret);
+	}
+
+	debug_fleave();
+}
+
+static void handle_method_get_acquired_focus_stream_type(GDBusMethodInvocation* invocation)
+{
+	int ret = MM_ERROR_NONE;
+	int focus_type = 0;
+	char *stream_type = NULL;
+	char *additional_info = NULL;
+	GVariant *params = NULL;
+
+	debug_fenter();
+
+	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
+		debug_error("Parameter for Method is NULL");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto send_reply;
+	}
+
+	g_variant_get(params, "(i)", &focus_type);
+	ret = __mm_sound_mgr_focus_ipc_get_acquired_focus_stream_type(focus_type, &stream_type, &additional_info);
+
+send_reply:
+	if (ret == MM_ERROR_NONE) {
+		_method_call_return_value(invocation, g_variant_new("(ss)", stream_type, additional_info));
 	} else {
 		_method_call_return_error(invocation, ret);
 	}

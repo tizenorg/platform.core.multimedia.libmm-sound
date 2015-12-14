@@ -408,6 +408,11 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 		/* client will lost the acquired focus */
 		cb_data.type= assaulter_param->request_type & victim_node->status;
 		cb_data.state= FOCUS_STATUS_DEACTIVATED;
+		/* remove additional info. */
+		for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+			if (cb_data.type & (i+1))
+				memset(victim_node->option[i], 0x0, MM_SOUND_NAME_NUM);
+		}
 	} else {
 		/* client will gain the lost focus */
 		for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
@@ -417,6 +422,11 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 		}
 		cb_data.type = flag_for_focus_type & assaulter_param->request_type;
 		cb_data.state = !FOCUS_STATUS_DEACTIVATED;
+		/* copy additional info. */
+		for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+			if (cb_data.type & (i+1))
+				MMSOUND_STRNCPY(victim_node->option[i], assaulter_param->option, MM_SOUND_NAME_NUM);
+		}
 	}
 	MMSOUND_STRNCPY(cb_data.stream_type, assaulter_stream_type, MAX_STREAM_TYPE_LEN);
 	MMSOUND_STRNCPY(cb_data.name, assaulter_param->option, MM_SOUND_NAME_NUM);
@@ -593,10 +603,10 @@ static int _mm_sound_mgr_focus_list_dump ()
 	for (list = g_focus_node_list; list != NULL; list = list->next) {
 		node = (focus_node_t *)list->data;
 		if (node && !node->is_for_watch) {
-			debug_log("*** pid[%5d]/handle_id[%d]/[%15s]: priority[%2d], status[%s], taken_by[P(%5d/%2d/%2d)C(%5d/%2d/%2d)], for_session[%d]\n",
+			debug_log("*** pid[%5d]/handle_id[%d]/[%15s]:priority[%2d],status[%s],taken_by[P(%5d/%2d/%2d)C(%5d/%2d/%2d)],for_session[%d],add.info[%s/%s]\n",
 					node->pid, node->handle_id, node->stream_type, node->priority, focus_status_str[node->status],
 					node->taken_by_id[0].pid, node->taken_by_id[0].handle_id, node->taken_by_id[0].by_session, node->taken_by_id[1].pid,
-					node->taken_by_id[1].handle_id, node->taken_by_id[1].by_session, node->is_for_session);
+					node->taken_by_id[1].handle_id, node->taken_by_id[1].by_session, node->is_for_session, node->option[0], node->option[1]);
 		}
 	}
 	debug_log("================================================ focus node list : end =====================================================\n");
@@ -836,7 +846,49 @@ int mm_sound_mgr_focus_set_reacquisition (const _mm_sound_mgr_focus_param_t *par
 	return ret;
 }
 
-int mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param)
+int mm_sound_mgr_focus_get_stream_type_of_acquired_focus(focus_type_e focus_type, char **stream_type, char **additional_info)
+{
+	int ret = MM_ERROR_NONE;
+	GList *list = NULL;
+	focus_node_t *node = NULL;
+	bool is_found = false;
+
+	debug_fenter();
+
+	if (focus_type == FOCUS_TYPE_BOTH) /* focus_type should be "playback" or "capture" */
+		return MM_ERROR_INVALID_ARGUMENT;
+	if (!stream_type)
+		return MM_ERROR_INVALID_ARGUMENT;
+
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_focus_node_list_mutex, MM_ERROR_SOUND_INTERNAL);
+
+	/* Update list for dead process */
+	g_list_foreach (g_focus_node_list, (GFunc)_clear_focus_node_list_func, NULL);
+
+	/* Find node to set reacquisition */
+	for (list = g_focus_node_list; list != NULL; list = list->next) {
+		node = (focus_node_t *)list->data;
+		if (node && !node->is_for_watch && (node->status & focus_type)) {
+			debug_msg("found a node : request_focus_type(%d), stream_type(%s)/additional info(%s) of acquired focus\n", focus_type, node->stream_type, node->option);
+			*stream_type = node->stream_type;
+			if (additional_info)
+				*additional_info = node->option;
+			is_found = true;
+			break;
+		}
+	}
+
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_focus_node_list_mutex);
+
+	if (!is_found)
+		ret = MM_ERROR_SOUND_NO_DATA;
+
+	debug_fleave();
+
+	return ret;
+}
+
+int mm_sound_mgr_focus_request_acquire(const _mm_sound_mgr_focus_param_t *param)
 {
 	int ret = MM_ERROR_NONE;
 	GList *list = NULL;
@@ -918,6 +970,11 @@ int mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param
 	}
 
 	if (ret != MM_ERROR_POLICY_BLOCKED) {
+		/* copy additional info. */
+		for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+			if (param->request_type & (i+1))
+				MMSOUND_STRNCPY(my_node->option[i], param->option, MM_SOUND_NAME_NUM);
+		}
 		/* update status */
 		my_node->status |= param->request_type;
 		/* do watch callback due to the status of mine */
@@ -949,6 +1006,7 @@ int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param
 	focus_node_t *my_node = NULL;
 	bool need_to_trigger_watch_cb = true;
 	bool need_to_trigger_cb = true;
+	int i = 0;
 
 	debug_fenter();
 
@@ -1002,7 +1060,6 @@ int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param
 			if (node == my_node || node->is_for_watch) {
 				/* skip */
 			} else {
-				int i = 0;
 				for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
 					if (param_s->request_type & (i+1)) {
 						if (node && (node->taken_by_id[i].pid == param_s->pid && (node->taken_by_id[i].handle_id == param_s->handle_id || node->taken_by_id[i].by_session))) {
@@ -1022,6 +1079,11 @@ int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param
 	}
 	/* update status */
 	my_node->status &= ~(param->request_type);
+	/* remove additional info. */
+	for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
+		if (!(my_node->status & (i+1)))
+			memset(my_node->option[i], 0x0, MM_SOUND_NAME_NUM);
+	}
 	/* do watch callback due to the status of mine */
 	if (need_to_trigger_watch_cb)
 		_mm_sound_mgr_focus_do_watch_callback((focus_type_e)param->request_type, FOCUS_COMMAND_RELEASE, my_node, param);
