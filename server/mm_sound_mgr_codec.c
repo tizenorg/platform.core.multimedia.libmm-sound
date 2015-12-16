@@ -1,3 +1,4 @@
+
 /*
  * libmm-sound
  *
@@ -37,10 +38,9 @@
 #include "include/mm_sound_plugin_codec.h"
 #include "include/mm_sound_thread_pool.h"
 #include "include/mm_sound_pa_client.h"
+#include "../include/mm_sound_common.h"
 #include "../include/mm_sound_focus.h"
 #include "../include/mm_sound_device.h"
-
-
 
 #define _ENABLE_KEYTONE	/* Temporal test code */
 
@@ -189,9 +189,10 @@ int MMSoundMgrCodecInit(const char *targetdir)
 	}
 
 	MMSoundPluginScan(targetdir, MM_SOUND_PLUGIN_TYPE_CODEC, &g_codec_plugins);
-
-	while (g_codec_plugins[loop].type != MM_SOUND_PLUGIN_TYPE_NONE) {
-		_MMSoundMgrCodecRegisterInterface(&g_codec_plugins[loop++]);
+	if (g_codec_plugins) {
+		while (g_codec_plugins[loop].type != MM_SOUND_PLUGIN_TYPE_NONE) {
+			_MMSoundMgrCodecRegisterInterface(&g_codec_plugins[loop++]);
+		}
 	}
 
 	debug_leave("\n");
@@ -244,7 +245,7 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 #endif
 
 	err = _MMSoundMgrCodecGetEmptySlot(slotid);
-	if (err != MM_ERROR_NONE) {
+	if (err != MM_ERROR_NONE || *slotid < 0) {
 		debug_error("Empty g_slot is not found\n");
 		goto cleanup;
 	}
@@ -261,7 +262,7 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 	codec_param.handle_route = param->handle_route;
 	codec_param.codec_wave_mutex = &codec_wave_mutex;
 	codec_param.stream_index = param->stream_index;
-	strncpy(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
+	MMSOUND_STRNCPY(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
 	pthread_mutex_lock(&g_slot_mutex);
 #ifdef DEBUG_DETAIL
 	debug_msg("After Slot_mutex LOCK\n");
@@ -417,7 +418,7 @@ int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param
 	}
 
 	err = _MMSoundMgrCodecGetEmptySlot(slotid);
-	if (err != MM_ERROR_NONE) {
+	if (err != MM_ERROR_NONE || *slotid < 0) {
 		debug_error("Empty g_slot is not found\n");
 		goto cleanup;
 	}
@@ -433,7 +434,7 @@ int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param
 	codec_param.handle_route = param->handle_route;
 	codec_param.codec_wave_mutex = &codec_wave_mutex;
 	codec_param.stream_index = param->stream_index;
-	strncpy(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
+	MMSOUND_STRNCPY(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
 	pthread_mutex_lock(&g_slot_mutex);
 #ifdef DEBUG_DETAIL
 	debug_msg("After Slot_mutex LOCK\n");
@@ -512,7 +513,7 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 #endif
 
 	err = _MMSoundMgrCodecGetEmptySlot(slotid);
-	if(err != MM_ERROR_NONE)
+	if(err != MM_ERROR_NONE || *slotid < 0)
 	{
 		debug_error("Empty g_slot is not found\n");
 		goto cleanup;
@@ -527,7 +528,7 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 	codec_param.param = *slotid;
 	codec_param.pid = (int)param->param;
 	codec_param.stream_index = param->stream_index;
-	strncpy(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
+	MMSOUND_STRNCPY(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
 
 	pthread_mutex_lock(&g_slot_mutex);
 #ifdef DEBUG_DETAIL
@@ -688,7 +689,7 @@ int MMSoundMgrCodecPlayDtmfWithStreamInfo(int *slotid, const mmsound_mgr_codec_p
 #endif
 
 	err = _MMSoundMgrCodecGetEmptySlot(slotid);
-	if(err != MM_ERROR_NONE)
+	if(err != MM_ERROR_NONE || *slotid < 0)
 	{
 		debug_error("Empty g_slot is not found\n");
 		goto cleanup;
@@ -703,7 +704,7 @@ int MMSoundMgrCodecPlayDtmfWithStreamInfo(int *slotid, const mmsound_mgr_codec_p
 	codec_param.pid = (int)param->param;
 	codec_param.volume_config = -1; //setting volume config to -1 since using stream info instead of volume type
 	codec_param.stream_index = param->stream_index;
-	strncpy(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
+	MMSOUND_STRNCPY(codec_param.stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
 
 	pthread_mutex_lock(&g_slot_mutex);
 #ifdef DEBUG_DETAIL

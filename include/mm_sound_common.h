@@ -87,20 +87,18 @@ if( pthread_mutex_unlock( x_mutex ) ) { \
 	debug_error("mutex unlock failed\n"); \
 }
 
-#define MMSOUND_STRNCPY(dst,src,size)\
+#define MMSOUND_STRNCPY(dst, src, size) \
 do { \
-	if(src != NULL && dst != NULL && size > 0) {\
-		strncpy(dst,src,size); \
-		dst[size-1] = '\0';\
-	} else if(dst == NULL) {       \
-		debug_error("STRNCPY ERROR: Destination String is NULL\n"); \
-	}	\
-	else if(size <= 0) {      \
-		debug_error("STRNCPY ERROR: Destination String is NULL\n"); \
-	}	\
-	else {    \
-		debug_error("STRNCPY ERROR: Destination String is NULL\n"); \
-	}	\
+	if (dst == NULL) \
+		debug_error("STRNCPY ERROR: Destination String is NULL"); \
+	else if (src == NULL) \
+		debug_error("STRNCPY ERROR: Source String is NULL"); \
+	else if (size <= 0) \
+		debug_error("STRNCPY ERROR: Size(%d) <= 0", size); \
+	else { \
+		strncpy(dst, src, size - 1); \
+		dst[size - 1] = '\0';\
+	} \
 } while(0)
 
 #endif /* __MM_SOUND_COMMON_H__ */

@@ -90,7 +90,7 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 	param.handle_route = handle_route;
 	param.enable_session = enable_session;
 	param.stream_index = stream_index;
-	strncpy(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
+	MMSOUND_STRNCPY(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
 
 	/* workaround for AF volume gain tuning */
 	if (strncmp(filename, MM_SOUND_AF_FILE_PREFIX, strlen(MM_SOUND_AF_FILE_PREFIX)) == 0) {
@@ -178,7 +178,7 @@ int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 	param.source = source;
 	param.handle_route = handle_route;
 	param.stream_index = stream_index;
-	strncpy(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
+	MMSOUND_STRNCPY(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
 
 	/* workaround for AF volume gain tuning */
 	if (strncmp(filename, MM_SOUND_AF_FILE_PREFIX, strlen(MM_SOUND_AF_FILE_PREFIX)) == 0) {
@@ -219,7 +219,7 @@ int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 	param.session_options = session_options;
 	param.enable_session = enable_session;
 	param.stream_index = stream_index;
-	strncpy(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
+	MMSOUND_STRNCPY(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
 
 	debug_msg("DTMF %d\n", param.tone);
 	debug_msg("Loop %d\n", param.repeat_count);
@@ -251,7 +251,7 @@ int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume, int c
 	param.priority = 0;
 	param.param = (void*)client_pid;
 	param.stream_index = stream_index;
-	strncpy(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
+	MMSOUND_STRNCPY(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
 
 	debug_msg("DTMF %d\n", param.tone);
 	debug_msg("Loop %d\n", param.repeat_count);

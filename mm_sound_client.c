@@ -381,31 +381,31 @@ void mm_sound_convert_volume_type_to_stream_type(int volume_type, char *stream_t
 {
 	switch (volume_type) {
 	case VOLUME_TYPE_SYSTEM:
-		strncpy(stream_type, "system", MM_SOUND_STREAM_TYPE_LEN);
+		MMSOUND_STRNCPY(stream_type, "system", MM_SOUND_STREAM_TYPE_LEN);
 		break;
 	case VOLUME_TYPE_NOTIFICATION:
-		strncpy(stream_type, "notification", MM_SOUND_STREAM_TYPE_LEN);
+		MMSOUND_STRNCPY(stream_type, "notification", MM_SOUND_STREAM_TYPE_LEN);
 		break;
 	case VOLUME_TYPE_ALARM:
-		strncpy(stream_type, "alarm", MM_SOUND_STREAM_TYPE_LEN);
+		MMSOUND_STRNCPY(stream_type, "alarm", MM_SOUND_STREAM_TYPE_LEN);
 		break;
 	case VOLUME_TYPE_RINGTONE:
-		strncpy(stream_type, "ringtone-voip", MM_SOUND_STREAM_TYPE_LEN);
+		MMSOUND_STRNCPY(stream_type, "ringtone-voip", MM_SOUND_STREAM_TYPE_LEN);
 		break;
 	case VOLUME_TYPE_MEDIA:
-		strncpy(stream_type, "media", MM_SOUND_STREAM_TYPE_LEN);
+		MMSOUND_STRNCPY(stream_type, "media", MM_SOUND_STREAM_TYPE_LEN);
 		break;
 	case VOLUME_TYPE_CALL:
-		strncpy(stream_type, "system", MM_SOUND_STREAM_TYPE_LEN);
+		MMSOUND_STRNCPY(stream_type, "system", MM_SOUND_STREAM_TYPE_LEN);
 		break;
 	case VOLUME_TYPE_VOIP:
-		strncpy(stream_type, "voip", MM_SOUND_STREAM_TYPE_LEN);
+		MMSOUND_STRNCPY(stream_type, "voip", MM_SOUND_STREAM_TYPE_LEN);
 		break;
 	case VOLUME_TYPE_VOICE:
-		strncpy(stream_type, "voice-recognition", MM_SOUND_STREAM_TYPE_LEN);
+		MMSOUND_STRNCPY(stream_type, "voice-recognition", MM_SOUND_STREAM_TYPE_LEN);
 		break;
 	default:
-		strncpy(stream_type, "media", MM_SOUND_STREAM_TYPE_LEN);
+		MMSOUND_STRNCPY(stream_type, "media", MM_SOUND_STREAM_TYPE_LEN);
 		break;
 	}
 
@@ -794,17 +794,6 @@ int mm_sound_client_remove_device_info_changed_callback(unsigned int subs_id)
 	debug_fleave();
 	return ret;
 
-}
-int mm_sound_client_is_bt_a2dp_on (bool *connected, char** bt_name)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-
-	ret = mm_sound_client_dbus_is_bt_a2dp_on(connected, bt_name);
-
-	debug_fleave();
-	return ret;
 }
 
 int __convert_volume_type_to_str(int volume_type, char **volume_type_str)
@@ -1531,7 +1520,7 @@ int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_
 
 	instance = pid;
 
-	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
+	for (index = 0; index < FOCUS_HANDLE_MAX - 1; index++) {
 		if (g_focus_sound_handle[index].is_used == false) {
 			g_focus_sound_handle[index].is_used = true;
 			break;
@@ -1767,7 +1756,7 @@ int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e focu
 	if (ret)
 		return ret;
 
-	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
+	for (index = 0; index < FOCUS_HANDLE_MAX - 1; index++) {
 		if (g_focus_sound_handle[index].is_used == false) {
 			g_focus_sound_handle[index].is_used = true;
 			break;

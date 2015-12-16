@@ -279,7 +279,7 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 	p->source = source;
 	p->codec_wave_mutex = param->codec_wave_mutex;
 	p->stream_index = param->stream_index;
-	strncpy(p->stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
+	MMSOUND_STRNCPY(p->stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
 	//	pthread_mutex_init(&p->mutex, NULL);
 
 	debug_msg("[CODEC WAV] transper_size : %d\n", p->transper_size);
