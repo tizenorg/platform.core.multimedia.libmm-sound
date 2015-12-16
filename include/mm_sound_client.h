@@ -70,7 +70,6 @@ int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e type
 int mm_sound_client_unset_focus_watch_callback(int id);
 #endif
 
-int mm_sound_client_is_bt_a2dp_on (bool *connected, char** bt_name);
 int mm_sound_client_set_active_route_auto(void);
 int mm_sound_client_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 

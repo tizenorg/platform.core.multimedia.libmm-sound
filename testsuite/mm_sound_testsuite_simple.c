@@ -1461,21 +1461,7 @@ static void interpret (char *cmd)
 			} else {
 				g_print ("### mm_sound_remove_active_device_changed_callback() Error : errno [%x]\n\n", ret);
 			}
-		} else if (strncmp(cmd, "{", 1) == 0) {
-			int ret = 0;
-			bool connected = 0;
-			char* bt_name = NULL;
-
-			ret = mm_sound_route_get_a2dp_status (&connected, &bt_name);
-			if (ret == MM_ERROR_NONE) {
-				g_print ("### mm_sound_route_get_a2dp_status() Success : connected=[%d] name=[%s]\n", connected, bt_name);
-				if (bt_name)
-					free (bt_name);
-			} else {
-				g_print ("### mm_sound_route_get_a2dp_status() Error : errno [%x]\n", ret);
-			}
 		}
-
 		else if(strncmp(cmd, "}", 1) == 0)
 		{
 			int ret = 0;

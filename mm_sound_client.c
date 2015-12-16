@@ -795,17 +795,6 @@ int mm_sound_client_remove_device_info_changed_callback(unsigned int subs_id)
 	return ret;
 
 }
-int mm_sound_client_is_bt_a2dp_on (bool *connected, char** bt_name)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-
-	ret = mm_sound_client_dbus_is_bt_a2dp_on(connected, bt_name);
-
-	debug_fleave();
-	return ret;
-}
 
 int __convert_volume_type_to_str(int volume_type, char **volume_type_str)
 {
@@ -1531,7 +1520,7 @@ int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_
 
 	instance = pid;
 
-	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
+	for (index = 0; index < FOCUS_HANDLE_MAX - 1; index++) {
 		if (g_focus_sound_handle[index].is_used == false) {
 			g_focus_sound_handle[index].is_used = true;
 			break;
@@ -1767,7 +1756,7 @@ int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e focu
 	if (ret)
 		return ret;
 
-	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
+	for (index = 0; index < FOCUS_HANDLE_MAX - 1; index++) {
 		if (g_focus_sound_handle[index].is_used == false) {
 			g_focus_sound_handle[index].is_used = true;
 			break;

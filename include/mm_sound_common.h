@@ -90,7 +90,7 @@ if( pthread_mutex_unlock( x_mutex ) ) { \
 #define MMSOUND_STRNCPY(dst,src,size)\
 do { \
 	if(src != NULL && dst != NULL && size > 0) {\
-		strncpy(dst,src,size); \
+		strncpy(dst,src,size-1); \
 		dst[size-1] = '\0';\
 	} else if(dst == NULL) {       \
 		debug_error("STRNCPY ERROR: Destination String is NULL\n"); \
