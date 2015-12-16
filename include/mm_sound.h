@@ -1747,39 +1747,6 @@ int mm_sound_play_tone_with_stream_info(MMSoundTone_t tone, char *stream_type, i
  * Enumerations of System audio route policy
  */
 
-/**
- * This function get a2dp activation information.
- *
- * @param	 connected		    [out] is Bluetooth A2DP connected (1:connected, 0:not connected)
- *              bt_name		[out] Bluetooth A2DP connected device name (allocated by internal when connected=1 otherwise set to null)
- *
- *
- * @return	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	This function allocation memory to given bt_name pointer internally.
- *          So application should free given memory pointer later after use.
- *          bt_name will be null if there's no a2dp device is connected (connected is 0)
- * @see		mm_sound_route_set_system_policy mm_sound_route_get_system_policy
- * @pre		None.
- * @post	memory buffer will be allocated and fill with bluetooth device name.
- * @par Example
- * @code
-int ret;
-int connected = 0;
-char* bt_name = NULL;
-ret = mm_sound_route_get_a2dp_status (&connected, &bt_name);
-
-if (ret == MM_ERROR_NONE) {
-	g_print ("### Is Bluetooth A2DP On Success : connected=[%d] name=[%s]\n", connected, bt_name);
-	if (bt_name)
-		free (bt_name);
-} else {
-	g_print ("### Is Bluetooth A2DP On Error : errno [%d]\n", ret);
-
- * @endcode
- */
-int mm_sound_route_get_a2dp_status (bool* connected, char** bt_name);
-
 
 /*
  * Enumerations of device & route
