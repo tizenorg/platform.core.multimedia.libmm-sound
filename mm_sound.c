@@ -556,26 +556,6 @@ int mm_sound_play_tone (MMSoundTone_t num, int volume_config, const double volum
 ///////////////////////////////////
 
 EXPORT_API
-int mm_sound_route_get_a2dp_status (bool *connected, char **bt_name)
-{
-	int ret = MM_ERROR_NONE;
-
-	if (connected == NULL || bt_name == NULL) {
-		debug_error ("argument is not valid\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	ret = mm_sound_client_is_bt_a2dp_on (connected, bt_name);
-	debug_msg ("connected=[%d] bt_name[%s]\n", *connected, *bt_name);
-	if (ret < 0) {
-		debug_error("MMSoundClientIsBtA2dpOn() Failed\n");
-		return ret;
-	}
-
-	return ret;
-}
-
-EXPORT_API
 int mm_sound_is_route_available(mm_sound_route route, bool *is_available)
 {
 	int ret = MM_ERROR_NONE;
