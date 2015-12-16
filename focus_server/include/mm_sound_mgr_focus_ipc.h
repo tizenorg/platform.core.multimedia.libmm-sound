@@ -25,10 +25,13 @@
 #include "../../include/mm_sound_msg.h"
 
 #ifdef SUPPORT_CONTAINER
+
+#define CONTAINER_NAME_MAX 64
+
 typedef struct container_info
 {
 	int pid;
-	char name[64];
+	char name[CONTAINER_NAME_MAX];
 } container_info_t;
 #endif
 

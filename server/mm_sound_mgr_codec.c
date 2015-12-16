@@ -189,9 +189,10 @@ int MMSoundMgrCodecInit(const char *targetdir)
 	}
 
 	MMSoundPluginScan(targetdir, MM_SOUND_PLUGIN_TYPE_CODEC, &g_codec_plugins);
-
-	while (g_codec_plugins[loop].type != MM_SOUND_PLUGIN_TYPE_NONE) {
-		_MMSoundMgrCodecRegisterInterface(&g_codec_plugins[loop++]);
+	if (g_codec_plugins) {
+		while (g_codec_plugins[loop].type != MM_SOUND_PLUGIN_TYPE_NONE) {
+			_MMSoundMgrCodecRegisterInterface(&g_codec_plugins[loop++]);
+		}
 	}
 
 	debug_leave("\n");
@@ -244,7 +245,7 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 #endif
 
 	err = _MMSoundMgrCodecGetEmptySlot(slotid);
-	if (err != MM_ERROR_NONE) {
+	if (err != MM_ERROR_NONE || *slotid < 0) {
 		debug_error("Empty g_slot is not found\n");
 		goto cleanup;
 	}
@@ -417,7 +418,7 @@ int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param
 	}
 
 	err = _MMSoundMgrCodecGetEmptySlot(slotid);
-	if (err != MM_ERROR_NONE) {
+	if (err != MM_ERROR_NONE || *slotid < 0) {
 		debug_error("Empty g_slot is not found\n");
 		goto cleanup;
 	}
@@ -512,7 +513,7 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 #endif
 
 	err = _MMSoundMgrCodecGetEmptySlot(slotid);
-	if(err != MM_ERROR_NONE)
+	if(err != MM_ERROR_NONE || *slotid < 0)
 	{
 		debug_error("Empty g_slot is not found\n");
 		goto cleanup;
@@ -688,7 +689,7 @@ int MMSoundMgrCodecPlayDtmfWithStreamInfo(int *slotid, const mmsound_mgr_codec_p
 #endif
 
 	err = _MMSoundMgrCodecGetEmptySlot(slotid);
-	if(err != MM_ERROR_NONE)
+	if(err != MM_ERROR_NONE || *slotid < 0)
 	{
 		debug_error("Empty g_slot is not found\n");
 		goto cleanup;

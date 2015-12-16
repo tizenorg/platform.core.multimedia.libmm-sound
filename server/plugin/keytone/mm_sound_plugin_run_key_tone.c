@@ -202,14 +202,12 @@ static int _play_keytone(const char *filename, int volume_config)
 			debug_error("Fail to write data: %s\n", strerror(errno));
 			ret = MM_ERROR_SOUND_INTERNAL;
 		}
+		/* Close PIPE */
+		close(fd);
 	} else {
 		debug_error("Fail to open pipe\n");
 		ret = MM_ERROR_SOUND_FILE_NOT_FOUND;
 	}
-
-	/* Close PIPE */
-	if (fd != -1)
-		close(fd);
 
 	return ret;
 }

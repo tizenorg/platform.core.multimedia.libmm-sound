@@ -57,7 +57,9 @@ int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const
 		param.pid = client_pid;
 	param.handle_id = handle_id;
 	param.is_for_session = is_for_session;
-	memcpy(param.stream_type, stream_type, MAX_STREAM_TYPE_LEN);
+	strncpy(param.stream_type, stream_type, MAX_STREAM_TYPE_LEN - 1);
+	param.stream_type[MAX_STREAM_TYPE_LEN - 1] = '\0';
+
 	ret = mm_sound_mgr_focus_create_node(&param);
 
 	/* FIX ME : Notice that it needs to be improved by the time when mused and container actually work togeter */
@@ -75,7 +77,8 @@ int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const
 	param.pid = client_pid;
 	param.handle_id = handle_id;
 	param.is_for_session = is_for_session;
-	memcpy(param.stream_type, stream_type, MAX_STREAM_TYPE_LEN);
+	strncpy(param.stream_type, stream_type, MAX_STREAM_TYPE_LEN - 1);
+	param.stream_type[MAX_STREAM_TYPE_LEN - 1] = '\0';
 
 	ret = mm_sound_mgr_focus_create_node(&param);
 
@@ -144,7 +147,9 @@ int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_typ
 	param.pid = pid;
 	param.handle_id = handle_id;
 	param.request_type = focus_type;
-	memcpy(param.option, name, MM_SOUND_NAME_NUM);
+	strncpy(param.option, name, MM_SOUND_NAME_NUM - 1);
+	param.option[MM_SOUND_NAME_NUM - 1] = '\0';
+
 	ret = mm_sound_mgr_focus_request_acquire(&param);
 
 	return ret;
@@ -160,7 +165,8 @@ int __mm_sound_mgr_focus_ipc_release_focus(int pid, int handle_id, int focus_typ
 	param.pid = pid;
 	param.handle_id = handle_id;
 	param.request_type = focus_type;
-	memcpy(param.option, name, MM_SOUND_NAME_NUM);
+	strncpy(param.option, name, MM_SOUND_NAME_NUM - 1);
+	param.option[MM_SOUND_NAME_NUM - 1] = '\0';
 
 	ret = mm_sound_mgr_focus_request_release(&param);
 
