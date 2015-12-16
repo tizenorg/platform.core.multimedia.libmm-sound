@@ -58,7 +58,8 @@ int mm_source_open_file(const char *filename, MMSourceType *source, int drmsuppo
 	struct stat finfo = {0, };
 	int fd = -1;
 	void *mmap_buf = NULL;
-	unsigned int mediaSize,readSize,offSet=0;
+	unsigned int mediaSize, offSet=0;
+	int readSize = 0;
 	char genStr[20];
 	int i;
 

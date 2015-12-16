@@ -1092,6 +1092,11 @@ int __do_watch_callback(ASM_sound_events_t sound_event, ASM_sound_states_t updat
 		 *
 		 ******************************************/
 		filename2 = __get_asm_pipe_path(instance_id_list[num], handle_list[num], "r");
+		if (filename2 == NULL) {
+			debug_error("[RETCB] Fail to get return pipe");
+			goto fail;
+		}
+
 		if ((fd=open(filename2,O_RDONLY|O_NONBLOCK))== -1) {
 			char str_error[256];
 			strerror_r (errno, str_error, sizeof(str_error));
