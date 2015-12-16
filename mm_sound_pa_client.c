@@ -201,7 +201,6 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
     int samples_per_period = PA_SIMPLE_SAMPLES_PER_PERIOD_DEFAULT;
     int periods_per_buffer = PA_SIMPLE_PERIODS_PER_BUFFER_DEFAULT;
 
-    unsigned long latency = 0;
     int handle_mode = mode;
     int handle_inout = HANDLE_DIRECTION_NONE;
     int sample_size = 0;
@@ -329,12 +328,12 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
         break;
 
     case HANDLE_MODE_OUTPUT_CLOCK:
-        period_time = (!latency) ? PA_SIMPLE_PERIOD_TIME_FOR_HIGH_LATENCY_MSEC : latency;
+        period_time = PA_SIMPLE_PERIOD_TIME_FOR_HIGH_LATENCY_MSEC;
         samples_per_period = (ss->rate * period_time) / 1000;
         periods_per_buffer = PA_SIMPLE_PERIODS_PER_BUFFER_PLAYBACK;
         attr.prebuf = -1;
         attr.minreq = -1;
-        attr.tlength = (!latency) ? (uint32_t)-1 : periods_per_buffer * samples_per_period * pa_sample_size(ss);
+        attr.tlength = (uint32_t)-1;
         attr.maxlength = -1;
         attr.fragsize = 0;
 

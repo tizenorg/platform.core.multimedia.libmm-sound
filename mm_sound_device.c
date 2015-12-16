@@ -173,22 +173,24 @@ int mm_sound_get_current_device_list(mm_sound_device_flags_e flags, MMSoundDevic
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	ret = _check_for_valid_mask(flags);
+	if (ret != MM_ERROR_NONE) {
+		debug_error("mask[0x%x] is invalid, ret=0x%x", flag, ret);
+		return ret;
+	}
 
 	if (!(_device_list = g_malloc0(sizeof(mm_sound_device_list_t)))) {
 		debug_error("[Client] Allocate device list failed");
-		ret = MM_ERROR_SOUND_INTERNAL;
+		return MM_ERROR_SOUND_INTERNAL;
 	}
 
 	_device_list->is_new_device_list = true;
 
-	if (ret == MM_ERROR_NONE) {
-		ret = mm_sound_client_get_current_connected_device_list(flags, _device_list);
-		if (ret < 0) {
-			debug_error("Could not get current connected device list, ret = %x\n", ret);
-			g_free(_device_list);
-		} else {
-			*device_list = _device_list;
-		}
+	ret = mm_sound_client_get_current_connected_device_list(flags, _device_list);
+	if (ret < 0) {
+		debug_error("Could not get current connected device list, ret = %x\n", ret);
+		g_free(_device_list);
+	} else {
+		*device_list = _device_list;
 	}
 
 	return ret;

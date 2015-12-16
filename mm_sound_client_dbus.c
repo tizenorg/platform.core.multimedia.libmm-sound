@@ -408,7 +408,7 @@ static int _dbus_method_call_to(int dbus_to, int method_type, GVariant *args, GV
 	GDBusConnection *conn = NULL;
 	const char *bus_name, *object, *interface;
 
-	if (method_type < 0 || method_type > METHOD_CALL_MAX) {
+	if (method_type < 0 || method_type >= METHOD_CALL_MAX) {
 		debug_error("Invalid method type");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -559,7 +559,7 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 		interface = INTERFACE_PULSE_MODULE_POLICY;
 	} else {
 		debug_error("Invalid case, dbus_to %d", dbus_to);
-		return MM_ERROR_SOUND_INTERNAL;
+		goto fail;
 	}
 
 
@@ -567,16 +567,21 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 		if(_dbus_subscribe_signal(conn, object, interface, g_signals[signaltype].name,
 								_dbus_signal_callback, &_subs_id, user_cb) != MM_ERROR_NONE) {
 			debug_error("Dbus Subscribe on Client Error");
-			return MM_ERROR_SOUND_INTERNAL;
+			goto fail;
 		} else {
 			if (subs_id)
 				*subs_id = (unsigned int)_subs_id;
 		}
 	} else {
 		debug_error("Get Dbus Connection Error");
-		return MM_ERROR_SOUND_INTERNAL;
+		goto fail;
 	}
 	return MM_ERROR_NONE;
+
+fail:
+	if (user_cb)
+		free(user_cb);
+	return MM_ERROR_SOUND_INTERNAL;
 }
 
 static int _dbus_signal_unsubscribe(unsigned int subs_id)
@@ -598,7 +603,7 @@ static int _pulseaudio_dbus_set_property(pulseaudio_property_t property, GVarian
 	int ret = MM_ERROR_NONE;
 	GDBusConnection *conn = NULL;
 
-	if (property < 0 || property > PULSEAUDIO_PROP_MAX) {
+	if (property < 0 || property >= PULSEAUDIO_PROP_MAX) {
 		debug_error("Invalid property [%d]", property);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -627,7 +632,7 @@ static int _pulseaudio_dbus_get_property(pulseaudio_property_t property, GVarian
 	int ret = MM_ERROR_NONE;
 	GDBusConnection *conn = NULL;
 
-	if (property < 0 || property > PULSEAUDIO_PROP_MAX) {
+	if (property < 0 || property >= PULSEAUDIO_PROP_MAX) {
 		debug_error("Invalid property [%d]", property);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -813,31 +818,6 @@ int mm_sound_client_dbus_remove_device_info_changed_callback(unsigned int subs_i
 	if ((ret = _dbus_signal_unsubscribe(subs_id)) != MM_ERROR_NONE) {
 		debug_error("remove device info changed callback failed");
 	}
-
-	debug_fleave();
-	return ret;
-}
-
-int mm_sound_client_dbus_is_bt_a2dp_on (bool *connected, char** bt_name)
-{
-	int ret = MM_ERROR_NONE;
-	GVariant* result = NULL;
-	gboolean _connected;
-	gchar* _bt_name = NULL;
-
-	debug_fenter();
-
-	if((ret = _dbus_method_call_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, METHOD_CALL_GET_BT_A2DP_STATUS, NULL, &result)) != MM_ERROR_NONE) {
-		goto cleanup;
-	}
-	g_variant_get(result, "(bs)", &_connected, &_bt_name);
-
-	*connected = _connected;
-	*bt_name = (_connected)? _bt_name : NULL;
-
-cleanup:
-	if (result)
-		g_variant_unref(result);
 
 	debug_fleave();
 	return ret;

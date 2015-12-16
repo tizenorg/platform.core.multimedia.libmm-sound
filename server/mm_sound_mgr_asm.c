@@ -1092,6 +1092,11 @@ int __do_watch_callback(ASM_sound_events_t sound_event, ASM_sound_states_t updat
 		 *
 		 ******************************************/
 		filename2 = __get_asm_pipe_path(instance_id_list[num], handle_list[num], "r");
+		if (filename2 == NULL) {
+			debug_error("[RETCB] Fail to get return pipe");
+			goto fail;
+		}
+
 		if ((fd=open(filename2,O_RDONLY|O_NONBLOCK))== -1) {
 			char str_error[256];
 			strerror_r (errno, str_error, sizeof(str_error));
@@ -1702,7 +1707,7 @@ void __asm_get_empty_handle(int instance_id, int *handle)
 	}
 }
 
-void __print_resource(unsigned short resource_status)
+void __print_resource(unsigned int resource_status)
 {
 	if (resource_status == ASM_RESOURCE_NONE)
 		debug_warning(" resource NONE\n");
@@ -2033,7 +2038,7 @@ CONFLICT_AGAIN:
 							goto CONFLICT_AGAIN;
 						}
 
-						unsigned short resource_status = current_using_resource & mm_resource;
+						unsigned int resource_status = current_using_resource & mm_resource;
 						if (resource_status != ASM_RESOURCE_NONE) {
 							debug_log(" resource conflict found 0x%x\n", resource_status);
 							event_src = ASM_EVENT_SOURCE_RESOURCE_CONFLICT;
@@ -2110,7 +2115,7 @@ CONFLICT_AGAIN:
 						}
 
 						ASM_resource_t update_resource = current_using_resource;
-						unsigned short resource_status = current_using_resource & mm_resource;
+						unsigned int resource_status = current_using_resource & mm_resource;
 						if (resource_status) { /* Resouce conflict */
 							debug_warning(" there is system resource conflict 0x%x\n", resource_status);
 							__print_resource(resource_status);
@@ -2163,7 +2168,7 @@ CONFLICT_AGAIN:
 
 				case ASM_CASE_RESOURCE_CHECK:
 				{
-					unsigned short resource_status = current_using_resource & mm_resource;
+					unsigned int resource_status = current_using_resource & mm_resource;
 					if (resource_status!= ASM_RESOURCE_NONE) {
 						debug_log(" ASM_CASE_RESOURCE_CHECK : resource conflict found 0x%x\n", resource_status);
 
@@ -2305,7 +2310,7 @@ CONFLICT_AGAIN:
 						debug_warning(" Do not check in same pid %d\n", instance_id);
 					} else {
 						ASM_resource_t update_resource = current_using_resource;
-						unsigned short resource_status = current_using_resource & mm_resource;
+						unsigned int resource_status = current_using_resource & mm_resource;
 						if (resource_status) { /* Resouce conflict */
 							debug_warning(" there is system resource conflict 0x%x\n", resource_status);
 							__print_resource(resource_status);
@@ -2397,7 +2402,7 @@ CONFLICT_AGAIN:
 							//PID is policy group.
 							debug_log(" Do not send Stop callback in same pid %d\n", instance_id);
 						} else {
-							unsigned short resource_status = current_using_resource & mm_resource;
+							unsigned int resource_status = current_using_resource & mm_resource;
 
 							/* Check conflict with paused instance */
 							if (resource_status != ASM_RESOURCE_NONE) {
@@ -2555,7 +2560,7 @@ void ___check_camcorder_status(int instance_id, int handle, ASM_sound_events_t s
 int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sound_event, ASM_sound_states_t rcv_sound_state, ASM_resource_t rcv_resource, bool is_for_recovery, bool *need_to_resume)
 {
 	int ret = MM_ERROR_NONE;
-	session_t cur_session;
+	session_t cur_session = SESSION_MEDIA;
 
 	/* FIXME */
 //	MMSoundMgrSessionGetSession(&cur_session);
@@ -3614,7 +3619,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 				int ret = 0;
 				int session_order = -1;
 
-				session_t cur_session;
+				session_t cur_session = SESSION_MEDIA;
 //				MMSoundMgrSessionGetSession(&cur_session);
 				debug_warning (" cur_session[%d] (0:MEDIA 1:VC 2:VT 3:VOIP 4:FM 5:NOTI 6:ALARM 7:EMER 8:VR)\n",cur_session);
 				if (cur_session == SESSION_VOICECALL ||
@@ -3657,7 +3662,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 			{
 				int ret = 0;
 				int session_order = -1;
-				session_t cur_session;
+				session_t cur_session = SESSION_MEDIA;
 //				MMSoundMgrSessionGetSession(&cur_session);
 				debug_warning (" cur_session[%d] (0:MEDIA 1:VC 2:VT 3:VOIP 4:FM 5:NOTI 6:ALARM 7:EMER 8:VR)\n",cur_session);
 				if (cur_session == SESSION_VOICECALL ||
@@ -3759,6 +3764,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		ASM_sound_events_t sound_event = ASM_EVENT_NONE;
 		if (rcv_subevent < ASM_SUB_EVENT_NONE || rcv_subevent >= ASM_SUB_EVENT_MAX) {
 			debug_error (" Invalid sub-event type[%d] to set\n", rcv_subevent);
+			break;
 		}
 		sound_event = __asm_find_event_of_handle(rcv_instance_id, rcv_sound_handle);
 
@@ -3864,8 +3870,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		/* change session forcedly */
 		if (asm_instance_h && (asm_instance_h->sound_state == ASM_STATE_PLAYING || asm_instance_h->sound_state == ASM_STATE_PAUSE)) {
 			ret = __asm_change_session (ASM_REQUEST_SETSTATE, rcv_sound_event, ASM_STATE_STOP,
-							(asm_instance_h)? asm_instance_h->mm_resource : rcv_resource,
-							true, &need_to_resume);
+										asm_instance_h->mm_resource, true, &need_to_resume);
 			if (ret) {
 				debug_error (" failed to __asm_change_session(), error(0x%x)", ret);
 			} else {
@@ -3901,6 +3906,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		/* check if it is redundant */
 		if (__is_it_redundant_request(rcv_instance_id, rcv_sound_event, rcv_sound_state)) {
 			debug_error (" it is redundant request for adding watch list...");
+			pthread_mutex_unlock(&g_mutex_asm);
 			return false;
 		}
 
