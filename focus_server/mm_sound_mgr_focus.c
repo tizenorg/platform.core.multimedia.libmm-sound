@@ -760,11 +760,13 @@ int mm_sound_mgr_focus_destroy_node (const _mm_sound_mgr_focus_param_t *param)
 	if(need_to_trigger) {
 		for (list = g_focus_node_list; list != NULL; list = list->next) {
 			node = (focus_node_t *)list->data;
-			if (my_node == node || node->is_for_watch) {
+			if (!node) {
+				/* skip */
+			} else if (my_node == node || node->is_for_watch) {
 				/* skip */
 			} else {
 				for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
-					if (node && (node->taken_by_id[i].pid == param->pid)) {
+					if (node->taken_by_id[i].pid == param->pid) {
 						if(my_node->taken_by_id[i].pid) {
 						/* If exists update the taken focus info to my victim node */
 							if (node->taken_by_id[i].by_session && !node->status) {
@@ -943,10 +945,12 @@ int mm_sound_mgr_focus_request_acquire(const _mm_sound_mgr_focus_param_t *param)
 		param_s->is_for_session = my_node->is_for_session;
 		for (list = g_focus_node_list; list != NULL; list = list->next) {
 			node = (focus_node_t *)list->data;
-			if (node == my_node || node->is_for_watch || (node->pid == my_node->pid && node->is_for_session && my_node->is_for_session)) {
+			if (!node) {
 				/* skip */
-			} else if (node && (param_s->request_type == FOCUS_TYPE_BOTH || node->status == FOCUS_STATUS_ACTIVATED_BOTH ||
-					(node->status & param_s->request_type))) {
+			} else if (node == my_node || node->is_for_watch || (node->pid == my_node->pid && node->is_for_session && my_node->is_for_session)) {
+				/* skip */
+			} else if (param_s->request_type == FOCUS_TYPE_BOTH || node->status == FOCUS_STATUS_ACTIVATED_BOTH ||
+					(node->status & param_s->request_type)) {
 				if (node->status > FOCUS_STATUS_DEACTIVATED) {
 					if (my_node->priority >= node->priority) {
 						/* do callback for interruption */
@@ -1053,12 +1057,14 @@ int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param
 		param_s->is_for_session = my_node->is_for_session;
 		for (list = g_focus_node_list; list != NULL; list = list->next) {
 			node = (focus_node_t *)list->data;
-			if (node == my_node || node->is_for_watch) {
+			if (!node) {
+				/* skip */
+			} else if (node == my_node || node->is_for_watch) {
 				/* skip */
 			} else {
 				for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
 					if (param_s->request_type & (i+1)) {
-						if (node && (node->taken_by_id[i].pid == param_s->pid && (node->taken_by_id[i].handle_id == param_s->handle_id || node->taken_by_id[i].by_session))) {
+						if (node->taken_by_id[i].pid == param_s->pid && (node->taken_by_id[i].handle_id == param_s->handle_id || node->taken_by_id[i].by_session)) {
 							/* do callback for resumption */
 							ret = _mm_sound_mgr_focus_do_callback(FOCUS_COMMAND_ACQUIRE, node, param_s, my_node->stream_type);
 							if (ret) {

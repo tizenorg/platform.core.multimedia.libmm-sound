@@ -176,7 +176,7 @@ int mm_sound_get_current_device_list(mm_sound_device_flags_e flags, MMSoundDevic
 
 	if (!(_device_list = g_malloc0(sizeof(mm_sound_device_list_t)))) {
 		debug_error("[Client] Allocate device list failed");
-		ret = MM_ERROR_SOUND_INTERNAL;
+		return MM_ERROR_SOUND_INTERNAL;
 	}
 
 	_device_list->is_new_device_list = true;

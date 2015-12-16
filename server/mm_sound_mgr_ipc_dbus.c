@@ -335,7 +335,6 @@ static void handle_method_play_file_stop(GDBusMethodInvocation* invocation);
 static void handle_method_play_dtmf(GDBusMethodInvocation* invocation);
 static void handle_method_play_dtmf_with_stream_info(GDBusMethodInvocation* invocation);
 static void handle_method_clear_focus(GDBusMethodInvocation* invocation);
-static void handle_method_get_bt_a2dp_status(GDBusMethodInvocation* invocation);
 static void handle_method_test(GDBusMethodInvocation* invocation);
 static void handle_method_set_sound_path_for_active_device(GDBusMethodInvocation* invocation);
 static void handle_method_get_audio_path(GDBusMethodInvocation* invocation);
@@ -403,12 +402,6 @@ struct mm_sound_dbus_method methods[METHOD_CALL_MAX] = {
 			.name = "PlayDTMFWithStreamInfo",
 		},
 		.handler = handle_method_play_dtmf_with_stream_info
-	},
-	[METHOD_CALL_GET_BT_A2DP_STATUS] = {
-		.info = {
-			.name = "GetBTA2DPStatus",
-		},
-		.handler = handle_method_get_bt_a2dp_status
 	},
 	[METHOD_CALL_SET_PATH_FOR_ACTIVE_DEVICE] = {
 		.info = {
@@ -895,30 +888,6 @@ send_reply:
 	} else {
 		_method_call_return_error(invocation, ret);
 	}
-
-	debug_fleave();
-}
-
-static void handle_method_get_bt_a2dp_status(GDBusMethodInvocation* invocation)
-{
-	int ret = MM_ERROR_NONE;
-	gboolean is_bt_on = FALSE;
-	gchar* bt_name = NULL;
-
-	debug_fenter();
-
-	/* FIXME */
-//	ret = MMSoundMgrPulseHandleIsBtA2DPOnReq(&is_bt_on, &bt_name);
-
-send_reply:
-	if (ret == MM_ERROR_NONE) {
-		_method_call_return_value(invocation, g_variant_new("(bs)", is_bt_on, bt_name));
-	} else {
-		_method_call_return_error(invocation, ret);
-	}
-
-	if (bt_name)
-		g_free(bt_name);
 
 	debug_fleave();
 }

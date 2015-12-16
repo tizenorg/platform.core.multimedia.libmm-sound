@@ -1092,6 +1092,11 @@ int __do_watch_callback(ASM_sound_events_t sound_event, ASM_sound_states_t updat
 		 *
 		 ******************************************/
 		filename2 = __get_asm_pipe_path(instance_id_list[num], handle_list[num], "r");
+		if (filename2 == NULL) {
+			debug_error("[RETCB] Fail to get return pipe");
+			goto fail;
+		}
+
 		if ((fd=open(filename2,O_RDONLY|O_NONBLOCK))== -1) {
 			char str_error[256];
 			strerror_r (errno, str_error, sizeof(str_error));
@@ -2555,7 +2560,7 @@ void ___check_camcorder_status(int instance_id, int handle, ASM_sound_events_t s
 int __asm_change_session (ASM_requests_t rcv_request, ASM_sound_events_t rcv_sound_event, ASM_sound_states_t rcv_sound_state, ASM_resource_t rcv_resource, bool is_for_recovery, bool *need_to_resume)
 {
 	int ret = MM_ERROR_NONE;
-	session_t cur_session;
+	session_t cur_session = SESSION_MEDIA;
 
 	/* FIXME */
 //	MMSoundMgrSessionGetSession(&cur_session);
@@ -3657,7 +3662,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 			{
 				int ret = 0;
 				int session_order = -1;
-				session_t cur_session;
+				session_t cur_session = SESSION_MEDIA;
 //				MMSoundMgrSessionGetSession(&cur_session);
 				debug_warning (" cur_session[%d] (0:MEDIA 1:VC 2:VT 3:VOIP 4:FM 5:NOTI 6:ALARM 7:EMER 8:VR)\n",cur_session);
 				if (cur_session == SESSION_VOICECALL ||
@@ -3759,6 +3764,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		ASM_sound_events_t sound_event = ASM_EVENT_NONE;
 		if (rcv_subevent < ASM_SUB_EVENT_NONE || rcv_subevent >= ASM_SUB_EVENT_MAX) {
 			debug_error (" Invalid sub-event type[%d] to set\n", rcv_subevent);
+			break;
 		}
 		sound_event = __asm_find_event_of_handle(rcv_instance_id, rcv_sound_handle);
 
@@ -3901,6 +3907,7 @@ int __asm_process_message (void *rcv_msg, void *ret_msg)
 		/* check if it is redundant */
 		if (__is_it_redundant_request(rcv_instance_id, rcv_sound_event, rcv_sound_state)) {
 			debug_error (" it is redundant request for adding watch list...");
+			pthread_mutex_unlock(&g_mutex_asm);
 			return false;
 		}
 
