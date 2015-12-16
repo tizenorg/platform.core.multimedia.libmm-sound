@@ -183,7 +183,6 @@ static int _mm_sound_play_keysound(const char *filename, int volume_config, ipc_
 		res = write(fd, &data, size);
 		if (res < 0) {
 			debug_error("Fail to write data: [%s][%d]\n", strerror(errno), errno);
-			close(fd);
 			ret = MM_ERROR_SOUND_INTERNAL;
 		}
 		/* Close PIPE */

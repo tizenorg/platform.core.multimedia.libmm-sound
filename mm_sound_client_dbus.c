@@ -818,31 +818,6 @@ int mm_sound_client_dbus_remove_device_info_changed_callback(unsigned int subs_i
 	return ret;
 }
 
-int mm_sound_client_dbus_is_bt_a2dp_on (bool *connected, char** bt_name)
-{
-	int ret = MM_ERROR_NONE;
-	GVariant* result = NULL;
-	gboolean _connected;
-	gchar* _bt_name = NULL;
-
-	debug_fenter();
-
-	if((ret = _dbus_method_call_to(DBUS_TO_PULSE_MODULE_DEVICE_MANAGER, METHOD_CALL_GET_BT_A2DP_STATUS, NULL, &result)) != MM_ERROR_NONE) {
-		goto cleanup;
-	}
-	g_variant_get(result, "(bs)", &_connected, &_bt_name);
-
-	*connected = _connected;
-	*bt_name = (_connected)? _bt_name : NULL;
-
-cleanup:
-	if (result)
-		g_variant_unref(result);
-
-	debug_fleave();
-	return ret;
-}
-
 int mm_sound_client_dbus_set_volume_by_type(const char *volume_type, const unsigned int volume_level)
 {
 	int ret = MM_ERROR_NONE;

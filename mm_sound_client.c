@@ -795,17 +795,6 @@ int mm_sound_client_remove_device_info_changed_callback(unsigned int subs_id)
 	return ret;
 
 }
-int mm_sound_client_is_bt_a2dp_on (bool *connected, char** bt_name)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_fenter();
-
-	ret = mm_sound_client_dbus_is_bt_a2dp_on(connected, bt_name);
-
-	debug_fleave();
-	return ret;
-}
 
 int __convert_volume_type_to_str(int volume_type, char **volume_type_str)
 {
