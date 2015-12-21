@@ -157,8 +157,6 @@ int mm_sound_play_sound_with_stream_info(const char *filename, char *stream_type
  */
 int mm_sound_play_keysound(const char *filename, int volume_config);
 
-int mm_sound_pcm_play_open_ex (MMSoundPcmHandle_t *handle, const unsigned int rate, MMSoundPcmChannel_t channel, MMSoundPcmFormat_t format, int volume_config, int asm_event);
-
 int mm_sound_boot_ready(int timeout_sec);
 
 int mm_sound_boot_play_sound(char* path);

@@ -672,36 +672,6 @@ static const GDBusInterfaceVTable interface_vtable =
 	handle_set_property
 };
 
-#if 0
-static void handle_signal(GDBusConnection  *connection,
-                                     const gchar      *sender_name,
-                                     const gchar      *object_path,
-                                     const gchar      *interface_name,
-                                     const gchar      *signal_name,
-                                     GVariant         *params,
-                                     gpointer          user_data)
-{
-	if (!object_path || !interface_name || !signal_name) {
-		debug_error("Invalid Parameters");
-		return;
-	}
-
-	debug_log("Got Signal : Object '%s, Interface '%s', Signal '%s'", object_path, interface_name, signal_name);
-
-	if (!g_strcmp0(object_path, OBJECT_ASM)) {
-		if (!g_strcmp0(interface_name, INTERFACE_ASM) && !g_strcmp0(signal_name, "EmergentExit")) {
-			debug_log("handle signal '%s.%s'", interface_name, signal_name);
-			handle_signal_asm_emergent_exit(params, user_data);
-		} else {
-			debug_log("Unknown Signal '%s.%s'", interface_name, signal_name);
-		}
-	} else {
-		debug_log("Unknown Object '%s'", object_path);
-	}
-
-}
-#endif
-
 static void on_bus_acquired(GDBusConnection *connection, const gchar *name, gpointer user_data)
 {
 	guint reg_id;

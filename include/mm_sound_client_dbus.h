@@ -45,6 +45,7 @@ int mm_sound_client_dbus_remove_volume_changed_callback(unsigned int subs_id);
 int mm_sound_client_dbus_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
 #ifdef USE_FOCUS
+int mm_sound_client_dbus_get_unique_id(int *id);
 int mm_sound_client_dbus_register_focus(int id, int instance, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data);
 int mm_sound_client_dbus_unregister_focus(int instance, int id, bool is_for_session);
 int mm_sound_client_dbus_set_foucs_reacquisition(int instance, int id, bool reacquisition);

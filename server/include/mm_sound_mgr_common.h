@@ -27,7 +27,6 @@
 
 #include <mm_session.h>
 #include <mm_session_private.h>
-#include <audio-session-manager.h>
 
 #endif /* __MM_SOUND_MGR_COMMON_H__ */
 

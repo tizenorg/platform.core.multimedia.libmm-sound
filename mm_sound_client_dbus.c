@@ -20,10 +20,7 @@
 #define COOKIE_SIZE 20
 #endif
 
-
 #define BUS_NAME_PULSEAUDIO "org.pulseaudio.Server"
-#define OBJECT_PULSE_MODULE_POLICY "/org/pulseaudio/policy1"
-#define INTERFACE_PULSE_MODULE_POLICY "org.PulseAudio.Ext.Policy1"
 #define OBJECT_PULSE_MODULE_DEVICE_MANAGER "/org/pulseaudio/DeviceManager"
 #define INTERFACE_PULSE_MODULE_DEVICE_MANAGER "org.pulseaudio.DeviceManager"
 #define OBJECT_PULSE_MODULE_STREAM_MANAGER "/org/pulseaudio/StreamManager"
@@ -50,7 +47,6 @@ enum {
 	DBUS_TO_SOUND_SERVER,
 	DBUS_TO_PULSE_MODULE_DEVICE_MANAGER,
 	DBUS_TO_PULSE_MODULE_STREAM_MANAGER,
-	DBUS_TO_PULSE_MODULE_POLICY,
 	DBUS_TO_FOCUS_SERVER,
 };
 
@@ -287,6 +283,7 @@ static int _dbus_method_call(GDBusConnection* conn, const char* bus_name, const 
 	return ret;
 }
 
+#if 0
 static int _dbus_set_property(GDBusConnection* conn, const char* bus_name, const char* object, const char* intf,
 							const char* prop, GVariant* args, GVariant** result)
 {
@@ -327,6 +324,7 @@ static int _dbus_get_property(GDBusConnection *conn, const char* bus_name, const
 
 	return ret;
 }
+#endif
 
 static int _dbus_subscribe_signal(GDBusConnection *conn, const char* object_name, const char* intf_name,
 					const char* signal_name, GDBusSignalCallback signal_cb, guint *subscribe_id, void* userdata)
@@ -391,12 +389,14 @@ static GDBusConnection* _dbus_get_connection(GBusType bustype)
 
 }
 
+#if 0
 static void _dbus_disconnect(GDBusConnection* conn)
 {
 	debug_fenter ();
 	g_object_unref(conn);
 	debug_fleave ();
 }
+#endif
 
 /******************************************************************************************
 		Simple Functions For Communicate with Sound-Server
@@ -425,10 +425,6 @@ static int _dbus_method_call_to(int dbus_to, int method_type, GVariant *args, GV
 		bus_name = BUS_NAME_PULSEAUDIO;
 		object = OBJECT_PULSE_MODULE_STREAM_MANAGER;
 		interface = INTERFACE_PULSE_MODULE_STREAM_MANAGER;
-	} else if (dbus_to == DBUS_TO_PULSE_MODULE_POLICY) {
-		bus_name = BUS_NAME_PULSEAUDIO;
-		object = OBJECT_PULSE_MODULE_POLICY;
-		interface = INTERFACE_PULSE_MODULE_POLICY;
 	} else if (dbus_to == DBUS_TO_FOCUS_SERVER) {
 		bus_name = BUS_NAME_FOCUS_SERVER;
 		object = OBJECT_FOCUS_SERVER;
@@ -554,9 +550,6 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 	} else if (dbus_to == DBUS_TO_PULSE_MODULE_STREAM_MANAGER) {
 		object = OBJECT_PULSE_MODULE_STREAM_MANAGER;
 		interface = INTERFACE_PULSE_MODULE_STREAM_MANAGER;
-	} else if (dbus_to == DBUS_TO_PULSE_MODULE_POLICY) {
-		object = OBJECT_PULSE_MODULE_POLICY;
-		interface = INTERFACE_PULSE_MODULE_POLICY;
 	} else {
 		debug_error("Invalid case, dbus_to %d", dbus_to);
 		return MM_ERROR_SOUND_INTERNAL;
@@ -585,59 +578,6 @@ static int _dbus_signal_unsubscribe(unsigned int subs_id)
 
 	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
 		_dbus_unsubscribe_signal(conn, (guint) subs_id);
-	} else {
-		debug_error("Get Dbus Connection Error");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-static int _pulseaudio_dbus_set_property(pulseaudio_property_t property, GVariant* args, GVariant **result)
-{
-	int ret = MM_ERROR_NONE;
-	GDBusConnection *conn = NULL;
-
-	if (property < 0 || property > PULSEAUDIO_PROP_MAX) {
-		debug_error("Invalid property [%d]", property);
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	if (args == NULL) {
-		debug_error("Invalid args");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
-		if((ret = _dbus_set_property(conn, BUS_NAME_PULSEAUDIO, OBJECT_PULSE_MODULE_POLICY, INTERFACE_PULSE_MODULE_POLICY,
-									g_pulseaudio_properties[property].name, args, result)) != MM_ERROR_NONE) {
-			debug_error("Dbus Call on Client Error");
-			return ret;
-		}
-	} else {
-		debug_error("Get Dbus Connection Error");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-static int _pulseaudio_dbus_get_property(pulseaudio_property_t property, GVariant **result)
-{
-	int ret = MM_ERROR_NONE;
-	GDBusConnection *conn = NULL;
-
-	if (property < 0 || property > PULSEAUDIO_PROP_MAX) {
-		debug_error("Invalid property [%d]", property);
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
-		if((ret = _dbus_get_property(conn, BUS_NAME_PULSEAUDIO, OBJECT_PULSE_MODULE_POLICY, INTERFACE_PULSE_MODULE_POLICY,
-									g_pulseaudio_properties[property].name, result)) != MM_ERROR_NONE) {
-			debug_error("Dbus Call on Client Error");
-			return ret;
-		}
 	} else {
 		debug_error("Get Dbus Connection Error");
 		return MM_ERROR_SOUND_INTERNAL;

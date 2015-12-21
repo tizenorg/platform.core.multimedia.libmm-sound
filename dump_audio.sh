@@ -16,7 +16,7 @@ ls /dev/snd/ -alZ >> ${AUDIO_DEBUG}/device_dump
 ls /usr/share/alsa/ucm/* -alZ >> ${AUDIO_DEBUG}/device_dump
 amixer contents >> ${AUDIO_DEBUG}/device_dump
 hcitool con >> ${AUDIO_DEBUG}/device_dump
-ls /tmp/ -alZ | grep ASM >> ${AUDIO_DEBUG}/tmp_dump
+ls /tmp/ -alZ | grep focus >> ${AUDIO_DEBUG}/tmp_dump
 ls /tmp/ -alZ | grep session >> ${AUDIO_DEBUG}/tmp_dump
 ipcs >> ${AUDIO_DEBUG}/ipcs_dump
 rpm -qa | egrep "mm-sound|avsystem|audio|session|sound|ext0|wav-player|tone-player|alsa|sysconf|openal" >> ${AUDIO_DEBUG}/rpm_dump

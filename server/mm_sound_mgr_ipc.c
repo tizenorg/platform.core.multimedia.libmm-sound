@@ -39,11 +39,8 @@
 #include "../include/mm_sound_msg.h"
 //#include "include/mm_sound_thread_pool.h"
 #include "include/mm_sound_mgr_codec.h"
-#include "include/mm_sound_mgr_asm.h"
 #include <mm_error.h>
 #include <mm_debug.h>
-
-#include <audio-session-manager.h>
 
 #include <gio/gio.h>
 
@@ -64,7 +61,6 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 	mmsound_mgr_codec_param_t param = {0,};
 	MMSourceType *source = NULL;
 	int ret = MM_ERROR_NONE;
-	int mm_session_type = MM_SESSION_TYPE_MEDIA;
 
 	/* Set source */
 	source = (MMSourceType*)malloc(sizeof(MMSourceType));
@@ -88,7 +84,7 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 	param.volume = volume;
 	param.volume_config = volume_config;
 	param.priority = priority;
-	mm_session_type = session_type;
+	param.session_type = session_type;
 	param.param = (void*)client_pid;
 	param.source = source;
 	param.handle_route = handle_route;
@@ -108,33 +104,6 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 			param.tone, param.repeat_count, param.volume, param.priority, param.volume_config, param.callback,
 			(int)param.param, param.source->type, param.source->ptr, param.keytone, param.handle_route, param.enable_session);
 			*/
-
-	//convert mm_session_type to asm_event_type
-	switch(mm_session_type)
-	{
-	case MM_SESSION_TYPE_MEDIA:
-		param.session_type = ASM_EVENT_MEDIA_MMSOUND;
-		break;
-	case MM_SESSION_TYPE_NOTIFY:
-		param.session_type = ASM_EVENT_NOTIFY;
-		break;
-	case MM_SESSION_TYPE_ALARM:
-		param.session_type = ASM_EVENT_ALARM;
-		break;
-	case MM_SESSION_TYPE_EMERGENCY:
-		param.session_type = ASM_EVENT_EMERGENCY;
-		break;
-	case MM_SESSION_TYPE_VIDEOCALL:
-		param.session_type = ASM_EVENT_VIDEOCALL;
-		break;
-	case MM_SESSION_TYPE_VOIP:
-		param.session_type = ASM_EVENT_VOIP;
-		break;
-	default:
-		debug_error("Unknown session type - use default shared type. %s %d\n", __FUNCTION__, __LINE__);
-		param.session_type = ASM_EVENT_MEDIA_MMSOUND;
-		break;
-	}
 
 	ret = MMSoundMgrCodecPlay(codechandle, &param);
 	if (ret != MM_ERROR_NONE) {
@@ -246,40 +215,11 @@ int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 	param.volume_config = volume_config;
 	param.priority = 0;
 	param.param = (void*)client_pid;
+	param.session_type = session_type;
 	param.session_options = session_options;
 	param.enable_session = enable_session;
 	param.stream_index = stream_index;
 	strncpy(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
-
-	//convert mm_session_type to asm_event_type
-	switch(session_type)
-	{
-		case MM_SESSION_TYPE_MEDIA:
-			param.session_type = ASM_EVENT_MEDIA_MMSOUND;
-			break;
-		case MM_SESSION_TYPE_NOTIFY:
-			param.session_type = ASM_EVENT_NOTIFY;
-			break;
-		case MM_SESSION_TYPE_ALARM:
-			param.session_type = ASM_EVENT_ALARM;
-			break;
-		case MM_SESSION_TYPE_EMERGENCY:
-			param.session_type = ASM_EVENT_EMERGENCY;
-			break;
-		case MM_SESSION_TYPE_CALL:
-			param.session_type = ASM_EVENT_CALL;
-			break;
-		case MM_SESSION_TYPE_VIDEOCALL:
-			param.session_type = ASM_EVENT_VIDEOCALL;
-			break;
-		case MM_SESSION_TYPE_VOIP:
-			param.session_type = ASM_EVENT_VOIP;
-			break;
-		default:
-			debug_error("Unknown session type - use default media type. %s %d\n", __FUNCTION__, __LINE__);
-			param.session_type = ASM_EVENT_MEDIA_MMSOUND;
-			break;
-	}
 
 	debug_msg("DTMF %d\n", param.tone);
 	debug_msg("Loop %d\n", param.repeat_count);
@@ -363,182 +303,6 @@ int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_so
 
 	return ret;
 }
-
-/************************************** ASM ***************************************/
-int __mm_sound_mgr_ipc_asm_register_sound(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-#ifdef SUPPORT_CONTAINER
-						const char* container_name, int container_pid,
-#endif
-					  int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
-					  int* request_id_r, int* sound_command_r, int* sound_state_r )
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_register_sound(pid, handle, sound_event, request_id, sound_state, resource,
-						      pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_command_r, sound_state_r);
-#ifdef SUPPORT_CONTAINER
-	_mm_sound_mgr_asm_update_container_data(*alloc_handle_r, container_name, container_pid);
-#endif
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_unregister_sound(int pid, int handle, int sound_event, int request_id, int sound_state, int resource)
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_unregister_sound(pid, handle, sound_event, request_id, sound_state, resource);
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_register_watcher(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-#ifdef SUPPORT_CONTAINER
-						const char* container_name, int container_pid,
-#endif
-					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
-					    int* request_id_r, int* sound_command_r, int* sound_state_r )
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_register_watcher(pid, handle, sound_event, request_id, sound_state, resource,
-						  pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_command_r, sound_state_r);
-#ifdef SUPPORT_CONTAINER
-	_mm_sound_mgr_asm_update_container_data(*alloc_handle_r, container_name, container_pid);
-#endif
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_unregister_watcher(int pid, int handle, int sound_event, int request_id, int sound_state, int resource)
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_unregister_watcher(pid, handle, sound_event, request_id, sound_state, resource);
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_get_mystate(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
-					    int* request_id_r, int* sound_state_r )
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_get_mystate(pid, handle, sound_event, request_id, sound_state, resource,
-						      pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_state_r);
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_set_state(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
-					    int* request_id_r, int* sound_command_r, int* sound_state_r , int* error_code_r)
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_set_state(pid, handle, sound_event, request_id, sound_state, resource,
-						      pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_command_r, sound_state_r, error_code_r);
-
-	return ret;
-}
-
-
-int __mm_sound_mgr_ipc_asm_get_state(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
-					    int* request_id_r, int* sound_state_r )
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_get_state(pid, handle, sound_event, request_id, sound_state, resource,
-						      pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_state_r);
-
-	return ret;
-}
-int __mm_sound_mgr_ipc_asm_set_subsession(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r, int* request_id_r)
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_set_subsession(pid, handle, sound_event, request_id, sound_state, resource,
-						      pid_r, alloc_handle_r, cmd_handle_r, request_id_r);
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_get_subsession(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r, int* request_id_r, int* sound_command_r)
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_get_subsession(pid, handle, sound_event, request_id, sound_state, resource,
-						      pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_command_r);
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_set_subevent(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
-					    int* request_id_r, int* sound_command_r, int* sound_state_r )
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_set_subevent(pid, handle, sound_event, request_id, sound_state, resource,
-						   pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_command_r, sound_state_r);
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_get_subevent(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
-					    int* request_id_r, int* sound_command_r)
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_get_subevent(pid, handle, sound_event, request_id, sound_state, resource,
-						   pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_command_r);
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_set_session_option(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
-					    int* request_id_r, int* sound_command_r, int* error_code_r )
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_set_session_option(pid, handle, sound_event, request_id, sound_state, resource,
-						pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_command_r, error_code_r);
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_get_session_option(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
-					    int* request_id_r, int* sound_command_r, int* option_flag_r )
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_get_session_option(pid, handle, sound_event, request_id, sound_state, resource,
-					     pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_command_r, option_flag_r);
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_reset_resume_tag(int pid, int handle, int sound_event, int request_id, int sound_state, int resource,
-					    int* pid_r, int* alloc_handle_r, int* cmd_handle_r,
-					    int* request_id_r, int* sound_command_r, int* sound_state_r )
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_reset_resume_tag(pid, handle, sound_event, request_id, sound_state, resource,
-					  pid_r, alloc_handle_r, cmd_handle_r, request_id_r, sound_command_r, sound_state_r);
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_dump(int pid, int handle, int sound_event, int request_id, int sound_state, int resource)
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_dump(pid, handle, sound_event, request_id, sound_state, resource);
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_asm_emergent_exit(int pid, int handle, int sound_event, int request_id, int sound_state)
-{
-	int ret = MM_ERROR_NONE;
-	ret = _mm_sound_mgr_asm_emergent_exit(pid, handle, sound_event, request_id, sound_state);
-
-	return ret;
-}
-
-/**********************************************************************************/
-
 
 /******************************************************************************************
 	Functions For Server-Side to notify Clients
