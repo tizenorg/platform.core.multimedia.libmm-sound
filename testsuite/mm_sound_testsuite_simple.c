@@ -46,7 +46,6 @@
 #include <dirent.h>
 #include <vconf.h>
 #include <mm_session_private.h>
-#include <audio-session-manager-types.h>
 
 #define POWERON_FILE	"/usr/share/feedback/sound/operation/power_on.wav"
 #define KEYTONE_FILE	"/usr/share/feedback/sound/operation/operation.wav"
@@ -264,7 +263,6 @@ static void displaymenu()
 		g_print("N : Notification start \n");
 		g_print("n : VOIP start \t");
 		g_print("v : Session end   \t");
-		g_print("V : Current Status \n");
 		g_print("==================================================================\n");
 		g_print("	Audio device APIs\n");
 		g_print("==================================================================\n");
@@ -1574,44 +1572,6 @@ static void interpret (char *cmd)
 			if(MM_ERROR_NONE != mm_session_finish())
 			{
 				g_print("Call session finish failed\n");
-			}
-		}
-
-		else if(strncmp(cmd, "V", 1) == 0) {
-			int value;
-			if(vconf_get_int(SOUND_STATUS_KEY, &value)) {
-				g_print("Can not get %s\n", SOUND_STATUS_KEY);
-			}
-			else
-			{
-				if(value == ASM_STATUS_NONE || value == ASM_STATUS_MONITOR)
-				{
-					g_print("No Session Instance\n");
-				}
-				if(value & ASM_STATUS_MEDIA_MMPLAYER) {
-					g_print("MEDIA - PLAYER\n");
-				}
-				if(value & ASM_STATUS_MEDIA_MMSOUND) {
-					g_print("MEDIA - SOUND\n");
-				}
-				if(value & ASM_STATUS_MEDIA_OPENAL) {
-					g_print("MEDIA - OPENAL\n");
-				}
-				if(value & ASM_STATUS_NOTIFY) {
-					g_print("NOTIFY\n");
-				}
-				if(value & ASM_STATUS_ALARM) {
-					g_print("ALARM\n");
-				}
-				if(value & ASM_STATUS_CALL) {
-					g_print("CALL\n");
-				}
-				if(value & ASM_STATUS_VIDEOCALL) {
-					g_print("VIDEOCALL\n");
-				}
-				if(value & ASM_STATUS_VOIP) {
-					g_print("VOIP\n");
-				}
 			}
 		}
 

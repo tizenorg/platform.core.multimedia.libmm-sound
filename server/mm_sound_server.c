@@ -48,8 +48,6 @@
 #include "include/mm_sound_mgr_codec.h"
 #include "include/mm_sound_mgr_ipc.h"
 #include "include/mm_sound_mgr_ipc_dbus.h"
-#include "include/mm_sound_mgr_asm.h"
-#include <audio-session-manager.h>
 
 #include <glib.h>
 
@@ -165,7 +163,6 @@ int main(int argc, char **argv)
 		MMSoundMgrRunInit(serveropt.plugdir);
 		MMSoundMgrCodecInit(serveropt.plugdir);
 		MMSoundMgrDbusInit();
-		MMSoundMgrASMInit();
 	}
 
 	debug_warning("sound_server [%d] initialization complete...now, start running!!\n", getpid());
@@ -196,8 +193,6 @@ int main(int argc, char **argv)
 		MMSoundMgrCodecFini();
 		MMSoundMgrRunFini();
 		MMSoundThreadPoolFini();
-
-		MMSoundMgrASMFini();
 	}
 
 	debug_warning("sound_server [%d] exit ----------------- END \n", getpid());

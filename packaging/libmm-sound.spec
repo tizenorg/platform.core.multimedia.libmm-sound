@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.9.276
+Version:    0.10.1
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -17,7 +17,6 @@ Requires(postun): /sbin/ldconfig
 BuildRequires: pkgconfig(mm-common)
 BuildRequires: pkgconfig(mm-log)
 BuildRequires: pkgconfig(mm-session)
-BuildRequires: pkgconfig(audio-session-mgr)
 BuildRequires: pkgconfig(glib-2.0)
 BuildRequires: pkgconfig(gio-2.0)
 BuildRequires: pkgconfig(vconf)
