@@ -252,10 +252,14 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 	}
 
 	err = OGGDEC_CreateDecode(&p->decoder);
-	if (err != OGGDEC_SUCCESS || p->decoder == NULL) {
+	if (err != OGGDEC_SUCCESS) {
 		debug_error("[CODEC OGG]Fail to Create ogg decoder\n");
 		sem_destroy(&p->start_ogg_signal);
 		sem_destroy(&p->start_wave_signal);
+		if (p->decoder) {
+			OGGDEC_ResetDecode(p->decoder);
+			OGGDEC_DeleteDecode(p->decoder);
+		}
 		free(p);
 		return MM_ERROR_SOUND_INTERNAL;
 	}
