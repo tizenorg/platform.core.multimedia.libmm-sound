@@ -206,6 +206,7 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 	MMSourceType *source = NULL;
 	OGG_DEC_INFO ogg_info;
 	int err, used_size, skipsize;
+	int ret = MM_ERROR_NONE;
 
 	mm_sound_handle_route_info route_info;
 	route_info.policy = HANDLE_ROUTE_POLICY_OUT_AUTO;
@@ -239,64 +240,43 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 	err = sem_init(&p->start_ogg_signal, 0, 0);
 	if (err == -1) {
 		debug_error("[CODEC OGG]Semaphore init fail\n");
-		free(p);
-		return MM_ERROR_SOUND_INTERNAL;
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error_before_create;
 	}
 
 	err = sem_init(&p->start_wave_signal, 0, 0);
 	if (err == -1) {
 		debug_error("[CODEC OGG]Semaphore init fail\n");
 		sem_destroy(&p->start_ogg_signal);
-		free(p);
-		return MM_ERROR_SOUND_INTERNAL;
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error_before_create;
 	}
 
 	err = OGGDEC_CreateDecode(&p->decoder);
 	if (err != OGGDEC_SUCCESS) {
 		debug_error("[CODEC OGG]Fail to Create ogg decoder\n");
-		sem_destroy(&p->start_ogg_signal);
-		sem_destroy(&p->start_wave_signal);
-		if (p->decoder) {
-			OGGDEC_ResetDecode(p->decoder);
-			OGGDEC_DeleteDecode(p->decoder);
-		}
-		free(p);
-		return MM_ERROR_SOUND_INTERNAL;
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error_before_create;
 	}
 	p->pcm_out_buf = (char *)malloc(sizeof(char)*OGG_DEC_BUF_SIZE);
 	if (p->pcm_out_buf == NULL) {
 		debug_error("[CODEC OGG]Memory allocation fail\n");
-		sem_destroy(&p->start_ogg_signal);
-		sem_destroy(&p->start_wave_signal);
-		OGGDEC_ResetDecode(p->decoder);
-		OGGDEC_DeleteDecode(p->decoder);
-		free(p);
-		return MM_ERROR_SOUND_NO_FREE_SPACE;
+		ret = MM_ERROR_SOUND_NO_FREE_SPACE;
+		goto error_after_create;
 	}
 	err = OGGDEC_InitDecode(p->decoder, (unsigned char*)p->source->ptr, p->BufferSize, &skipsize);
-	if (err != OGGDEC_SUCCESS || p->decoder == NULL) {
+	if (err != OGGDEC_SUCCESS) {
 		debug_error("Fail to init ogg decoder\n");
-		sem_destroy(&p->start_ogg_signal);
-		sem_destroy(&p->start_wave_signal);
-		OGGDEC_ResetDecode(p->decoder);
-		OGGDEC_DeleteDecode(p->decoder);
-		free(p->pcm_out_buf);
-		free(p);
-		return MM_ERROR_SOUND_INTERNAL;
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error_after_buffer;
 	}
 	p->offset = skipsize;
 
 	err = OGGDEC_InfoDecode(p->decoder, p->source->ptr+p->offset, &used_size, &ogg_info);
-	if (err != OGGDEC_SUCCESS || p->decoder == NULL)
-	{
+	if (err != OGGDEC_SUCCESS) {
 		debug_error("[CODEC OGG]Fail to get ogg info\n");
-		sem_destroy(&p->start_ogg_signal);
-		sem_destroy(&p->start_wave_signal);
-		OGGDEC_ResetDecode(p->decoder);
-		OGGDEC_DeleteDecode(p->decoder);
-		free(p->pcm_out_buf);
-		free(p);
-		return MM_ERROR_SOUND_INTERNAL;
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error_after_buffer;
 	}
 	p->offset += used_size;
 	p->Duration = info->duration;
@@ -380,14 +360,9 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 		if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER || p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE) {
 			__mm_sound_unlock();
 		}
-		
-		sem_destroy(&p->start_ogg_signal);
-		sem_destroy(&p->start_wave_signal);
-		OGGDEC_ResetDecode(p->decoder);
-		OGGDEC_DeleteDecode(p->decoder);
-		free(p->pcm_out_buf);
-		free(p);
-		return MM_ERROR_SOUND_INTERNAL;
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error_after_buffer;
+
 	}
 
 	pthread_mutex_lock(&p->mutex);
@@ -400,18 +375,26 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 		if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER || p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE) {
 			__mm_sound_unlock();
 		}		
-		sem_destroy(&p->start_ogg_signal);
-		sem_destroy(&p->start_wave_signal);
-		OGGDEC_ResetDecode(p->decoder);
-		OGGDEC_DeleteDecode(p->decoder);
-		free(p->pcm_out_buf);
-		free(p);
 		debug_error("[CODEC OGG]pthread_create() fail in pcm thread\n");
-		return MM_ERROR_SOUND_INTERNAL;
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error_after_buffer;
 	}
 
 	debug_leave("\n");
 	return MM_ERROR_NONE;
+
+error_after_buffer:
+	free(p->pcm_out_buf);
+
+error_after_create:
+	sem_destroy(&p->start_ogg_signal);
+	sem_destroy(&p->start_wave_signal);
+	OGGDEC_ResetDecode(p->decoder);
+	OGGDEC_DeleteDecode(p->decoder);
+
+error_before_create:
+	free(p);
+	return ret;
 }
 
 int MMSoundPlugCodecOggPlay(MMHandleType handle)

@@ -847,9 +847,13 @@ static int _MMSoundMgrCodecStopCallback(int param)
 
 	debug_enter("(Slot : %d)\n", param);
 
+	if (param < 0 || param >= MANAGER_HANDLE_MAX) {
+		debug_error ("Slot index param [%d] is invalid", param);
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
 	pthread_mutex_lock(&g_slot_mutex);
 	debug_msg("[CODEC MGR] Slot_mutex lock done\n");
-
 
 	/*
 	 * Unregister FOCUS here

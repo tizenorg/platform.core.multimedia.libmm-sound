@@ -204,7 +204,7 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
     int handle_mode = mode;
     int handle_inout = HANDLE_DIRECTION_NONE;
     int sample_size = 0;
-    pa_proplist *proplist = pa_proplist_new();
+    pa_proplist *proplist = NULL;
 
     mm_sound_handle_t* handle = NULL;
     MMSoundHandleRoutePolicy policy = HANDLE_ROUTE_POLICY_DEFAULT;
@@ -215,6 +215,8 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
 
     if (ss->channels < MM_SOUND_CHANNEL_MIN || ss->channels > MM_SOUND_CHANNEL_MAX)
         return MM_ERROR_INVALID_ARGUMENT;
+
+    proplist = pa_proplist_new();
 
     if(channel_map == NULL) {
         pa_channel_map_init_auto(&maps, ss->channels, PA_CHANNEL_MAP_ALSA);

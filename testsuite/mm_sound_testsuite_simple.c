@@ -692,7 +692,6 @@ static void interpret (char *cmd)
 
 				if(flag_1 == '0') { id = 0; }
 				else if(flag_1 == '1') { id = 1; }
-				else if(flag_1 == '2') { id = 2; }
 				else { id = 2; }
 
 				if(flag_2 == '1') { type = FOCUS_FOR_PLAYBACK; }
