@@ -132,19 +132,6 @@ void _pcm_out_func(void *data)
 	mm_sound_pa_drain(p->handle);
 	mm_sound_pa_close(p->handle);
 
-	/*
-	 * Restore path here
-	 */
-	if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER) {
-		/* If current path is not same as before playing sound, restore the sound path */
-		if (p->device_out != MM_SOUND_DEVICE_OUT_SPEAKER) {
-			mm_sound_set_sound_path_for_active_device(p->device_out, p->device_in);
-			mm_sound_pa_corkall(0);
-		}
-	}
-	if(p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER || p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE) {
-		__mm_sound_unlock();
-	}
 	/* Notice */
 	/* OggDestory is called by stop_cb func */
 	/* INDEED the stop_cb must be called, after end of all progress */
@@ -308,10 +295,7 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 		mode = HANDLE_MODE_OUTPUT;
 	}
 
-	if(param->handle_route == MM_SOUND_HANDLE_ROUTE_USING_CURRENT) /* normal, solo */
-		route_info.policy = HANDLE_ROUTE_POLICY_OUT_AUTO;
-	else /* loud solo */
-		route_info.policy = HANDLE_ROUTE_POLICY_OUT_HANDSET;
+	route_info.policy = HANDLE_ROUTE_POLICY_OUT_AUTO;
 
 	p->handle_route = param->handle_route;
 
@@ -333,36 +317,11 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 	debug_msg("[CODEC OGG] PARAM mode:[%d] priority:[%d] policy:[%d] channels:[%d] samplerate:[%d] format:[%d] volume type:[%x]\n",
 		mode,-1, route_info.policy, ss.channels, ss.rate, ss.format, param->volume_config);
 
-	/*
-	 * set path here
-	 */
-	switch(p->handle_route)
-	{
-		case MM_SOUND_HANDLE_ROUTE_SPEAKER:
-		case MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE:
-			debug_msg("[CODEC OGG] Save backup path\n");
-			__mm_sound_lock();
-			mm_sound_get_audio_path(&p->device_in, &p->device_out);
-			/* if current out is not speaker, then force set path to speaker */
-			if (p->device_out != MM_SOUND_DEVICE_OUT_SPEAKER) {
-				debug_msg("[CODEC OGG] current out is not SPEAKER, set path to SPEAKER now!!!\n");
-				mm_sound_pa_corkall(1);
-				mm_sound_set_sound_path_for_active_device(MM_SOUND_DEVICE_OUT_SPEAKER, MM_SOUND_DEVICE_IN_NONE);
-			}
-			break;
-		case MM_SOUND_HANDLE_ROUTE_USING_CURRENT:
-		default:
-			break;
-	}
 	p->handle = mm_sound_pa_open(HANDLE_MODE_OUTPUT_LOW_LATENCY, &route_info, 0, param->volume_config, &ss, NULL, &size, param->stream_type, param->stream_index);
 	if(!p->handle) {
 		debug_error("[CODEC OGG] Can not open audio handle\n");
-		if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER || p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE) {
-			__mm_sound_unlock();
-		}
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto error_after_buffer;
-
 	}
 
 	pthread_mutex_lock(&p->mutex);
@@ -372,9 +331,6 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 
 	err = g_thread_pool_func(p, _pcm_out_func);
 	if (err) {
-		if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER || p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE) {
-			__mm_sound_unlock();
-		}
 		debug_error("[CODEC OGG]pthread_create() fail in pcm thread\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto error_after_buffer;
