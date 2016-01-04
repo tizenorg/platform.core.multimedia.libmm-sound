@@ -52,15 +52,6 @@
 #define MASTER_VOLUME_MAX 100
 #define MASTER_VOLUME_MIN 0
 
-
-typedef struct {
-	volume_callback_fn	func;
-	void*				data;
-	volume_type_t		type;
-} volume_cb_param;
-
-volume_cb_param g_volume_param[VOLUME_TYPE_MAX];
-
 static pthread_mutex_t g_volume_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #include <gio/gio.h>
@@ -125,67 +116,11 @@ static int _validate_volume(volume_type_t type, int value)
 	return 0;
 }
 
-static void _volume_changed_cb(keynode_t* node, void* data)
-{
-	volume_cb_param* param = (volume_cb_param*) data;
-
-	debug_msg("%s changed callback called\n",vconf_keynode_get_name(node));
-
-	MMSOUND_ENTER_CRITICAL_SECTION( &g_volume_mutex )
-
-	if(param && (param->func != NULL)) {
-		debug_log("function 0x%x\n", param->func);
-		((volume_callback_fn)param->func)(param->data);
-	}
-
-	MMSOUND_LEAVE_CRITICAL_SECTION( &g_volume_mutex )
-}
-
-EXPORT_API
-int mm_sound_volume_add_callback(volume_type_t type, volume_callback_fn func, void* user_data)
-{
-	debug_msg("type = (%d)%15s, func = %p, user_data = %p", type, _get_volume_str(type), func, user_data);
-
-	/* Check input param */
-	if (type < 0 || type >= VOLUME_TYPE_MAX) {
-		debug_error("invalid argument\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-	if (!func) {
-		debug_warning("callback function is null\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN( &g_volume_mutex, MM_ERROR_SOUND_INTERNAL );
-
-	g_volume_param[type].func = func;
-	g_volume_param[type].data = user_data;
-	g_volume_param[type].type = type;
-
-	MMSOUND_LEAVE_CRITICAL_SECTION( &g_volume_mutex );
-
-	return mm_sound_util_volume_add_callback(type, _volume_changed_cb, (void*)&g_volume_param[type]);
-}
-
 EXPORT_API
 int mm_sound_volume_remove_callback(volume_type_t type)
 {
-	debug_msg("type = (%d)%s", type, _get_volume_str(type));
-
-	if(type < 0 || type >=VOLUME_TYPE_MAX) {
-		debug_error("invalid argument\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN( &g_volume_mutex, MM_ERROR_SOUND_INTERNAL );
-
-	g_volume_param[type].func = NULL;
-	g_volume_param[type].data = NULL;
-	g_volume_param[type].type = type;
-
-	MMSOUND_LEAVE_CRITICAL_SECTION( &g_volume_mutex );
-
-	return mm_sound_util_volume_remove_callback(type, _volume_changed_cb);
+	/* FIXME : Will be removed */
+	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 EXPORT_API
@@ -217,12 +152,6 @@ int mm_sound_remove_volume_changed_callback(unsigned int subs_id)
 	}
 
 	return ret;
-}
-
-EXPORT_API
-int mm_sound_volume_get_step(volume_type_t type, int *step)
-{
-	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 EXPORT_API
@@ -315,22 +244,6 @@ int mm_sound_volume_primary_type_get(volume_type_t *type)
 	return ret;
 }
 
-/* it will be removed */
-EXPORT_API
-int mm_sound_volume_primary_type_clear(void)
-{
-	int ret = MM_ERROR_NONE;
-
-	if (vconf_set_int(VCONFKEY_SOUND_PRIMARY_VOLUME_TYPE, -1)) {
-		debug_error("could not reset vconf for PRIMARY_VOLUME_TYPE\n");
-		ret = MM_ERROR_SOUND_INTERNAL;
-	} else {
-		debug_msg("clear primary volume type forcibly %d(%s)", -1, "none");
-	}
-
-	return ret;
-}
-
 ///////////////////////////////////
 ////     MMSOUND PLAY APIs
 ///////////////////////////////////
@@ -347,39 +260,12 @@ static inline void _mm_sound_fill_play_param(MMSoundPlayParam *param, const char
 }
 
 EXPORT_API
-int mm_sound_play_loud_solo_sound_no_restore(const char *filename, int volume_config, mm_sound_stop_callback_func callback, void *data, int *handle)
-{
-	MMSoundPlayParam param = { 0, };
-
-	_mm_sound_fill_play_param(&param, filename, volume_config, callback, data, HANDLE_PRIORITY_SOLO, MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE);
-	return mm_sound_play_sound_ex(&param, handle);
-}
-
-EXPORT_API
 int mm_sound_play_loud_solo_sound(const char *filename, int volume_config, mm_sound_stop_callback_func callback, void *data, int *handle)
 {
 	MMSoundPlayParam param = { 0, };
 
-	_mm_sound_fill_play_param(&param, filename, volume_config, callback, data, HANDLE_PRIORITY_SOLO, MM_SOUND_HANDLE_ROUTE_SPEAKER);
-	return mm_sound_play_sound_ex(&param, handle);
-}
-
-EXPORT_API
-int mm_sound_play_solo_sound(const char *filename, int volume_config, mm_sound_stop_callback_func callback, void *data, int *handle)
-{
-	MMSoundPlayParam param = { 0, };
-
-	_mm_sound_fill_play_param(&param, filename, volume_config, callback, data, HANDLE_PRIORITY_SOLO, MM_SOUND_HANDLE_ROUTE_USING_CURRENT);
-	return mm_sound_play_sound_ex(&param, handle);
-}
-
-EXPORT_API
-int mm_sound_play_sound_without_session(const char *filename, int volume_config, mm_sound_stop_callback_func callback, void *data, int *handle)
-{
-	MMSoundPlayParam param = { 0, };
-
-	_mm_sound_fill_play_param(&param, filename, volume_config, callback, data, HANDLE_PRIORITY_SOLO, MM_SOUND_HANDLE_ROUTE_USING_CURRENT);
-	param.skip_session = true;
+    /* FIXME : this function will be deleted */
+	_mm_sound_fill_play_param(&param, filename, volume_config, callback, data, HANDLE_PRIORITY_NORMAL, MM_SOUND_HANDLE_ROUTE_USING_CURRENT);
 	return mm_sound_play_sound_ex(&param, handle);
 }
 
@@ -556,223 +442,11 @@ int mm_sound_play_tone (MMSoundTone_t num, int volume_config, const double volum
 ///////////////////////////////////
 
 EXPORT_API
-int mm_sound_is_route_available(mm_sound_route route, bool *is_available)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_warning ("enter : route=[%x], is_available=[%p]\n", route, is_available);
-
-	if (!mm_sound_util_is_route_valid(route)) {
-		debug_error("route is invalid %d\n", route);
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-	if (!is_available) {
-		debug_error("is_available is invalid\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	ret = mm_sound_client_is_route_available(route, is_available);
-	if (ret < 0) {
-		debug_error("Can not check given route is available, ret = %x\n", ret);
-	} else {
-		debug_warning ("success : route=[%x], available=[%d]\n", route, *is_available);
-	}
-
-	return ret;
-}
-
-EXPORT_API
-int mm_sound_foreach_available_route_cb(mm_sound_available_route_cb available_route_cb, void *user_data)
-{
-	int ret = MM_ERROR_NONE;
-
-	if (!available_route_cb) {
-		debug_error("available_route_cb is invalid\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	ret = mm_sound_client_foreach_available_route_cb(available_route_cb, user_data);
-	if (ret < 0) {
-		debug_error("Can not set foreach available route callback, ret = %x\n", ret);
-	}
-
-	return ret;
-}
-
-EXPORT_API
-int mm_sound_set_active_route(mm_sound_route route)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_warning ("enter : route=[%x]\n", route);
-	if (!mm_sound_util_is_route_valid(route)) {
-		debug_error("route is invalid %d\n", route);
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	ret = mm_sound_client_set_active_route(route, true);
-	if (ret < 0) {
-		debug_error("Can not set active route, ret = %x\n", ret);
-	} else {
-		debug_warning ("success : route=[%x]\n", route);
-	}
-
-	return ret;
-}
-
-EXPORT_API
-int mm_sound_set_active_route_auto(void)
-{
-	int ret = MM_ERROR_NONE;
-
-	ret = mm_sound_client_set_active_route_auto();
-	if (ret < 0) {
-		debug_error("fail to set active route auto, ret = %x\n", ret);
-	} else {
-		debug_msg ("success !!\n");
-	}
-
-	return ret;
-}
-
-EXPORT_API
-int mm_sound_set_active_route_without_broadcast(mm_sound_route route)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_warning ("enter : route=[%x]\n", route);
-	if (!mm_sound_util_is_route_valid(route)) {
-		debug_error("route is invalid %d\n", route);
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	ret = mm_sound_client_set_active_route(route, false);
-	if (ret < 0) {
-		debug_error("Can not set active route, ret = %x\n", ret);
-	} else {
-		debug_warning ("success : route=[%x]\n", route);
-	}
-
-	return ret;
-}
-
-EXPORT_API
 int mm_sound_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
 {
-	int ret = MM_ERROR_NONE;
-
-	if (device_in == NULL || device_out == NULL) {
-		debug_error("argument is not valid\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	ret = mm_sound_client_get_active_device(device_in, device_out);
-	if (ret < 0) {
-		debug_error("Can not add active device callback, ret = %x\n", ret);
-	} else {
-		debug_msg ("success : in=[%x], out=[%x]\n", *device_in, *device_out);
-	}
-
-	return ret;
+	/* FIXME : Will be removed */
+	return MM_ERROR_NOT_SUPPORT_API;
 }
-
-EXPORT_API
-int mm_sound_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
-{
-	int ret = MM_ERROR_NONE;
-
-	if (device_in == NULL || device_out == NULL) {
-		debug_error("argument is not valid\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	ret = mm_sound_client_get_audio_path(device_in, device_out);
-	if (ret < 0) {
-		debug_error("Can not add active device callback, ret = %x\n", ret);
-	} else {
-		debug_msg ("success : in=[%x], out=[%x]\n", *device_in, *device_out);
-	}
-
-	return ret;
-}
-
-EXPORT_API
-int mm_sound_add_active_device_changed_callback(const char *name, mm_sound_active_device_changed_cb func, void *user_data)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_warning ("enter %s\n", name);
-	if (func == NULL) {
-		debug_error("argument is not valid\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	ret = mm_sound_client_add_active_device_changed_callback(name, func, user_data);
-	if (ret < 0) {
-		debug_error("Can not add active device changed callback, ret = %x\n", ret);
-	}
-
-	return ret;
-}
-
-EXPORT_API
-int mm_sound_remove_active_device_changed_callback(const char *name)
-{
-	int ret = MM_ERROR_NONE;
-
-	debug_warning ("enter name %s \n", name);
-	ret = mm_sound_client_remove_active_device_changed_callback(name);
-	if (ret < 0) {
-		debug_error("Can not remove active device changed callback, ret = %x\n", ret);
-	}
-
-	return ret;
-}
-
-EXPORT_API
-int mm_sound_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void *user_data)
-{
-	int ret = MM_ERROR_NONE;
-
-	if (func == NULL) {
-		debug_error("argument is not valid\n");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-
-	ret = mm_sound_client_add_available_route_changed_callback(func, user_data);
-	if (ret < 0) {
-		debug_error("Can not add available route changed callback, ret = %x\n", ret);
-	}
-
-	return ret;
-}
-
-EXPORT_API
-int mm_sound_remove_available_route_changed_callback(void)
-{
-	int ret = MM_ERROR_NONE;
-
-	ret = mm_sound_client_remove_available_route_changed_callback();
-	if (ret < 0) {
-		debug_error("Can not remove available route changed callback, ret = %x\n", ret);
-	}
-
-	return ret;
-}
-
-EXPORT_API
-int mm_sound_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in)
-{
-	int ret = MM_ERROR_NONE;
-
-	ret = mm_sound_client_set_sound_path_for_active_device(device_out, device_in);
-	if (ret < 0) {
-		debug_error("Can not mm sound set sound path for active device, ret = %x\n", ret);
-	}
-
-	return ret;
-}
-
 
 EXPORT_API
 int mm_sound_test(int a, int b, int* getv)

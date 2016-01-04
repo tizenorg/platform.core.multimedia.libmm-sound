@@ -270,31 +270,6 @@ int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume, int c
 	return ret;
 }
 
-
-int __mm_sound_mgr_ipc_set_sound_path_for_active_device(mm_sound_device_in _device_in, mm_sound_device_out _device_out)
-{
-	int ret = MM_ERROR_NONE;
-#if 0 /* FIXME */
-	mm_sound_device_in device_in = MM_SOUND_DEVICE_IN_NONE;
-	mm_sound_device_out device_out = MM_SOUND_DEVICE_OUT_NONE;
-
-	device_in = _device_in;
-	device_out = _device_out;
-	ret = _mm_sound_mgr_device_set_sound_path_for_active_device(device_out, device_in);
-#endif
-
-	return ret;
-}
-
-int __mm_sound_mgr_ipc_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
-{
-	int ret = MM_ERROR_NONE;
-
-//	ret = _mm_sound_mgr_device_get_audio_path(device_in, device_out);
-
-	return ret;
-}
-
 int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_sound_device_t **device_list, int *total_num)
 {
 	int ret = MM_ERROR_NONE;

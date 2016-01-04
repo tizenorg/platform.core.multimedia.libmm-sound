@@ -98,15 +98,9 @@
   "	     <arg type='i' name='stream_index' direction='in'/>"
   "	     <arg type='i' name='handle' direction='out'/>"
   "	   </method>"
-  "    <method name='SetPathForActiveDevice'>"
-  "    </method>"
   "    <method name='GetConnectedDeviceList'>"
   "      <arg type='i' name='device_mask' direction='in'/>"
   "      <arg type='a(iiiis)' name='device_list' direction='out'/>"
-  "    </method>"
-  "    <method name='GetAudioPath'>"
-  "      <arg type='i' name='device_in' direction='out'/>"
-  "      <arg type='i' name='device_out' direction='out'/>"
   "    </method>"
   "  </interface>"
   "</node>";
@@ -132,8 +126,6 @@ static void handle_method_play_dtmf(GDBusMethodInvocation* invocation);
 static void handle_method_play_dtmf_with_stream_info(GDBusMethodInvocation* invocation);
 static void handle_method_clear_focus(GDBusMethodInvocation* invocation);
 static void handle_method_test(GDBusMethodInvocation* invocation);
-static void handle_method_set_sound_path_for_active_device(GDBusMethodInvocation* invocation);
-static void handle_method_get_audio_path(GDBusMethodInvocation* invocation);
 static void handle_method_get_connected_device_list(GDBusMethodInvocation* invocation);
 
 /* Currently , Just using method's name and handler */
@@ -182,18 +174,6 @@ struct mm_sound_dbus_method methods[METHOD_CALL_MAX] = {
 			.name = "PlayDTMFWithStreamInfo",
 		},
 		.handler = handle_method_play_dtmf_with_stream_info
-	},
-	[METHOD_CALL_SET_PATH_FOR_ACTIVE_DEVICE] = {
-		.info = {
-			.name = "SetPathForActiveDevice",
-		},
-		.handler = handle_method_set_sound_path_for_active_device
-	},
-	[METHOD_CALL_GET_AUDIO_PATH] = {
-		.info = {
-			.name = "GetAudioPath",
-		},
-		.handler = handle_method_get_audio_path
 	},
 	[METHOD_CALL_GET_CONNECTED_DEVICE_LIST] = {
 		.info = {
@@ -575,54 +555,6 @@ static void handle_method_clear_focus(GDBusMethodInvocation* invocation)
 send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
-	} else {
-		_method_call_return_error(invocation, ret);
-	}
-
-	debug_fleave();
-}
-
-static void handle_method_set_sound_path_for_active_device( GDBusMethodInvocation* invocation)
-{
-	int ret = MM_ERROR_NONE;
-	int device_in = 0, device_out = 0;
-	GVariant *params = NULL;
-
-	debug_fenter();
-
-	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
-		debug_error("Parameter for Method is NULL");
-		ret = MM_ERROR_SOUND_INTERNAL;
-		goto send_reply;
-	}
-
-	g_variant_get(params, "(ii)", &device_in, &device_out);
-	ret = __mm_sound_mgr_ipc_set_sound_path_for_active_device(device_in, device_out);
-
-send_reply:
-	if (ret == MM_ERROR_NONE) {
-		_method_call_return_value(invocation, g_variant_new("()"));
-	} else {
-		_method_call_return_error(invocation, ret);
-	}
-
-	debug_fleave();
-}
-
-static void handle_method_get_audio_path(GDBusMethodInvocation* invocation)
-{
-	int ret = MM_ERROR_NONE;
-	mm_sound_device_in device_in = 0;
-	mm_sound_device_out device_out = 0;
-
-	debug_fenter();
-
-	ret = __mm_sound_mgr_ipc_get_audio_path(&device_in, &device_out);
-
-	/* FIXME */
-send_reply:
-	if (ret == MM_ERROR_NONE) {
-		_method_call_return_value(invocation, g_variant_new("(ii)", device_in, device_out));
 	} else {
 		_method_call_return_error(invocation, ret);
 	}
