@@ -384,12 +384,10 @@ static void _runing(void *param)
 
 			/* get route info from pulseaudio */
 			/* MMSoundMgrPulseGetActiveDevice(&p->in, &p->out); */
-			mm_sound_get_audio_path(&device_in_before, &device_out_before);
 			/* if current out is not speaker, then force set path to speaker */
 			if (device_out_before != MM_SOUND_DEVICE_OUT_SPEAKER) {
 				debug_msg("[CODEC WAV] current out is not SPEAKER, set path to SPEAKER now!!!\n");
 				mm_sound_pa_corkall(1);
-				mm_sound_set_sound_path_for_active_device(MM_SOUND_DEVICE_OUT_SPEAKER, MM_SOUND_DEVICE_IN_NONE);
 			}
 
 			/* set route info */
@@ -506,7 +504,6 @@ static void _runing(void *param)
 		if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER) {
 			/* If current path is not same as before playing sound, restore the sound path */
 			if (device_out_before != MM_SOUND_DEVICE_OUT_SPEAKER) {
-				mm_sound_set_sound_path_for_active_device(device_out_before, device_in_before);
 				mm_sound_pa_corkall(0);
 			}
 		}

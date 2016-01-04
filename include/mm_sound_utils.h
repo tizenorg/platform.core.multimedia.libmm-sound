@@ -41,19 +41,10 @@
 	extern "C" {
 #endif
 
-int mm_sound_util_get_valid_route_list(mm_sound_route **route_list);
-bool mm_sound_util_is_route_valid(mm_sound_route route);
-void mm_sound_util_get_devices_from_route(mm_sound_route route, mm_sound_device_in *device_in, mm_sound_device_out *device_out);
-int mm_sound_util_volume_add_callback(volume_type_t type, void *func, void* user_data);
-int mm_sound_util_volume_remove_callback(volume_type_t type, void *func);
 int mm_sound_util_volume_get_value_by_type(volume_type_t type, unsigned int *value);
 int mm_sound_util_volume_set_value_by_type(volume_type_t type, unsigned int value);
-int mm_sound_util_get_earjack_type(int* type);
-int mm_sound_util_get_dock_type (int *type);
 
 bool mm_sound_util_is_recording (void);
-bool mm_sound_util_is_mute_policy (void);
-
 bool mm_sound_util_is_process_alive(pid_t pid);
 
 #ifdef __cplusplus
