@@ -81,15 +81,6 @@ const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_CLEAR_FOCUS] = {
 		.name = "ClearFocus",
 	},
-	[METHOD_CALL_GET_BT_A2DP_STATUS] = {
-		.name = "GetBTA2DPStatus",
-	},
-	[METHOD_CALL_SET_PATH_FOR_ACTIVE_DEVICE] = {
-		.name = "SetPathForActiveDevice",
-	},
-	[METHOD_CALL_GET_AUDIO_PATH] = {
-		.name = "GetAudioPath",
-	},
 	[METHOD_CALL_SET_VOLUME_LEVEL] = {
 		.name = "SetVolumeLevel",
 	},
@@ -827,28 +818,6 @@ int mm_sound_client_dbus_remove_volume_changed_callback(unsigned int subs_id)
 	return ret;
 }
 
-int mm_sound_client_dbus_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
-{
-	int ret = MM_ERROR_NONE;
-	GVariant *result = NULL;
-
-	debug_fenter();
-
-	if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_GET_AUDIO_PATH, NULL, &result)) != MM_ERROR_NONE) {
-		debug_error("add device connected callback failed");
-		goto cleanup;
-	}
-
-	g_variant_get(result, "(ii)", device_in, device_out );
-
-cleanup:
-	if (result)
-		g_variant_unref(result);
-
-	debug_fleave();
-	return ret;
-}
-
 int mm_sound_client_dbus_play_tone(int tone, int repeat, int volume, int volume_config,
 			   int session_type, int session_options, int client_pid,
 			   bool enable_session, int *codechandle, char *stream_type, int stream_index)
@@ -1060,26 +1029,6 @@ int mm_sound_client_dbus_clear_focus(int pid)
 	return ret;
 }
 
-int mm_sound_client_dbus_is_route_available(mm_sound_route route, bool *is_available)
-{
-	return MM_ERROR_NOT_SUPPORT_API;
-}
-
-int mm_sound_client_dbus_foreach_available_route_cb(mm_sound_available_route_cb avail_cb, void *user_data)
-{
-	return MM_ERROR_NOT_SUPPORT_API;
-}
-
-int mm_sound_client_dbus_set_active_route(mm_sound_route route, bool need_broadcast)
-{
-	return MM_ERROR_NOT_SUPPORT_API;
-}
-
-int mm_sound_client_dbus_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
-{
-	return MM_ERROR_NOT_SUPPORT_API;
-}
-
 int mm_sound_client_dbus_add_play_sound_end_callback(mm_sound_stop_callback_wrapper_func stop_cb, void* userdata, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
@@ -1106,36 +1055,6 @@ int mm_sound_client_dbus_remove_play_sound_end_callback(unsigned int subs_id)
 
 	debug_fleave();
 	return ret;
-}
-
-int mm_sound_client_dbus_add_active_device_changed_callback(const char *name, mm_sound_active_device_changed_cb func, void* user_data)
-{
-	return MM_ERROR_NOT_SUPPORT_API;
-}
-
-int mm_sound_client_dbus_remove_active_device_changed_callback(const char *name)
-{
-	return MM_ERROR_NOT_SUPPORT_API;
-}
-
-int mm_sound_client_dbus_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void* user_data)
-{
-	return MM_ERROR_NOT_SUPPORT_API;
-}
-
-int mm_sound_client_dbus_remove_available_route_changed_callback(void)
-{
-	return MM_ERROR_NOT_SUPPORT_API;
-}
-
-int mm_sound_client_dbus_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in)
-{
-	return MM_ERROR_NOT_SUPPORT_API;
-}
-
-int mm_sound_client_dbus_set_active_route_auto(void)
-{
-	return MM_ERROR_NOT_SUPPORT_API;
 }
 
 /*------------------------------------------ FOCUS --------------------------------------------------*/

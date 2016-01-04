@@ -276,7 +276,6 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 		param->session_type != MM_SESSION_TYPE_VIDEOCALL &&
 		param->session_type != MM_SESSION_TYPE_VOIP &&
 		param->session_type != MM_SESSION_TYPE_VOICE_RECOGNITION &&
-		param->priority != HANDLE_PRIORITY_SOLO &&
 		param->enable_session) {
 
 		unsigned int subs_id = 0;

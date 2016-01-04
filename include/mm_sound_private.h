@@ -49,63 +49,8 @@
 #define MM_SOUND_VOLUME_CONFIG_TYPE(vol) (vol & 0x00FF)
 #define MM_SOUND_VOLUME_CONFIG_GAIN(vol) (vol & 0xFF00)
 
-enum MMSoundGainType {
-	MM_SOUND_GAIN_KEYTONE = 0,	/**< hw gain configuration for keytone play */
-	MM_SOUND_GAIN_RINGTONE,		/**< hw gain configuration for ringtone play */
-	MM_SOUND_GAIN_ALARMTONE,	/**< hw gain configuration for alarmtone play */
-	MM_SOUND_GAIN_CALLTONE,		/**< hw gain configuration for calltone play */
-	MM_SOUND_GAIN_AUDIOPLAYER,	/**< hw gain configuration for music play */
-	MM_SOUND_GAIN_VIDEOPLAYER,	/**< hw gain configuration for video play */
-	MM_SOUND_GAIN_VOICECALL,	/**< hw gain configuration for voice call */
-	MM_SOUND_GAIN_VIDEOCALL,	/**< hw gain configuration for video call */
-	MM_SOUND_GAIN_FMRADIO,		/**< hw gain configuration for fm radio play */
-	MM_SOUND_GAIN_VOICEREC,		/**< hw gain configuration for voice recording */
-	MM_SOUND_GAIN_CAMCORDER,	/**< hw gain configuration for camcording */
-	MM_SOUND_GAIN_CAMERA,		/**< hw gain configuration for camera shutter sound */
-	MM_SOUND_GAIN_GAME,			/**< hw gain configuration for game play */
-	MM_SOUND_GAIN_CNT,			/**< hw gain configuration count */
-	MM_SOUND_GAIN_MUSIC = MM_SOUND_GAIN_AUDIOPLAYER,	/**< remained for legacy application */
-	MM_SOUND_GAIN_VIDEO,							/**< remained for legacy application */
-	MM_SOUND_GAIN_NONE = MM_SOUND_GAIN_KEYTONE,		/**< remained for legacy application */
-};
-
-/**
- * Enumerations for sound path
- */
-enum MMSoundPathExType {
-	MM_SOUND_PATH_NONE = 0,		/**< no route path */
-	MM_SOUND_PATH_SPK,			/**< sound route to speaker */
-	MM_SOUND_PATH_RECV,			/**< sound route to receiver */
-	MM_SOUND_PATH_HEADSET,		/**< sound route to headset */
-	MM_SOUND_PATH_BTHEADSET,		/**< sound route to bluetooth headset */
-	MM_SOUND_PATH_A2DP,			/**< not used */
-	MM_SOUND_PATH_HANDSFREE,		/**< not used */
-	MM_SOUND_PATH_HDMI,			/**< not used */
-	MM_SOUND_PATH_OUTMAX,		/**< output route count */
-	MM_SOUND_PATH_MIC = 1,		/**< sound route from microphone */
-	MM_SOUND_PATH_HEADSETMIC,	/**< sound route from headset microphone */
-	MM_SOUND_PATH_BTMIC,			/**< sound route from bluetooth microphone */
-	MM_SOUND_PATH_FMINPUT,		/**< sound route from FM radio module */
-	MM_SOUND_PATH_HANDSFREEMIC,	/**< not used */
-	MM_SOUND_PATH_INMAX,			/**< input route count */
-};
-
-/**
- * Enumerations for sound path option
- */
-enum MMSoundPathOptionType {
-	MM_SOUND_PATH_OPTION_NONE					= 0x00000000,	/**< no sound path option */
-	MM_SOUND_PATH_OPTION_AUTO_HEADSET_CONTROL	= 0x00000001,	/**< automatic sound path change by earphone event */
-	MM_SOUND_PATH_OPTION_SPEAKER_WITH_HEADSET	= 0x00000002,	/**< play sound via speaker and earphone (if inserted) */
-	MM_SOUND_PATH_OPTION_VOICECALL_REC			= 0x00000010,	/**< voice call recording option */
-	MM_SOUND_PATH_OPTION_USE_SUB_MIC				= 0x00000020,	/**< use sub-mic on call and recording */
-};
-
-
 enum mm_sound_handle_route_t {
 	MM_SOUND_HANDLE_ROUTE_USING_CURRENT,
-	MM_SOUND_HANDLE_ROUTE_SPEAKER,
-	MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE
 };
 
 typedef struct {
