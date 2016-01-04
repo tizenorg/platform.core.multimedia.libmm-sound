@@ -37,7 +37,7 @@
 #include "../../include/mm_sound_thread_pool.h"
 #include "../../include/mm_sound_plugin_codec.h"
 #include "../../../include/mm_sound_private.h"
-
+#include "../../../include/mm_sound_common.h"
 
 #define SAMPLE_COUNT	128
 #define WAV_FILE_SAMPLE_PLAY_DURATION		350			/*Unit: ms*/
