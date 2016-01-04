@@ -31,16 +31,10 @@
 typedef enum {
 	HANDLE_ROUTE_POLICY_DEFAULT,
 	HANDLE_ROUTE_POLICY_OUT_AUTO,
-	HANDLE_ROUTE_POLICY_OUT_HANDSET,
-	HANDLE_ROUTE_POLICY_OUT_ALL,
-	HANDLE_ROUTE_POLICY_IN_MIRRORING,
-	HANDLE_ROUTE_POLICY_IN_VOIP,
 }MMSoundHandleRoutePolicy; /* custom route policy per handle */
 
 typedef enum {
 	HANDLE_PRIORITY_NORMAL,
-	HANDLE_PRIORITY_SOLO,
-	HANDLE_PRIORITY_MAX,
 }MMSoundHandlePriority;
 
 typedef enum {
@@ -60,8 +54,6 @@ typedef enum {
 
 enum mm_sound_handle_direction_t {
 	HANDLE_DIRECTION_NONE,
-	HANDLE_DIRECTION_IN,
-	HANDLE_DIRECTION_OUT,
 };
 
 typedef struct mm_sound_handle_route_info{

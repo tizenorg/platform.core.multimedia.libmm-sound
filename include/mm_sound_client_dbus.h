@@ -21,16 +21,6 @@ int mm_sound_client_dbus_play_sound_with_stream_info(const char* filename, int r
 			int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index);
 int mm_sound_client_dbus_stop_sound(int handle);
 int mm_sound_client_dbus_clear_focus(int pid); // Not original focus feature, only for cleaning up tone/wav player internal focus usage.
-int mm_sound_client_dbus_is_route_available(mm_sound_route route, bool *is_available);
-int mm_sound_client_dbus_foreach_available_route_cb(mm_sound_available_route_cb, void *user_data);
-int mm_sound_client_dbus_set_active_route(mm_sound_route route, bool need_broadcast);
-int mm_sound_client_dbus_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
-int mm_sound_client_dbus_add_active_device_changed_callback(const char *name, mm_sound_active_device_changed_cb func, void* user_data);
-int mm_sound_client_dbus_remove_active_device_changed_callback(const char *name);
-int mm_sound_client_dbus_add_available_route_changed_callback(mm_sound_available_route_changed_cb func, void* user_data);
-int mm_sound_client_dbus_remove_available_route_changed_callback(void);
-int mm_sound_client_dbus_set_sound_path_for_active_device(mm_sound_device_out device_out, mm_sound_device_in device_in);
-int mm_sound_client_dbus_set_active_route_auto(void);
 int mm_sound_client_dbus_add_play_sound_end_callback(mm_sound_stop_callback_wrapper_func stop_cb, void* userdata, unsigned int *subs_id);
 int mm_sound_client_dbus_remove_play_sound_end_callback(unsigned int subs_id);
 int mm_sound_client_dbus_get_current_connected_device_list(int device_flags, GList** device_list);
@@ -41,7 +31,6 @@ int mm_sound_client_dbus_remove_device_info_changed_callback(unsigned int subs_i
 int mm_sound_client_dbus_set_volume_by_type(const char *volume_type, const unsigned int volume_level);
 int mm_sound_client_dbus_add_volume_changed_callback(mm_sound_volume_changed_wrapper_cb func, void* user_data, unsigned int *subs_id);
 int mm_sound_client_dbus_remove_volume_changed_callback(unsigned int subs_id);
-int mm_sound_client_dbus_get_audio_path(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
 
 #ifdef USE_FOCUS
 int mm_sound_client_dbus_get_unique_id(int *id);

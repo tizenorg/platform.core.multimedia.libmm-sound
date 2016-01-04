@@ -372,38 +372,7 @@ static void _runing(void *param)
 	debug_enter("[CODEC WAV] (Slot ID %d)\n", p->cb_param);
 	CODEC_WAVE_LOCK(p->codec_wave_mutex);
 
-	/*
-	 * set path here
-	 */
-	switch(p->handle_route)
-	{
-		case MM_SOUND_HANDLE_ROUTE_SPEAKER:
-		case MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE:
-			debug_msg("[CODEC WAV] Save backup path\n");
-			__mm_sound_lock();
-
-			/* get route info from pulseaudio */
-			/* MMSoundMgrPulseGetActiveDevice(&p->in, &p->out); */
-			mm_sound_get_audio_path(&device_in_before, &device_out_before);
-			/* if current out is not speaker, then force set path to speaker */
-			if (device_out_before != MM_SOUND_DEVICE_OUT_SPEAKER) {
-				debug_msg("[CODEC WAV] current out is not SPEAKER, set path to SPEAKER now!!!\n");
-				mm_sound_pa_corkall(1);
-				mm_sound_set_sound_path_for_active_device(MM_SOUND_DEVICE_OUT_SPEAKER, MM_SOUND_DEVICE_IN_NONE);
-			}
-
-			/* set route info */
-			route_info.device_in = MM_SOUND_DEVICE_IN_NONE;
-			route_info.device_out = MM_SOUND_DEVICE_OUT_SPEAKER;
-			route_info.policy = HANDLE_ROUTE_POLICY_OUT_HANDSET;
-			/* MMSoundMgrPulseSetActiveDevice(route_info_device_in, route_info.device_out); */
-			break;
-		case MM_SOUND_HANDLE_ROUTE_USING_CURRENT:
-			route_info.policy = HANDLE_ROUTE_POLICY_OUT_AUTO;
-			break;
-		default:
-			break;
-	}
+	route_info.policy = HANDLE_ROUTE_POLICY_OUT_AUTO;
 
 	ss.rate = p->samplerate;
 	ss.channels = p->channels;
@@ -413,9 +382,6 @@ static void _runing(void *param)
 	if(!p->handle) {
 		debug_critical("[CODEC WAV] Can not open audio handle\n");
 		CODEC_WAVE_UNLOCK(p->codec_wave_mutex);
-		if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER || p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE) {
-			__mm_sound_unlock();
-		}
 		return;
 	}
 	
@@ -435,9 +401,6 @@ static void _runing(void *param)
 	if(!dummy) {
 		debug_error("[CODEC WAV] not enough memory");
 		CODEC_WAVE_UNLOCK(p->codec_wave_mutex);
-		if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER || p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE) {
-			__mm_sound_unlock();
-		}
 		return;
 	}
 	memset(dummy, 0, p->period);
@@ -499,19 +462,6 @@ static void _runing(void *param)
 			debug_error("[CODEC WAV] Can not close audio handle\n");
 		} else {
 			p->handle = 0;
-		}
-		/*
-		 * Restore path here
-		 */
-		if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER) {
-			/* If current path is not same as before playing sound, restore the sound path */
-			if (device_out_before != MM_SOUND_DEVICE_OUT_SPEAKER) {
-				mm_sound_set_sound_path_for_active_device(device_out_before, device_in_before);
-				mm_sound_pa_corkall(0);
-			}
-		}
-		if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER || p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE) {
-			__mm_sound_unlock();
 		}
 	}
 	CODEC_WAVE_UNLOCK(p->codec_wave_mutex);
