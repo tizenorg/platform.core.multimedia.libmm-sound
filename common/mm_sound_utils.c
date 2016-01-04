@@ -113,17 +113,6 @@ void mm_sound_util_get_devices_from_route(mm_sound_route route, mm_sound_device_
 }
 
 EXPORT_API
-int mm_sound_util_volume_add_callback(volume_type_t type, void *func, void* user_data)
-{
-	if (vconf_notify_key_changed(g_volume_vconf[type], func, user_data)) {
-		debug_error ("vconf_notify_key_changed failed..\n");
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return MM_ERROR_NONE;
-}
-
-EXPORT_API
 int mm_sound_util_volume_remove_callback(volume_type_t type, void *func)
 {
 	if (vconf_ignore_key_changed(g_volume_vconf[type], func)) {

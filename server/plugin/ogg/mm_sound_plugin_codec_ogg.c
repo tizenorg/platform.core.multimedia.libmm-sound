@@ -138,7 +138,6 @@ void _pcm_out_func(void *data)
 	if (p->handle_route == MM_SOUND_HANDLE_ROUTE_SPEAKER) {
 		/* If current path is not same as before playing sound, restore the sound path */
 		if (p->device_out != MM_SOUND_DEVICE_OUT_SPEAKER) {
-			mm_sound_set_sound_path_for_active_device(p->device_out, p->device_in);
 			mm_sound_pa_corkall(0);
 		}
 	}
@@ -342,12 +341,10 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 		case MM_SOUND_HANDLE_ROUTE_SPEAKER_NO_RESTORE:
 			debug_msg("[CODEC OGG] Save backup path\n");
 			__mm_sound_lock();
-			mm_sound_get_audio_path(&p->device_in, &p->device_out);
 			/* if current out is not speaker, then force set path to speaker */
 			if (p->device_out != MM_SOUND_DEVICE_OUT_SPEAKER) {
 				debug_msg("[CODEC OGG] current out is not SPEAKER, set path to SPEAKER now!!!\n");
 				mm_sound_pa_corkall(1);
-				mm_sound_set_sound_path_for_active_device(MM_SOUND_DEVICE_OUT_SPEAKER, MM_SOUND_DEVICE_IN_NONE);
 			}
 			break;
 		case MM_SOUND_HANDLE_ROUTE_USING_CURRENT:

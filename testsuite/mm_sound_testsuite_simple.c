@@ -82,9 +82,6 @@ gboolean input (GIOChannel *channel);
 static char* __get_playback_device_str (mm_sound_device_out out);
 static char* __get_capture_device_str (mm_sound_device_in in);
 static char* __get_route_str (mm_sound_route route);
-static int __mm_sound_foreach_available_route_cb (mm_sound_route route, void *user_data);
-static void __mm_sound_available_route_changed_cb (mm_sound_route route, bool available, void *user_data);
-static void __mm_sound_active_device_changed_cb (mm_sound_device_in device_in, mm_sound_device_out device_out, void *user_data);
 
 void mycallback(void *data, int id)
 {
@@ -399,23 +396,6 @@ static char* __get_route_str (mm_sound_route route)
 	case MM_SOUND_ROUTE_INOUT_BLUETOOTH: return "INOUT_BLUETOOTH";
 	default: return NULL;
 	}
-}
-
-static int __mm_sound_foreach_available_route_cb (mm_sound_route route, void *user_data)
-{
-	g_print ("[%s] route = [0x%08x][%s]\n", __func__, route, __get_route_str(route));
-	return true;
-}
-
-static void __mm_sound_available_route_changed_cb (mm_sound_route route, bool available, void *user_data)
-{
-	g_print ("[%s] route = [%d][0x%08x][%s]\n", __func__, available, route, __get_route_str(route));
-}
-
-static void __mm_sound_active_device_changed_cb (mm_sound_device_in device_in, mm_sound_device_out device_out, void *user_data)
-{
-	g_print ("[%s] in[0x%08x][%s], out[0x%08x][%s]\n", __func__,
-			device_in, __get_capture_device_str(device_in), device_out, __get_playback_device_str(device_out));
 }
 
 static void __mm_sound_signal_cb1 (mm_sound_signal_name_t signal, int value, void *user_data)
@@ -812,27 +792,6 @@ static void interpret (char *cmd)
 				g_print("remove test callback success\n");
 			    }
 			}
-			else if (strncmp(cmd, "gap", 3) == 0) {
-				int ret = 0;
-				mm_sound_device_in device_in = 0;
-				mm_sound_device_out device_out = 0;
-				ret = mm_sound_get_audio_path(&device_in, &device_out);
-				if (ret == MM_ERROR_NONE) {
-				    g_print ("### mm_sound_get_audio_path() Success (%X,%X)\n\n", device_in, device_out);
-				} else {
-				    g_print ("### mm_sound_get_audio_path() Error : errno [%x]\n\n", ret);
-				}
-			}
-			else if (strncmp(cmd, "spa", 3) == 0) {
-				int ret = 0;
-				int device_in=1, device_out=200;
-				ret = mm_sound_set_sound_path_for_active_device(device_out, device_in);
-				if (ret == MM_ERROR_NONE) {
-				    g_print ("### mm_sound_set_sound_path_for_active_device() Success (%X,%X)\n\n", device_in, device_out);
-				} else {
-				    g_print ("### mm_sound_sspfad() Error : errno [%x]\n\n", ret);
-				}
-			}
 			else if(strncmp(cmd, "q", 1) == 0)
 			{//get media volume
 				unsigned int value = 100;
@@ -843,27 +802,6 @@ static void interpret (char *cmd)
 				else{
 					g_print("*** MEDIA VOLUME : %u ***\n", value);
 					g_volume_value = value;
-				}
-			}
-			else if(strncmp(cmd, "w", 1) == 0)
-			{//set media volume up
-				unsigned int value = 100;
-				ret = mm_sound_volume_get_value(g_volume_type, &value);
-				if(ret < 0) {
-					debug_log("mm_sound_volume_get_value 0x%x\n", ret);
-				}
-				else {
-					debug_log("Loaded media volume is %d\n", value);
-					int step;
-					value++;
-					mm_sound_volume_get_step(g_volume_type, &step);
-					if(value >= step) {
-						value = step-1;
-					}
-					ret = mm_sound_volume_set_value(g_volume_type, value);
-					if(ret < 0) {
-						debug_log("mm_sound_volume_set_value 0x%x\n", ret);
-					}
 				}
 			}
 			else if(strncmp(cmd, "e", 1) == 0)
@@ -896,29 +834,6 @@ static void interpret (char *cmd)
 					g_volume_value = value;
 				}
 			}
-			else if(strncmp(cmd, "t", 1) == 0)
-			{//set media volume up
-				unsigned int value = 100;
-				ret = mm_sound_volume_get_value(VOLUME_TYPE_SYSTEM, &value);
-				if(ret < 0) {
-					debug_log("mm_sound_volume_get_value 0x%x\n", ret);
-				}
-				else {
-					debug_log("Loaded system volume is %d\n", value);
-					int step;
-					value++;
-					mm_sound_volume_get_step(VOLUME_TYPE_SYSTEM, &step);
-					if(value >= step) {
-						value = step-1;
-					}
-					ret = mm_sound_volume_set_value(VOLUME_TYPE_SYSTEM, value);
-					if(ret < 0) {
-						debug_log("mm_sound_volume_set_value 0x%x\n", ret);
-					}else {
-						g_print("Current System volume is %d\n", value);
-					}
-				}
-			}
 			else if(strncmp(cmd, "y", 1) == 0)
 			{//set media volume down
 				unsigned int value = 100;
@@ -949,29 +864,6 @@ static void interpret (char *cmd)
 				else{
 					g_print("*** VOICE VOLUME : %u ***\n", value);
 					g_volume_value = value;
-				}
-			}
-			else if(strncmp(cmd, "h", 1) == 0)
-			{//set voice volume up
-				unsigned int value = 100;
-				ret = mm_sound_volume_get_value(VOLUME_TYPE_VOICE, &value);
-				if(ret < 0) {
-					debug_log("mm_sound_volume_get_value 0x%x\n", ret);
-				}
-				else {
-					debug_log("Loaded voice volume is %d\n", value);
-					int step;
-					value++;
-					mm_sound_volume_get_step(VOLUME_TYPE_VOICE, &step);
-					if(value >= step) {
-						value = step-1;
-					}
-					ret = mm_sound_volume_set_value(VOLUME_TYPE_VOICE, value);
-					if(ret < 0) {
-						debug_log("mm_sound_volume_set_value 0x%x\n", ret);
-					}else {
-						g_print("Current Voice volume is %d\n", value);
-					}
 				}
 			}
 			else if(strncmp(cmd, "j", 1) == 0)
@@ -1404,131 +1296,6 @@ static void interpret (char *cmd)
 		g_print("P : Remove Active Route Callback \n");
 		g_print("{ : Get BT A2DP Status\n");
 #endif
-		else if (strncmp(cmd, "u", 1) == 0) {
-			int ret = 0;
-			ret = mm_sound_foreach_available_route_cb(__mm_sound_foreach_available_route_cb, NULL);
-			if (ret == MM_ERROR_NONE) {
-				g_print ("### mm_sound_foreach_available_route_cb() Success\n\n");
-			} else {
-				g_print ("### mm_sound_foreach_available_route_cb() Error : errno [%x]\n\n", ret);
-			}
-		}
-		else if (strncmp(cmd, "i", 1) == 0) {
-			int ret = 0;
-			mm_sound_device_in in = MM_SOUND_DEVICE_IN_NONE;
-			mm_sound_device_out out = MM_SOUND_DEVICE_OUT_NONE;
-			ret = mm_sound_get_active_device(&in, &out);
-			if (ret == MM_ERROR_NONE) {
-				g_print ("### mm_sound_get_active_device() Success : in[0x%08x][%s], out[0x%08x][%s]\n\n",
-						in, __get_capture_device_str(in), out, __get_playback_device_str(out));
-			} else {
-				g_print ("### mm_sound_get_active_device() Error : errno [%x]\n\n", ret);
-			}
-		}
-		else if (strncmp(cmd, "o", 1) == 0) {
-			int ret = 0;
-			ret = mm_sound_add_available_route_changed_callback(__mm_sound_available_route_changed_cb, NULL);
-			if (ret == MM_ERROR_NONE) {
-				g_print ("### mm_sound_add_available_route_changed_callback() Success\n\n");
-			} else {
-				g_print ("### mm_sound_add_available_route_changed_callback() Error : errno [%x]\n\n", ret);
-			}
-		}
-		else if (strncmp(cmd, "O", 1) == 0) {
-			int ret = 0;
-			ret = mm_sound_remove_available_route_changed_callback();
-			if (ret == MM_ERROR_NONE) {
-				g_print ("### mm_sound_remove_available_route_changed_callback() Success\n\n");
-			} else {
-				g_print ("### mm_sound_remove_available_route_changed_callback() Error : errno [%x]\n\n", ret);
-			}
-		}
-		else if (strncmp(cmd, "p", 1) == 0) {
-			int ret = 0;
-			ret = mm_sound_add_active_device_changed_callback("null", __mm_sound_active_device_changed_cb, NULL);
-			if (ret == MM_ERROR_NONE) {
-				g_print ("### mm_sound_add_active_device_changed_callback() Success\n\n");
-			} else {
-				g_print ("### mm_sound_add_active_device_changed_callback() Error : errno [%x]\n\n", ret);
-			}
-		}
-		else if (strncmp(cmd, "P", 1) == 0) {
-			int ret = 0;
-			ret = mm_sound_remove_active_device_changed_callback("null");
-			if (ret == MM_ERROR_NONE) {
-				g_print ("### mm_sound_remove_active_device_changed_callback() Success\n\n");
-			} else {
-				g_print ("### mm_sound_remove_active_device_changed_callback() Error : errno [%x]\n\n", ret);
-			}
-		}
-		else if(strncmp(cmd, "}", 1) == 0)
-		{
-			int ret = 0;
-			char input_string[128];
-			mm_sound_route route = MM_SOUND_ROUTE_OUT_SPEAKER;
-			char num;
-			char need_broadcast;
-
-			fflush(stdin);
-			g_print ("1. MM_SOUND_ROUTE_OUT_SPEAKER\n");
-			g_print ("2. MM_SOUND_ROUTE_OUT_RECEIVER\n");
-			g_print ("3. MM_SOUND_ROUTE_OUT_WIRED_ACCESSORY\n");
-			g_print ("4. MM_SOUND_ROUTE_OUT_BLUETOOTH_A2DP\n");
-			g_print ("5. MM_SOUND_ROUTE_OUT_DOCK\n");
-			g_print ("6. MM_SOUND_ROUTE_OUT_HDMI\n");
-			g_print ("7. MM_SOUND_ROUTE_OUT_MIRRORING\n");
-			g_print ("8. MM_SOUND_ROUTE_OUT_USB_AUDIO\n");
-			g_print ("9. MM_SOUND_ROUTE_OUT_MULTIMEDIA_DOCK\n");
-			g_print ("0. MM_SOUND_ROUTE_IN_MIC\n");
-			g_print ("a. MM_SOUND_ROUTE_IN_WIRED_ACCESSORY\n");
-			g_print ("b. MM_SOUND_ROUTE_IN_MIC_OUT_RECEIVER\n");
-			g_print ("c. MM_SOUND_ROUTE_IN_MIC_OUT_SPEAKER\n");
-			g_print ("d. MM_SOUND_ROUTE_IN_MIC_OUT_HEADPHONE\n");
-			g_print ("e. MM_SOUND_ROUTE_INOUT_HEADSET\n");
-			g_print ("f. MM_SOUND_ROUTE_INOUT_BLUETOOTH\n");
-			g_print("> select route number and select is need broadcast(1 need , 0 no need):  (eg . 1 1)");
-
-			if (fgets(input_string, sizeof(input_string)-1, stdin)) {
-				g_print ("### fgets return  NULL\n");
-			}
-			num = input_string[0];
-			need_broadcast = input_string[2];
-
-			if(num == '1') { route = MM_SOUND_ROUTE_OUT_SPEAKER; }
-			else if(num == '2') { route = MM_SOUND_ROUTE_OUT_RECEIVER; }
-			else if(num == '3') { route = MM_SOUND_ROUTE_OUT_WIRED_ACCESSORY; }
-			else if(num == '4') { route = MM_SOUND_ROUTE_OUT_BLUETOOTH_A2DP; }
-			else if(num == '5') { route = MM_SOUND_ROUTE_OUT_DOCK; }
-			else if(num == '6') { route = MM_SOUND_ROUTE_OUT_HDMI; }
-			else if(num == '7') { route = MM_SOUND_ROUTE_OUT_MIRRORING; }
-			else if(num == '8') { route = MM_SOUND_ROUTE_OUT_USB_AUDIO; }
-			else if(num == '9') { route = MM_SOUND_ROUTE_OUT_MULTIMEDIA_DOCK; }
-			else if(num == '0') { route = MM_SOUND_ROUTE_IN_MIC; }
-			else if(num == 'a') { route = MM_SOUND_ROUTE_IN_WIRED_ACCESSORY; }
-			else if(num == 'b') { route = MM_SOUND_ROUTE_IN_MIC_OUT_RECEIVER; }
-			else if(num == 'c') { route = MM_SOUND_ROUTE_IN_MIC_OUT_SPEAKER; }
-			else if(num == 'd') { route = MM_SOUND_ROUTE_IN_MIC_OUT_HEADPHONE; }
-			else if(num == 'e') { route = MM_SOUND_ROUTE_INOUT_HEADSET; }
-			else if(num == 'f') { route = MM_SOUND_ROUTE_INOUT_BLUETOOTH; }
-
-			if (need_broadcast == '1') {
-				ret = mm_sound_set_active_route(route);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_set_active_route(%s) Success\n\n", __get_route_str (route));
-				} else {
-					g_print ("### mm_sound_set_active_route(%s) Error : errno [%x]\n\n", __get_route_str (route), ret);
-				}
-
-			} else {
-				ret = mm_sound_set_active_route_without_broadcast(route);
-				if (ret == MM_ERROR_NONE) {
-					g_print ("### mm_sound_set_active_route_without_broadcast(%s) Success\n\n", __get_route_str (route));
-				} else {
-					g_print ("### mm_sound_set_active_route_without_broadcast(%s) Error : errno [%x]\n\n", __get_route_str (route), ret);
-				}
-			}
-	}
-
 		else if(strncmp(cmd, "z", 1) == 0) {
 			if(MM_ERROR_NONE != mm_session_init(MM_SESSION_TYPE_CALL))
 			{
