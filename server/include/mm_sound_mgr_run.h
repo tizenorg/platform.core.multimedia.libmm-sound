@@ -27,4 +27,4 @@ int MMSoundMgrRunFini(void);
 int MMSoundMgrRunRunAll(void);
 int MMSoundMgrRunStopAll(void);
 
-#endif /* __MM_SOUND_MGR_RUN_H__ */
+#endif							/* __MM_SOUND_MGR_RUN_H__ */

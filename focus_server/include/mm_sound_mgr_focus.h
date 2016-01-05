@@ -28,21 +28,18 @@
 #include "../include/mm_ipc.h"
 #include "mm_sound_mgr_focus_ipc.h"
 
-typedef enum
-{
+typedef enum {
 	FOCUS_COMMAND_RELEASE,
 	FOCUS_COMMAND_ACQUIRE,
 } focus_command_e;
 
-typedef enum
-{
+typedef enum {
 	FOCUS_TYPE_PLAYBACK = 1,
 	FOCUS_TYPE_CAPTURE,
 	FOCUS_TYPE_BOTH,
 } focus_type_e;
 
-typedef enum
-{
+typedef enum {
 	FOCUS_STATUS_DEACTIVATED,
 	FOCUS_STATUS_ACTIVATED_PLAYBACK,
 	FOCUS_STATUS_ACTIVATED_CAPTURE,
@@ -59,11 +56,10 @@ typedef struct {
 	void *cbdata;
 	bool reacquisition;
 
-	bool is_for_session;	/* will be removed when the session concept is completely left out*/
+	bool is_for_session;		/* will be removed when the session concept is completely left out */
 } _mm_sound_mgr_focus_param_t;
 
-typedef struct _taken_by_id
-{
+typedef struct _taken_by_id {
 	int pid;
 	int handle_id;
 	bool by_session;
@@ -82,7 +78,7 @@ typedef struct {
 	void *cbdata;
 	bool reacquisition;
 
-	bool is_for_session;	/* will be removed when the session concept is completely left out*/
+	bool is_for_session;		/* will be removed when the session concept is completely left out */
 
 #ifdef SUPPORT_CONTAINER
 	container_info_t container;
@@ -91,19 +87,17 @@ typedef struct {
 
 int MMSoundMgrFocusInit(void);
 int MMSoundMgrFocusFini(void);
-int mm_sound_mgr_focus_create_node (const _mm_sound_mgr_focus_param_t *param);
-int mm_sound_mgr_focus_destroy_node (const _mm_sound_mgr_focus_param_t *param);
-int mm_sound_mgr_focus_set_reacquisition (const _mm_sound_mgr_focus_param_t *param);
+int mm_sound_mgr_focus_create_node(const _mm_sound_mgr_focus_param_t * param);
+int mm_sound_mgr_focus_destroy_node(const _mm_sound_mgr_focus_param_t * param);
+int mm_sound_mgr_focus_set_reacquisition(const _mm_sound_mgr_focus_param_t * param);
 int mm_sound_mgr_focus_get_stream_type_of_acquired_focus(focus_type_e focus_type, char **stream_type, char **additional_info);
-int mm_sound_mgr_focus_request_acquire (const _mm_sound_mgr_focus_param_t *param);
-int mm_sound_mgr_focus_request_release (const _mm_sound_mgr_focus_param_t *param);
-int mm_sound_mgr_focus_set_watch_cb (const _mm_sound_mgr_focus_param_t *param);
-int mm_sound_mgr_focus_unset_watch_cb (const _mm_sound_mgr_focus_param_t *param);
-int mm_sound_mgr_focus_emergent_exit(const _mm_sound_mgr_focus_param_t *param);
+int mm_sound_mgr_focus_request_acquire(const _mm_sound_mgr_focus_param_t * param);
+int mm_sound_mgr_focus_request_release(const _mm_sound_mgr_focus_param_t * param);
+int mm_sound_mgr_focus_set_watch_cb(const _mm_sound_mgr_focus_param_t * param);
+int mm_sound_mgr_focus_unset_watch_cb(const _mm_sound_mgr_focus_param_t * param);
+int mm_sound_mgr_focus_emergent_exit(const _mm_sound_mgr_focus_param_t * param);
 #ifdef SUPPORT_CONTAINER
-void mm_sound_mgr_focus_update_container_data(int pid,int handle, const char* container_name, int container_pid);
+void mm_sound_mgr_focus_update_container_data(int pid, int handle, const char *container_name, int container_pid);
 #endif
 
-
-#endif /* __MM_SOUND_MGR_FOCUS_H__ */
-
+#endif							/* __MM_SOUND_MGR_FOCUS_H__ */

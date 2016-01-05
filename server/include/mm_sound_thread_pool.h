@@ -24,7 +24,7 @@
 
 int MMSoundThreadPoolDump(int fulldump);
 int MMSoundThreadPoolInit(void);
-int MMSoundThreadPoolRun(void *param, void (*func)(void*));
+int MMSoundThreadPoolRun(void *param, void (*func) (void *));
 int MMSoundThreadPoolFini(void);
 
-#endif /* __MM_SOUND_THREAd_POOL_H__ */
+#endif							/* __MM_SOUND_THREAd_POOL_H__ */

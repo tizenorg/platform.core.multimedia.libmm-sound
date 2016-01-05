@@ -19,14 +19,12 @@
  *
  */
 
-
 #ifndef __MM_SOUND_MGR_COMMON_H__
 #define __MM_SOUND_MGR_COMMON_H__
 
-#define MANAGER_HANDLE_MAX 256 //30
+#define MANAGER_HANDLE_MAX 256	//30
 
 #include <mm_session.h>
 #include <mm_session_private.h>
 
-#endif /* __MM_SOUND_MGR_COMMON_H__ */
-
+#endif							/* __MM_SOUND_MGR_COMMON_H__ */

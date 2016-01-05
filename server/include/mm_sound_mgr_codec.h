@@ -19,7 +19,6 @@
  *
  */
 
-
 #ifndef __MM_SOUND_MGR_CODEC_H__
 #define __MM_SOUND_MGR_CODEC_H__
 
@@ -35,11 +34,11 @@ typedef struct {
 	int focus_handle;
 	int focus_wcb_id;
 	void *stopcb;
-	int (*callback)(int, void *, void *, int);
-	void *msgcallback;		/* Client callback function */
-	void *msgdata;			/* Client callback data */
+	int (*callback) (int, void *, void *, int);
+	void *msgcallback;			/* Client callback function */
+	void *msgdata;				/* Client callback data */
 	void *param;
-	MMSourceType *source; /* Will free plugin */
+	MMSourceType *source;		/* Will free plugin */
 	int samplerate;
 	int channels;
 	int volume_config;
@@ -50,8 +49,7 @@ typedef struct {
 	int stream_index;
 } mmsound_mgr_codec_param_t;
 
-enum
-{
+enum {
 	MM_SOUND_CODEC_OP_KEYTONE = 0,
 	MM_SOUND_CODEC_OP_SOUND,
 };
@@ -59,16 +57,14 @@ enum
 int MMSoundMgrCodecInit(const char *targetdir);
 int MMSoundMgrCodecFini(void);
 
-int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param);
-int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param_t *param);
+int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t * param);
+int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param_t * param);
 int MMSoundMgrCodecStop(const int slotid);
 int MMSoundMgrCodecClearFocus(int pid);
-int MMSoundMgrCodecCreate(int *slotid, const mmsound_mgr_codec_param_t *param);
-int MMSoundMgrCodecPlayWave(int slotid, const mmsound_mgr_codec_param_t *param);
-int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param);
-int MMSoundMgrCodecPlayDtmfWithStreamInfo(int *slotid, const mmsound_mgr_codec_param_t *param);
+int MMSoundMgrCodecCreate(int *slotid, const mmsound_mgr_codec_param_t * param);
+int MMSoundMgrCodecPlayWave(int slotid, const mmsound_mgr_codec_param_t * param);
+int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t * param);
+int MMSoundMgrCodecPlayDtmfWithStreamInfo(int *slotid, const mmsound_mgr_codec_param_t * param);
 int MMSoundMgrCodecDestroy(const int slotid);
 
-
-#endif /* __MM_SOUND_MGR_CODEC_H__ */
-
+#endif							/* __MM_SOUND_MGR_CODEC_H__ */

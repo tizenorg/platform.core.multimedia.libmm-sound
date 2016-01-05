@@ -61,98 +61,98 @@ guint g_dbus_prop_subs_ids[PULSEAUDIO_PROP_MAX];
 
 const struct mm_sound_dbus_method_info g_methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_TEST] = {
-		.name = "MethodTest1",
-	},
+						  .name = "MethodTest1",
+						  },
 	[METHOD_CALL_PLAY_FILE_START] = {
-		.name = "PlayFileStart",
-	},
+									 .name = "PlayFileStart",
+									 },
 	[METHOD_CALL_PLAY_FILE_START_WITH_STREAM_INFO] = {
-		.name = "PlayFileStartWithStreamInfo",
-	},
+													  .name = "PlayFileStartWithStreamInfo",
+													  },
 	[METHOD_CALL_PLAY_FILE_STOP] = {
-		.name = "PlayFileStop",
-	},
+									.name = "PlayFileStop",
+									},
 	[METHOD_CALL_PLAY_DTMF] = {
-		.name = "PlayDTMF",
-	},
+							   .name = "PlayDTMF",
+							   },
 	[METHOD_CALL_PLAY_DTMF_WITH_STREAM_INFO] = {
-		.name = "PlayDTMFWithStreamInfo",
-	},
+												.name = "PlayDTMFWithStreamInfo",
+												},
 	[METHOD_CALL_CLEAR_FOCUS] = {
-		.name = "ClearFocus",
-	},
+								 .name = "ClearFocus",
+								 },
 	[METHOD_CALL_SET_VOLUME_LEVEL] = {
-		.name = "SetVolumeLevel",
-	},
+									  .name = "SetVolumeLevel",
+									  },
 	[METHOD_CALL_GET_CONNECTED_DEVICE_LIST] = {
-		.name = "GetConnectedDeviceList",
-	},
+											   .name = "GetConnectedDeviceList",
+											   },
 	[METHOD_CALL_GET_UNIQUE_ID] = {
-		.name = "GetUniqueId",
-	},
+								   .name = "GetUniqueId",
+								   },
 	[METHOD_CALL_REGISTER_FOCUS] = {
-		.name = "RegisterFocus",
-	},
+									.name = "RegisterFocus",
+									},
 	[METHOD_CALL_UNREGISTER_FOCUS] = {
-		.name = "UnregisterFocus",
-	},
+									  .name = "UnregisterFocus",
+									  },
 	[METHOD_CALL_SET_FOCUS_REACQUISITION] = {
-		.name = "SetFocusReacquisition",
-	},
+											 .name = "SetFocusReacquisition",
+											 },
 	[METHOD_CALL_GET_ACQUIRED_FOCUS_STREAM_TYPE] = {
-		.name = "GetAcquiredFocusStreamType",
-	},
+													.name = "GetAcquiredFocusStreamType",
+													},
 	[METHOD_CALL_ACQUIRE_FOCUS] = {
-		.name = "AcquireFocus",
-	},
+								   .name = "AcquireFocus",
+								   },
 	[METHOD_CALL_RELEASE_FOCUS] = {
-		.name = "ReleaseFocus",
-	},
+								   .name = "ReleaseFocus",
+								   },
 	[METHOD_CALL_WATCH_FOCUS] = {
-		.name = "WatchFocus",
-	},
+								 .name = "WatchFocus",
+								 },
 	[METHOD_CALL_UNWATCH_FOCUS] = {
-		.name = "UnwatchFocus",
-	},
+								   .name = "UnwatchFocus",
+								   },
 	[METHOD_CALL_EMERGENT_EXIT_FOCUS] = {
-		.name = "EmergentExitFocus",
-	},
+										 .name = "EmergentExitFocus",
+										 },
 };
 
 const struct mm_sound_dbus_signal_info g_signals[SIGNAL_MAX] = {
-    [SIGNAL_TEST] = {
-		.name = "SignalTest1",
-	},
+	[SIGNAL_TEST] = {
+					 .name = "SignalTest1",
+					 },
 	[SIGNAL_PLAY_FILE_END] = {
-		.name = "PlayFileEnd",
-	},
+							  .name = "PlayFileEnd",
+							  },
 	[SIGNAL_VOLUME_CHANGED] = {
-		.name = "VolumeChanged",
-	},
+							   .name = "VolumeChanged",
+							   },
 	[SIGNAL_DEVICE_CONNECTED] = {
-		.name = "DeviceConnected",
-	},
+								 .name = "DeviceConnected",
+								 },
 	[SIGNAL_DEVICE_INFO_CHANGED] = {
-		.name = "DeviceInfoChanged",
-	},
+									.name = "DeviceInfoChanged",
+									},
 	[SIGNAL_FOCUS_CHANGED] = {
-		.name = "FocusChanged",
-	},
+							  .name = "FocusChanged",
+							  },
 	[SIGNAL_FOCUS_WATCH] = {
-		.name = "FocusWatch",
-	}
+							.name = "FocusWatch",
+							}
 };
 
 const struct pulseaudio_dbus_property_info g_pulseaudio_properties[PULSEAUDIO_PROP_MAX] = {
 	[PULSEAUDIO_PROP_AUDIO_BALANCE] = {
-		.name = "AudioBalance",
-	},
+									   .name = "AudioBalance",
+									   },
 	[PULSEAUDIO_PROP_MONO_AUDIO] = {
-		.name = "MonoAudio",
-	},
+									.name = "MonoAudio",
+									},
 	[PULSEAUDIO_PROP_MUTE_ALL] = {
-		.name = "MuteAll",
-	},
+								  .name = "MuteAll",
+								  },
 };
 
 /*
@@ -163,10 +163,8 @@ static const GDBusErrorEntry mm_sound_client_error_entries[] =
 };
 */
 
-
 /* Only For error types which is currently being used in server-side */
-static const GDBusErrorEntry mm_sound_error_entries[] =
-{
+static const GDBusErrorEntry mm_sound_error_entries[] = {
 	{MM_ERROR_OUT_OF_MEMORY, "org.tizen.multimedia.OutOfMemory"},
 	{MM_ERROR_OUT_OF_STORAGE, "org.tizen.multimedia.OutOfStorage"},
 	{MM_ERROR_INVALID_ARGUMENT, "org.tizen.multimedia.InvalidArgument"},
@@ -188,11 +186,9 @@ static const GDBusErrorEntry mm_sound_error_entries[] =
 	{MM_ERROR_SOUND_INVALID_PATH, "org.tizen.multimedia.audio.InvalidPath"},
 };
 
-
 /******************************************************************************************
 		Wrapper Functions of GDbus
 ******************************************************************************************/
-
 
 static int _parse_error_msg(char *full_err_msg, char **err_name, char **err_msg)
 {
@@ -230,12 +226,11 @@ static int _convert_error_name(const char *err_name)
 	return MM_ERROR_COMMON_UNKNOWN;
 }
 
-static int _dbus_method_call(GDBusConnection* conn, const char* bus_name, const char* object, const char* intf,
-							const char* method, GVariant* args, GVariant** result)
+static int _dbus_method_call(GDBusConnection * conn, const char *bus_name, const char *object, const char *intf, const char *method, GVariant * args, GVariant ** result)
 {
 	int ret = MM_ERROR_NONE;
 	GError *err = NULL;
-	GVariant* dbus_reply = NULL;
+	GVariant *dbus_reply = NULL;
 
 	if (!conn || !object || !intf || !method) {
 		debug_error("Invalid Argument");
@@ -252,9 +247,7 @@ static int _dbus_method_call(GDBusConnection* conn, const char* bus_name, const 
 
 	debug_log("Dbus call with obj'%s' intf'%s' method'%s'", object, intf, method);
 
-	dbus_reply = g_dbus_connection_call_sync(conn, bus_name, object , intf, \
-			     method, args ,\
-			     NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &err );
+	dbus_reply = g_dbus_connection_call_sync(conn, bus_name, object, intf, method, args, NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &err);
 	if (dbus_reply && !err) {
 		debug_log("Method Call '%s.%s' Success", intf, method);
 		*result = dbus_reply;
@@ -262,7 +255,7 @@ static int _dbus_method_call(GDBusConnection* conn, const char* bus_name, const 
 		char *err_name = NULL, *err_msg = NULL;
 		debug_log("Method Call '%s.%s' Failed, %s", intf, method, err->message);
 
-		if (_parse_error_msg(err->message,  &err_name, &err_msg) < 0) {
+		if (_parse_error_msg(err->message, &err_name, &err_msg) < 0) {
 			debug_error("failed to parse error message");
 			g_error_free(err);
 			return MM_ERROR_SOUND_INTERNAL;
@@ -275,8 +268,7 @@ static int _dbus_method_call(GDBusConnection* conn, const char* bus_name, const 
 }
 
 #if 0
-static int _dbus_set_property(GDBusConnection* conn, const char* bus_name, const char* object, const char* intf,
-							const char* prop, GVariant* args, GVariant** result)
+static int _dbus_set_property(GDBusConnection * conn, const char *bus_name, const char *object, const char *intf, const char *prop, GVariant * args, GVariant ** result)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -287,16 +279,14 @@ static int _dbus_set_property(GDBusConnection* conn, const char* bus_name, const
 
 	debug_log("Dbus set property with obj'%s' intf'%s' prop'%s'", object, intf, prop);
 
-	if ((ret = _dbus_method_call(conn, bus_name, object, INTERFACE_DBUS, METHOD_SET,
-								g_variant_new("(ssv)", intf, prop, args), result)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_method_call(conn, bus_name, object, INTERFACE_DBUS, METHOD_SET, g_variant_new("(ssv)", intf, prop, args), result)) != MM_ERROR_NONE) {
 		debug_error("Dbus call for set property failed");
 	}
 
 	return ret;
 }
 
-static int _dbus_get_property(GDBusConnection *conn, const char* bus_name, const char* object_name,
-							const char* intf_name, const char* prop, GVariant** result)
+static int _dbus_get_property(GDBusConnection * conn, const char *bus_name, const char *object_name, const char *intf_name, const char *prop, GVariant ** result)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -307,9 +297,7 @@ static int _dbus_get_property(GDBusConnection *conn, const char* bus_name, const
 
 	debug_log("Dbus get property with obj'%s' intf'%s' prop'%s'", object_name, intf_name, prop);
 
-	if ((ret = _dbus_method_call(conn,
-				       bus_name, object_name, INTERFACE_DBUS, METHOD_GET,
-				       g_variant_new("(ss)", intf_name, prop), result)) != MM_ERROR_NONE) {
+	if ((ret = _dbus_method_call(conn, bus_name, object_name, INTERFACE_DBUS, METHOD_GET, g_variant_new("(ss)", intf_name, prop), result)) != MM_ERROR_NONE) {
 		debug_error("Dbus call for get property failed");
 	}
 
@@ -317,8 +305,7 @@ static int _dbus_get_property(GDBusConnection *conn, const char* bus_name, const
 }
 #endif
 
-static int _dbus_subscribe_signal(GDBusConnection *conn, const char* object_name, const char* intf_name,
-					const char* signal_name, GDBusSignalCallback signal_cb, guint *subscribe_id, void* userdata)
+static int _dbus_subscribe_signal(GDBusConnection * conn, const char *object_name, const char *intf_name, const char *signal_name, GDBusSignalCallback signal_cb, guint * subscribe_id, void *userdata)
 {
 	guint subs_id = 0;
 
@@ -329,11 +316,10 @@ static int _dbus_subscribe_signal(GDBusConnection *conn, const char* object_name
 
 	debug_log("Dbus subscirbe signal with Obj'%s' Intf'%s' sig'%s'", object_name, intf_name, signal_name);
 
-	subs_id = g_dbus_connection_signal_subscribe(conn, NULL, intf_name, signal_name, object_name, \
-			 NULL , G_DBUS_SIGNAL_FLAGS_NONE , signal_cb, userdata, NULL );
+	subs_id = g_dbus_connection_signal_subscribe(conn, NULL, intf_name, signal_name, object_name, NULL, G_DBUS_SIGNAL_FLAGS_NONE, signal_cb, userdata, NULL);
 
 	if (!subs_id) {
-		debug_error ("g_dbus_connection_signal_subscribe() failed ");
+		debug_error("g_dbus_connection_signal_subscribe() failed ");
 		return MM_ERROR_SOUND_INTERNAL;
 	} else {
 		if (subscribe_id)
@@ -343,7 +329,7 @@ static int _dbus_subscribe_signal(GDBusConnection *conn, const char* object_name
 	return MM_ERROR_NONE;
 }
 
-static void _dbus_unsubscribe_signal(GDBusConnection *conn, guint subs_id)
+static void _dbus_unsubscribe_signal(GDBusConnection * conn, guint subs_id)
 {
 	if (!conn || !subs_id) {
 		debug_error("Invalid Argument");
@@ -352,7 +338,7 @@ static void _dbus_unsubscribe_signal(GDBusConnection *conn, guint subs_id)
 	g_dbus_connection_signal_unsubscribe(conn, subs_id);
 }
 
-static GDBusConnection* _dbus_get_connection(GBusType bustype)
+static GDBusConnection *_dbus_get_connection(GBusType bustype)
 {
 	static GDBusConnection *conn_system = NULL;
 	static GDBusConnection *conn_session = NULL;
@@ -381,11 +367,11 @@ static GDBusConnection* _dbus_get_connection(GBusType bustype)
 }
 
 #if 0
-static void _dbus_disconnect(GDBusConnection* conn)
+static void _dbus_disconnect(GDBusConnection * conn)
 {
-	debug_fenter ();
+	debug_fenter();
 	g_object_unref(conn);
-	debug_fleave ();
+	debug_fleave();
 }
 #endif
 
@@ -393,7 +379,7 @@ static void _dbus_disconnect(GDBusConnection* conn)
 		Simple Functions For Communicate with Sound-Server
 ******************************************************************************************/
 
-static int _dbus_method_call_to(int dbus_to, int method_type, GVariant *args, GVariant **result)
+static int _dbus_method_call_to(int dbus_to, int method_type, GVariant * args, GVariant ** result)
 {
 	int ret = MM_ERROR_NONE;
 	GDBusConnection *conn = NULL;
@@ -426,11 +412,7 @@ static int _dbus_method_call_to(int dbus_to, int method_type, GVariant *args, GV
 	}
 
 	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
-		if((ret = _dbus_method_call(conn, bus_name,
-					      object,
-					      interface,
-					      g_methods[method_type].name,
-					      args, result)) != MM_ERROR_NONE) {
+		if ((ret = _dbus_method_call(conn, bus_name, object, interface, g_methods[method_type].name, args, result)) != MM_ERROR_NONE) {
 			debug_error("Dbus Call on Client Error");
 			return ret;
 		}
@@ -442,15 +424,9 @@ static int _dbus_method_call_to(int dbus_to, int method_type, GVariant *args, GV
 	return MM_ERROR_NONE;
 }
 
-static void _dbus_signal_callback (GDBusConnection  *connection,
-                                     const gchar      *sender_name,
-                                     const gchar      *object_path,
-                                     const gchar      *interface_name,
-                                     const gchar      *signal_name,
-                                     GVariant         *params,
-                                     gpointer          user_data)
+static void _dbus_signal_callback(GDBusConnection * connection, const gchar * sender_name, const gchar * object_path, const gchar * interface_name, const gchar * signal_name, GVariant * params, gpointer user_data)
 {
-	struct user_callback* user_cb = (struct user_callback*) user_data;
+	struct user_callback *user_cb = (struct user_callback *)user_data;
 
 	if (!user_cb || !user_cb->cb) {
 		debug_error("User callback data Null");
@@ -474,33 +450,31 @@ static void _dbus_signal_callback (GDBusConnection  *connection,
 		unsigned int volume_level;
 
 		g_variant_get(params, "(&s&su)", &direction, &volume_type_str, &volume_level);
-		((mm_sound_volume_changed_wrapper_cb)(user_cb->cb))(direction, volume_type_str, volume_level, user_cb->userdata);
+		((mm_sound_volume_changed_wrapper_cb) (user_cb->cb)) (direction, volume_type_str, volume_level, user_cb->userdata);
 	} else if (user_cb->sig_type == SIGNAL_DEVICE_CONNECTED) {
 		const char *name = NULL, *device_type = NULL;
 		gboolean is_connected = FALSE;
 		int device_id, io_direction, state;
 
-		g_variant_get(params, "((i&sii&s)b)", &device_id, &device_type, &io_direction,
-					&state, &name, &is_connected);
-		((mm_sound_device_connected_wrapper_cb)(user_cb->cb))(device_id, device_type, io_direction, state, name, is_connected, user_cb->userdata);
+		g_variant_get(params, "((i&sii&s)b)", &device_id, &device_type, &io_direction, &state, &name, &is_connected);
+		((mm_sound_device_connected_wrapper_cb) (user_cb->cb)) (device_id, device_type, io_direction, state, name, is_connected, user_cb->userdata);
 	} else if (user_cb->sig_type == SIGNAL_DEVICE_INFO_CHANGED) {
 		const char *name = NULL, *device_type = NULL;
 		int changed_device_info_type = 0;
 		int device_id, io_direction, state;
 
-		g_variant_get(params, "((i&sii&s)i)", &device_id, &device_type, &io_direction,
-					&state, &name, &changed_device_info_type);
-		((mm_sound_device_info_changed_wrapper_cb)(user_cb->cb))(device_id, device_type, io_direction, state, name, changed_device_info_type, user_cb->userdata);
+		g_variant_get(params, "((i&sii&s)i)", &device_id, &device_type, &io_direction, &state, &name, &changed_device_info_type);
+		((mm_sound_device_info_changed_wrapper_cb) (user_cb->cb)) (device_id, device_type, io_direction, state, name, changed_device_info_type, user_cb->userdata);
 	} else if (user_cb->sig_type == SIGNAL_FOCUS_CHANGED) {
 	} else if (user_cb->sig_type == SIGNAL_FOCUS_WATCH) {
 	} else if (user_cb->sig_type == SIGNAL_TEST) {
 		int test_var = 0;
 		g_variant_get(params, "(i)", &test_var);
-		((mm_sound_test_cb)(user_cb->cb))(test_var, user_cb->userdata);
+		((mm_sound_test_cb) (user_cb->cb)) (test_var, user_cb->userdata);
 	} else if (user_cb->sig_type == SIGNAL_PLAY_FILE_END) {
 		int ended_handle = 0;
 		g_variant_get(params, "(i)", &ended_handle);
-		((mm_sound_stop_callback_wrapper_func)(user_cb->cb))(ended_handle, user_cb->userdata);
+		((mm_sound_stop_callback_wrapper_func) (user_cb->cb)) (ended_handle, user_cb->userdata);
 	}
 }
 
@@ -508,7 +482,7 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 {
 	GDBusConnection *conn = NULL;
 	guint _subs_id = 0;
-	struct user_callback *user_cb  = NULL;
+	struct user_callback *user_cb = NULL;
 	const char *object, *interface;
 
 	if (!cb) {
@@ -531,7 +505,6 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 	user_cb->userdata = userdata;
 	user_cb->mask = mask;
 
-
 	if (dbus_to == DBUS_TO_SOUND_SERVER) {
 		object = OBJECT_SOUND_SERVER;
 		interface = INTERFACE_SOUND_SERVER;
@@ -546,10 +519,8 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 		goto fail;
 	}
 
-
 	if ((conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
-		if(_dbus_subscribe_signal(conn, object, interface, g_signals[signaltype].name,
-								_dbus_signal_callback, &_subs_id, user_cb) != MM_ERROR_NONE) {
+		if (_dbus_subscribe_signal(conn, object, interface, g_signals[signaltype].name, _dbus_signal_callback, &_subs_id, user_cb) != MM_ERROR_NONE) {
 			debug_error("Dbus Subscribe on Client Error");
 			goto fail;
 		} else {
@@ -562,7 +533,7 @@ static int _dbus_signal_subscribe_to(int dbus_to, sound_server_signal_t signalty
 	}
 	return MM_ERROR_NONE;
 
-fail:
+ fail:
 	if (user_cb)
 		free(user_cb);
 	return MM_ERROR_SOUND_INTERNAL;
@@ -586,7 +557,7 @@ static int _dbus_signal_unsubscribe(unsigned int subs_id)
 		Implementation of each dbus client code (Construct Params,..)
 ******************************************************************************************/
 
-int mm_sound_client_dbus_add_test_callback(mm_sound_test_cb func, void* user_data, unsigned int *subs_id)
+int mm_sound_client_dbus_add_test_callback(mm_sound_test_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -633,14 +604,14 @@ int mm_sound_client_dbus_test(int a, int b, int *get)
 	}
 
 	if (result) {
-		g_variant_get(result, "(i)",  &reply);
+		g_variant_get(result, "(i)", &reply);
 		debug_log("reply : %d", reply);
 		*get = reply;
 	} else {
 		debug_error("reply null");
 	}
 
-cleanup:
+ cleanup:
 	if (result)
 		g_variant_unref(result);
 
@@ -648,13 +619,13 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_dbus_get_current_connected_device_list(int device_flags, GList** device_list)
+int mm_sound_client_dbus_get_current_connected_device_list(int device_flags, GList ** device_list)
 {
 	int ret = MM_ERROR_NONE;
 	GVariant *result = NULL, *child = NULL;
 	GVariant *params;
 	GVariantIter iter;
-	mm_sound_device_t* device_item;
+	mm_sound_device_t *device_item;
 	const gchar *device_name_tmp = NULL, *device_type_tmp = NULL;
 
 	debug_fenter();
@@ -685,7 +656,7 @@ int mm_sound_client_dbus_get_current_connected_device_list(int device_flags, GLi
 			MMSOUND_STRNCPY(device_item->name, device_name_tmp, MAX_DEVICE_NAME_NUM);
 			MMSOUND_STRNCPY(device_item->type, device_type_tmp, MAX_DEVICE_TYPE_STR_LEN);
 			*device_list = g_list_append(*device_list, device_item);
-			debug_log("Added device id(%d) type(%17s) direction(%d) state(%d) name(%s)", device_item->id, device_item->type,device_item->io_direction, device_item->state, device_item->name);
+			debug_log("Added device id(%d) type(%17s) direction(%d) state(%d) name(%s)", device_item->id, device_item->type, device_item->io_direction, device_item->state, device_item->name);
 		} else {
 			if (device_item)
 				g_free(device_item);
@@ -693,7 +664,7 @@ int mm_sound_client_dbus_get_current_connected_device_list(int device_flags, GLi
 		}
 	}
 
-cleanup:
+ cleanup:
 	if (result)
 		g_variant_unref(result);
 
@@ -701,7 +672,7 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_sound_device_connected_wrapper_cb func, void* user_data, unsigned int *subs_id)
+int mm_sound_client_dbus_add_device_connected_callback(int device_flags, mm_sound_device_connected_wrapper_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -728,7 +699,7 @@ int mm_sound_client_dbus_remove_device_connected_callback(unsigned int subs_id)
 	return ret;
 }
 
-int mm_sound_client_dbus_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_wrapper_cb func, void* user_data, unsigned int *subs_id)
+int mm_sound_client_dbus_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_wrapper_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
@@ -774,7 +745,7 @@ int mm_sound_client_dbus_set_volume_by_type(const char *volume_type, const unsig
 	}
 
 	if (result) {
-		g_variant_get(result, "(&s)",  &reply);
+		g_variant_get(result, "(&s)", &reply);
 		debug_log("reply : %s", reply);
 		if (!strcmp(reply, "STREAM_MANAGER_RETURN_ERROR"))
 			ret = MM_ERROR_SOUND_INTERNAL;
@@ -782,7 +753,7 @@ int mm_sound_client_dbus_set_volume_by_type(const char *volume_type, const unsig
 		debug_error("reply null");
 	}
 
-cleanup:
+ cleanup:
 	if (result)
 		g_variant_unref(result);
 
@@ -790,7 +761,7 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_dbus_add_volume_changed_callback(mm_sound_volume_changed_wrapper_cb func, void* user_data, unsigned int *subs_id)
+int mm_sound_client_dbus_add_volume_changed_callback(mm_sound_volume_changed_wrapper_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -818,13 +789,11 @@ int mm_sound_client_dbus_remove_volume_changed_callback(unsigned int subs_id)
 	return ret;
 }
 
-int mm_sound_client_dbus_play_tone(int tone, int repeat, int volume, int volume_config,
-			   int session_type, int session_options, int client_pid,
-			   bool enable_session, int *codechandle, char *stream_type, int stream_index)
+int mm_sound_client_dbus_play_tone(int tone, int repeat, int volume, int volume_config, int session_type, int session_options, int client_pid, bool enable_session, int *codechandle, char *stream_type, int stream_index)
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 	gboolean _enable_session = enable_session;
 
 	if (!codechandle) {
@@ -834,8 +803,7 @@ int mm_sound_client_dbus_play_tone(int tone, int repeat, int volume, int volume_
 
 	debug_fenter();
 
-	params = g_variant_new("(iiiiiiibsi)", tone, repeat, volume,
-		      volume_config, session_type, session_options, client_pid , _enable_session, stream_type, stream_index);
+	params = g_variant_new("(iiiiiiibsi)", tone, repeat, volume, volume_config, session_type, session_options, client_pid, _enable_session, stream_type, stream_index);
 	if (params) {
 		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_DTMF, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus play tone failed");
@@ -846,20 +814,19 @@ int mm_sound_client_dbus_play_tone(int tone, int repeat, int volume, int volume_
 	}
 
 	if (result) {
-		g_variant_get(result, "(i)",  &handle);
+		g_variant_get(result, "(i)", &handle);
 		debug_log("handle : %d", handle);
 		*codechandle = handle;
 	} else {
 		debug_error("reply null");
 	}
 
-cleanup:
+ cleanup:
 	if (result)
 		g_variant_unref(result);
 
 	debug_fleave();
 	return ret;
-
 
 }
 
@@ -867,7 +834,7 @@ int mm_sound_client_dbus_play_tone_with_stream_info(int client_pid, int tone, ch
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -887,30 +854,27 @@ int mm_sound_client_dbus_play_tone_with_stream_info(int client_pid, int tone, ch
 	}
 
 	if (result) {
-		g_variant_get(result, "(i)",  &handle);
+		g_variant_get(result, "(i)", &handle);
 		debug_log("handle : %d", handle);
 		*codechandle = handle;
 	} else {
 		debug_error("reply null");
 	}
 
-cleanup:
+ cleanup:
 	if (result)
 		g_variant_unref(result);
 
 	debug_fleave();
 	return ret;
 
-
 }
 
-int mm_sound_client_dbus_play_sound(const char* filename, int tone, int repeat, int volume, int volume_config,
-			   int priority, int session_type, int session_options, int client_pid, int handle_route,
-			   bool enable_session, int *codechandle, char *stream_type, int stream_index)
+int mm_sound_client_dbus_play_sound(const char *filename, int tone, int repeat, int volume, int volume_config, int priority, int session_type, int session_options, int client_pid, int handle_route, bool enable_session, int *codechandle, char *stream_type, int stream_index)
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 	gboolean _enable_session = enable_session;
 
 	if (!filename || !codechandle) {
@@ -920,8 +884,7 @@ int mm_sound_client_dbus_play_sound(const char* filename, int tone, int repeat, 
 
 	debug_fenter();
 
-	params = g_variant_new("(siiiiiiiiibsi)", filename, tone, repeat, volume,
-		      volume_config, priority, session_type, session_options, client_pid, handle_route, _enable_session, stream_type, stream_index);
+	params = g_variant_new("(siiiiiiiiibsi)", filename, tone, repeat, volume, volume_config, priority, session_type, session_options, client_pid, handle_route, _enable_session, stream_type, stream_index);
 	if (params) {
 		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_FILE_START, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus play file failed");
@@ -932,14 +895,14 @@ int mm_sound_client_dbus_play_sound(const char* filename, int tone, int repeat, 
 	}
 
 	if (result) {
-		g_variant_get(result, "(i)",  &handle);
+		g_variant_get(result, "(i)", &handle);
 		debug_log("handle : %d", handle);
 		*codechandle = handle;
 	} else {
 		debug_error("reply null");
 	}
 
-cleanup:
+ cleanup:
 	if (result)
 		g_variant_unref(result);
 
@@ -947,12 +910,11 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_dbus_play_sound_with_stream_info(const char* filename, int repeat, int volume,
-				int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index)
+int mm_sound_client_dbus_play_sound_with_stream_info(const char *filename, int repeat, int volume, int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index)
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	if (!filename || !codechandle) {
 		debug_error("Param for play is null");
@@ -961,8 +923,7 @@ int mm_sound_client_dbus_play_sound_with_stream_info(const char* filename, int r
 
 	debug_fenter();
 
-	params = g_variant_new("(siiiiisi)", filename, repeat, volume,
-			priority, client_pid, handle_route, stream_type, stream_index);
+	params = g_variant_new("(siiiiisi)", filename, repeat, volume, priority, client_pid, handle_route, stream_type, stream_index);
 	if (params) {
 		if ((ret = _dbus_method_call_to(DBUS_TO_SOUND_SERVER, METHOD_CALL_PLAY_FILE_START_WITH_STREAM_INFO, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus play file failed");
@@ -973,23 +934,21 @@ int mm_sound_client_dbus_play_sound_with_stream_info(const char* filename, int r
 	}
 
 	if (result) {
-		g_variant_get(result, "(i)",  &handle);
+		g_variant_get(result, "(i)", &handle);
 		debug_log("handle : %d", handle);
 		*codechandle = handle;
 	} else {
 		debug_error("reply null");
 	}
 
-cleanup:
+ cleanup:
 	if (result)
 		g_variant_unref(result);
 
 	debug_fleave();
 	return ret;
 
-
 }
-
 
 int mm_sound_client_dbus_stop_sound(int handle)
 {
@@ -1003,7 +962,7 @@ int mm_sound_client_dbus_stop_sound(int handle)
 		goto cleanup;
 	}
 
-cleanup:
+ cleanup:
 	if (result)
 		g_variant_unref(result);
 
@@ -1029,7 +988,7 @@ int mm_sound_client_dbus_clear_focus(int pid)
 	return ret;
 }
 
-int mm_sound_client_dbus_add_play_sound_end_callback(mm_sound_stop_callback_wrapper_func stop_cb, void* userdata, unsigned int *subs_id)
+int mm_sound_client_dbus_add_play_sound_end_callback(mm_sound_stop_callback_wrapper_func stop_cb, void *userdata, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -1062,33 +1021,33 @@ int mm_sound_client_dbus_remove_play_sound_end_callback(unsigned int subs_id)
 
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
-char* _get_cookie(int cookie_size)
+char *_get_cookie(int cookie_size)
 {
 	int retval = -1;
-	char* cookie = NULL;
+	char *cookie = NULL;
 
 	if (security_server_get_cookie_size() != cookie_size) {
-		debug_error ("[Security] security_server_get_cookie_size() != COOKIE_SIZE(%d)\n", cookie_size);
+		debug_error("[Security] security_server_get_cookie_size() != COOKIE_SIZE(%d)\n", cookie_size);
 		return false;
 	}
 
-	cookie = (char*)malloc (cookie_size);
+	cookie = (char *)malloc(cookie_size);
 
-	retval = security_server_request_cookie (cookie, cookie_size);
+	retval = security_server_request_cookie(cookie, cookie_size);
 	if (retval == SECURITY_SERVER_API_SUCCESS) {
-		debug_msg ("[Security] security_server_request_cookie() returns [%d]\n", retval);
+		debug_msg("[Security] security_server_request_cookie() returns [%d]\n", retval);
 	} else {
-		debug_error ("[Security] security_server_request_cookie() returns [%d]\n", retval);
+		debug_error("[Security] security_server_request_cookie() returns [%d]\n", retval);
 	}
 
 	return cookie;
 }
 
-static GVariant* _get_cookie_variant ()
+static GVariant *_get_cookie_variant()
 {
 	int i;
 	GVariantBuilder builder;
-	char* cookie = NULL;
+	char *cookie = NULL;
 
 	cookie = _get_cookie(COOKIE_SIZE);
 
@@ -1099,12 +1058,12 @@ static GVariant* _get_cookie_variant ()
 	for (i = 0; i < COOKIE_SIZE; i++)
 		g_variant_builder_add(&builder, "y", cookie[i]);
 
-	free (cookie);
+	free(cookie);
 	return g_variant_builder_end(&builder);
 }
 
-#endif /* USE_SECURITY */
-#endif /* SUPPORT_CONTAINER */
+#endif							/* USE_SECURITY */
+#endif							/* SUPPORT_CONTAINER */
 
 int mm_sound_client_dbus_get_unique_id(int *id)
 {
@@ -1130,10 +1089,10 @@ int mm_sound_client_dbus_get_unique_id(int *id)
 	return ret;
 }
 
-int mm_sound_client_dbus_register_focus(int id, int instance, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data)
+int mm_sound_client_dbus_register_focus(int id, int instance, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 #ifdef SUPPORT_CONTAINER
 	char container[128];
 #endif
@@ -1143,16 +1102,16 @@ int mm_sound_client_dbus_register_focus(int id, int instance, const char *stream
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
 	params = g_variant_new("(@ayiisb)", _get_cookie_variant(), instance, id, stream_type, is_for_session);
-#else /* USE_SECURITY */
+#else							/* USE_SECURITY */
 	gethostname(container, sizeof(container));
 	debug_error("container = %s", container);
 	params = g_variant_new("(siisb)", container, instance, id, stream_type, is_for_session);
-#endif /* USE_SECURITY */
+#endif							/* USE_SECURITY */
 
-#else /* SUPPORT_CONTAINER */
+#else							/* SUPPORT_CONTAINER */
 	params = g_variant_new("(iisb)", instance, id, stream_type, is_for_session);
 
-#endif /* SUPPORT_CONTAINER */
+#endif							/* SUPPORT_CONTAINER */
 
 	if (params) {
 		if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_REGISTER_FOCUS, params, &result)) != MM_ERROR_NONE) {
@@ -1162,8 +1121,8 @@ int mm_sound_client_dbus_register_focus(int id, int instance, const char *stream
 		debug_error("Construct Param for method call failed");
 	}
 
-	if(ret != MM_ERROR_NONE)
-		g_variant_get(result, "(i)",  &ret);
+	if (ret != MM_ERROR_NONE)
+		g_variant_get(result, "(i)", &ret);
 	if (result)
 		g_variant_unref(result);
 
@@ -1176,7 +1135,7 @@ int mm_sound_client_dbus_register_focus(int id, int instance, const char *stream
 int mm_sound_client_dbus_unregister_focus(int instance, int id, bool is_for_session)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -1190,7 +1149,7 @@ int mm_sound_client_dbus_unregister_focus(int instance, int id, bool is_for_sess
 	}
 
 	if (ret != MM_ERROR_NONE)
-		g_variant_get(result, "(i)",  &ret);
+		g_variant_get(result, "(i)", &ret);
 	if (result)
 		g_variant_unref(result);
 
@@ -1202,7 +1161,7 @@ int mm_sound_client_dbus_unregister_focus(int instance, int id, bool is_for_sess
 int mm_sound_client_dbus_set_foucs_reacquisition(int instance, int id, bool reacquisition)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -1216,7 +1175,7 @@ int mm_sound_client_dbus_set_foucs_reacquisition(int instance, int id, bool reac
 	}
 
 	if (ret != MM_ERROR_NONE)
-		g_variant_get(result, "(i)",  &ret);
+		g_variant_get(result, "(i)", &ret);
 	if (result)
 		g_variant_unref(result);
 
@@ -1227,7 +1186,7 @@ int mm_sound_client_dbus_set_foucs_reacquisition(int instance, int id, bool reac
 int mm_sound_client_dbus_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **additional_info)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -1252,7 +1211,7 @@ int mm_sound_client_dbus_get_acquired_focus_stream_type(int focus_type, char **s
 int mm_sound_client_dbus_acquire_focus(int instance, int id, mm_sound_focus_type_e type, const char *option, bool is_for_session)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -1266,7 +1225,7 @@ int mm_sound_client_dbus_acquire_focus(int instance, int id, mm_sound_focus_type
 	}
 
 	if (ret != MM_ERROR_NONE)
-		g_variant_get(result, "(i)",  &ret);
+		g_variant_get(result, "(i)", &ret);
 	if (result)
 		g_variant_unref(result);
 
@@ -1277,7 +1236,7 @@ int mm_sound_client_dbus_acquire_focus(int instance, int id, mm_sound_focus_type
 int mm_sound_client_dbus_release_focus(int instance, int id, mm_sound_focus_type_e type, const char *option, bool is_for_session)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -1291,7 +1250,7 @@ int mm_sound_client_dbus_release_focus(int instance, int id, mm_sound_focus_type
 	}
 
 	if (ret != MM_ERROR_NONE)
-		g_variant_get(result, "(i)",  &ret);
+		g_variant_get(result, "(i)", &ret);
 	if (result)
 		g_variant_unref(result);
 
@@ -1299,10 +1258,10 @@ int mm_sound_client_dbus_release_focus(int instance, int id, mm_sound_focus_type
 	return ret;
 }
 
-int mm_sound_client_dbus_set_focus_watch_callback(int instance, int handle, mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, bool is_for_session, void* user_data)
+int mm_sound_client_dbus_set_focus_watch_callback(int instance, int handle, mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, bool is_for_session, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 #ifdef SUPPORT_CONTAINER
 	char container[128];
 #endif
@@ -1311,15 +1270,15 @@ int mm_sound_client_dbus_set_focus_watch_callback(int instance, int handle, mm_s
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
 	params = g_variant_new("(@ayiiib)", _get_cookie_variant(), instance, handle, type, is_for_session);
-#else /* USE_SECURITY */
+#else							/* USE_SECURITY */
 	gethostname(container, sizeof(container));
 	debug_error("container = %s", container);
 	params = g_variant_new("(siiib)", container, instance, handle, type, is_for_session);
-#endif /* USE_SECURITY */
+#endif							/* USE_SECURITY */
 
-#else /* SUPPORT_CONTAINER */
+#else							/* SUPPORT_CONTAINER */
 	params = g_variant_new("(iiib)", instance, handle, type, is_for_session);
-#endif /* SUPPORT_CONTAINER */
+#endif							/* SUPPORT_CONTAINER */
 
 	if (params) {
 		if ((ret = _dbus_method_call_to(DBUS_TO_FOCUS_SERVER, METHOD_CALL_WATCH_FOCUS, params, &result)) != MM_ERROR_NONE) {
@@ -1330,7 +1289,7 @@ int mm_sound_client_dbus_set_focus_watch_callback(int instance, int handle, mm_s
 	}
 
 	if (ret != MM_ERROR_NONE)
-		g_variant_get(result, "(i)",  &ret);
+		g_variant_get(result, "(i)", &ret);
 	if (result)
 		g_variant_unref(result);
 	debug_fleave();
@@ -1342,7 +1301,7 @@ int mm_sound_client_dbus_set_focus_watch_callback(int instance, int handle, mm_s
 int mm_sound_client_dbus_unset_focus_watch_callback(int focus_tid, int handle, bool is_for_session)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -1355,7 +1314,7 @@ int mm_sound_client_dbus_unset_focus_watch_callback(int focus_tid, int handle, b
 		debug_error("Construct Param for method call failed");
 	}
 	if (ret != MM_ERROR_NONE)
-		g_variant_get(result, "(i)",  &ret);
+		g_variant_get(result, "(i)", &ret);
 	if (result)
 		g_variant_unref(result);
 
@@ -1367,7 +1326,7 @@ int mm_sound_client_dbus_unset_focus_watch_callback(int focus_tid, int handle, b
 int mm_sound_client_dbus_emergent_exit_focus(int exit_pid)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -1381,9 +1340,9 @@ int mm_sound_client_dbus_emergent_exit_focus(int exit_pid)
 		debug_error("Construct Param for method call failed");
 	}
 
-cleanup:
+ cleanup:
 	if (ret != MM_ERROR_NONE)
-		g_variant_get(result, "(i)",  &ret);
+		g_variant_get(result, "(i)", &ret);
 	if (result)
 		g_variant_unref(result);
 
@@ -1391,7 +1350,7 @@ cleanup:
 	return ret;
 }
 
-#endif /* USE_FOCUS */
+#endif							/* USE_FOCUS */
 /*------------------------------------------ FOCUS --------------------------------------------------*/
 
 int mm_sound_client_dbus_initialize(void)

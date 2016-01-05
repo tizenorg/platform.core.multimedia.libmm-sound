@@ -40,7 +40,6 @@
 #include <time.h>
 #include <errno.h>
 
-
 #include "../include/mm_sound_common.h"
 #include "../include/mm_sound_utils.h"
 #include "include/mm_sound_thread_pool.h"
@@ -51,7 +50,7 @@
 
 #include <glib.h>
 
-#include "../config.h" /* for PLUGIN_DIR */
+#include "../config.h"			/* for PLUGIN_DIR */
 
 #define PLUGIN_ENV "MM_SOUND_PLUGIN_PATH"
 #define PLUGIN_MAX 30
@@ -60,20 +59,20 @@
 #define USE_SYSTEM_SERVER_PROCESS_MONITORING
 
 typedef struct {
-    char plugdir[MAX_PLUGIN_DIR_PATH_LEN];
-    int startserver;
-    int printlist;
-    int testmode;
+	char plugdir[MAX_PLUGIN_DIR_PATH_LEN];
+	int startserver;
+	int printlist;
+	int testmode;
 } server_arg;
 
-static int getOption(int argc, char **argv, server_arg *arg);
+static int getOption(int argc, char **argv, server_arg * arg);
 static int _usage(int argc, char **argv);
 
-static struct sigaction sigint_action;  /* Backup pointer of SIGINT handler */
-static struct sigaction sigabrt_action; /* Backup pointer of SIGABRT signal handler */
-static struct sigaction sigsegv_action; /* Backup pointer of SIGSEGV fault signal handler */
-static struct sigaction sigterm_action; /* Backup pointer of SIGTERM signal handler */
-static struct sigaction sigsys_action;  /* Backup pointer of SIGSYS signal handler */
+static struct sigaction sigint_action;	/* Backup pointer of SIGINT handler */
+static struct sigaction sigabrt_action;	/* Backup pointer of SIGABRT signal handler */
+static struct sigaction sigsegv_action;	/* Backup pointer of SIGSEGV fault signal handler */
+static struct sigaction sigterm_action;	/* Backup pointer of SIGTERM signal handler */
+static struct sigaction sigsys_action;	/* Backup pointer of SIGSYS signal handler */
 static void _exit_handler(int sig);
 
 GMainLoop *g_mainloop;
@@ -87,22 +86,22 @@ static void _mainloop_run()
 	g_main_loop_run(g_mainloop);
 }
 
-static sem_t* sem_create_n_wait()
+static sem_t *sem_create_n_wait()
 {
-	sem_t* sem = NULL;
+	sem_t *sem = NULL;
 
-	if ((sem = sem_open ("booting-sound", O_CREAT, 0660, 0))== SEM_FAILED) {
-		debug_error ("error creating sem : %d", errno);
+	if ((sem = sem_open("booting-sound", O_CREAT, 0660, 0)) == SEM_FAILED) {
+		debug_error("error creating sem : %d", errno);
 		return NULL;
 	}
 
-	debug_msg ("returning sem [%p]", sem);
+	debug_msg("returning sem [%p]", sem);
 	return sem;
 }
 
 int main(int argc, char **argv)
 {
-	sem_t* sem = NULL;
+	sem_t *sem = NULL;
 	server_arg serveropt;
 	struct sigaction action;
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
@@ -124,29 +123,23 @@ int main(int argc, char **argv)
 	/* Daemon process create */
 	if (!serveropt.testmode && serveropt.startserver) {
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
-		daemon(0,0); //chdir to ("/"), and close stdio
+		daemon(0, 0);			//chdir to ("/"), and close stdio
 #endif
 	}
 
-	/* Sound Server Starts!!!*/
+	/* Sound Server Starts!!! */
 	debug_warning("sound_server [%d] start \n", getpid());
 
-	signal(SIGPIPE, SIG_IGN); //ignore SIGPIPE
+	signal(SIGPIPE, SIG_IGN);	//ignore SIGPIPE
 
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
-	while(1)
-	{
-		if ((pid = fork()) < 0)
-		{
+	while (1) {
+		if ((pid = fork()) < 0) {
 			fprintf(stderr, "Sub Fork Error\n");
 			return 2;
-		}
-		else if(pid == 0)
-		{
+		} else if (pid == 0) {
 			break;
-		}
-		else if(pid > 0)
-		{
+		} else if (pid > 0) {
 			wait(&ret);
 			fprintf(stderr, "Killed by signal [%05X]\n", ret);
 			fprintf(stderr, "Daemon is run againg\n");
@@ -171,13 +164,13 @@ int main(int argc, char **argv)
 		/* Start Run types */
 		MMSoundMgrRunRunAll();
 
-		unlink(PA_READY); // remove pa_ready file after sound-server init.
+		unlink(PA_READY);		// remove pa_ready file after sound-server init.
 
 		if (sem) {
 			if (sem_post(sem) == -1) {
-				debug_error ("error sem post : %d", errno);
+				debug_error("error sem post : %d", errno);
 			} else {
-				debug_msg ("Ready to play booting sound!!!!");
+				debug_msg("Ready to play booting sound!!!!");
 			}
 		}
 
@@ -200,7 +193,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-static int getOption(int argc, char **argv, server_arg *arg)
+static int getOption(int argc, char **argv, server_arg * arg)
 {
 	int c;
 	char *plugin_env_dir = NULL;
@@ -223,30 +216,28 @@ static int getOption(int argc, char **argv, server_arg *arg)
 
 	arg->testmode = 0;
 
-	while (1)
-	{
+	while (1) {
 		int opt_idx = 0;
 
-		c = getopt_long (argc, argv, "SFLHRUP:Tiurd", long_options, &opt_idx);
+		c = getopt_long(argc, argv, "SFLHRUP:Tiurd", long_options, &opt_idx);
 		if (c == -1)
 			break;
-		switch (c)
-		{
-		case 'S': /* Start daemon */
+		switch (c) {
+		case 'S':				/* Start daemon */
 			arg->startserver = 1;
 			break;
-		case 'L': /* list of plugins */
+		case 'L':				/* list of plugins */
 			arg->printlist = 1;
 			break;
-		case 'P': /* Custom plugindir */
+		case 'P':				/* Custom plugindir */
 			MMSOUND_STRNCPY(arg->plugdir, optarg, MAX_PLUGIN_DIR_PATH_LEN);
 			break;
-		case 'T': /* Test mode */
+		case 'T':				/* Test mode */
 			arg->testmode = 1;
 			break;
-		case 'H': /* help msg */
+		case 'H':				/* help msg */
 		default:
-		return _usage(argc, argv);
+			return _usage(argc, argv);
 		}
 	}
 	if (argc == 1)
@@ -266,8 +257,7 @@ static void _exit_handler(int sig)
 		debug_log("All run-type plugin stopped\n");
 	}
 
-	switch(sig)
-	{
+	switch (sig) {
 	case SIGINT:
 		sigaction(SIGINT, &sigint_action, NULL);
 		debug_error("signal(SIGINT) error");
@@ -302,4 +292,3 @@ static int _usage(int argc, char **argv)
 
 	return 1;
 }
-

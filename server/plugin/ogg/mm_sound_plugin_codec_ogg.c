@@ -51,41 +51,41 @@
 int MMSoundPlugCodecOggStop(MMHandleType handle);
 
 enum {
-   STATE_NONE = 0,
-   STATE_READY,
-   STATE_BEGIN,
-   STATE_PLAY,
-   STATE_ENDOFDECORD,
-   STATE_STOP,
+	STATE_NONE = 0,
+	STATE_READY,
+	STATE_BEGIN,
+	STATE_PLAY,
+	STATE_ENDOFDECORD,
+	STATE_STOP,
 };
 
 typedef struct {
 	/* thread controls */
-	sem_t 			start_wave_signal; /* control start of pcm write thread */
-	sem_t 			start_ogg_signal; /* control start of ogg decord thread*/
-	pthread_mutex_t		mutex;
+	sem_t start_wave_signal;	/* control start of pcm write thread */
+	sem_t start_ogg_signal;		/* control start of ogg decord thread */
+	pthread_mutex_t mutex;
 
-     /* Codec infomations */
-	void 			*decoder;
-	char* pcm_out_buf;
-	int			offset;
-	int	period;
-	int	handle_route;
+	/* Codec infomations */
+	void *decoder;
+	char *pcm_out_buf;
+	int offset;
+	int period;
+	int handle_route;
 	int gain, out, in, option;
 	mm_sound_device_in device_in;
 	mm_sound_device_out device_out;
 	unsigned int volume_value;
 
-     /* Audio Infomations */
-	int 				transper_size; /* audio open return */
-	int 				handle;
+	/* Audio Infomations */
+	int transper_size;			/* audio open return */
+	int handle;
 
-     /* control Informations */
-	int				repeat_count;
-	int				(*stop_cb)(int);
-	int				cb_param;
-	int				state;
-	MMSourceType 	     *source;
+	/* control Informations */
+	int repeat_count;
+	int (*stop_cb) (int);
+	int cb_param;
+	int state;
+	MMSourceType *source;
 	int codec;
 	int NumberOfChannels;
 	int SamplingFrequency;
@@ -95,14 +95,14 @@ typedef struct {
 	int BufferSize;
 } ogg_info_t;
 
-static int (*g_thread_pool_func)(void*, void (*)(void*)) = NULL;
+static int (*g_thread_pool_func) (void *, void (*)(void *)) = NULL;
 
 void _pcm_out_func(void *data)
 {
-	ogg_info_t *p = (ogg_info_t*) data;
+	ogg_info_t *p = (ogg_info_t *) data;
 	int used_size;
 	int decoded_len;
-	unsigned char* ogg_buf;
+	unsigned char *ogg_buf;
 	unsigned int ogg_remain;
 	int err;
 
@@ -113,18 +113,18 @@ void _pcm_out_func(void *data)
 	ogg_remain = MMSourceGetCurSize(p->source);
 
 	while (p->state == STATE_PLAY) {
-		err = OGGDEC_FrameDecode(p->decoder, ogg_buf+p->offset, &used_size, p->pcm_out_buf, &decoded_len);
+		err = OGGDEC_FrameDecode(p->decoder, ogg_buf + p->offset, &used_size, p->pcm_out_buf, &decoded_len);
 		if (decoded_len > 0) {
 			mm_sound_pa_write(p->handle, p->pcm_out_buf, decoded_len);
 			ogg_buf += used_size;
 			ogg_remain -= used_size;
-			if(err != OGGDEC_SUCCESS) {
-				MMSoundPlugCodecOggStop((MMHandleType)p);
+			if (err != OGGDEC_SUCCESS) {
+				MMSoundPlugCodecOggStop((MMHandleType) p);
 				debug_error("Decode done :: %d\n", err);
 				break;
 			}
 		} else {
-			MMSoundPlugCodecOggStop((MMHandleType)p);
+			MMSoundPlugCodecOggStop((MMHandleType) p);
 			break;
 		}
 	}
@@ -135,13 +135,13 @@ void _pcm_out_func(void *data)
 	/* Notice */
 	/* OggDestory is called by stop_cb func */
 	/* INDEED the stop_cb must be called, after end of all progress */
-	if(p->stop_cb) {
+	if (p->stop_cb) {
 		p->stop_cb(p->cb_param);
 	}
 	debug_leave("\n");
 }
 
-int MMSoundPlugCodecOggSetThreadPool(int (*func)(void*, void (*)(void*)))
+int MMSoundPlugCodecOggSetThreadPool(int (*func) (void *, void (*)(void *)))
 {
 	debug_enter("(func : %p)\n", func);
 	g_thread_pool_func = func;
@@ -149,15 +149,15 @@ int MMSoundPlugCodecOggSetThreadPool(int (*func)(void*, void (*)(void*)))
 	return MM_ERROR_NONE;
 }
 
-int* MMSoundPlugCodecOggGetSupportTypes(void)
+int *MMSoundPlugCodecOggGetSupportTypes(void)
 {
 	debug_enter("\n");
-	static int suported[2] = {MM_SOUND_SUPPORTED_CODEC_OGG, 0};
+	static int suported[2] = { MM_SOUND_SUPPORTED_CODEC_OGG, 0 };
 	debug_leave("\n");
 	return suported;
 }
 
-int MMSoundPlugCodecOggParse(MMSourceType *source, mmsound_codec_info_t *info)
+int MMSoundPlugCodecOggParse(MMSourceType * source, mmsound_codec_info_t * info)
 {
 	unsigned char *ptr = NULL;
 	unsigned int size = 0;
@@ -166,7 +166,7 @@ int MMSoundPlugCodecOggParse(MMSourceType *source, mmsound_codec_info_t *info)
 
 	debug_enter("\n");
 
-	ptr = (unsigned char*)MMSourceGetPtr(source);
+	ptr = (unsigned char *)MMSourceGetPtr(source);
 	size = MMSourceGetCurSize(source);
 	debug_msg("[CODEC OGG] source ptr :[0x%08X] ::: source size :[0x%d]\n", ptr, size);
 
@@ -187,9 +187,9 @@ int MMSoundPlugCodecOggParse(MMSourceType *source, mmsound_codec_info_t *info)
 	return MM_ERROR_NONE;
 }
 
-int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t *info, MMHandleType *handle)
+int MMSoundPlugCodecOggCreate(mmsound_codec_param_t * param, mmsound_codec_info_t * info, MMHandleType * handle)
 {
-	ogg_info_t* p = NULL;
+	ogg_info_t *p = NULL;
 	MMSourceType *source = NULL;
 	OGG_DEC_INFO ogg_info;
 	int err, used_size, skipsize;
@@ -245,13 +245,13 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto error_before_create;
 	}
-	p->pcm_out_buf = (char *)malloc(sizeof(char)*OGG_DEC_BUF_SIZE);
+	p->pcm_out_buf = (char *)malloc(sizeof(char) * OGG_DEC_BUF_SIZE);
 	if (p->pcm_out_buf == NULL) {
 		debug_error("[CODEC OGG]Memory allocation fail\n");
 		ret = MM_ERROR_SOUND_NO_FREE_SPACE;
 		goto error_after_create;
 	}
-	err = OGGDEC_InitDecode(p->decoder, (unsigned char*)p->source->ptr, p->BufferSize, &skipsize);
+	err = OGGDEC_InitDecode(p->decoder, (unsigned char *)p->source->ptr, p->BufferSize, &skipsize);
 	if (err != OGGDEC_SUCCESS) {
 		debug_error("Fail to init ogg decoder\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
@@ -259,7 +259,7 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 	}
 	p->offset = skipsize;
 
-	err = OGGDEC_InfoDecode(p->decoder, p->source->ptr+p->offset, &used_size, &ogg_info);
+	err = OGGDEC_InfoDecode(p->decoder, p->source->ptr + p->offset, &used_size, &ogg_info);
 	if (err != OGGDEC_SUCCESS) {
 		debug_error("[CODEC OGG]Fail to get ogg info\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
@@ -273,23 +273,23 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 
 	/* Temporal code for debug */
 	/*
-	debug_msg("([CODEC OGG]handle %x)\n", p);
-	debug_msg("[CODEC OGG]Type %s\n", info->codec == MM_AUDIO_CODEC_OGG ? "OGG" : "Unknown");
-	debug_msg("[CODEC OGG]channels   : %d\n", info->channels);
-	debug_msg("[CODEC OGG]format     : %d\n", info->format);
-	debug_msg("[CODEC OGG]samplerate : %d\n", info->samplerate);
-	debug_msg("[CODEC OGG]doffset    : %d\n", info->doffset);
-	debug_msg("[CODEC OGG]priority : %d\n", param->priority);
-	debug_msg("[CODEC OGG]repeat : %d\n", param->repeat_count);
-	debug_msg("[CODEC OGG]volume : %d\n", param->volume);
-	debug_msg("[CODEC OGG]callback : %08x\n", param->stop_cb);
-	*/
+	   debug_msg("([CODEC OGG]handle %x)\n", p);
+	   debug_msg("[CODEC OGG]Type %s\n", info->codec == MM_AUDIO_CODEC_OGG ? "OGG" : "Unknown");
+	   debug_msg("[CODEC OGG]channels   : %d\n", info->channels);
+	   debug_msg("[CODEC OGG]format     : %d\n", info->format);
+	   debug_msg("[CODEC OGG]samplerate : %d\n", info->samplerate);
+	   debug_msg("[CODEC OGG]doffset    : %d\n", info->doffset);
+	   debug_msg("[CODEC OGG]priority : %d\n", param->priority);
+	   debug_msg("[CODEC OGG]repeat : %d\n", param->repeat_count);
+	   debug_msg("[CODEC OGG]volume : %d\n", param->volume);
+	   debug_msg("[CODEC OGG]callback : %08x\n", param->stop_cb);
+	 */
 	debug_msg("Audio duration [%d]", info->duration);
-	p->repeat_count = param ->repeat_count;
+	p->repeat_count = param->repeat_count;
 	p->stop_cb = param->stop_cb;
 	p->cb_param = param->param;
 
-	if(info->duration < OGG_FILE_SAMPLE_PLAY_DURATION) {
+	if (info->duration < OGG_FILE_SAMPLE_PLAY_DURATION) {
 		mode = HANDLE_MODE_OUTPUT_LOW_LATENCY;
 	} else {
 		mode = HANDLE_MODE_OUTPUT;
@@ -299,26 +299,24 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 
 	p->handle_route = param->handle_route;
 
-	switch(info->format)
-	{
+	switch (info->format) {
 	case 8:
 		ss.format = PA_SAMPLE_U8;
 		break;
 	case 16:
-		ss.format =  PA_SAMPLE_S16LE;
+		ss.format = PA_SAMPLE_S16LE;
 		break;
 	default:
-		ss.format =  PA_SAMPLE_S16LE;
+		ss.format = PA_SAMPLE_S16LE;
 		break;
 	}
 	ss.channels = info->channels;
 	ss.rate = info->samplerate;
 
-	debug_msg("[CODEC OGG] PARAM mode:[%d] priority:[%d] policy:[%d] channels:[%d] samplerate:[%d] format:[%d] volume type:[%x]\n",
-		mode,-1, route_info.policy, ss.channels, ss.rate, ss.format, param->volume_config);
+	debug_msg("[CODEC OGG] PARAM mode:[%d] priority:[%d] policy:[%d] channels:[%d] samplerate:[%d] format:[%d] volume type:[%x]\n", mode, -1, route_info.policy, ss.channels, ss.rate, ss.format, param->volume_config);
 
 	p->handle = mm_sound_pa_open(HANDLE_MODE_OUTPUT_LOW_LATENCY, &route_info, 0, param->volume_config, &ss, NULL, &size, param->stream_type, param->stream_index);
-	if(!p->handle) {
+	if (!p->handle) {
 		debug_error("[CODEC OGG] Can not open audio handle\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto error_after_buffer;
@@ -339,16 +337,16 @@ int MMSoundPlugCodecOggCreate(mmsound_codec_param_t *param, mmsound_codec_info_t
 	debug_leave("\n");
 	return MM_ERROR_NONE;
 
-error_after_buffer:
+ error_after_buffer:
 	free(p->pcm_out_buf);
 
-error_after_create:
+ error_after_create:
 	sem_destroy(&p->start_ogg_signal);
 	sem_destroy(&p->start_wave_signal);
 	OGGDEC_ResetDecode(p->decoder);
 	OGGDEC_DeleteDecode(p->decoder);
 
-error_before_create:
+ error_before_create:
 	free(p);
 	return ret;
 }
@@ -359,8 +357,8 @@ int MMSoundPlugCodecOggPlay(MMHandleType handle)
 	debug_enter("(handle %x)\n", handle);
 
 	if (p->BufferSize <= 0) {
-	    debug_error("[CODEC OGG]End of file\n");
-	    return MM_ERROR_END_OF_FILE;
+		debug_error("[CODEC OGG]End of file\n");
+		return MM_ERROR_END_OF_FILE;
 	}
 	pthread_mutex_lock(&p->mutex);
 	p->state = STATE_PLAY;
@@ -385,7 +383,7 @@ int MMSoundPlugCodecOggStop(MMHandleType handle)
 
 int MMSoundPlugCodecOggDestroy(MMHandleType handle)
 {
-	ogg_info_t *p = (ogg_info_t*) handle;
+	ogg_info_t *p = (ogg_info_t *) handle;
 	int err;
 
 	debug_enter("(handle %x)\n", handle);
@@ -396,9 +394,10 @@ int MMSoundPlugCodecOggDestroy(MMHandleType handle)
 		return err;
 	}
 
-	if(p->source) {
+	if (p->source) {
 		mm_source_close(p->source);
-		free(p->source); p->source = NULL;
+		free(p->source);
+		p->source = NULL;
 	}
 
 	err = OGGDEC_ResetDecode(p->decoder);
@@ -408,7 +407,7 @@ int MMSoundPlugCodecOggDestroy(MMHandleType handle)
 	}
 
 	err = OGGDEC_DeleteDecode(p->decoder);
-	if (err != OGGDEC_SUCCESS) 	{
+	if (err != OGGDEC_SUCCESS) {
 		debug_error("[CODEC OGG]Delete Decode fail\n");
 		err = MM_ERROR_SOUND_INTERNAL;
 	}
@@ -416,13 +415,13 @@ int MMSoundPlugCodecOggDestroy(MMHandleType handle)
 	sem_destroy(&p->start_wave_signal);
 	sem_destroy(&p->start_ogg_signal);
 
-	if(p->pcm_out_buf) {
+	if (p->pcm_out_buf) {
 		free(p->pcm_out_buf);
 		p->pcm_out_buf = NULL;
 	}
 
 	if (p) {
-		free (p);
+		free(p);
 		p = NULL;
 	}
 
@@ -430,16 +429,14 @@ int MMSoundPlugCodecOggDestroy(MMHandleType handle)
 	return err;
 }
 
-EXPORT_API
-int MMSoundGetPluginType(void)
+EXPORT_API int MMSoundGetPluginType(void)
 {
 	debug_enter("\n");
 	debug_leave("\n");
 	return MM_SOUND_PLUGIN_TYPE_CODEC;
 }
 
-EXPORT_API
-int MMSoundPlugCodecGetInterface(mmsound_codec_interface_t *intf)
+EXPORT_API int MMSoundPlugCodecGetInterface(mmsound_codec_interface_t * intf)
 {
 	debug_enter("\n");
 	if (!intf) {
@@ -447,13 +444,13 @@ int MMSoundPlugCodecGetInterface(mmsound_codec_interface_t *intf)
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 
-	intf->GetSupportTypes   = MMSoundPlugCodecOggGetSupportTypes;
-	intf->Parse             = MMSoundPlugCodecOggParse;
-	intf->Create            = MMSoundPlugCodecOggCreate;
-	intf->Destroy           = MMSoundPlugCodecOggDestroy;
-	intf->Play              = MMSoundPlugCodecOggPlay;
-	intf->Stop              = MMSoundPlugCodecOggStop;
-	intf->SetThreadPool     = MMSoundPlugCodecOggSetThreadPool;
+	intf->GetSupportTypes = MMSoundPlugCodecOggGetSupportTypes;
+	intf->Parse = MMSoundPlugCodecOggParse;
+	intf->Create = MMSoundPlugCodecOggCreate;
+	intf->Destroy = MMSoundPlugCodecOggDestroy;
+	intf->Play = MMSoundPlugCodecOggPlay;
+	intf->Stop = MMSoundPlugCodecOggStop;
+	intf->SetThreadPool = MMSoundPlugCodecOggSetThreadPool;
 
 	debug_leave("\n");
 	return MM_ERROR_NONE;

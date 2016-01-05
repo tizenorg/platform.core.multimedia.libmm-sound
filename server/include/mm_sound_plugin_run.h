@@ -26,16 +26,16 @@
 #include <mm_types.h>
 
 enum {
-    MM_SOUND_PLUG_RUN_OP_RUN,
-    MM_SOUND_PLUG_RUN_OP_STOP,
-    MM_SOUND_PLUG_RUN_OP_LAST
+	MM_SOUND_PLUG_RUN_OP_RUN,
+	MM_SOUND_PLUG_RUN_OP_STOP,
+	MM_SOUND_PLUG_RUN_OP_LAST
 };
 
 /* Plugin Interface */
 typedef struct {
-    int (*run)(void);
-    int (*stop)(void);
-    int (*SetThreadPool) (int (*)(void*, void (*)(void*)));
+	int (*run) (void);
+	int (*stop) (void);
+	int (*SetThreadPool) (int (*)(void *, void (*)(void *)));
 } mmsound_run_interface_t;
 
 int MMSoundRunRun(void);
@@ -44,7 +44,6 @@ int MMSoundRunStop(void);
 /* Utility Functions */
 #define RUN_GET_INTERFACE_FUNC_NAME "MMSoundPlugRunGetInterface"
 #define MMSoundPlugRunCastGetInterface(func) ((int (*)(mmsound_run_interface_t*))(func))
-int MMSoundPlugRunGetInterface(mmsound_run_interface_t *intf);
+int MMSoundPlugRunGetInterface(mmsound_run_interface_t * intf);
 
-#endif /* __MM_SOUND_PLUGIN_RUN_H__ */
-
+#endif							/* __MM_SOUND_PLUGIN_RUN_H__ */

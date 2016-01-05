@@ -51,14 +51,14 @@
 #define ENV_KEYTONE_TIMEOUT "KEYTONE_TIMEOUT"
 
 #define MAX_BUFFER_SIZE 1920
-#define KEYTONE_PATH "/tmp/keytone"		/* Keytone pipe path, this is the pipe for pulseaudio module-sound-player */
-#define KEYTONE_GROUP	6526			/* Keytone group : assigned by security */
-#define FILE_FULL_PATH 1024				/* File path lenth */
-#define ROLE_NAME_LEN 64				/* Role name length */
-#define VOLUME_GAIN_TYPE_LEN 64		/* Volume gain type length */
+#define KEYTONE_PATH "/tmp/keytone"	/* Keytone pipe path, this is the pipe for pulseaudio module-sound-player */
+#define KEYTONE_GROUP	6526	/* Keytone group : assigned by security */
+#define FILE_FULL_PATH 1024		/* File path lenth */
+#define ROLE_NAME_LEN 64		/* Role name length */
+#define VOLUME_GAIN_TYPE_LEN 64	/* Volume gain type length */
 #define AUDIO_CHANNEL 1
 #define AUDIO_SAMPLERATE 44100
-#define DURATION_CRITERIA 11000          /* write once or not       */
+#define DURATION_CRITERIA 11000	/* write once or not       */
 
 #define SUPPORT_DBUS_KEYTONE
 #ifdef SUPPORT_DBUS_KEYTONE
@@ -73,10 +73,9 @@
 
 #define DBUS_HW_KEYTONE "/usr/share/sounds/sound-server/Tizen_HW_Touch.ogg"
 
-#endif /* SUPPORT_DBUS_KEYTONE */
+#endif							/* SUPPORT_DBUS_KEYTONE */
 
-typedef struct
-{
+typedef struct {
 	pthread_mutex_t sw_lock;
 	pthread_cond_t sw_cond;
 	int handle;
@@ -87,19 +86,17 @@ typedef struct
 	void *src;
 } keytone_info_t;
 
-typedef struct
-{
+typedef struct {
 	char filename[FILE_FULL_PATH];
 	int volume_config;
 } ipc_type;
 
-typedef struct
-{
+typedef struct {
 	mmsound_codec_info_t *info;
 	MMSourceType *source;
 } buf_param_t;
 
-static int (*g_thread_pool_func)(void*, void (*)(void*)) = NULL;
+static int (*g_thread_pool_func) (void *, void (*)(void *)) = NULL;
 
 static int _MMSoundKeytoneInit(void);
 static int _MMSoundKeytoneFini(void);
@@ -112,15 +109,15 @@ typedef struct ipc_data {
 	char filename[FILE_FULL_PATH];
 	char role[ROLE_NAME_LEN];
 	char volume_gain_type[VOLUME_GAIN_TYPE_LEN];
-}ipc_t;
+} ipc_t;
 
 GDBusConnection *conn;
 guint sig_id;
 
-static const char* _convert_volume_type_to_role(int volume_type)
+static const char *_convert_volume_type_to_role(int volume_type)
 {
-	debug_warning ("volume_type(%d)", volume_type);
-	switch(volume_type) {
+	debug_warning("volume_type(%d)", volume_type);
+	switch (volume_type) {
 	case VOLUME_TYPE_SYSTEM:
 		return "system";
 	case VOLUME_TYPE_NOTIFICATION:
@@ -140,10 +137,10 @@ static const char* _convert_volume_type_to_role(int volume_type)
 	}
 }
 
-static const char* _convert_volume_gain_type_to_string(int volume_gain_type)
+static const char *_convert_volume_gain_type_to_string(int volume_gain_type)
 {
-	debug_warning ("volume_gain_type(0x%x)", volume_gain_type);
-	switch(volume_gain_type) {
+	debug_warning("volume_gain_type(0x%x)", volume_gain_type);
+	switch (volume_gain_type) {
 	case VOLUME_GAIN_DEFAULT:
 		return NULL;
 	case VOLUME_GAIN_DIALER:
@@ -175,7 +172,7 @@ static int _play_keytone(const char *filename, int volume_config)
 {
 	int err = -1;
 	int fd = -1;
-	ipc_t data = {{0,},{0,},{0,}};
+	ipc_t data = { {0,}, {0,}, {0,} };
 	int ret = MM_ERROR_NONE;
 	const char *role = NULL;
 	const char *vol_gain_type = NULL;
@@ -212,14 +209,14 @@ static int _play_keytone(const char *filename, int volume_config)
 	return ret;
 }
 
-static bool _is_mute_sound ()
+static bool _is_mute_sound()
 {
 	int setting_sound_status = true;
 	int setting_touch_sound = true;
 
 	/* 1. Check if recording is in progress */
 	if (mm_sound_util_is_recording()) {
-		debug_log ("During Recording....MUTE!!!");
+		debug_log("During Recording....MUTE!!!");
 		return true;
 	}
 
@@ -230,65 +227,56 @@ static bool _is_mute_sound ()
 	return !(setting_sound_status & setting_touch_sound);
 }
 
-static void _on_changed_receive(GDBusConnection *conn,
-							   const gchar *sender_name,
-							   const gchar *object_path,
-							   const gchar *interface_name,
-							   const gchar *signal_name,
-							   GVariant *parameters,
-							   gpointer user_data)
+static void _on_changed_receive(GDBusConnection * conn, const gchar * sender_name, const gchar * object_path, const gchar * interface_name, const gchar * signal_name, GVariant * parameters, gpointer user_data)
 {
-	debug_msg ("sender : %s, object : %s, interface : %s, signal : %s",
-			sender_name, object_path, interface_name, signal_name);
+	debug_msg("sender : %s, object : %s, interface : %s, signal : %s", sender_name, object_path, interface_name, signal_name);
 
-	if (_is_mute_sound ()) {
-		debug_log ("Skip playing keytone due to mute sound mode");
+	if (_is_mute_sound()) {
+		debug_log("Skip playing keytone due to mute sound mode");
 	} else {
 		/* request to play to pulseaudio module-sound-player */
-		_play_keytone (DBUS_HW_KEYTONE, VOLUME_TYPE_SYSTEM | VOLUME_GAIN_TOUCH);
+		_play_keytone(DBUS_HW_KEYTONE, VOLUME_TYPE_SYSTEM | VOLUME_GAIN_TOUCH);
 	}
 }
 
-static int _init_dbus_keytone ()
+static int _init_dbus_keytone()
 {
 	GError *err = NULL;
 
-	debug_fenter ();
+	debug_fenter();
 
 	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 	if (!conn && err) {
-		debug_error ("g_bus_get_sync() error (%s) ", err->message);
-		g_error_free (err);
+		debug_error("g_bus_get_sync() error (%s) ", err->message);
+		g_error_free(err);
 		goto error;
 	}
 
-	sig_id = g_dbus_connection_signal_subscribe(conn,
-			NULL, INTERFACE_NAME, SIGNAL_NAME, OBJECT_PATH, NULL, 0,
-			_on_changed_receive, NULL, NULL);
+	sig_id = g_dbus_connection_signal_subscribe(conn, NULL, INTERFACE_NAME, SIGNAL_NAME, OBJECT_PATH, NULL, 0, _on_changed_receive, NULL, NULL);
 	if (sig_id == 0) {
-		debug_error ("g_dbus_connection_signal_subscribe() error (%d)", sig_id);
+		debug_error("g_dbus_connection_signal_subscribe() error (%d)", sig_id);
 		goto sig_error;
 	}
 
-	debug_fleave ();
+	debug_fleave();
 	return 0;
 
-sig_error:
+ sig_error:
 	g_dbus_connection_signal_unsubscribe(conn, sig_id);
 	g_object_unref(conn);
 
-error:
+ error:
 	return -1;
 }
 
-static void _deinit_dbus_keytone ()
+static void _deinit_dbus_keytone()
 {
-	debug_fenter ();
+	debug_fenter();
 	g_dbus_connection_signal_unsubscribe(conn, sig_id);
 	g_object_unref(conn);
-	debug_fleave ();
+	debug_fleave();
 }
-#endif /* SUPPORT_DBUS_KEYTONE */
+#endif							/* SUPPORT_DBUS_KEYTONE */
 
 static int MMSoundPlugRunKeytoneControlRun(void)
 {
@@ -302,7 +290,7 @@ static int MMSoundPlugRunKeytoneControlRun(void)
 	/* We receive the signal for HW back key here temporarily */
 	/* It'll be moved to some other place soon */
 	_init_dbus_keytone();
-#endif /* SUPPORT_DBUS_KEYTONE */
+#endif							/* SUPPORT_DBUS_KEYTONE */
 
 	while (stop_flag) {
 		usleep(100000);
@@ -315,16 +303,16 @@ static int MMSoundPlugRunKeytoneControlRun(void)
 
 static int MMSoundPlugRunKeytoneControlStop(void)
 {
-	stop_flag = MMSOUND_FALSE; /* No impl. Don`t stop */
+	stop_flag = MMSOUND_FALSE;	/* No impl. Don`t stop */
 
 #ifdef SUPPORT_DBUS_KEYTONE
 	_deinit_dbus_keytone();
-#endif /* SUPPORT_DBUS_KEYTONE */
+#endif							/* SUPPORT_DBUS_KEYTONE */
 
 	return MM_ERROR_NONE;
 }
 
-static int MMSoundPlugRunKeytoneSetThreadPool(int (*func)(void*, void (*)(void*)))
+static int MMSoundPlugRunKeytoneSetThreadPool(int (*func) (void *, void (*)(void *)))
 {
 	debug_enter("(func : %p)\n", func);
 	g_thread_pool_func = func;
@@ -332,8 +320,7 @@ static int MMSoundPlugRunKeytoneSetThreadPool(int (*func)(void*, void (*)(void*)
 	return MM_ERROR_NONE;
 }
 
-EXPORT_API
-int MMSoundPlugRunGetInterface(mmsound_run_interface_t *intf)
+EXPORT_API int MMSoundPlugRunGetInterface(mmsound_run_interface_t * intf)
 {
 	debug_enter("\n");
 	intf->run = MMSoundPlugRunKeytoneControlRun;
@@ -344,8 +331,7 @@ int MMSoundPlugRunGetInterface(mmsound_run_interface_t *intf)
 	return MM_ERROR_NONE;
 }
 
-EXPORT_API
-int MMSoundGetPluginType(void)
+EXPORT_API int MMSoundGetPluginType(void)
 {
 	debug_enter("\n");
 	debug_leave("\n");
