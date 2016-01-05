@@ -102,4 +102,3 @@ do { \
 } while(0)
 
 #endif /* __MM_SOUND_COMMON_H__ */
-

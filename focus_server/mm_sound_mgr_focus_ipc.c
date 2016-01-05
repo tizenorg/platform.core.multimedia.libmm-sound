@@ -45,13 +45,15 @@
 
 #ifdef SUPPORT_CONTAINER
 // method + add callback
-int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type, bool is_for_session, const char* container_name, int container_pid)
+int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id,
+											const char *stream_type,
+											bool is_for_session, const char *container_name, int container_pid)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
 
 	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
-	if(is_for_session)
+	if (is_for_session)
 		param.pid = container_pid;
 	else
 		param.pid = client_pid;
@@ -62,12 +64,13 @@ int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const
 	ret = mm_sound_mgr_focus_create_node(&param);
 
 	/* FIX ME : Notice that it needs to be improved by the time when mused and container actually work togeter */
-	mm_sound_mgr_focus_update_container_data((is_for_session) ? container_pid : client_pid, handle_id, container_name, container_pid);
+	mm_sound_mgr_focus_update_container_data((is_for_session) ? container_pid :
+											 client_pid, handle_id, container_name, container_pid);
 
 	return ret;
 }
 #else
-int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type, bool is_for_session)
+int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char *stream_type, bool is_for_session)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
@@ -116,7 +119,8 @@ int __mm_sound_mgr_focus_ipc_set_focus_reacquisition(int pid, int handle_id, boo
 }
 
 // method
-int __mm_sound_mgr_focus_ipc_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **additional_info)
+int __mm_sound_mgr_focus_ipc_get_acquired_focus_stream_type(int focus_type, char **stream_type, char
+															**additional_info)
 {
 	int ret = MM_ERROR_NONE;
 	char *stream_type_str = NULL;
@@ -136,7 +140,7 @@ int __mm_sound_mgr_focus_ipc_get_acquired_focus_stream_type(int focus_type, char
 }
 
 // method -> callback
-int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_type, const char* name)
+int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_type, const char *name)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
@@ -153,7 +157,7 @@ int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_typ
 }
 
 // method -> callback
-int __mm_sound_mgr_focus_ipc_release_focus(int pid, int handle_id, int focus_type, const char* name)
+int __mm_sound_mgr_focus_ipc_release_focus(int pid, int handle_id, int focus_type, const char *name)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
@@ -171,13 +175,14 @@ int __mm_sound_mgr_focus_ipc_release_focus(int pid, int handle_id, int focus_typ
 
 #ifdef SUPPORT_CONTAINER
 // method + add callback
-int __mm_sound_mgr_focus_ipc_watch_focus(int pid, int handle_id, int focus_type, bool is_for_session, const char* container_name, int container_pid)
+int __mm_sound_mgr_focus_ipc_watch_focus(int pid, int handle_id, int focus_type,
+										 bool is_for_session, const char *container_name, int container_pid)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
 
 	memset(&param, 0x00, sizeof(_mm_sound_mgr_focus_param_t));
-	if(is_for_session)
+	if (is_for_session)
 		param.pid = container_pid;
 	else
 		param.pid = pid;
@@ -238,4 +243,3 @@ int __mm_sound_mgr_focus_ipc_emergent_exit(int pid)
 	return ret;
 }
 #endif
-

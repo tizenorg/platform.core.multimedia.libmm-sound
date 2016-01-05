@@ -40,7 +40,6 @@
 #include <time.h>
 #include <errno.h>
 
-
 #include "../include/mm_sound_common.h"
 #include "../include/mm_sound_utils.h"
 #include "include/mm_sound_mgr_focus.h"
@@ -52,29 +51,29 @@
 #define USE_SYSTEM_SERVER_PROCESS_MONITORING
 
 typedef struct {
-    int startserver;
-    int printlist;
-    int testmode;
+	int startserver;
+	int printlist;
+	int testmode;
 } server_arg;
 
-static int get_option(int argc, char **argv, server_arg *arg);
+static int get_option(int argc, char **argv, server_arg * arg);
 static int usage(int argc, char **argv);
 
-static struct sigaction sigint_action;  /* Backup pointer of SIGINT handler */
-static struct sigaction sigabrt_action; /* Backup pointer of SIGABRT signal handler */
-static struct sigaction sigsegv_action; /* Backup pointer of SIGSEGV fault signal handler */
-static struct sigaction sigterm_action; /* Backup pointer of SIGTERM signal handler */
-static struct sigaction sigsys_action;  /* Backup pointer of SIGSYS signal handler */
+static struct sigaction sigint_action;	/* Backup pointer of SIGINT handler */
+static struct sigaction sigabrt_action;	/* Backup pointer of SIGABRT signal handler */
+static struct sigaction sigsegv_action;	/* Backup pointer of SIGSEGV fault signal handler */
+static struct sigaction sigterm_action;	/* Backup pointer of SIGTERM signal handler */
+static struct sigaction sigsys_action;	/* Backup pointer of SIGSYS signal handler */
 static void _exit_handler(int sig);
 
 GMainLoop *g_mainloop;
 
-void* pulse_handle;
+void *pulse_handle;
 
 void mainloop_run()
 {
 	g_mainloop = g_main_loop_new(NULL, TRUE);
-	if(g_mainloop == NULL) {
+	if (g_mainloop == NULL) {
 		debug_error("g_main_loop_new() failed\n");
 	}
 	g_main_loop_run(g_mainloop);
@@ -100,29 +99,23 @@ int main(int argc, char **argv)
 	/* Daemon process create */
 	if (!serveropt.testmode && serveropt.startserver) {
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
-		daemon(0,0); //chdir to ("/"), and close stdio
+		daemon(0, 0);	//chdir to ("/"), and close stdio
 #endif
 	}
 
-	/* focus Server Starts!!!*/
+	/* focus Server Starts!!! */
 	debug_warning("focus_server [%d] start \n", getpid());
 
-	signal(SIGPIPE, SIG_IGN); //ignore SIGPIPE
+	signal(SIGPIPE, SIG_IGN);	//ignore SIGPIPE
 
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
-	while(1)
-	{
-		if ((pid = fork()) < 0)
-		{
+	while (1) {
+		if ((pid = fork()) < 0) {
 			fprintf(stderr, "Sub Fork Error\n");
 			return 2;
-		}
-		else if(pid == 0)
-		{
+		} else if (pid == 0) {
 			break;
-		}
-		else if(pid > 0)
-		{
+		} else if (pid > 0) {
 			wait(&ret);
 			fprintf(stderr, "Killed by signal [%05X]\n", ret);
 			fprintf(stderr, "Daemon is run againg\n");
@@ -142,7 +135,7 @@ int main(int argc, char **argv)
 	debug_warning("focus_server [%d] initialization complete...now, start running!!\n", getpid());
 
 	if (serveropt.startserver) {
-//		unlink(PA_READY); // remove pa_ready file after focus-server init.
+//      unlink(PA_READY); // remove pa_ready file after focus-server init.
 
 		mainloop_run();
 	}
@@ -159,7 +152,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-static int get_option(int argc, char **argv, server_arg *arg)
+static int get_option(int argc, char **argv, server_arg * arg)
 {
 	int c;
 	static struct option long_options[] = {
@@ -172,24 +165,22 @@ static int get_option(int argc, char **argv, server_arg *arg)
 
 	arg->testmode = 0;
 
-	while (1)
-	{
+	while (1) {
 		int opt_idx = 0;
 
-		c = getopt_long (argc, argv, "SFLHRUP:Tiurd", long_options, &opt_idx);
+		c = getopt_long(argc, argv, "SFLHRUP:Tiurd", long_options, &opt_idx);
 		if (c == -1)
 			break;
-		switch (c)
-		{
-		case 'S': /* Start daemon */
+		switch (c) {
+		case 'S':	/* Start daemon */
 			arg->startserver = 1;
 			break;
-		case 'T': /* Test mode */
+		case 'T':	/* Test mode */
 			arg->testmode = 1;
 			break;
-		case 'H': /* help msg */
+		case 'H':	/* help msg */
 		default:
-		return usage(argc, argv);
+			return usage(argc, argv);
 		}
 	}
 	if (argc == 1)
@@ -200,8 +191,7 @@ static int get_option(int argc, char **argv, server_arg *arg)
 //__attribute__ ((destructor))
 static void _exit_handler(int sig)
 {
-	switch(sig)
-	{
+	switch (sig) {
 	case SIGINT:
 		sigaction(SIGINT, &sigint_action, NULL);
 		debug_error("signal(SIGINT) error");
@@ -236,4 +226,3 @@ static int usage(int argc, char **argv)
 
 	return 1;
 }
-

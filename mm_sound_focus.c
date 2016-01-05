@@ -44,9 +44,8 @@
 	} \
 } \
 
-EXPORT_API
-int mm_sound_focus_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback, void *user_data)
-{
+EXPORT_API int
+ mm_sound_focus_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback, void *user_data) {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
@@ -55,22 +54,21 @@ int mm_sound_focus_set_session_interrupt_callback(mm_sound_focus_session_interru
 	if (!callback)
 		return MM_ERROR_INVALID_ARGUMENT;
 
-	ret = mm_sound_client_set_session_interrupt_callback (callback, user_data);
+	ret = mm_sound_client_set_session_interrupt_callback(callback, user_data);
 
 	debug_fleave();
 
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_focus_unset_session_interrupt_callback(void)
+EXPORT_API int mm_sound_focus_unset_session_interrupt_callback(void)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
 	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
 
-	ret = mm_sound_client_unset_session_interrupt_callback ();
+	ret = mm_sound_client_unset_session_interrupt_callback();
 	if (ret) {
 		debug_error("Failed to mm_sound_client_unset_session_interrupt_callback(), ret[0x%x]\n", ret);
 	}
@@ -80,8 +78,7 @@ int mm_sound_focus_unset_session_interrupt_callback(void)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_focus_get_id(int *id)
+EXPORT_API int mm_sound_focus_get_id(int *id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -99,8 +96,7 @@ int mm_sound_focus_get_id(int *id)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_focus_is_cb_thread(bool *result)
+EXPORT_API int mm_sound_focus_is_cb_thread(bool * result)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -117,8 +113,7 @@ int mm_sound_focus_is_cb_thread(bool *result)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data)
+EXPORT_API int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -141,8 +136,8 @@ int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_chan
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_register_focus_for_session(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data)
+EXPORT_API int mm_sound_register_focus_for_session(int id, int pid,
+												   const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -165,8 +160,7 @@ int mm_sound_register_focus_for_session(int id, int pid, const char *stream_type
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_unregister_focus(int id)
+EXPORT_API int mm_sound_unregister_focus(int id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -189,8 +183,7 @@ int mm_sound_unregister_focus(int id)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_set_focus_reacquisition(int id, bool reacquisition)
+EXPORT_API int mm_sound_set_focus_reacquisition(int id, bool reacquisition)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -212,8 +205,7 @@ int mm_sound_set_focus_reacquisition(int id, bool reacquisition)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_get_focus_reacquisition(int id, bool *reacquisition)
+EXPORT_API int mm_sound_get_focus_reacquisition(int id, bool * reacquisition)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -235,8 +227,8 @@ int mm_sound_get_focus_reacquisition(int id, bool *reacquisition)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_get_stream_type_of_acquired_focus(int focus_type, char **stream_type, char **additional_info)
+EXPORT_API int mm_sound_get_stream_type_of_acquired_focus(int focus_type, char **stream_type, char
+														  **additional_info)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -258,8 +250,7 @@ int mm_sound_get_stream_type_of_acquired_focus(int focus_type, char **stream_typ
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info)
+EXPORT_API int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -286,8 +277,7 @@ int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char 
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info)
+EXPORT_API int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -314,8 +304,8 @@ int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char 
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data, int *id)
+EXPORT_API int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e
+												 focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data, int *id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -337,8 +327,10 @@ int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_set_focus_watch_callback_for_session(int pid, mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data, int *id)
+EXPORT_API int mm_sound_set_focus_watch_callback_for_session(int pid,
+															 mm_sound_focus_type_e
+															 focus_type,
+															 mm_sound_focus_changed_watch_cb callback, void *user_data, int *id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -360,8 +352,7 @@ int mm_sound_set_focus_watch_callback_for_session(int pid, mm_sound_focus_type_e
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_unset_focus_watch_callback(int id)
+EXPORT_API int mm_sound_unset_focus_watch_callback(int id)
 {
 	int ret = MM_ERROR_NONE;
 

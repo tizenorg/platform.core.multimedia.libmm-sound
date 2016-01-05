@@ -31,21 +31,19 @@
 #define	__MM_SOUND_STREAM_H__
 
 #ifdef __cplusplus
-	extern "C" {
+extern "C" {
 #endif
 
 #include <glib.h>
 #define MAX_STREAM_TYPE_LEN 64
-#define NUM_OF_STREAM_IO_TYPE         2    /* playback / capture */
+#define NUM_OF_STREAM_IO_TYPE         2	/* playback / capture */
 #define AVAIL_STREAMS_MAX 32
-typedef struct _stream_list {
-	gchar *stream_types[AVAIL_STREAMS_MAX];
-	int priorities[AVAIL_STREAMS_MAX];
-} stream_list_t;
+	typedef struct _stream_list {
+		gchar *stream_types[AVAIL_STREAMS_MAX];
+		int priorities[AVAIL_STREAMS_MAX];
+	} stream_list_t;
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif	/* __MM_SOUND_STREAM_H__ */
-
+#endif							/* __MM_SOUND_STREAM_H__ */

@@ -43,11 +43,9 @@
 #include "include/mm_ipc.h"
 #include "include/mm_sound_common.h"
 
-
 #define VOLUME_MAX_MULTIMEDIA	16
 #define VOLUME_MAX_BASIC		8
 #define VOLUME_MAX_SINGLE		1
-
 
 #define MASTER_VOLUME_MAX 100
 #define MASTER_VOLUME_MIN 0
@@ -65,9 +63,9 @@ static pthread_mutex_t g_subscribe_cb_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 GDBusConnection *g_dbus_conn_mmsound;
 
-int g_dbus_signal_values[MM_SOUND_SIGNAL_MAX] = {0,};
+int g_dbus_signal_values[MM_SOUND_SIGNAL_MAX] = { 0, };
 
-const char* dbus_signal_name_str[] = {
+const char *dbus_signal_name_str[] = {
 	"ReleaseInternalFocus",
 };
 
@@ -78,12 +76,13 @@ typedef struct _subscribe_cb {
 	unsigned int id;
 } subscribe_cb_t;
 
-static const char* _get_volume_str (volume_type_t type)
+static const char *_get_volume_str(volume_type_t type)
 {
-	static const char *volume_type_str[VOLUME_TYPE_MAX] =
-		{ "SYSTEM", "NOTIFICATION", "ALARM", "RINGTONE", "MEDIA", "CALL", "VOIP", "VOICE", "FIXED"};
+	static const char *volume_type_str[VOLUME_TYPE_MAX] = { "SYSTEM", "NOTIFICATION", "ALARM", "RINGTONE", "MEDIA", "CALL",
+		"VOIP", "VOICE", "FIXED"
+	};
 
-	return (type >= VOLUME_TYPE_SYSTEM && type < VOLUME_TYPE_MAX)? volume_type_str[type] : "Unknown";
+	return (type >= VOLUME_TYPE_SYSTEM && type < VOLUME_TYPE_MAX) ? volume_type_str[type] : "Unknown";
 }
 
 static int _validate_volume(volume_type_t type, int value)
@@ -91,8 +90,7 @@ static int _validate_volume(volume_type_t type, int value)
 	if (value < 0)
 		return -1;
 
-	switch (type)
-	{
+	switch (type) {
 	case VOLUME_TYPE_CALL:
 	case VOLUME_TYPE_VOIP:
 		if (value >= VOLUME_MAX_BASIC) {
@@ -116,15 +114,13 @@ static int _validate_volume(volume_type_t type, int value)
 	return 0;
 }
 
-EXPORT_API
-int mm_sound_volume_remove_callback(volume_type_t type)
+EXPORT_API int mm_sound_volume_remove_callback(volume_type_t type)
 {
 	/* FIXME : Will be removed */
 	return MM_ERROR_NOT_SUPPORT_API;
 }
 
-EXPORT_API
-int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data, unsigned int *subs_id)
+EXPORT_API int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -141,8 +137,7 @@ int mm_sound_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* 
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_remove_volume_changed_callback(unsigned int subs_id)
+EXPORT_API int mm_sound_remove_volume_changed_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -154,8 +149,7 @@ int mm_sound_remove_volume_changed_callback(unsigned int subs_id)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_volume_set_value(volume_type_t volume_type, const unsigned int volume_level)
+EXPORT_API int mm_sound_volume_set_value(volume_type_t volume_type, const unsigned int volume_level)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -170,7 +164,7 @@ int mm_sound_volume_set_value(volume_type_t volume_type, const unsigned int volu
 	ret = mm_sound_util_volume_set_value_by_type(volume_type, volume_level);
 	if (ret == MM_ERROR_NONE) {
 		/* update shared memory value */
-		if(MM_ERROR_NONE != mm_sound_client_set_volume_by_type(volume_type, volume_level)) {
+		if (MM_ERROR_NONE != mm_sound_client_set_volume_by_type(volume_type, volume_level)) {
 			debug_error("Can not set volume to shared memory 0x%x\n", ret);
 		}
 	}
@@ -178,8 +172,7 @@ int mm_sound_volume_set_value(volume_type_t volume_type, const unsigned int volu
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_volume_get_value(volume_type_t type, unsigned int *value)
+EXPORT_API int mm_sound_volume_get_value(volume_type_t type, unsigned int *value)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -199,13 +192,12 @@ int mm_sound_volume_get_value(volume_type_t type, unsigned int *value)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_volume_primary_type_set(volume_type_t type)
+EXPORT_API int mm_sound_volume_primary_type_set(volume_type_t type)
 {
 	int ret = MM_ERROR_NONE;
 
 	/* Check input param */
-	if(type < VOLUME_TYPE_UNKNOWN || type >= VOLUME_TYPE_MAX) {
+	if (type < VOLUME_TYPE_UNKNOWN || type >= VOLUME_TYPE_MAX) {
 		debug_error("invalid argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -220,14 +212,13 @@ int mm_sound_volume_primary_type_set(volume_type_t type)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_volume_primary_type_get(volume_type_t *type)
+EXPORT_API int mm_sound_volume_primary_type_get(volume_type_t * type)
 {
 	int ret = MM_ERROR_NONE;
 	int voltype = VOLUME_TYPE_RINGTONE;
 
 	/* Check input param */
-	if(type == NULL) {
+	if (type == NULL) {
 		debug_error("invalid argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -247,10 +238,13 @@ int mm_sound_volume_primary_type_get(volume_type_t *type)
 ///////////////////////////////////
 ////     MMSOUND PLAY APIs
 ///////////////////////////////////
-static inline void _mm_sound_fill_play_param(MMSoundPlayParam *param, const char *filename, int volume_config, mm_sound_stop_callback_func callback, void *data, int priority, int handle_route)
+static inline void _mm_sound_fill_play_param(MMSoundPlayParam * param,
+											 const char *filename,
+											 int volume_config,
+											 mm_sound_stop_callback_func callback, void *data, int priority, int handle_route)
 {
 	param->filename = filename;
-	param->volume = 0; //volume value dose not effect anymore
+	param->volume = 0;	//volume value dose not effect anymore
 	param->callback = callback;
 	param->data = data;
 	param->loop = 1;
@@ -259,27 +253,28 @@ static inline void _mm_sound_fill_play_param(MMSoundPlayParam *param, const char
 	param->handle_route = handle_route;
 }
 
-EXPORT_API
-int mm_sound_play_loud_solo_sound(const char *filename, int volume_config, mm_sound_stop_callback_func callback, void *data, int *handle)
+EXPORT_API int mm_sound_play_loud_solo_sound(const char *filename,
+											 int volume_config, mm_sound_stop_callback_func callback, void *data, int *handle)
 {
 	MMSoundPlayParam param = { 0, };
 
-    /* FIXME : this function will be deleted */
-	_mm_sound_fill_play_param(&param, filename, volume_config, callback, data, HANDLE_PRIORITY_NORMAL, MM_SOUND_HANDLE_ROUTE_USING_CURRENT);
+	/* FIXME : this function will be deleted */
+	_mm_sound_fill_play_param(&param, filename, volume_config, callback, data,
+							  HANDLE_PRIORITY_NORMAL, MM_SOUND_HANDLE_ROUTE_USING_CURRENT);
 	return mm_sound_play_sound_ex(&param, handle);
 }
 
-EXPORT_API
-int mm_sound_play_sound(const char *filename, int volume_config, mm_sound_stop_callback_func callback, void *data, int *handle)
+EXPORT_API int mm_sound_play_sound(const char *filename, int volume_config,
+								   mm_sound_stop_callback_func callback, void *data, int *handle)
 {
 	MMSoundPlayParam param = { 0, };
 
-	_mm_sound_fill_play_param(&param, filename, volume_config, callback, data, HANDLE_PRIORITY_NORMAL, MM_SOUND_HANDLE_ROUTE_USING_CURRENT);
+	_mm_sound_fill_play_param(&param, filename, volume_config, callback, data,
+							  HANDLE_PRIORITY_NORMAL, MM_SOUND_HANDLE_ROUTE_USING_CURRENT);
 	return mm_sound_play_sound_ex(&param, handle);
 }
 
-EXPORT_API
-int mm_sound_play_sound_ex(MMSoundPlayParam *param, int *handle)
+EXPORT_API int mm_sound_play_sound_ex(MMSoundPlayParam * param, int *handle)
 {
 	int err;
 	int lhandle = -1;
@@ -301,7 +296,7 @@ int mm_sound_play_sound_ex(MMSoundPlayParam *param, int *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	debug_warning ("play sound : priority=[%d], handle_route=[%d]\n", param->priority, param->handle_route);
+	debug_warning("play sound : priority=[%d], handle_route=[%d]\n", param->priority, param->handle_route);
 
 	/* Play sound */
 	err = mm_sound_client_play_sound(param, 0, &lhandle);
@@ -317,19 +312,21 @@ int mm_sound_play_sound_ex(MMSoundPlayParam *param, int *handle)
 		debug_critical("The sound hadle cannot be get [%d]\n", lhandle);
 	}
 
-	debug_warning ("success : handle=[%p]\n", handle);
+	debug_warning("success : handle=[%p]\n", handle);
 
 	return MM_ERROR_NONE;
 }
 
-EXPORT_API
-int mm_sound_play_sound_with_stream_info(const char *filename, char *stream_type, int stream_id, mm_sound_stop_callback_func callback, void *data, int *handle)
+EXPORT_API int mm_sound_play_sound_with_stream_info(const char *filename,
+													char *stream_type,
+													int stream_id,
+													mm_sound_stop_callback_func callback, void *data, int *handle)
 {
 	MMSoundPlayParam param = { 0, };
 	int err;
 
 	param.filename = filename;
-	param.volume = 0; //volume value dose not effect anymore
+	param.volume = 0;	//volume value dose not effect anymore
 	param.callback = callback;
 	param.data = data;
 	param.loop = 1;
@@ -342,26 +339,24 @@ int mm_sound_play_sound_with_stream_info(const char *filename, char *stream_type
 		return err;
 	}
 
-	debug_warning ("success : handle=[%p]\n", handle);
+	debug_warning("success : handle=[%p]\n", handle);
 
 	return MM_ERROR_NONE;
 
 }
 
-
-EXPORT_API
-int mm_sound_stop_sound(int handle)
+EXPORT_API int mm_sound_stop_sound(int handle)
 {
 	int err;
 
-	debug_warning ("enter : handle=[%p]\n", handle);
+	debug_warning("enter : handle=[%p]\n", handle);
 	/* Stop sound */
 	err = mm_sound_client_stop_sound(handle);
 	if (err < 0) {
 		debug_error("Fail to stop sound\n");
 		return err;
 	}
-	debug_warning ("success : handle=[%p]\n", handle);
+	debug_warning("success : handle=[%p]\n", handle);
 
 	return MM_ERROR_NONE;
 }
@@ -369,8 +364,8 @@ int mm_sound_stop_sound(int handle)
 ///////////////////////////////////
 ////     MMSOUND TONE APIs
 ///////////////////////////////////
-EXPORT_API
-int mm_sound_play_tone_ex (MMSoundTone_t num, int volume_config, const double volume, const int duration, int *handle, bool enable_session)
+EXPORT_API int mm_sound_play_tone_ex(MMSoundTone_t num, int volume_config,
+									 const double volume, const int duration, int *handle, bool enable_session)
 {
 	int lhandle = -1;
 	int err = MM_ERROR_NONE;
@@ -414,14 +409,15 @@ int mm_sound_play_tone_ex (MMSoundTone_t num, int volume_config, const double vo
 	return MM_ERROR_NONE;
 }
 
-EXPORT_API
-int mm_sound_play_tone_with_stream_info(MMSoundTone_t tone, char *stream_type, int stream_id, const double volume, const int duration, int *handle)
+EXPORT_API int mm_sound_play_tone_with_stream_info(MMSoundTone_t tone,
+												   char *stream_type,
+												   int stream_id, const double volume, const int duration, int *handle)
 {
 
 	int err = MM_ERROR_NONE;
 
 	err = mm_sound_client_play_tone_with_stream_info(tone, stream_type, stream_id, volume, duration, handle);
-	if (err <0) {
+	if (err < 0) {
 		debug_error("Failed to play sound\n");
 		return err;
 	}
@@ -430,26 +426,22 @@ int mm_sound_play_tone_with_stream_info(MMSoundTone_t tone, char *stream_type, i
 
 }
 
-
-EXPORT_API
-int mm_sound_play_tone (MMSoundTone_t num, int volume_config, const double volume, const int duration, int *handle)
+EXPORT_API int mm_sound_play_tone(MMSoundTone_t num, int volume_config, const double volume, const int duration, int *handle)
 {
-	return mm_sound_play_tone_ex (num, volume_config, volume, duration, handle, true);
+	return mm_sound_play_tone_ex(num, volume_config, volume, duration, handle, true);
 }
 
 ///////////////////////////////////
 ////     MMSOUND ROUTING APIs
 ///////////////////////////////////
 
-EXPORT_API
-int mm_sound_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
+EXPORT_API int mm_sound_get_active_device(mm_sound_device_in * device_in, mm_sound_device_out * device_out)
 {
 	/* FIXME : Will be removed */
 	return MM_ERROR_NOT_SUPPORT_API;
 }
 
-EXPORT_API
-int mm_sound_test(int a, int b, int* getv)
+EXPORT_API int mm_sound_test(int a, int b, int *getv)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -467,8 +459,7 @@ int mm_sound_test(int a, int b, int* getv)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data, unsigned int *subs_id)
+EXPORT_API int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -487,8 +478,7 @@ int mm_sound_add_test_callback(mm_sound_test_cb func, void *user_data, unsigned 
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_remove_test_callback(unsigned int subs_id)
+EXPORT_API int mm_sound_remove_test_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -502,7 +492,8 @@ int mm_sound_remove_test_callback(unsigned int subs_id)
 	return ret;
 }
 
-static int _convert_signal_name_str_to_enum (const char *name_str, mm_sound_signal_name_t *name_enum) {
+static int _convert_signal_name_str_to_enum(const char *name_str, mm_sound_signal_name_t * name_enum)
+{
 	int ret = MM_ERROR_NONE;
 
 	if (!name_str || !name_enum)
@@ -517,11 +508,11 @@ static int _convert_signal_name_str_to_enum (const char *name_str, mm_sound_sign
 	return ret;
 }
 
-static void _dbus_signal_callback (const char *signal_name, int value, void *user_data)
+static void _dbus_signal_callback(const char *signal_name, int value, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 	mm_sound_signal_name_t signal;
-	subscribe_cb_t *subscribe_cb = (subscribe_cb_t*)user_data;
+	subscribe_cb_t *subscribe_cb = (subscribe_cb_t *) user_data;
 
 	debug_fenter();
 
@@ -532,7 +523,7 @@ static void _dbus_signal_callback (const char *signal_name, int value, void *use
 	if (ret)
 		return;
 
-	debug_msg ("signal_name[%s], value[%d], user_data[0x%x]\n", signal_name, value, user_data);
+	debug_msg("signal_name[%s], value[%d], user_data[0x%x]\n", signal_name, value, user_data);
 
 	if (subscribe_cb->signal_type == MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS) {
 		/* trigger the signal callback when it comes from the same process */
@@ -548,31 +539,26 @@ static void _dbus_signal_callback (const char *signal_name, int value, void *use
 	return;
 }
 
-static void signal_callback(GDBusConnection *conn,
-							   const gchar *sender_name,
-							   const gchar *object_path,
-							   const gchar *interface_name,
-							   const gchar *signal_name,
-							   GVariant *parameters,
-							   gpointer user_data)
+static void signal_callback(GDBusConnection * conn, const gchar * sender_name,
+							const gchar * object_path,
+							const gchar * interface_name, const gchar * signal_name, GVariant * parameters, gpointer user_data)
 {
-	int value=0;
-	const GVariantType* value_type;
+	int value = 0;
+	const GVariantType *value_type;
 
-	debug_msg ("sender : %s, object : %s, interface : %s, signal : %s",
-			sender_name, object_path, interface_name, signal_name);
+	debug_msg("sender : %s, object : %s, interface : %s, signal : %s", sender_name, object_path, interface_name, signal_name);
 	if (g_variant_is_of_type(parameters, G_VARIANT_TYPE("(i)"))) {
-		g_variant_get(parameters, "(i)",&value);
+		g_variant_get(parameters, "(i)", &value);
 		debug_msg(" - value : %d\n", value);
 		_dbus_signal_callback(signal_name, value, user_data);
-	} else	{
+	} else {
 		value_type = g_variant_get_type(parameters);
 		debug_warning("signal type is %s", value_type);
 	}
 }
 
-EXPORT_API
-int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subscribe_id, mm_sound_signal_callback callback, void *user_data)
+EXPORT_API int mm_sound_subscribe_signal(mm_sound_signal_name_t signal,
+										 unsigned int *subscribe_id, mm_sound_signal_callback callback, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 	GError *err = NULL;
@@ -584,7 +570,7 @@ int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subsc
 	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_subscribe_cb_list_mutex, MM_ERROR_SOUND_INTERNAL);
 
 	if (signal < 0 || signal >= MM_SOUND_SIGNAL_MAX || !subscribe_id) {
-		debug_error ("invalid argument, signal(%d), subscribe_id(0x%p)", signal, subscribe_id);
+		debug_error("invalid argument, signal(%d), subscribe_id(0x%p)", signal, subscribe_id);
 		ret = MM_ERROR_INVALID_ARGUMENT;
 		goto error;
 	}
@@ -598,8 +584,8 @@ int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subsc
 
 	g_dbus_conn_mmsound = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 	if (!g_dbus_conn_mmsound && err) {
-		debug_error ("g_bus_get_sync() error (%s) ", err->message);
-		g_error_free (err);
+		debug_error("g_bus_get_sync() error (%s) ", err->message);
+		g_error_free(err);
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto error;
 	}
@@ -608,11 +594,13 @@ int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subsc
 	subscribe_cb->callback = callback;
 	subscribe_cb->user_data = user_data;
 
-	*subscribe_id = g_dbus_connection_signal_subscribe(g_dbus_conn_mmsound,
-			NULL, MM_SOUND_DBUS_INTERFACE, dbus_signal_name_str[signal], MM_SOUND_DBUS_OBJECT_PATH, NULL, 0,
-			signal_callback, subscribe_cb, NULL);
+	*subscribe_id =
+		g_dbus_connection_signal_subscribe(g_dbus_conn_mmsound, NULL,
+										   MM_SOUND_DBUS_INTERFACE,
+										   dbus_signal_name_str[signal],
+										   MM_SOUND_DBUS_OBJECT_PATH, NULL, 0, signal_callback, subscribe_cb, NULL);
 	if (*subscribe_id == 0) {
-		debug_error ("g_dbus_connection_signal_subscribe() error (%d)", *subscribe_id);
+		debug_error("g_dbus_connection_signal_subscribe() error (%d)", *subscribe_id);
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto sig_error;
 	}
@@ -621,7 +609,9 @@ int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subsc
 
 	g_subscribe_cb_list = g_list_append(g_subscribe_cb_list, subscribe_cb);
 	if (g_subscribe_cb_list) {
-		debug_log("new subscribe_cb(0x%x)[user_callback(0x%x), subscribe_id(%u)] is added\n", subscribe_cb, subscribe_cb->callback, subscribe_cb->id);
+		debug_log
+			("new subscribe_cb(0x%x)[user_callback(0x%x), subscribe_id(%u)] is added\n",
+			 subscribe_cb, subscribe_cb->callback, subscribe_cb->id);
 	} else {
 		debug_error("g_list_append failed\n");
 		ret = MM_ERROR_SOUND_INTERNAL;
@@ -634,21 +624,20 @@ int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subsc
 
 	return ret;
 
-sig_error:
+ sig_error:
 	g_dbus_connection_signal_unsubscribe(g_dbus_conn_mmsound, *subscribe_id);
 	g_object_unref(g_dbus_conn_mmsound);
 
-error:
+ error:
 	if (subscribe_cb)
-		free (subscribe_cb);
+		free(subscribe_cb);
 
 	MMSOUND_LEAVE_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
 
 	return ret;
 }
 
-EXPORT_API
-void mm_sound_unsubscribe_signal(unsigned int subscribe_id)
+EXPORT_API void mm_sound_unsubscribe_signal(unsigned int subscribe_id)
 {
 	GList *list = NULL;
 	subscribe_cb_t *subscribe_cb = NULL;
@@ -661,11 +650,11 @@ void mm_sound_unsubscribe_signal(unsigned int subscribe_id)
 		g_dbus_connection_signal_unsubscribe(g_dbus_conn_mmsound, subscribe_id);
 		g_object_unref(g_dbus_conn_mmsound);
 		for (list = g_subscribe_cb_list; list != NULL; list = list->next) {
-			subscribe_cb = (subscribe_cb_t *)list->data;
+			subscribe_cb = (subscribe_cb_t *) list->data;
 			if (subscribe_cb && (subscribe_cb->id == subscribe_id)) {
 				g_subscribe_cb_list = g_list_remove(g_subscribe_cb_list, subscribe_cb);
 				debug_log("subscribe_cb(0x%x) is removed\n", subscribe_cb);
-				free (subscribe_cb);
+				free(subscribe_cb);
 			}
 		}
 	}
@@ -675,8 +664,7 @@ void mm_sound_unsubscribe_signal(unsigned int subscribe_id)
 	debug_fleave();
 }
 
-EXPORT_API
-int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
+EXPORT_API int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
 {
 	int ret = MM_ERROR_NONE;
 	GError *err = NULL;
@@ -688,14 +676,14 @@ int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
 	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_subscribe_cb_list_mutex, MM_ERROR_SOUND_INTERNAL);
 
 	if (signal < 0 || signal >= MM_SOUND_SIGNAL_MAX) {
-		debug_error ("invalid argument, signal(%d)", signal);
+		debug_error("invalid argument, signal(%d)", signal);
 		ret = MM_ERROR_INVALID_ARGUMENT;
 		goto error;
 	}
 
 	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 	if (!conn && err) {
-		debug_error ("g_bus_get_sync() error (%s)", err->message);
+		debug_error("g_bus_get_sync() error (%s)", err->message);
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto error;
 	}
@@ -705,25 +693,24 @@ int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
 		/* trigger the signal callback when it comes from the same process */
 		value |= ((int)getpid() << 16);
 	}
-	dbus_ret = g_dbus_connection_emit_signal (conn,
-				NULL, MM_SOUND_DBUS_OBJECT_PATH, MM_SOUND_DBUS_INTERFACE, dbus_signal_name_str[signal],
-				g_variant_new ("(i)", value),
-				&err);
+	dbus_ret =
+		g_dbus_connection_emit_signal(conn, NULL, MM_SOUND_DBUS_OBJECT_PATH,
+									  MM_SOUND_DBUS_INTERFACE, dbus_signal_name_str[signal], g_variant_new("(i)", value), &err);
 	if (!dbus_ret && err) {
-		debug_error ("g_dbus_connection_emit_signal() error (%s)", err->message);
+		debug_error("g_dbus_connection_emit_signal() error (%s)", err->message);
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto error;
 	}
 
 	dbus_ret = g_dbus_connection_flush_sync(conn, NULL, &err);
 	if (!dbus_ret && err) {
-		debug_error ("g_dbus_connection_flush_sync() error (%s)", err->message);
+		debug_error("g_dbus_connection_flush_sync() error (%s)", err->message);
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto error;
 	}
 
 	g_object_unref(conn);
-	debug_msg ("sending signal[%s], value[%d] success", dbus_signal_name_str[signal], value);
+	debug_msg("sending signal[%s], value[%d] success", dbus_signal_name_str[signal], value);
 
 	MMSOUND_LEAVE_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
 
@@ -731,9 +718,9 @@ int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
 
 	return ret;
 
-error:
+ error:
 	if (err)
-		g_error_free (err);
+		g_error_free(err);
 	if (conn)
 		g_object_unref(conn);
 
@@ -742,8 +729,7 @@ error:
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_get_signal_value(mm_sound_signal_name_t signal, int *value)
+EXPORT_API int mm_sound_get_signal_value(mm_sound_signal_name_t signal, int *value)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -772,5 +758,3 @@ static void _mm_sound_finalize(void)
 {
 	mm_sound_client_finalize();
 }
-
-

@@ -20,108 +20,94 @@
 #include "include/mm_sound_mgr_focus_dbus.h"
 #include "include/mm_sound_mgr_focus_ipc.h"
 
-
 #define BUS_NAME_FOCUS_SERVER "org.tizen.FocusServer"
 #define OBJECT_FOCUS_SERVER "/org/tizen/FocusServer1"
 #define INTERFACE_FOCUS_SERVER "org.tizen.FocusServer1"
 
 /* Introspection data for the service we are exporting */
-  static const gchar introspection_xml[] =
-  "<node>"
-  "  <interface name='org.tizen.FocusServer1'>"
-  "    <method name='GetUniqueId'>"
-  "      <arg name='id' type='i' direction='out'/>"
-  "    </method>"
-  "    <method name='RegisterFocus'>"
+static const gchar introspection_xml[] =
+	"<node>" "  <interface name='org.tizen.FocusServer1'>"
+	"    <method name='GetUniqueId'>"
+	"      <arg name='id' type='i' direction='out'/>" "    </method>" "    <method name='RegisterFocus'>"
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
-  "      <arg name='container' type='ay' direction='in'/>"
+	"      <arg name='container' type='ay' direction='in'/>"
 #else
-  "      <arg name='container' type='s' direction='in'/>"
+	"      <arg name='container' type='s' direction='in'/>"
 #endif
 #endif
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "      <arg name='stream_type' type='s' direction='in'/>"
-  "      <arg name='is_for_session' type='b' direction='in'/>"
-  "    </method>"
-  "    <method name='UnregisterFocus'>"
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "      <arg name='is_for_session' type='b' direction='in'/>"
-  "    </method>"
-  "    <method name='SetFocusReacquisition'>"
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "      <arg name='reacquisition' type='b' direction='in'/>"
-  "    </method>"
-  "    <method name='GetAcquiredFocusStreamType'>"
-  "      <arg name='focus_type' type='i' direction='in'/>"
-  "      <arg name='stream_type' type='s' direction='out'/>"
-  "      <arg name='additional_info' type='s' direction='out'/>"
-  "    </method>"
-  "    <method name='AcquireFocus'>"
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "      <arg name='focus_type' type='i' direction='in'/>"
-  "      <arg name='name' type='s' direction='in'/>"
-  "      <arg name='is_for_session' type='b' direction='in'/>"
-  "    </method>"
-  "    <method name='ReleaseFocus'>"
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "      <arg name='focus_type' type='i' direction='in'/>"
-  "      <arg name='name' type='s' direction='in'/>"
-  "      <arg name='is_for_session' type='b' direction='in'/>"
-  "    </method>"
-  "    <method name='WatchFocus'>"
+	"      <arg name='pid' type='i' direction='in'/>"
+	"      <arg name='handle_id' type='i' direction='in'/>"
+	"      <arg name='stream_type' type='s' direction='in'/>"
+	"      <arg name='is_for_session' type='b' direction='in'/>"
+	"    </method>"
+	"    <method name='UnregisterFocus'>"
+	"      <arg name='pid' type='i' direction='in'/>"
+	"      <arg name='handle_id' type='i' direction='in'/>"
+	"      <arg name='is_for_session' type='b' direction='in'/>"
+	"    </method>"
+	"    <method name='SetFocusReacquisition'>"
+	"      <arg name='pid' type='i' direction='in'/>"
+	"      <arg name='handle_id' type='i' direction='in'/>"
+	"      <arg name='reacquisition' type='b' direction='in'/>"
+	"    </method>" "    <method name='GetAcquiredFocusStreamType'>"
+	"      <arg name='focus_type' type='i' direction='in'/>"
+	"      <arg name='stream_type' type='s' direction='out'/>"
+	"      <arg name='additional_info' type='s' direction='out'/>"
+	"    </method>" "    <method name='AcquireFocus'>"
+	"      <arg name='pid' type='i' direction='in'/>"
+	"      <arg name='handle_id' type='i' direction='in'/>"
+	"      <arg name='focus_type' type='i' direction='in'/>"
+	"      <arg name='name' type='s' direction='in'/>"
+	"      <arg name='is_for_session' type='b' direction='in'/>" "    </method>"
+	"    <method name='ReleaseFocus'>"
+	"      <arg name='pid' type='i' direction='in'/>"
+	"      <arg name='handle_id' type='i' direction='in'/>"
+	"      <arg name='focus_type' type='i' direction='in'/>"
+	"      <arg name='name' type='s' direction='in'/>"
+	"      <arg name='is_for_session' type='b' direction='in'/>" "    </method>" "    <method name='WatchFocus'>"
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
-	  " 	 <arg name='container' type='ay' direction='in'/>"
+	" 	 <arg name='container' type='ay' direction='in'/>"
 #else
-	  " 	 <arg name='container' type='s' direction='in'/>"
+	" 	 <arg name='container' type='s' direction='in'/>"
 #endif
 #endif
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "      <arg name='focus_type' type='i' direction='in'/>"
-  "      <arg name='is_for_session' type='b' direction='in'/>"
-  "    </method>"
-  "    <method name='UnwatchFocus'>"
-  "      <arg name='pid' type='i' direction='in'/>"
-  "      <arg name='handle_id' type='i' direction='in'/>"
-  "      <arg name='is_for_session' type='b' direction='in'/>"
-  "    </method>"
-  "    <method name='EmergentExitFocus'>"
-  "      <arg name='pid' type='i' direction='in'/>"
-  "    </method>"
-  "  </interface>"
-  "</node>";
-GDBusConnection* conn_g;
+	"      <arg name='pid' type='i' direction='in'/>"
+	"      <arg name='handle_id' type='i' direction='in'/>"
+	"      <arg name='focus_type' type='i' direction='in'/>"
+	"      <arg name='is_for_session' type='b' direction='in'/>" "    </method>"
+	"    <method name='UnwatchFocus'>"
+	"      <arg name='pid' type='i' direction='in'/>"
+	"      <arg name='handle_id' type='i' direction='in'/>"
+	"      <arg name='is_for_session' type='b' direction='in'/>" "    </method>"
+	"    <method name='EmergentExitFocus'>"
+	"      <arg name='pid' type='i' direction='in'/>" "    </method>" "  </interface>" "</node>";
+GDBusConnection *conn_g;
 
-typedef void (*dbus_method_handler)(GDBusMethodInvocation *invocation);
-typedef int (*dbus_signal_sender)(GDBusConnection *conn, GVariant *parameter);
+typedef void (*dbus_method_handler) (GDBusMethodInvocation * invocation);
+typedef int (*dbus_signal_sender) (GDBusConnection * conn, GVariant * parameter);
 
-struct mm_sound_mgr_focus_dbus_method{
+struct mm_sound_mgr_focus_dbus_method {
 	struct mm_sound_dbus_method_info info;
-        dbus_method_handler handler;
+	dbus_method_handler handler;
 };
 
-struct mm_sound_mgr_focus_dbus_signal{
+struct mm_sound_mgr_focus_dbus_signal {
 	struct mm_sound_dbus_signal_info info;
 	dbus_signal_sender sender;
 };
 
-static void handle_method_get_unique_id(GDBusMethodInvocation* invocation);
-static void handle_method_register_focus(GDBusMethodInvocation* invocation);
-static void handle_method_unregister_focus(GDBusMethodInvocation* invocation);
-static void handle_method_set_focus_reacquisition(GDBusMethodInvocation* invocation);
-static void handle_method_get_acquired_focus_stream_type(GDBusMethodInvocation* invocation);
-static void handle_method_acquire_focus(GDBusMethodInvocation* invocation);
-static void handle_method_release_focus(GDBusMethodInvocation* invocation);
-static void handle_method_watch_focus(GDBusMethodInvocation* invocation);
-static void handle_method_unwatch_focus(GDBusMethodInvocation* invocation);
-static void handle_method_emergent_exit_focus (GDBusMethodInvocation* invocation);
+static void handle_method_get_unique_id(GDBusMethodInvocation * invocation);
+static void handle_method_register_focus(GDBusMethodInvocation * invocation);
+static void handle_method_unregister_focus(GDBusMethodInvocation * invocation);
+static void handle_method_set_focus_reacquisition(GDBusMethodInvocation * invocation);
+static void handle_method_get_acquired_focus_stream_type(GDBusMethodInvocation * invocation);
+static void handle_method_acquire_focus(GDBusMethodInvocation * invocation);
+static void handle_method_release_focus(GDBusMethodInvocation * invocation);
+static void handle_method_watch_focus(GDBusMethodInvocation * invocation);
+static void handle_method_unwatch_focus(GDBusMethodInvocation * invocation);
+static void handle_method_emergent_exit_focus(GDBusMethodInvocation * invocation);
 
 /* Currently , Just using method's name and handler */
 /* TODO : generate introspection xml automatically, with these value include argument and reply */
@@ -129,97 +115,84 @@ static void handle_method_emergent_exit_focus (GDBusMethodInvocation* invocation
 /* TODO : divide object and interface with features (ex. play, path, device, focus, asm) */
 struct mm_sound_mgr_focus_dbus_method methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_GET_UNIQUE_ID] = {
-		.info = {
-			.name = "GetUniqueId",
-		},
-		.handler = handle_method_get_unique_id
-	},
+								   .info = {
+											.name = "GetUniqueId",
+											},
+								   .handler = handle_method_get_unique_id},
 	[METHOD_CALL_REGISTER_FOCUS] = {
-		.info = {
-			.name = "RegisterFocus",
-		},
-		.handler = handle_method_register_focus
-	},
+									.info = {
+											 .name = "RegisterFocus",
+											 },
+									.handler = handle_method_register_focus},
 	[METHOD_CALL_UNREGISTER_FOCUS] = {
-		.info = {
-			.name = "UnregisterFocus",
-		},
-		.handler = handle_method_unregister_focus
-	},
+									  .info = {
+											   .name = "UnregisterFocus",
+											   },
+									  .handler = handle_method_unregister_focus},
 	[METHOD_CALL_SET_FOCUS_REACQUISITION] = {
-		.info = {
-			.name = "SetFocusReacquisition",
-		},
-		.handler = handle_method_set_focus_reacquisition
-	},
+											 .info = {
+													  .name = "SetFocusReacquisition",
+													  },
+											 .handler = handle_method_set_focus_reacquisition},
 	[METHOD_CALL_GET_ACQUIRED_FOCUS_STREAM_TYPE] = {
-		.info = {
-			.name = "GetAcquiredFocusStreamType",
-		},
-		.handler = handle_method_get_acquired_focus_stream_type
-	},
+													.info = {
+															 .name = "GetAcquiredFocusStreamType",
+															 },
+													.handler = handle_method_get_acquired_focus_stream_type},
 	[METHOD_CALL_ACQUIRE_FOCUS] = {
-		.info = {
-			.name = "AcquireFocus",
-		},
-		.handler = handle_method_acquire_focus
-	},
+								   .info = {
+											.name = "AcquireFocus",
+											},
+								   .handler = handle_method_acquire_focus},
 	[METHOD_CALL_RELEASE_FOCUS] = {
-		.info = {
-			.name = "ReleaseFocus",
-		},
-		.handler = handle_method_release_focus
-	},
+								   .info = {
+											.name = "ReleaseFocus",
+											},
+								   .handler = handle_method_release_focus},
 	[METHOD_CALL_WATCH_FOCUS] = {
-		.info = {
-			.name = "WatchFocus",
-		},
-		.handler = handle_method_watch_focus
-	},
+								 .info = {
+										  .name = "WatchFocus",
+										  },
+								 .handler = handle_method_watch_focus},
 	[METHOD_CALL_UNWATCH_FOCUS] = {
-		.info = {
-			.name = "UnwatchFocus",
-		},
-		.handler = handle_method_unwatch_focus
-	},
+								   .info = {
+											.name = "UnwatchFocus",
+											},
+								   .handler = handle_method_unwatch_focus},
 	[METHOD_CALL_EMERGENT_EXIT_FOCUS] = {
-		.info = {
-			.name = "EmergentExitFocus",
-		},
-		.handler = handle_method_emergent_exit_focus
-	},
+										 .info = {
+												  .name = "EmergentExitFocus",
+												  },
+										 .handler = handle_method_emergent_exit_focus},
 };
-
 
 struct mm_sound_mgr_focus_dbus_signal signals[SIGNAL_MAX] = {
 	[SIGNAL_TEST] = {
-		.info = {
-			.name = "SignalTest1",
-		},
-	},
+					 .info = {
+							  .name = "SignalTest1",
+							  },
+					 },
 	[SIGNAL_FOCUS_CHANGED] = {
-		.info = {
-			.name = "FocusChanged",
-		},
-	},
+							  .info = {
+									   .name = "FocusChanged",
+									   },
+							  },
 	[SIGNAL_FOCUS_WATCH] = {
-		.info = {
-			.name = "FocusWatch",
-		},
-	}
+							.info = {
+									 .name = "FocusWatch",
+									 },
+							}
 };
 
-
 static GDBusNodeInfo *introspection_data = NULL;
-guint focus_server_owner_id ;
+guint focus_server_owner_id;
 
 /*
         For pass error code with 'g_dbus_method_invocation_return_error'
         We have to use some glib features like GError, GQuark
 */
 /* Only For error types which is currently being used in server-side */
-static const GDBusErrorEntry mm_sound_error_entries[] =
-{
+static const GDBusErrorEntry mm_sound_error_entries[] = {
 	{MM_ERROR_OUT_OF_MEMORY, "org.tizen.multimedia.OutOfMemory"},
 	{MM_ERROR_OUT_OF_STORAGE, "org.tizen.multimedia.OutOfStorage"},
 	{MM_ERROR_INVALID_ARGUMENT, "org.tizen.multimedia.InvalidArgument"},
@@ -233,15 +206,17 @@ static const GDBusErrorEntry mm_sound_error_entries[] =
 	{MM_ERROR_SOUND_INTERNAL, "org.tizen.multimedia.audio.Internal"},
 	{MM_ERROR_SOUND_INVALID_STATE, "org.tizen.multimedia.audio.InvalidState"},
 	{MM_ERROR_SOUND_NO_FREE_SPACE, "org.tizen.multimedia.audio.NoFreeSpace"},
-	{MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE, "org.tizen.multimedia.audio.UnsupportedMediaType"},
-	{MM_ERROR_SOUND_INVALID_POINTER, "org.tizen.multimedia.audio.InvalidPointer"},
+	{MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE,
+	 "org.tizen.multimedia.audio.UnsupportedMediaType"},
+	{MM_ERROR_SOUND_INVALID_POINTER,
+	 "org.tizen.multimedia.audio.InvalidPointer"},
 	{MM_ERROR_SOUND_INVALID_FILE, "org.tizen.multimedia.audio.InvalidFile"},
 	{MM_ERROR_SOUND_FILE_NOT_FOUND, "org.tizen.multimedia.audio.FileNotFound"},
 	{MM_ERROR_SOUND_NO_DATA, "org.tizen.multimedia.audio.NoData"},
 	{MM_ERROR_SOUND_INVALID_PATH, "org.tizen.multimedia.audio.InvalidPath"},
 };
 
-static const char* _convert_error_code(int err_code)
+static const char *_convert_error_code(int err_code)
 {
 	int i = 0;
 
@@ -254,39 +229,43 @@ static const char* _convert_error_code(int err_code)
 	return "org.tizen.multimedia.common.Unknown";
 }
 
-static int _get_sender_pid(GDBusMethodInvocation* invocation)
+static int _get_sender_pid(GDBusMethodInvocation * invocation)
 {
-	GVariant* value;
+	GVariant *value;
 	guint pid;
-	const gchar* sender;
-	GDBusConnection * connection = NULL;
-	GError* err = NULL;
+	const gchar *sender;
+	GDBusConnection *connection = NULL;
+	GError *err = NULL;
 
 	connection = g_dbus_method_invocation_get_connection(invocation);
 	sender = g_dbus_method_invocation_get_sender(invocation);
 
-	debug_error ("connection = %p, sender = %s", connection, sender);
+	debug_error("connection = %p, sender = %s", connection, sender);
 
-	value = g_dbus_connection_call_sync (connection, "org.freedesktop.DBus", "/org/freedesktop/DBus",
-										"org.freedesktop.DBus", "GetConnectionUnixProcessID",
-										g_variant_new("(s)", sender, NULL), NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &err);
+	value =
+		g_dbus_connection_call_sync(connection, "org.freedesktop.DBus",
+									"/org/freedesktop/DBus",
+									"org.freedesktop.DBus",
+									"GetConnectionUnixProcessID",
+									g_variant_new("(s)", sender, NULL), NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &err);
 	if (value) {
 		g_variant_get(value, "(u)", &pid);
-		debug_error ("Sender PID = [%d]", pid);
+		debug_error("Sender PID = [%d]", pid);
 	} else {
-		debug_error ("err code = %d, err msg = %s", err->code, err->message);
+		debug_error("err code = %d, err msg = %s", err->code, err->message);
 	}
 	return pid;
 }
 
-static void _method_call_return_value(GDBusMethodInvocation *invocation, GVariant *params)
+static void _method_call_return_value(GDBusMethodInvocation * invocation, GVariant * params)
 {
 	const char *method_name;
 	method_name = g_dbus_method_invocation_get_method_name(invocation);
 	debug_error("Method Call '%s' success", method_name);
 	g_dbus_method_invocation_return_value(invocation, params);
 }
-static void _method_call_return_error(GDBusMethodInvocation *invocation, int ret)
+
+static void _method_call_return_error(GDBusMethodInvocation * invocation, int ret)
 {
 	const char *err_name, *method_name;
 	err_name = _convert_error_code(ret);
@@ -295,7 +274,7 @@ static void _method_call_return_error(GDBusMethodInvocation *invocation, int ret
 	g_dbus_method_invocation_return_dbus_error(invocation, err_name, "failed");
 }
 
-static void handle_method_get_unique_id(GDBusMethodInvocation* invocation)
+static void handle_method_get_unique_id(GDBusMethodInvocation * invocation)
 {
 	static int unique_id = 0;
 
@@ -306,23 +285,22 @@ static void handle_method_get_unique_id(GDBusMethodInvocation* invocation)
 	debug_fleave();
 }
 
-static void handle_method_register_focus(GDBusMethodInvocation* invocation)
+static void handle_method_register_focus(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int handle_id = 0;
-	const char* stream_type = NULL;
+	const char *stream_type = NULL;
 	gboolean is_for_session;
 	GVariant *params = NULL;
 #ifdef SUPPORT_CONTAINER
 	int container_pid = -1;
-	char* container = NULL;
+	char *container = NULL;
 #ifdef USE_SECURITY
-	GVariant* cookie_data;
+	GVariant *cookie_data;
 #endif /* USE_SECURITY */
 #else
 	int pid = 0;
 #endif /* SUPPORT_CONTAINER */
-
 
 	debug_fenter();
 
@@ -331,18 +309,21 @@ static void handle_method_register_focus(GDBusMethodInvocation* invocation)
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto send_reply;
 	}
-
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
 	g_variant_get(params, "(@ayiisb)", &cookie_data, &container_pid, &handle_id, &stream_type, &is_for_session);
 	container = _get_container_from_cookie(cookie_data);
-	ret = __mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, is_for_session, container, container_pid);
+	ret =
+		__mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation),
+												handle_id, stream_type, is_for_session, container, container_pid);
 
 	if (container)
 		free(container);
 #else /* USE_SECURITY */
 	g_variant_get(params, "(siisb)", &container, &container_pid, &handle_id, &stream_type, &is_for_session);
-	ret = __mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, is_for_session, container, container_pid);
+	ret =
+		__mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation),
+												handle_id, stream_type, is_for_session, container, container_pid);
 
 #endif /* USE_SECURITY */
 #else /* SUPPORT_CONTAINER */
@@ -351,7 +332,7 @@ static void handle_method_register_focus(GDBusMethodInvocation* invocation)
 
 #endif /* SUPPORT_CONTAINER */
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
@@ -361,7 +342,7 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_unregister_focus(GDBusMethodInvocation* invocation)
+static void handle_method_unregister_focus(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int pid = 0, handle_id = 0;
@@ -379,7 +360,7 @@ static void handle_method_unregister_focus(GDBusMethodInvocation* invocation)
 	g_variant_get(params, "(iib)", &pid, &handle_id, &is_for_session);
 	ret = __mm_sound_mgr_focus_ipc_unregister_focus((is_for_session) ? pid : _get_sender_pid(invocation), handle_id);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
@@ -389,7 +370,7 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_set_focus_reacquisition(GDBusMethodInvocation* invocation)
+static void handle_method_set_focus_reacquisition(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int pid = 0, handle_id = 0;
@@ -407,7 +388,7 @@ static void handle_method_set_focus_reacquisition(GDBusMethodInvocation* invocat
 	g_variant_get(params, "(iib)", &pid, &handle_id, &reacquisition);
 	ret = __mm_sound_mgr_focus_ipc_set_focus_reacquisition(_get_sender_pid(invocation), handle_id, reacquisition);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
@@ -417,7 +398,7 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_get_acquired_focus_stream_type(GDBusMethodInvocation* invocation)
+static void handle_method_get_acquired_focus_stream_type(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int focus_type = 0;
@@ -436,7 +417,7 @@ static void handle_method_get_acquired_focus_stream_type(GDBusMethodInvocation* 
 	g_variant_get(params, "(i)", &focus_type);
 	ret = __mm_sound_mgr_focus_ipc_get_acquired_focus_stream_type(focus_type, &stream_type, &additional_info);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("(ss)", stream_type, additional_info));
 	} else {
@@ -446,11 +427,11 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_acquire_focus(GDBusMethodInvocation* invocation)
+static void handle_method_acquire_focus(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int pid = 0, handle_id = 0, focus_type = 0;
-	const char* name = NULL;
+	const char *name = NULL;
 	gboolean is_for_session;
 	GVariant *params = NULL;
 
@@ -463,9 +444,11 @@ static void handle_method_acquire_focus(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(iiisb)", &pid, &handle_id, &focus_type, &name, &is_for_session);
-	ret = __mm_sound_mgr_focus_ipc_acquire_focus((is_for_session) ? pid : _get_sender_pid(invocation), handle_id, focus_type, name);
+	ret =
+		__mm_sound_mgr_focus_ipc_acquire_focus((is_for_session) ? pid :
+											   _get_sender_pid(invocation), handle_id, focus_type, name);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
@@ -475,11 +458,11 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_release_focus(GDBusMethodInvocation* invocation)
+static void handle_method_release_focus(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int pid = 0, handle_id = 0, focus_type = 0;
-	const char* name = NULL;
+	const char *name = NULL;
 	gboolean is_for_session;
 	GVariant *params = NULL;
 
@@ -492,9 +475,11 @@ static void handle_method_release_focus(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(iiisb)", &pid, &handle_id, &focus_type, &name, &is_for_session);
-	ret = __mm_sound_mgr_focus_ipc_release_focus((is_for_session) ? pid : _get_sender_pid(invocation), handle_id, focus_type, name);
+	ret =
+		__mm_sound_mgr_focus_ipc_release_focus((is_for_session) ? pid :
+											   _get_sender_pid(invocation), handle_id, focus_type, name);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
@@ -504,7 +489,7 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
+static void handle_method_watch_focus(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int handle_id = 0, focus_type = 0;
@@ -512,9 +497,9 @@ static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 	GVariant *params = NULL;
 #ifdef SUPPORT_CONTAINER
 	int container_pid = -1;
-	char* container = NULL;
+	char *container = NULL;
 #ifdef USE_SECURITY
-	GVariant* cookie_data;
+	GVariant *cookie_data;
 #endif /* USE_SECURITY */
 #else
 	int pid = 0;
@@ -527,18 +512,21 @@ static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 		ret = MM_ERROR_SOUND_INTERNAL;
 		goto send_reply;
 	}
-
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
 	g_variant_get(params, "(@ayiiib)", &cookie_data, &container_pid, &handle_id, &focus_type, &is_for_session);
 	container = _get_container_from_cookie(cookie_data);
-	ret = __mm_sound_mgr_focus_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, is_for_session, container, container_pid);
+	ret =
+		__mm_sound_mgr_focus_ipc_watch_focus(_get_sender_pid(invocation),
+											 handle_id, focus_type, is_for_session, container, container_pid);
 
 	if (container)
 		free(container);
 #else /* USE_SECURITY */
 	g_variant_get(params, "(siiib)", &container, &container_pid, &handle_id, &focus_type, &is_for_session);
-	ret = __mm_sound_mgr_focus_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, is_for_session, container, container_pid);
+	ret =
+		__mm_sound_mgr_focus_ipc_watch_focus(_get_sender_pid(invocation),
+											 handle_id, focus_type, is_for_session, container, container_pid);
 
 #endif /* USE_SECURITY */
 #else /* SUPPORT_CONTAINER */
@@ -547,7 +535,7 @@ static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 
 #endif /* SUPPORT_CONTAINER */
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
@@ -557,7 +545,7 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_unwatch_focus (GDBusMethodInvocation* invocation)
+static void handle_method_unwatch_focus(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int pid = 0;
@@ -576,7 +564,7 @@ static void handle_method_unwatch_focus (GDBusMethodInvocation* invocation)
 	g_variant_get(params, "(iib)", &pid, &handle_id, &is_for_session);
 	ret = __mm_sound_mgr_focus_ipc_unwatch_focus((is_for_session) ? pid : _get_sender_pid(invocation), handle_id);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
@@ -586,7 +574,7 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_emergent_exit_focus (GDBusMethodInvocation* invocation)
+static void handle_method_emergent_exit_focus(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int pid = 0;
@@ -601,10 +589,10 @@ static void handle_method_emergent_exit_focus (GDBusMethodInvocation* invocation
 
 	g_variant_get(params, "(i)", &pid);
 	ret = __mm_sound_mgr_focus_ipc_emergent_exit(_get_sender_pid(invocation));
-	if(ret)
+	if (ret)
 		debug_error("__mm_sound_mgr_focus_ipc_emergent_exit faild : 0x%x", ret);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
@@ -615,14 +603,11 @@ send_reply:
 }
 
 /**********************************************************************************/
-static void handle_method_call(GDBusConnection *connection,
-							const gchar *sender,
-							const gchar *object_path,
-							const gchar *interface_name,
-							const gchar *method_name,
-							GVariant *parameters,
-							GDBusMethodInvocation *invocation,
-							gpointer userdata)
+static void handle_method_call(GDBusConnection * connection,
+							   const gchar * sender, const gchar * object_path,
+							   const gchar * interface_name,
+							   const gchar * method_name, GVariant * parameters,
+							   GDBusMethodInvocation * invocation, gpointer userdata)
 {
 	int method_idx = 0;
 
@@ -639,76 +624,66 @@ static void handle_method_call(GDBusConnection *connection,
 	}
 }
 
-
-static GVariant* handle_get_property(GDBusConnection *connection,
-									const gchar *sender,
-									const gchar *object_path,
-									const gchar *interface_name,
-									const gchar *property_name,
-									GError **error,
-									gpointer userdata)
+static GVariant *handle_get_property(GDBusConnection * connection,
+									 const gchar * sender,
+									 const gchar * object_path,
+									 const gchar * interface_name,
+									 const gchar * property_name, GError ** error, gpointer userdata)
 {
 	debug_log("Get Property, obj : %s, intf : %s, prop : %s", object_path, interface_name, property_name);
 	return NULL;
 }
 
-static gboolean handle_set_property(GDBusConnection *connection,
-									const gchar *sender,
-									const gchar *object_path,
-									const gchar *interface_name,
-									const gchar *property_name,
-									GVariant *value,
-									GError **error,
-									gpointer userdata)
+static gboolean handle_set_property(GDBusConnection * connection,
+									const gchar * sender,
+									const gchar * object_path,
+									const gchar * interface_name,
+									const gchar * property_name, GVariant * value, GError ** error, gpointer userdata)
 {
 	debug_log("Set Property, obj : %s, intf : %s, prop : %s", object_path, interface_name, property_name);
 	return TRUE;
 }
 
-static const GDBusInterfaceVTable interface_vtable =
-{
+static const GDBusInterfaceVTable interface_vtable = {
 	handle_method_call,
 	handle_get_property,
 	handle_set_property
 };
 
-static void on_bus_acquired(GDBusConnection *connection, const gchar *name, gpointer user_data)
+static void on_bus_acquired(GDBusConnection * connection, const gchar * name, gpointer user_data)
 {
 	guint reg_id;
 	debug_log("Bus Acquired (%s)", name);
 
 	conn_g = connection;
-	reg_id = g_dbus_connection_register_object(connection,
-					  OBJECT_FOCUS_SERVER,
-					  introspection_data->interfaces[0],
-					  &interface_vtable,
-					  NULL,
-					  NULL,
-					  NULL);
+	reg_id =
+		g_dbus_connection_register_object(connection, OBJECT_FOCUS_SERVER,
+										  introspection_data->interfaces[0], &interface_vtable, NULL, NULL, NULL);
 	if (!reg_id) {
 		debug_error("Register object(%s) failed", OBJECT_FOCUS_SERVER);
-		return ;
+		return;
 	}
 }
 
-static void on_name_acquired(GDBusConnection *connection, const gchar *name, gpointer user_data)
+static void on_name_acquired(GDBusConnection * connection, const gchar * name, gpointer user_data)
 {
 	debug_log("Name Acquired (%s)", name);
 }
 
-static void on_name_lost(GDBusConnection *connection, const gchar *name, gpointer user_data)
+static void on_name_lost(GDBusConnection * connection, const gchar * name, gpointer user_data)
 {
 	debug_log("Name Lost (%s)", name);
 }
 
-static int _mm_sound_mgr_focus_dbus_own_name(GBusType bus_type, const char* wellknown_name, guint* owner_id)
+static int _mm_sound_mgr_focus_dbus_own_name(GBusType bus_type, const char *wellknown_name, guint * owner_id)
 {
 	guint oid;
 
 	debug_log("Own name (%s) for focus-server", wellknown_name);
 
-	oid = g_bus_own_name(bus_type, wellknown_name , G_BUS_NAME_OWNER_FLAGS_NONE,
-			on_bus_acquired, on_name_acquired, on_name_lost, NULL, NULL);
+	oid =
+		g_bus_own_name(bus_type, wellknown_name, G_BUS_NAME_OWNER_FLAGS_NONE,
+					   on_bus_acquired, on_name_acquired, on_name_lost, NULL, NULL);
 	if (oid <= 0) {
 		debug_error("Dbus own name failed");
 		return MM_ERROR_SOUND_INTERNAL;
@@ -731,7 +706,7 @@ static void _mm_sound_mgr_focus_dbus_unown_name(guint oid)
 #define PA_STREAM_MANAGER_OBJECT_PATH                  "/org/pulseaudio/StreamManager"
 #define PA_STREAM_MANAGER_INTERFACE                    "org.pulseaudio.StreamManager"
 #define PA_STREAM_MANAGER_METHOD_NAME_GET_STREAM_LIST  "GetStreamList"
-int __mm_sound_mgr_focus_dbus_get_stream_list(stream_list_t* stream_list)
+int __mm_sound_mgr_focus_dbus_get_stream_list(stream_list_t * stream_list)
 {
 	int ret = MM_ERROR_NONE;
 	GVariant *result = NULL;
@@ -743,21 +718,16 @@ int __mm_sound_mgr_focus_dbus_get_stream_list(stream_list_t* stream_list)
 	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 	if (!conn && err) {
 		LOGE("g_bus_get_sync() error (%s)", err->message);
-		g_error_free (err);
+		g_error_free(err);
 		ret = MM_ERROR_SOUND_INTERNAL;
 		return ret;
 	}
-	result = g_dbus_connection_call_sync (conn,
-							PA_BUS_NAME,
-							PA_STREAM_MANAGER_OBJECT_PATH,
-							PA_STREAM_MANAGER_INTERFACE,
-							PA_STREAM_MANAGER_METHOD_NAME_GET_STREAM_LIST,
-							NULL,
-							G_VARIANT_TYPE("(vv)"),
-							G_DBUS_CALL_FLAGS_NONE,
-							2000,
-							NULL,
-							&err);
+	result =
+		g_dbus_connection_call_sync(conn, PA_BUS_NAME,
+									PA_STREAM_MANAGER_OBJECT_PATH,
+									PA_STREAM_MANAGER_INTERFACE,
+									PA_STREAM_MANAGER_METHOD_NAME_GET_STREAM_LIST,
+									NULL, G_VARIANT_TYPE("(vv)"), G_DBUS_CALL_FLAGS_NONE, 2000, NULL, &err);
 	if (!result && err) {
 		debug_error("g_dbus_connection_call_sync() error (%s)", err->message);
 		ret = MM_ERROR_SOUND_INTERNAL;
@@ -769,26 +739,28 @@ int __mm_sound_mgr_focus_dbus_get_stream_list(stream_list_t* stream_list)
 		gchar *name;
 		i = 0;
 		g_variant_iter_init(&iter, item);
-		while ((i < AVAIL_STREAMS_MAX) && g_variant_iter_loop(&iter, "&s", &name)) {
-			debug_log ("name : %s", name);
+		while ((i < AVAIL_STREAMS_MAX)
+			   && g_variant_iter_loop(&iter, "&s", &name)) {
+			debug_log("name : %s", name);
 			stream_list->stream_types[i++] = strdup(name);
 		}
-		g_variant_iter_free (&iter);
-		g_variant_unref (item);
-		g_variant_unref (child);
+		g_variant_iter_free(&iter);
+		g_variant_unref(item);
+		g_variant_unref(child);
 
 		child = g_variant_get_child_value(result, 1);
 		item = g_variant_get_variant(child);
 		gint32 priority;
 		i = 0;
 		g_variant_iter_init(&iter, item);
-		while ((i < AVAIL_STREAMS_MAX) && g_variant_iter_loop(&iter, "i", &priority)) {
-			debug_log ("priority : %d", priority);
+		while ((i < AVAIL_STREAMS_MAX)
+			   && g_variant_iter_loop(&iter, "i", &priority)) {
+			debug_log("priority : %d", priority);
 			stream_list->priorities[i++] = priority;
 		}
-		g_variant_iter_free (&iter);
-		g_variant_unref (item);
-		g_variant_unref (child);
+		g_variant_iter_free(&iter);
+		g_variant_unref(item);
+		g_variant_unref(child);
 
 		g_variant_unref(result);
 	}
@@ -797,17 +769,16 @@ int __mm_sound_mgr_focus_dbus_get_stream_list(stream_list_t* stream_list)
 	return ret;
 }
 
-
 int MMSoundMgrFocusDbusInit(void)
 {
 	debug_enter();
 
-	introspection_data = g_dbus_node_info_new_for_xml (introspection_xml, NULL);
+	introspection_data = g_dbus_node_info_new_for_xml(introspection_xml, NULL);
 	if (!introspection_data)
 		return MM_ERROR_SOUND_INTERNAL;
 
 	if (_mm_sound_mgr_focus_dbus_own_name(G_BUS_TYPE_SYSTEM, BUS_NAME_FOCUS_SERVER, &focus_server_owner_id) != MM_ERROR_NONE) {
-		debug_error ("dbus own name for focus-server error\n");
+		debug_error("dbus own name for focus-server error\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 
@@ -821,10 +792,7 @@ void MMSoundMgrFocusDbusFini(void)
 	debug_enter("\n");
 
 	_mm_sound_mgr_focus_dbus_unown_name(focus_server_owner_id);
-	g_dbus_node_info_unref (introspection_data);
+	g_dbus_node_info_unref(introspection_data);
 
 	debug_leave("\n");
 }
-
-
-

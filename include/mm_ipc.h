@@ -31,23 +31,21 @@
 #include "mm_sound_stream.h"
 #endif
 
-
 #define FILE_PATH 512
 
 typedef enum {
-    MM_IPC_SUCCESS,
-    MM_IPC_WARNING,
-    MM_IPC_ERROR,
-    MM_IPC_PROCESS,
+	MM_IPC_SUCCESS,
+	MM_IPC_WARNING,
+	MM_IPC_ERROR,
+	MM_IPC_PROCESS,
 } mm_ipc_async_state;
 
-typedef struct
-{
+typedef struct {
 	/* Recieve data */
 	int msgid;
 	int msgtype;
 	int code;
-	
+
 	/* Send data */
 	int keytone;
 	int repeat;
@@ -100,27 +98,25 @@ typedef struct
 	char name[MM_SOUND_NAME_NUM];
 } mmsound_ipc_t;
 
-typedef struct
-{
+typedef struct {
 	long msg_type;
 	mmsound_ipc_t sound_msg;
 	bool wait_for_reply;
 } mm_ipc_msg_t;
 
-typedef void (*mm_ipc_callback_t)(int code, int size);
+typedef void (*mm_ipc_callback_t) (int code, int size);
 
 int MMSoundGetTime(char *position);
 int MMIpcCreate(const int key);
 int MMIpcDestroy(const int key);
-int MMIpcSendMsg(const int key, mm_ipc_msg_t *msg);
-int MMIpcRecvMsg(const int key, mm_ipc_msg_t *msg);
+int MMIpcSendMsg(const int key, mm_ipc_msg_t * msg);
+int MMIpcRecvMsg(const int key, mm_ipc_msg_t * msg);
 
-int MMIpcSendMsgAsync(const char *ipcname, mm_ipc_msg_t *msg, mm_ipc_callback_t callback);
-int MMIpcRecvMsgAsync(const char *ipcname, mm_ipc_msg_t **msg, mm_ipc_callback_t callback);
+int MMIpcSendMsgAsync(const char *ipcname, mm_ipc_msg_t * msg, mm_ipc_callback_t callback);
+int MMIpcRecvMsgAsync(const char *ipcname, mm_ipc_msg_t ** msg, mm_ipc_callback_t callback);
 int MMIpcRecvData(const char *ipcname, void *data, int *size);
 int MMIpcSendDataAsync(const char *ipcname, void *data, int size, mm_ipc_callback_t callback);
 int __mm_sound_lock(void);
 int __mm_sound_unlock(void);
 
-#endif  /* __MM_SOUND_IPC_H__ */
-
+#endif /* __MM_SOUND_IPC_H__ */

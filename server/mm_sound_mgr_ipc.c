@@ -49,28 +49,28 @@
 /* workaround for AF volume gain tuning */
 #define MM_SOUND_AF_FILE_PREFIX "/opt/ug/res/sounds/ug-camera-efl/sounds/af_"
 
-
 /******************************************************************************************
 	Functions For handling request from client
 ******************************************************************************************/
 // except msgid
-int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int volume_config,
-			   int priority, int session_type, int session_options, int client_pid, int handle_route,
-			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index)
+int _MMSoundMgrIpcPlayFile(char *filename, int tone, int repeat, int volume,
+						   int volume_config, int priority, int session_type,
+						   int session_options, int client_pid,
+						   int handle_route, gboolean enable_session, int *codechandle, char *stream_type, int stream_index)
 {
-	mmsound_mgr_codec_param_t param = {0,};
+	mmsound_mgr_codec_param_t param = { 0, };
 	MMSourceType *source = NULL;
 	int ret = MM_ERROR_NONE;
 
 	/* Set source */
-	source = (MMSourceType*)malloc(sizeof(MMSourceType));
+	source = (MMSourceType *) malloc(sizeof(MMSourceType));
 	if (!source) {
 		debug_error("malloc fail!!\n");
 		return MM_ERROR_OUT_OF_MEMORY;
 	}
 
 	ret = mm_source_open_file(filename, source, MM_SOURCE_CHECK_DRM_CONTENTS);
-	if(ret != MM_ERROR_NONE) {
+	if (ret != MM_ERROR_NONE) {
 		debug_error("Fail to open file\n");
 		if (source) {
 			free(source);
@@ -85,7 +85,7 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 	param.volume_config = volume_config;
 	param.priority = priority;
 	param.session_type = session_type;
-	param.param = (void*)client_pid;
+	param.param = (void *)client_pid;
 	param.source = source;
 	param.handle_route = handle_route;
 	param.enable_session = enable_session;
@@ -147,22 +147,23 @@ int _MMSoundMgrIpcClearFocus(int pid)
 	return MM_ERROR_NONE;
 }
 
-int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
-			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index)
+int _MMSoundMgrIpcPlayFileWithStreamInfo(char *filename, int repeat, int volume,
+										 int priority, int client_pid,
+										 int handle_route, int *codechandle, char *stream_type, int stream_index)
 {
-	mmsound_mgr_codec_param_t param = {0,};
+	mmsound_mgr_codec_param_t param = { 0, };
 	MMSourceType *source = NULL;
 	int ret = MM_ERROR_NONE;
 
 	/* Set source */
-	source = (MMSourceType*)malloc(sizeof(MMSourceType));
+	source = (MMSourceType *) malloc(sizeof(MMSourceType));
 	if (!source) {
 		debug_error("malloc fail!!\n");
 		return MM_ERROR_OUT_OF_MEMORY;
 	}
 
 	ret = mm_source_open_file(filename, source, MM_SOURCE_CHECK_DRM_CONTENTS);
-	if(ret != MM_ERROR_NONE) {
+	if (ret != MM_ERROR_NONE) {
 		debug_error("Fail to open file\n");
 		if (source) {
 			free(source);
@@ -174,7 +175,7 @@ int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 	param.repeat_count = repeat;
 	param.volume = volume;
 	param.priority = priority;
-	param.param = (void*)client_pid;
+	param.param = (void *)client_pid;
 	param.source = source;
 	param.handle_route = handle_route;
 	param.stream_index = stream_index;
@@ -202,10 +203,10 @@ int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 }
 
 int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
-			   int session_type, int session_options, int client_pid,
-			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index)
+						   int session_type, int session_options,
+						   int client_pid, gboolean enable_session, int *codechandle, char *stream_type, int stream_index)
 {
-	mmsound_mgr_codec_param_t param = {0,};
+	mmsound_mgr_codec_param_t param = { 0, };
 	int ret = MM_ERROR_NONE;
 
 	/* Set sound player parameter */
@@ -214,7 +215,7 @@ int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 	param.volume = volume;
 	param.volume_config = volume_config;
 	param.priority = 0;
-	param.param = (void*)client_pid;
+	param.param = (void *)client_pid;
 	param.session_type = session_type;
 	param.session_options = session_options;
 	param.enable_session = enable_session;
@@ -223,15 +224,15 @@ int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 
 	debug_msg("DTMF %d\n", param.tone);
 	debug_msg("Loop %d\n", param.repeat_count);
-	debug_msg("Volume %d\n",param.volume);
-	debug_msg("VolumeConfig %x\n",param.volume_config);
+	debug_msg("Volume %d\n", param.volume);
+	debug_msg("VolumeConfig %x\n", param.volume_config);
 	debug_msg("Priority %d\n", param.priority);
 	debug_msg("session %d\n", param.session_type);
 	debug_msg("session options %x\n", param.session_options);
 	debug_msg("enable_session %d\n", param.enable_session);
 
 	ret = MMSoundMgrCodecPlayDtmf(codechandle, &param);
-	if ( ret != MM_ERROR_NONE) {
+	if (ret != MM_ERROR_NONE) {
 		debug_error("Will be closed a sources, codec handle : [0x%d]\n", *codechandle);
 		return ret;
 	}
@@ -239,9 +240,10 @@ int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 	return ret;
 }
 
-int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume, int client_pid, int *codechandle, char *stream_type, int stream_index)
+int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume,
+										 int client_pid, int *codechandle, char *stream_type, int stream_index)
 {
-	mmsound_mgr_codec_param_t param = {0,};
+	mmsound_mgr_codec_param_t param = { 0, };
 	int ret = MM_ERROR_NONE;
 
 	/* Set sound player parameter */
@@ -249,20 +251,19 @@ int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume, int c
 	param.repeat_count = repeat;
 	param.volume = volume;
 	param.priority = 0;
-	param.param = (void*)client_pid;
+	param.param = (void *)client_pid;
 	param.stream_index = stream_index;
 	MMSOUND_STRNCPY(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
 
 	debug_msg("DTMF %d\n", param.tone);
 	debug_msg("Loop %d\n", param.repeat_count);
-	debug_msg("Volume %d\n",param.volume);
+	debug_msg("Volume %d\n", param.volume);
 	debug_msg("Priority %d\n", param.priority);
 	debug_msg("stream type %s\n", param.stream_type);
 	debug_msg("stream index %d\n", param.stream_index);
 
-
 	ret = MMSoundMgrCodecPlayDtmfWithStreamInfo(codechandle, &param);
-	if ( ret != MM_ERROR_NONE) {
+	if (ret != MM_ERROR_NONE) {
 		debug_error("Will be closed a sources, codec handle : [0x%d]\n", *codechandle);
 		return ret;
 	}
@@ -270,11 +271,11 @@ int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume, int c
 	return ret;
 }
 
-int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_sound_device_t **device_list, int *total_num)
+int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_sound_device_t ** device_list, int *total_num)
 {
 	int ret = MM_ERROR_NONE;
 
-//	ret = _mm_sound_mgr_device_get_current_connected_dev_list(device_flags, device_list, total_num);
+//  ret = _mm_sound_mgr_device_get_current_connected_dev_list(device_flags, device_list, total_num);
 
 	return ret;
 }
@@ -283,17 +284,17 @@ int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_so
 	Functions For Server-Side to notify Clients
 ******************************************************************************************/
 
-int __mm_sound_mgr_ipc_notify_play_file_end (int handle)
+int __mm_sound_mgr_ipc_notify_play_file_end(int handle)
 {
 	return __mm_sound_mgr_ipc_dbus_notify_play_file_end(handle);
 }
 
-int __mm_sound_mgr_ipc_notify_device_connected (mm_sound_device_t *device, gboolean is_connected)
+int __mm_sound_mgr_ipc_notify_device_connected(mm_sound_device_t * device, gboolean is_connected)
 {
 	return __mm_sound_mgr_ipc_dbus_notify_device_connected(device, is_connected);
 }
 
-int __mm_sound_mgr_ipc_notify_device_info_changed (mm_sound_device_t *device, int changed_device_info_type)
+int __mm_sound_mgr_ipc_notify_device_info_changed(mm_sound_device_t * device, int changed_device_info_type)
 {
 	return __mm_sound_mgr_ipc_dbus_notify_device_info_changed(device, changed_device_info_type);
 }
@@ -315,25 +316,27 @@ int __mm_sound_mgr_ipc_notify_available_device_changed(int device_in, int device
 	return __mm_sound_mgr_ipc_dbus_notify_available_device_changed(device_in, device_out, available);
 }
 
-int __mm_sound_mgr_ipc_freeze_send (char* command, int pid)
+int __mm_sound_mgr_ipc_freeze_send(char *command, int pid)
 {
-	return mm_sound_mgr_ipc_dbus_send_signal_freeze ( command, pid);
+	return mm_sound_mgr_ipc_dbus_send_signal_freeze(command, pid);
 }
 
 /* should be converted to general type */
-int _MMIpcCBSndMsg(mm_ipc_msg_t *msg)
+int _MMIpcCBSndMsg(mm_ipc_msg_t * msg)
 {
-//	return _MMIpcMsgqCBSndMsg(msg);
+//  return _MMIpcMsgqCBSndMsg(msg);
 	return MM_ERROR_NONE;
 }
-int _MMIpcCBRecvMsg(mm_ipc_msg_t *msg)
+
+int _MMIpcCBRecvMsg(mm_ipc_msg_t * msg)
 {
-//	return _MMIpcMsgqCBRecvMsg(msg);
+//  return _MMIpcMsgqCBRecvMsg(msg);
 	return MM_ERROR_NONE;
 }
-int _MMIpcCBMsgEnQueueAgain(mm_ipc_msg_t *msg)
+
+int _MMIpcCBMsgEnQueueAgain(mm_ipc_msg_t * msg)
 {
-//	return _MMIpcMsgqCBMsgEnQueueAgain(msg);
+//  return _MMIpcMsgqCBMsgEnQueueAgain(msg);
 	return MM_ERROR_NONE;
 }
 

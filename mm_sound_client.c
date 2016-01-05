@@ -87,17 +87,17 @@ typedef struct {
 	int focus_tid;
 	int handle;
 	int focus_fd;
-	GSourceFuncs* g_src_funcs;
-	GPollFD* g_poll_fd;
-	GSource* focus_src;
+	GSourceFuncs *g_src_funcs;
+	GPollFD *g_poll_fd;
+	GSource *focus_src;
 	bool is_used;
 	bool auto_reacquire;
 	GMutex focus_lock;
 	mm_sound_focus_changed_cb focus_callback;
 	mm_sound_focus_changed_watch_cb watch_callback;
-	void* user_data;
+	void *user_data;
 
-	bool is_for_session;	/* will be removed when the session concept is completely left out*/
+	bool is_for_session;		/* will be removed when the session concept is completely left out */
 } focus_sound_info_t;
 
 typedef struct {
@@ -111,15 +111,15 @@ typedef struct {
 
 typedef struct {
 	mm_sound_focus_session_interrupt_cb user_cb;
-	void* user_data;
+	void *user_data;
 } focus_session_interrupt_info_t;
 
-typedef gboolean (*focus_gLoopPollHandler_t)(gpointer d);
+typedef gboolean(*focus_gLoopPollHandler_t) (gpointer d);
 
 GThread *g_focus_thread;
 GMainLoop *g_focus_loop;
 focus_sound_info_t g_focus_sound_handle[FOCUS_HANDLE_MAX];
-focus_session_interrupt_info_t g_focus_session_interrupt_info = {NULL, NULL};
+focus_session_interrupt_info_t g_focus_session_interrupt_info = { NULL, NULL };
 
 /* global variables for device list */
 static pthread_mutex_t g_id_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -155,7 +155,7 @@ void _focus_signal_handler(int signo)
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to emergnet_exit_focus\n");
 	else
-		debug_error("[Client] Error occurred : 0x%x \n",ret);
+		debug_error("[Client] Error occurred : 0x%x \n", ret);
 
 	sigprocmask(SIG_SETMASK, &old_mask, NULL);
 	/* signal unblock */
@@ -163,27 +163,27 @@ void _focus_signal_handler(int signo)
 	switch (signo) {
 	case SIGINT:
 		sigaction(SIGINT, &FOCUS_int_old_action, NULL);
-		raise( signo);
+		raise(signo);
 		break;
 	case SIGABRT:
 		sigaction(SIGABRT, &FOCUS_abrt_old_action, NULL);
-		raise( signo);
+		raise(signo);
 		break;
 	case SIGSEGV:
 		sigaction(SIGSEGV, &FOCUS_segv_old_action, NULL);
-		raise( signo);
+		raise(signo);
 		break;
 	case SIGTERM:
 		sigaction(SIGTERM, &FOCUS_term_old_action, NULL);
-		raise( signo);
+		raise(signo);
 		break;
 	case SIGSYS:
 		sigaction(SIGSYS, &FOCUS_sys_old_action, NULL);
-		raise( signo);
+		raise(signo);
 		break;
 	case SIGXCPU:
 		sigaction(SIGXCPU, &FOCUS_xcpu_old_action, NULL);
-		raise( signo);
+		raise(signo);
 		break;
 	default:
 		break;
@@ -216,7 +216,6 @@ int mm_sound_client_initialize(void)
 
 #endif
 
-
 	debug_fleave();
 	return ret;
 }
@@ -228,7 +227,6 @@ int mm_sound_client_finalize(void)
 	debug_fenter();
 
 	ret = mm_sound_client_dbus_finalize();
-
 
 #ifdef USE_FOCUS
 
@@ -323,11 +321,11 @@ void _mm_sound_client_focus_signal_callback(mm_sound_signal_name_t signal, int v
 int mm_sound_client_play_tone(int number, int volume_config, double volume, int time, int *handle, bool enable_session)
 {
 	int ret = MM_ERROR_NONE;
-//	 int instance = -1; 	/* instance is unique to communicate with server : client message queue filter type */
+//   int instance = -1;     /* instance is unique to communicate with server : client message queue filter type */
 	int volume_type = MM_SOUND_VOLUME_CONFIG_TYPE(volume_config);
-	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = {0, };
+	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = { 0, };
 
-	 debug_fenter();
+	debug_fenter();
 
 	/* read session information */
 	int session_type = MM_SESSION_TYPE_MEDIA;
@@ -348,26 +346,28 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 			debug_warning("[Client] Read Session Information failed. use default \"media\" type\n");
 			session_type = MM_SESSION_TYPE_MEDIA;
 
-			if(MM_ERROR_NONE != mm_session_init(session_type)) {
+			if (MM_ERROR_NONE != mm_session_init(session_type)) {
 				debug_critical("[Client] MMSessionInit() failed\n");
 				return MM_ERROR_POLICY_INTERNAL;
 			}
 		}
 	}
+	// instance = getpid();
+	//debug_log("[Client] pid for client ::: [%d]\n", instance);
 
-	 // instance = getpid();
-	 //debug_log("[Client] pid for client ::: [%d]\n", instance);
-
-	 /* Send msg */
-	 debug_msg("[Client] Input number : %d\n", number);
-	 /* Send req memory */
+	/* Send msg */
+	debug_msg("[Client] Input number : %d\n", number);
+	/* Send req memory */
 
 	mm_sound_convert_volume_type_to_stream_type(volume_type, stream_type);
-	ret = mm_sound_client_dbus_play_tone(number, time, volume, volume_config,
-					session_type, session_options, getpid(), enable_session, handle, stream_type, -1);
+	ret =
+		mm_sound_client_dbus_play_tone(number, time, volume, volume_config,
+									   session_type, session_options, getpid(), enable_session, handle, stream_type, -1);
 
 	if (enable_session && !g_focus_signal_handle) {
-		ret = mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &g_focus_signal_handle, _mm_sound_client_focus_signal_callback, NULL);
+		ret =
+			mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS,
+									  &g_focus_signal_handle, _mm_sound_client_focus_signal_callback, NULL);
 		if (ret) {
 			debug_error("mm_sound_subscribe_signal failed [0x%x]", ret);
 			return MM_ERROR_POLICY_INTERNAL;
@@ -378,7 +378,8 @@ int mm_sound_client_play_tone(int number, int volume_config, double volume, int 
 	return ret;
 }
 
-int mm_sound_client_play_tone_with_stream_info(int tone, char *stream_type, int stream_id, double volume, int duration, int *handle)
+int mm_sound_client_play_tone_with_stream_info(int tone, char *stream_type,
+											   int stream_id, double volume, int duration, int *handle)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -392,7 +393,7 @@ int mm_sound_client_play_tone_with_stream_info(int tone, char *stream_type, int 
 
 void _mm_sound_stop_callback_wrapper_func(int ended_handle, void *userdata)
 {
-	client_cb_data_t *cb_data = (client_cb_data_t*) userdata;
+	client_cb_data_t *cb_data = (client_cb_data_t *) userdata;
 
 	debug_log("[Wrapper CB][Play Stop] ended_handle : %d", ended_handle);
 
@@ -402,7 +403,7 @@ void _mm_sound_stop_callback_wrapper_func(int ended_handle, void *userdata)
 	}
 	if (ended_handle == cb_data->mask) {
 		debug_log("Interested playing handle end : %d", ended_handle);
-		((mm_sound_stop_callback_func)(cb_data->user_cb))(cb_data->user_data, ended_handle);
+		((mm_sound_stop_callback_func) (cb_data->user_cb)) (cb_data->user_data, ended_handle);
 		if (mm_sound_client_dbus_remove_play_sound_end_callback(cb_data->subs_id) != MM_ERROR_NONE)
 			debug_error("mm_sound_client_dbus_remove_play_file_end_callback failed");
 	} else {
@@ -410,15 +411,15 @@ void _mm_sound_stop_callback_wrapper_func(int ended_handle, void *userdata)
 	}
 }
 
-int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
+int mm_sound_client_play_sound(MMSoundPlayParam * param, int tone, int *handle)
 {
 	int ret = MM_ERROR_NONE;
 	int session_type = MM_SESSION_TYPE_MEDIA;
 	int session_options = 0;
 	int is_focus_registered = 0;
-//	int instance = -1; 	/* instance is unique to communicate with server : client message queue filter type */
+//  int instance = -1;  /* instance is unique to communicate with server : client message queue filter type */
 	int volume_type = MM_SOUND_VOLUME_CONFIG_TYPE(param->volume_config);
-	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = {0, };
+	char stream_type[MM_SOUND_STREAM_TYPE_LEN] = { 0, };
 	client_cb_data_t *cb_data = NULL;
 
 	debug_fenter();
@@ -435,11 +436,11 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 		param->skip_session = true;
 
 	if (param->skip_session == false) {
-		if(MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options)) {
+		if (MM_ERROR_NONE != _mm_session_util_read_information(-1, &session_type, &session_options)) {
 			debug_warning("[Client] Read MMSession Type failed. use default \"media\" type\n");
 			session_type = MM_SESSION_TYPE_MEDIA;
 
-			if(MM_ERROR_NONE != mm_session_init(session_type)) {
+			if (MM_ERROR_NONE != mm_session_init(session_type)) {
 				debug_critical("[Client] MMSessionInit() failed\n");
 				return MM_ERROR_POLICY_INTERNAL;
 			}
@@ -453,9 +454,12 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 	}
 
 	mm_sound_convert_volume_type_to_stream_type(volume_type, stream_type);
-	ret = mm_sound_client_dbus_play_sound(param->filename, tone, param->loop, param->volume, param->volume_config,
-					 param->priority, session_type, session_options, getpid(), param->handle_route,
-					 !param->skip_session, handle, stream_type, -1);
+	ret =
+		mm_sound_client_dbus_play_sound(param->filename, tone, param->loop,
+										param->volume, param->volume_config,
+										param->priority, session_type,
+										session_options, getpid(),
+										param->handle_route, !param->skip_session, handle, stream_type, -1);
 	if (ret != MM_ERROR_NONE) {
 		debug_error("Play Sound Failed");
 		goto failed;
@@ -466,32 +470,39 @@ int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
 		cb_data->user_data = param->data;
 		cb_data->mask = *handle;
 
-		ret = mm_sound_client_dbus_add_play_sound_end_callback(_mm_sound_stop_callback_wrapper_func, cb_data, &cb_data->subs_id);
+		ret =
+			mm_sound_client_dbus_add_play_sound_end_callback(_mm_sound_stop_callback_wrapper_func, cb_data, &cb_data->subs_id);
 		if (ret != MM_ERROR_NONE) {
 			debug_error("Add callback for play sound(%d) Failed", *handle);
 		}
 	}
 	if (!param->skip_session && !g_focus_signal_handle) {
-		ret = mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS, &g_focus_signal_handle, _mm_sound_client_focus_signal_callback, NULL);
+		ret =
+			mm_sound_subscribe_signal(MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS,
+									  &g_focus_signal_handle, _mm_sound_client_focus_signal_callback, NULL);
 		if (ret) {
 			debug_error("mm_sound_subscribe_signal failed [0x%x]", ret);
 			return MM_ERROR_POLICY_INTERNAL;
 		}
 	}
 
-failed:
+ failed:
 
 	debug_fleave();
 	return ret;
 }
 
-int mm_sound_client_play_sound_with_stream_info(MMSoundPlayParam *param, int *handle, char* stream_type, int stream_id)
+int mm_sound_client_play_sound_with_stream_info(MMSoundPlayParam * param, int *handle, char *stream_type, int stream_id)
 {
 	int ret = MM_ERROR_NONE;
 	client_cb_data_t *cb_data = NULL;
 
-	ret = mm_sound_client_dbus_play_sound_with_stream_info(param->filename, param->loop, param->volume,
-					 param->priority, getpid(), param->handle_route, handle, stream_type, stream_id);
+	ret =
+		mm_sound_client_dbus_play_sound_with_stream_info(param->filename,
+														 param->loop,
+														 param->volume,
+														 param->priority,
+														 getpid(), param->handle_route, handle, stream_type, stream_id);
 	if (ret != MM_ERROR_NONE) {
 		debug_error("Play Sound Failed");
 		goto failed;
@@ -502,13 +513,14 @@ int mm_sound_client_play_sound_with_stream_info(MMSoundPlayParam *param, int *ha
 		cb_data->user_data = param->data;
 		cb_data->mask = *handle;
 
-		ret = mm_sound_client_dbus_add_play_sound_end_callback(_mm_sound_stop_callback_wrapper_func, cb_data, &cb_data->subs_id);
+		ret =
+			mm_sound_client_dbus_add_play_sound_end_callback(_mm_sound_stop_callback_wrapper_func, cb_data, &cb_data->subs_id);
 		if (ret != MM_ERROR_NONE) {
 			debug_error("Add callback for play sound(%d) Failed", *handle);
 		}
 	}
 
-failed:
+ failed:
 
 	debug_fleave();
 	return ret;
@@ -531,7 +543,7 @@ int mm_sound_client_stop_sound(int handle)
 	return ret;
 }
 
-static int _mm_sound_client_device_list_dump (GList *device_list)
+static int _mm_sound_client_device_list_dump(GList * device_list)
 {
 	int ret = MM_ERROR_NONE;
 	GList *list = NULL;
@@ -544,10 +556,11 @@ static int _mm_sound_client_device_list_dump (GList *device_list)
 
 	debug_log("======================== device list : start ==========================\n");
 	for (list = device_list; list != NULL; list = list->next) {
-		device_node = (mm_sound_device_t *)list->data;
+		device_node = (mm_sound_device_t *) list->data;
 		if (device_node) {
-			debug_log(" list idx[%d]: type[%17s], id[%02d], io_direction[%d], state[%d], name[%s]\n",
-						count++, device_node->type, device_node->id, device_node->io_direction, device_node->state, device_node->name);
+			debug_log
+				(" list idx[%d]: type[%17s], id[%02d], io_direction[%d], state[%d], name[%s]\n",
+				 count++, device_node->type, device_node->id, device_node->io_direction, device_node->state, device_node->name);
 		}
 	}
 	debug_log("======================== device list : end ============================\n");
@@ -555,7 +568,7 @@ static int _mm_sound_client_device_list_dump (GList *device_list)
 	return ret;
 }
 
-int mm_sound_client_get_current_connected_device_list(int device_flags, mm_sound_device_list_t *device_list)
+int mm_sound_client_get_current_connected_device_list(int device_flags, mm_sound_device_list_t * device_list)
 {
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
@@ -577,18 +590,22 @@ int mm_sound_client_get_current_connected_device_list(int device_flags, mm_sound
 	}
 	_mm_sound_client_device_list_dump(device_list->list);
 
-failed:
+ failed:
 	debug_fleave();
 	return ret;
 }
 
-void _mm_sound_device_connected_callback_wrapper_func(int device_id, const char *device_type, int io_direction, int state, const char *name, gboolean is_connected, void *userdata)
+void _mm_sound_device_connected_callback_wrapper_func(int device_id,
+													  const char *device_type,
+													  int io_direction,
+													  int state, const char *name, gboolean is_connected, void *userdata)
 {
 	mm_sound_device_t device_h;
-	client_cb_data_t *cb_data = (client_cb_data_t*) userdata;
+	client_cb_data_t *cb_data = (client_cb_data_t *) userdata;
 
-	debug_log("[Wrapper CB][Device Connnected] device_id : %d, device_type : %s, direction : %d, state : %d, name : %s, is_connected : %d",
-			  device_id, device_type, io_direction, state, name, is_connected);
+	debug_log
+		("[Wrapper CB][Device Connnected] device_id : %d, device_type : %s, direction : %d, state : %d, name : %s, is_connected : %d",
+		 device_id, device_type, io_direction, state, name, is_connected);
 
 	if (cb_data == NULL) {
 		debug_warning("device connected changed callback data null");
@@ -601,10 +618,11 @@ void _mm_sound_device_connected_callback_wrapper_func(int device_id, const char 
 	MMSOUND_STRNCPY(device_h.name, name, MAX_DEVICE_NAME_NUM);
 	MMSOUND_STRNCPY(device_h.type, device_type, MAX_DEVICE_TYPE_STR_LEN);
 
-	((mm_sound_device_connected_cb)(cb_data->user_cb))(&device_h, is_connected, cb_data->user_data);
+	((mm_sound_device_connected_cb) (cb_data->user_cb)) (&device_h, is_connected, cb_data->user_data);
 }
 
-int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_device_connected_cb func, void* user_data, unsigned int *subs_id)
+int mm_sound_client_add_device_connected_callback(int device_flags,
+												  mm_sound_device_connected_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 	client_cb_data_t *cb_data = NULL;
@@ -615,7 +633,9 @@ int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_dev
 	cb_data->user_cb = func;
 	cb_data->user_data = user_data;
 
-	ret = mm_sound_client_dbus_add_device_connected_callback(device_flags, _mm_sound_device_connected_callback_wrapper_func, cb_data, subs_id);
+	ret =
+		mm_sound_client_dbus_add_device_connected_callback(device_flags,
+														   _mm_sound_device_connected_callback_wrapper_func, cb_data, subs_id);
 
 	debug_fleave();
 	return ret;
@@ -632,13 +652,16 @@ int mm_sound_client_remove_device_connected_callback(unsigned int subs_id)
 	return ret;
 }
 
-static void _mm_sound_device_info_changed_callback_wrapper_func(int device_id, const char *device_type, int io_direction, int state, const char *name, int changed_device_info_type, void *userdata)
+static void _mm_sound_device_info_changed_callback_wrapper_func(int device_id, const char
+																*device_type, int io_direction, int state, const char
+																*name, int changed_device_info_type, void *userdata)
 {
 	mm_sound_device_t device_h;
-	client_cb_data_t *cb_data = (client_cb_data_t*) userdata;
+	client_cb_data_t *cb_data = (client_cb_data_t *) userdata;
 
-	debug_log("[Wrapper CB][Device Info Changed] device_id : %d, device_type : %s, direction : %d, state : %d, name : %s, changed_info_type : %d",
-			  device_id, device_type, io_direction, state, name, changed_device_info_type);
+	debug_log
+		("[Wrapper CB][Device Info Changed] device_id : %d, device_type : %s, direction : %d, state : %d, name : %s, changed_info_type : %d",
+		 device_id, device_type, io_direction, state, name, changed_device_info_type);
 
 	if (cb_data == NULL) {
 		debug_warning("device info changed callback data null");
@@ -651,13 +674,15 @@ static void _mm_sound_device_info_changed_callback_wrapper_func(int device_id, c
 	MMSOUND_STRNCPY(device_h.name, name, MAX_DEVICE_NAME_NUM);
 	MMSOUND_STRNCPY(device_h.type, device_type, MAX_DEVICE_TYPE_STR_LEN);
 
-	((mm_sound_device_info_changed_cb)(cb_data->user_cb))(&device_h, changed_device_info_type, cb_data->user_data);
+	((mm_sound_device_info_changed_cb) (cb_data->user_cb)) (&device_h, changed_device_info_type, cb_data->user_data);
 }
 
-int mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_device_info_changed_cb func, void *userdata, unsigned int *subs_id)
+int mm_sound_client_add_device_info_changed_callback(int device_flags,
+													 mm_sound_device_info_changed_cb
+													 func, void *userdata, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
-	client_cb_data_t *cb_data = (client_cb_data_t*) userdata;
+	client_cb_data_t *cb_data = (client_cb_data_t *) userdata;
 
 	debug_fenter();
 
@@ -665,7 +690,10 @@ int mm_sound_client_add_device_info_changed_callback(int device_flags, mm_sound_
 	cb_data->user_cb = func;
 	cb_data->user_data = userdata;
 
-	ret = mm_sound_client_dbus_add_device_info_changed_callback(device_flags, _mm_sound_device_info_changed_callback_wrapper_func, cb_data, subs_id);
+	ret =
+		mm_sound_client_dbus_add_device_info_changed_callback(device_flags,
+															  _mm_sound_device_info_changed_callback_wrapper_func,
+															  cb_data, subs_id);
 
 	debug_fleave();
 	return ret;
@@ -676,7 +704,7 @@ int mm_sound_client_remove_device_info_changed_callback(unsigned int subs_id)
 	int ret = MM_ERROR_NONE;
 	debug_fenter();
 
-	ret =  mm_sound_client_dbus_remove_device_info_changed_callback(subs_id);
+	ret = mm_sound_client_dbus_remove_device_info_changed_callback(subs_id);
 
 	debug_fleave();
 	return ret;
@@ -717,7 +745,7 @@ int __convert_volume_type_to_str(int volume_type, char **volume_type_str)
 		*volume_type_str = "voice";
 		break;
 	}
-	if (!strncmp(*volume_type_str,"", VOLUME_TYPE_LEN)) {
+	if (!strncmp(*volume_type_str, "", VOLUME_TYPE_LEN)) {
 		debug_error("could not find the volume_type[%d] in this switch case statement", volume_type);
 		ret = MM_ERROR_SOUND_INTERNAL;
 	} else {
@@ -726,7 +754,7 @@ int __convert_volume_type_to_str(int volume_type, char **volume_type_str)
 	return ret;
 }
 
-static int __convert_volume_type_to_int(const char *volume_type_str, volume_type_t *volume_type)
+static int __convert_volume_type_to_int(const char *volume_type_str, volume_type_t * volume_type)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -771,17 +799,21 @@ int mm_sound_client_set_volume_by_type(const int volume_type, const unsigned int
 
 	ret = mm_sound_client_dbus_set_volume_by_type(type_str, volume_level);
 
-failed:
+ failed:
 	debug_fleave();
 	return ret;
 }
 
-static void _mm_sound_volume_changed_callback_wrapper_func(const char *direction, const char *volume_type_str, int volume_level, void *userdata)
+static void _mm_sound_volume_changed_callback_wrapper_func(const char
+														   *direction, const char
+														   *volume_type_str, int volume_level, void *userdata)
 {
 	volume_type_t volume_type = 0;
-	client_cb_data_t *cb_data = (client_cb_data_t*) userdata;
+	client_cb_data_t *cb_data = (client_cb_data_t *) userdata;
 
-	debug_log("[Wrapper CB][Volume Changed] direction : %s, volume_type : %s, volume_level : %d", direction, volume_type_str, volume_level);
+	debug_log
+		("[Wrapper CB][Volume Changed] direction : %s, volume_type : %s, volume_level : %d",
+		 direction, volume_type_str, volume_level);
 
 	if (cb_data == NULL) {
 		debug_warning("volume changed callback data null");
@@ -792,11 +824,13 @@ static void _mm_sound_volume_changed_callback_wrapper_func(const char *direction
 		debug_error("volume type convert failed");
 		return;
 	}
-	debug_log("Call volume changed user cb, direction : %s, vol_type : %s(%d), level : %u", direction, volume_type_str, volume_type, volume_level);
-	((mm_sound_volume_changed_cb)(cb_data->user_cb))(volume_type, volume_level, cb_data->user_data);
+	debug_log
+		("Call volume changed user cb, direction : %s, vol_type : %s(%d), level : %u",
+		 direction, volume_type_str, volume_type, volume_level);
+	((mm_sound_volume_changed_cb) (cb_data->user_cb)) (volume_type, volume_level, cb_data->user_data);
 }
 
-int mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func, void* user_data, unsigned int *subs_id)
+int mm_sound_client_add_volume_changed_callback(mm_sound_volume_changed_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 	client_cb_data_t *cb_data = NULL;
@@ -826,8 +860,7 @@ int mm_sound_client_remove_volume_changed_callback(unsigned int subs_id)
 }
 
 #ifdef USE_FOCUS
-int mm_sound_client_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback, void* user_data)
-{
+int mm_sound_client_set_session_interrupt_callback(mm_sound_focus_session_interrupt_cb callback, void *user_data) {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
@@ -883,7 +916,7 @@ static gboolean _focus_fd_check(GSource * source)
 		return FALSE;
 	}
 	do {
-		temp = (GPollFD*)fd_list->data;
+		temp = (GPollFD *) fd_list->data;
 		if (!temp) {
 			debug_error("fd_list->data is null");
 			return FALSE;
@@ -894,25 +927,24 @@ static gboolean _focus_fd_check(GSource * source)
 		fd_list = fd_list->next;
 	} while (fd_list);
 
-	return FALSE; /* there is no change in any fd state */
+	return FALSE;	/* there is no change in any fd state */
 }
 
-static gboolean _focus_fd_prepare(GSource *source, gint *timeout)
+static gboolean _focus_fd_prepare(GSource * source, gint * timeout)
 {
 	return FALSE;
 }
 
-static gboolean _focus_fd_dispatch(GSource *source,	GSourceFunc callback, gpointer user_data)
+static gboolean _focus_fd_dispatch(GSource * source, GSourceFunc callback, gpointer user_data)
 {
 	callback(user_data);
 	return TRUE;
 }
 
-
 static int _focus_find_index_by_handle(int handle)
 {
 	int i = 0;
-	for(i = 0; i< FOCUS_HANDLE_MAX; i++) {
+	for (i = 0; i < FOCUS_HANDLE_MAX; i++) {
 		if (handle == g_focus_sound_handle[i].handle) {
 			//debug_msg("found index(%d) for handle(%d)", i, handle);
 			if (handle == FOCUS_HANDLE_INIT_VAL) {
@@ -926,7 +958,7 @@ static int _focus_find_index_by_handle(int handle)
 
 static gboolean _focus_callback_handler(gpointer d)
 {
-	GPollFD *data = (GPollFD*)d;
+	GPollFD *data = (GPollFD *) d;
 	int count;
 	int tid = 0;
 	int focus_index = 0;
@@ -943,10 +975,10 @@ static gboolean _focus_callback_handler(gpointer d)
 		int changed_state = -1;
 
 		count = read(data->fd, &cb_data, sizeof(cb_data));
-		if (count < 0){
+		if (count < 0) {
 			char str_error[256];
 			strerror_r(errno, str_error, sizeof(str_error));
-			debug_error("GpollFD read fail, errno=%d(%s)",errno, str_error);
+			debug_error("GpollFD read fail, errno=%d(%s)", errno, str_error);
 			return FALSE;
 		}
 		changed_state = cb_data.state;
@@ -961,40 +993,51 @@ static gboolean _focus_callback_handler(gpointer d)
 		tid = g_focus_sound_handle[focus_index].focus_tid;
 
 		if (changed_state != -1) {
-			debug_error("Got and start CB : TID(%d), handle(%d), type(%d), state(%d,(DEACTIVATED(0)/ACTIVATED(1)), trigger(%s)", tid, cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type);
-			if (g_focus_sound_handle[focus_index].focus_callback== NULL) {
-					debug_error("callback is null..");
-					g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
-					return FALSE;
+			debug_error
+				("Got and start CB : TID(%d), handle(%d), type(%d), state(%d,(DEACTIVATED(0)/ACTIVATED(1)), trigger(%s)",
+				 tid, cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type);
+			if (g_focus_sound_handle[focus_index].focus_callback == NULL) {
+				debug_error("callback is null..");
+				g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
+				return FALSE;
 			}
-			debug_error("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].focus_callback);
-			(g_focus_sound_handle[focus_index].focus_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
+			debug_error("[CALLBACK(%p) START]", g_focus_sound_handle[focus_index].focus_callback);
+			(g_focus_sound_handle[focus_index].focus_callback) (cb_data.handle,
+																cb_data.type,
+																cb_data.state,
+																cb_data.stream_type,
+																cb_data.name, g_focus_sound_handle[focus_index].user_data);
 			debug_error("[CALLBACK END]");
 			if (g_focus_session_interrupt_info.user_cb) {
 				debug_error("sending session interrupt callback(%p)", g_focus_session_interrupt_info.user_cb);
-				(g_focus_session_interrupt_info.user_cb)(cb_data.state, cb_data.stream_type, false, g_focus_session_interrupt_info.user_data);
+				(g_focus_session_interrupt_info.user_cb) (cb_data.state,
+														  cb_data.stream_type, false, g_focus_session_interrupt_info.user_data);
 			}
 		}
 #ifdef CONFIG_ENABLE_RETCB
 
-				int rett = 0;
-				int tmpfd = -1;
-				unsigned int buf = 0;
-				char *filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", g_focus_sound_handle[focus_index].focus_tid, cb_data.handle);
-				tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
-				if (tmpfd < 0) {
-					char str_error[256];
-					strerror_r(errno, str_error, sizeof(str_error));
-					debug_error("[RETCB][Failed(May Server Close First)]tid(%d) fd(%d) %s errno=%d(%s)\n", tid, tmpfd, filename2, errno, str_error);
-					g_free(filename2);
-					g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
-					return FALSE;
-				}
-				buf = (unsigned int)((0x0000ffff & cb_data.handle) |(g_focus_sound_handle[focus_index].auto_reacquire << 16));
-				rett = write(tmpfd, &buf, sizeof(buf));
-				close(tmpfd);
-				g_free(filename2);
-				debug_msg("[RETCB] tid(%d) finishing CB (write=%d)\n", tid, rett);
+		int rett = 0;
+		int tmpfd = -1;
+		unsigned int buf = 0;
+		char *filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr",
+										  g_focus_sound_handle[focus_index].focus_tid,
+										  cb_data.handle);
+		tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
+		if (tmpfd < 0) {
+			char str_error[256];
+			strerror_r(errno, str_error, sizeof(str_error));
+			debug_error
+				("[RETCB][Failed(May Server Close First)]tid(%d) fd(%d) %s errno=%d(%s)\n",
+				 tid, tmpfd, filename2, errno, str_error);
+			g_free(filename2);
+			g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
+			return FALSE;
+		}
+		buf = (unsigned int)((0x0000ffff & cb_data.handle) | (g_focus_sound_handle[focus_index].auto_reacquire << 16));
+		rett = write(tmpfd, &buf, sizeof(buf));
+		close(tmpfd);
+		g_free(filename2);
+		debug_msg("[RETCB] tid(%d) finishing CB (write=%d)\n", tid, rett);
 #endif
 	}
 
@@ -1003,9 +1046,9 @@ static gboolean _focus_callback_handler(gpointer d)
 	return TRUE;
 }
 
-static gboolean _focus_watch_callback_handler( gpointer d)
+static gboolean _focus_watch_callback_handler(gpointer d)
 {
-	GPollFD *data = (GPollFD*)d;
+	GPollFD *data = (GPollFD *) d;
 	int count;
 	int tid = 0;
 	int focus_index = 0;
@@ -1021,10 +1064,10 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 	}
 	if (data->revents & (POLLIN | POLLPRI)) {
 		count = read(data->fd, &cb_data, sizeof(cb_data));
-		if (count < 0){
+		if (count < 0) {
 			char str_error[256];
 			strerror_r(errno, str_error, sizeof(str_error));
-			debug_error("GpollFD read fail, errno=%d(%s)",errno, str_error);
+			debug_error("GpollFD read fail, errno=%d(%s)", errno, str_error);
 			return FALSE;
 		}
 
@@ -1039,40 +1082,50 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 
 		tid = g_focus_sound_handle[focus_index].focus_tid;
 
-		debug_error("Got and start CB : TID(%d), handle(%d), type(%d), state(%d,(DEACTIVATED(0)/ACTIVATED(1)), trigger(%s)", tid, cb_data.handle,  cb_data.type, cb_data.state, cb_data.stream_type);
+		debug_error
+			("Got and start CB : TID(%d), handle(%d), type(%d), state(%d,(DEACTIVATED(0)/ACTIVATED(1)), trigger(%s)",
+			 tid, cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type);
 
 		if (g_focus_sound_handle[focus_index].watch_callback == NULL) {
 			debug_msg("callback is null..");
 		} else {
-			debug_msg("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].watch_callback);
-			(g_focus_sound_handle[focus_index].watch_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
+			debug_msg("[CALLBACK(%p) START]", g_focus_sound_handle[focus_index].watch_callback);
+			(g_focus_sound_handle[focus_index].watch_callback) (cb_data.handle,
+																cb_data.type,
+																cb_data.state,
+																cb_data.stream_type,
+																cb_data.name, g_focus_sound_handle[focus_index].user_data);
 			debug_msg("[CALLBACK END]");
 			if (g_focus_session_interrupt_info.user_cb) {
 				debug_error("sending session interrupt callback(%p)", g_focus_session_interrupt_info.user_cb);
-				(g_focus_session_interrupt_info.user_cb)(cb_data.state, cb_data.stream_type, true, g_focus_session_interrupt_info.user_data);
+				(g_focus_session_interrupt_info.user_cb) (cb_data.state,
+														  cb_data.stream_type, true, g_focus_session_interrupt_info.user_data);
 			}
 		}
 
 #ifdef CONFIG_ENABLE_RETCB
 
-			int rett = 0;
-			int tmpfd = -1;
-			int buf = -1;
-			char *filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", g_focus_sound_handle[focus_index].focus_tid);
-			tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
-			if (tmpfd < 0) {
-				char str_error[256];
-				strerror_r(errno, str_error, sizeof(str_error));
-				debug_error("[RETCB][Failed(May Server Close First)]tid(%d) fd(%d) %s errno=%d(%s)\n", tid, tmpfd, filename2, errno, str_error);
-				g_free(filename2);
-				g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
-				return FALSE;
-			}
-			buf = cb_data.handle;
-			rett = write(tmpfd, &buf, sizeof(buf));
-			close(tmpfd);
+		int rett = 0;
+		int tmpfd = -1;
+		int buf = -1;
+		char *filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr",
+										  g_focus_sound_handle[focus_index].focus_tid);
+		tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
+		if (tmpfd < 0) {
+			char str_error[256];
+			strerror_r(errno, str_error, sizeof(str_error));
+			debug_error
+				("[RETCB][Failed(May Server Close First)]tid(%d) fd(%d) %s errno=%d(%s)\n",
+				 tid, tmpfd, filename2, errno, str_error);
 			g_free(filename2);
-			debug_msg("[RETCB] tid(%d) finishing CB (write=%d)\n", tid, rett);
+			g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
+			return FALSE;
+		}
+		buf = cb_data.handle;
+		rett = write(tmpfd, &buf, sizeof(buf));
+		close(tmpfd);
+		g_free(filename2);
+		debug_msg("[RETCB] tid(%d) finishing CB (write=%d)\n", tid, rett);
 
 #endif
 
@@ -1082,7 +1135,6 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 	g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
 
 	debug_fleave();
-
 
 	return TRUE;
 }
@@ -1097,14 +1149,15 @@ static void _focus_open_callback(int index, bool is_for_watching)
 	if (is_for_watching) {
 		filename = g_strdup_printf("/tmp/FOCUS.%d.wch", g_focus_sound_handle[index].focus_tid);
 	} else {
-		filename = g_strdup_printf("/tmp/FOCUS.%d.%d", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
+		filename =
+			g_strdup_printf("/tmp/FOCUS.%d.%d", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	}
 	pre_mask = umask(0);
-	if (mknod(filename, S_IFIFO|0666, 0)) {
+	if (mknod(filename, S_IFIFO | 0666, 0)) {
 		debug_error("mknod() failure, errno(%d)", errno);
 	}
 	umask(pre_mask);
-	g_focus_sound_handle[index].focus_fd = open( filename, O_RDWR|O_NONBLOCK);
+	g_focus_sound_handle[index].focus_fd = open(filename, O_RDWR | O_NONBLOCK);
 	if (g_focus_sound_handle[index].focus_fd == -1) {
 		debug_error("Open fail : index(%d), file open error(%d)", index, errno);
 	} else {
@@ -1119,7 +1172,8 @@ static void _focus_open_callback(int index, bool is_for_watching)
 	if (is_for_watching) {
 		filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", g_focus_sound_handle[index].focus_tid);
 	} else {
-		filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
+		filename2 =
+			g_strdup_printf("/tmp/FOCUS.%d.%dr", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	}
 	pre_mask = umask(0);
 	if (mknod(filename2, S_IFIFO | 0666, 0)) {
@@ -1144,7 +1198,8 @@ void _focus_close_callback(int index, bool is_for_watching)
 		if (is_for_watching) {
 			filename = g_strdup_printf("/tmp/FOCUS.%d.wch", g_focus_sound_handle[index].focus_tid);
 		} else {
-			filename = g_strdup_printf("/tmp/FOCUS.%d.%d", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
+			filename =
+				g_strdup_printf("/tmp/FOCUS.%d.%d", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 		}
 		close(g_focus_sound_handle[index].focus_fd);
 		if (remove(filename)) {
@@ -1162,19 +1217,21 @@ void _focus_close_callback(int index, bool is_for_watching)
 	if (is_for_watching) {
 		filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", g_focus_sound_handle[index].focus_tid);
 	} else {
-		filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
+		filename2 =
+			g_strdup_printf("/tmp/FOCUS.%d.%dr", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	}
 
 	/* Defensive code - wait until callback timeout although callback is removed */
-	int buf = MM_ERROR_NONE; //no need to specify cb result to server, just notice if the client got the callback properly or not
+	int buf = MM_ERROR_NONE;	//no need to specify cb result to server, just notice if the client got the callback properly or not
 	int tmpfd = -1;
 
 	tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
 	if (tmpfd < 0) {
 		char str_error[256];
 		strerror_r(errno, str_error, sizeof(str_error));
-		debug_warning("could not open file(%s) (may server close it first), tid(%d) fd(%d) %s errno=%d(%s)",
-			filename2, g_focus_sound_handle[index].focus_tid, tmpfd, filename2, errno, str_error);
+		debug_warning
+			("could not open file(%s) (may server close it first), tid(%d) fd(%d) %s errno=%d(%s)",
+			 filename2, g_focus_sound_handle[index].focus_tid, tmpfd, filename2, errno, str_error);
 	} else {
 		debug_msg("write MM_ERROR_NONE(tid:%d) for waiting server", g_focus_sound_handle[index].focus_tid);
 		written = write(tmpfd, &buf, sizeof(buf));
@@ -1190,19 +1247,19 @@ void _focus_close_callback(int index, bool is_for_watching)
 
 }
 
-static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_gLoopPollHandler_t p_gloop_poll_handler )
+static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_gLoopPollHandler_t p_gloop_poll_handler)
 {
-	GSource* g_src = NULL;
-	GSourceFuncs *g_src_funcs = NULL;		/* handler function */
+	GSource *g_src = NULL;
+	GSourceFuncs *g_src_funcs = NULL;	/* handler function */
 	guint gsource_handle;
-	GPollFD *g_poll_fd = NULL;			/* file descriptor */
+	GPollFD *g_poll_fd = NULL;	/* file descriptor */
 
 	debug_fenter();
 
 	g_mutex_init(&g_focus_sound_handle[index].focus_lock);
 
 	/* 1. make GSource Object */
-	g_src_funcs = (GSourceFuncs *)g_malloc(sizeof(GSourceFuncs));
+	g_src_funcs = (GSourceFuncs *) g_malloc(sizeof(GSourceFuncs));
 	if (!g_src_funcs) {
 		debug_error("g_malloc failed on g_src_funcs");
 		return false;
@@ -1221,7 +1278,7 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 	g_focus_sound_handle[index].g_src_funcs = g_src_funcs;
 
 	/* 2. add file description which used in g_loop() */
-	g_poll_fd = (GPollFD *)g_malloc(sizeof(GPollFD));
+	g_poll_fd = (GPollFD *) g_malloc(sizeof(GPollFD));
 	if (!g_poll_fd) {
 		debug_error("g_malloc failed on g_poll_fd");
 		return false;
@@ -1240,14 +1297,14 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 	//g_source_unref(g_src);
 
 	/* 4. set callback */
-	g_source_set_callback(g_src, p_gloop_poll_handler,(gpointer)g_poll_fd, NULL);
+	g_source_set_callback(g_src, p_gloop_poll_handler, (gpointer) g_poll_fd, NULL);
 
-	debug_log(" g_malloc:g_src_funcs(%#X),g_poll_fd(%#X)  g_source_add_poll:g_src_id(%d)  g_source_set_callback:errno(%d)",
-				g_src_funcs, g_poll_fd, gsource_handle, errno);
+	debug_log
+		(" g_malloc:g_src_funcs(%#X),g_poll_fd(%#X)  g_source_add_poll:g_src_id(%d)  g_source_set_callback:errno(%d)",
+		 g_src_funcs, g_poll_fd, gsource_handle, errno);
 
 	debug_fleave();
 	return true;
-
 
 }
 
@@ -1276,11 +1333,11 @@ static bool _focus_remove_sound_callback(int index, gushort events)
 	debug_log(" g_source_remove_poll : fd(%d), event(%x), errno(%d)", g_poll_fd->fd, g_poll_fd->events, errno);
 	g_source_remove_poll(g_focus_sound_handle[index].focus_src, g_poll_fd);
 
-init_handle:
+ init_handle:
 
 	if (g_focus_sound_handle[index].focus_src) {
 		g_source_destroy(g_focus_sound_handle[index].focus_src);
-		if (!g_source_is_destroyed (g_focus_sound_handle[index].focus_src)) {
+		if (!g_source_is_destroyed(g_focus_sound_handle[index].focus_src)) {
 			debug_warning(" failed to g_source_destroy(), focus_src(0x%p)", g_focus_sound_handle[index].focus_src);
 		}
 	}
@@ -1305,17 +1362,18 @@ init_handle:
 	return ret;
 }
 
-
 static void _focus_add_callback(int index, bool is_for_watching)
 {
 	debug_fenter();
 	if (!is_for_watching) {
-		if (!_focus_add_sound_callback(index, g_focus_sound_handle[index].focus_fd, (gushort)POLLIN | POLLPRI, _focus_callback_handler)) {
+		if (!_focus_add_sound_callback
+			(index, g_focus_sound_handle[index].focus_fd, (gushort) POLLIN | POLLPRI, _focus_callback_handler)) {
 			debug_error("failed to _focus_add_sound_callback()");
 			//return false;
 		}
-	} else { // need to check if it's necessary
-		if (!_focus_add_sound_callback(index, g_focus_sound_handle[index].focus_fd, (gushort)POLLIN | POLLPRI, _focus_watch_callback_handler)) {
+	} else {	// need to check if it's necessary
+		if (!_focus_add_sound_callback
+			(index, g_focus_sound_handle[index].focus_fd, (gushort) POLLIN | POLLPRI, _focus_watch_callback_handler)) {
 			debug_error("failed to _focus_add_sound_callback()");
 			//return false;
 		}
@@ -1326,7 +1384,7 @@ static void _focus_add_callback(int index, bool is_for_watching)
 static void _focus_remove_callback(int index)
 {
 	debug_fenter();
-	if (!_focus_remove_sound_callback(index, (gushort)POLLIN | POLLPRI)) {
+	if (!_focus_remove_sound_callback(index, (gushort) POLLIN | POLLPRI)) {
 		debug_error("failed to __focus_remove_sound_callback()");
 		//return false;
 	}
@@ -1367,7 +1425,7 @@ int mm_sound_client_get_unique_id(int *id)
 	return ret;
 }
 
-int mm_sound_client_is_focus_cb_thread(GThread *mine, bool *result)
+int mm_sound_client_is_focus_cb_thread(GThread * mine, bool * result)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -1383,7 +1441,8 @@ int mm_sound_client_is_focus_cb_thread(GThread *mine, bool *result)
 	return ret;
 }
 
-int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* user_data)
+int mm_sound_client_register_focus(int id, int pid, const char *stream_type,
+								   mm_sound_focus_changed_cb callback, bool is_for_session, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
 	int instance;
@@ -1411,12 +1470,12 @@ int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_
 	if (ret == MM_ERROR_NONE) {
 		debug_msg("[Client] Success to register focus\n");
 		if (!g_focus_thread) {
-			GMainContext* focus_context = g_main_context_new ();
-			g_focus_loop = g_main_loop_new (focus_context, FALSE);
+			GMainContext *focus_context = g_main_context_new();
+			g_focus_loop = g_main_loop_new(focus_context, FALSE);
 			g_main_context_unref(focus_context);
 			g_focus_thread = g_thread_new("focus-callback-thread", _focus_thread_func, NULL);
 			if (g_focus_thread == NULL) {
-				debug_error ("could not create thread..");
+				debug_error("could not create thread..");
 				g_main_loop_unref(g_focus_loop);
 				g_focus_sound_handle[index].is_used = false;
 				ret = MM_ERROR_SOUND_INTERNAL;
@@ -1424,14 +1483,14 @@ int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_
 			}
 		}
 	} else {
-		debug_error("[Client] Error occurred : 0x%x \n",ret);
+		debug_error("[Client] Error occurred : 0x%x \n", ret);
 		g_focus_sound_handle[index].is_used = false;
 		goto cleanup;
 	}
 
 	_focus_init_callback(index, false);
 
-cleanup:
+ cleanup:
 
 	debug_fleave();
 	return ret;
@@ -1453,7 +1512,7 @@ int mm_sound_client_unregister_focus(int id)
 
 	if (!g_mutex_trylock(&g_focus_sound_handle[index].focus_lock)) {
 		debug_warning("maybe focus_callback is being called, try one more time..");
-		usleep(2500000); // 2.5 sec
+		usleep(2500000);	// 2.5 sec
 		if (g_mutex_trylock(&g_focus_sound_handle[index].focus_lock)) {
 			debug_msg("finally got focus_lock");
 		}
@@ -1464,7 +1523,7 @@ int mm_sound_client_unregister_focus(int id)
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to unregister focus\n");
 	else
-		debug_error("[Client] Error occurred : 0x%x \n",ret);
+		debug_error("[Client] Error occurred : 0x%x \n", ret);
 
 	g_mutex_unlock(&g_focus_sound_handle[index].focus_lock);
 
@@ -1503,7 +1562,7 @@ int mm_sound_client_set_focus_reacquisition(int id, bool reacquisition)
 		if (ret == MM_ERROR_NONE) {
 			debug_msg("[Client] Success to set focus reacquisition\n");
 		} else {
-			debug_error("[Client] Error occurred : 0x%x \n",ret);
+			debug_error("[Client] Error occurred : 0x%x \n", ret);
 			goto cleanup;
 		}
 	} else {
@@ -1512,13 +1571,13 @@ int mm_sound_client_set_focus_reacquisition(int id, bool reacquisition)
 
 	g_focus_sound_handle[index].auto_reacquire = reacquisition;
 
-cleanup:
+ cleanup:
 
 	debug_fleave();
 	return ret;
 }
 
-int mm_sound_client_get_focus_reacquisition(int id, bool *reacquisition)
+int mm_sound_client_get_focus_reacquisition(int id, bool * reacquisition)
 {
 	int ret = MM_ERROR_NONE;
 	int index = -1;
@@ -1550,9 +1609,11 @@ int mm_sound_client_get_acquired_focus_stream_type(int focus_type, char **stream
 
 	ret = mm_sound_client_dbus_get_acquired_focus_stream_type(focus_type, stream_type, additional_info);
 	if (ret == MM_ERROR_NONE)
-		debug_msg("[Client] Success to get stream type of acquired focus, stream_type(%s), additional_info(%s)\n", *stream_type, *additional_info);
+		debug_msg
+			("[Client] Success to get stream type of acquired focus, stream_type(%s), additional_info(%s)\n",
+			 *stream_type, *additional_info);
 	else
-		debug_error("[Client] Error occurred : 0x%x \n",ret);
+		debug_error("[Client] Error occurred : 0x%x \n", ret);
 
 	debug_fleave();
 	return ret;
@@ -1578,7 +1639,7 @@ int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to acquire focus\n");
 	else
-		debug_error("[Client] Error occurred : 0x%x \n",ret);
+		debug_error("[Client] Error occurred : 0x%x \n", ret);
 
 	debug_fleave();
 	return ret;
@@ -1603,14 +1664,16 @@ int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to release focus\n");
 	else
-		debug_error("[Client] Error occurred : 0x%x \n",ret);
-
+		debug_error("[Client] Error occurred : 0x%x \n", ret);
 
 	debug_fleave();
 	return ret;
 }
 
-int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, bool is_for_session, void* user_data, int *id)
+int mm_sound_client_set_focus_watch_callback(int pid,
+											 mm_sound_focus_type_e focus_type,
+											 mm_sound_focus_changed_watch_cb
+											 callback, bool is_for_session, void *user_data, int *id)
 {
 	int ret = MM_ERROR_NONE;
 	int instance;
@@ -1641,30 +1704,33 @@ int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e focu
 	g_focus_sound_handle[index].user_data = user_data;
 	g_focus_sound_handle[index].is_for_session = is_for_session;
 
-	ret = mm_sound_client_dbus_set_focus_watch_callback(pid, g_focus_sound_handle[index].handle, focus_type, callback, is_for_session, user_data);
+	ret =
+		mm_sound_client_dbus_set_focus_watch_callback(pid,
+													  g_focus_sound_handle
+													  [index].handle, focus_type, callback, is_for_session, user_data);
 
 	if (ret == MM_ERROR_NONE) {
 		debug_msg("[Client] Success to watch focus");
 		if (!g_focus_thread) {
-			GMainContext* focus_context = g_main_context_new ();
-			g_focus_loop = g_main_loop_new (focus_context, FALSE);
+			GMainContext *focus_context = g_main_context_new();
+			g_focus_loop = g_main_loop_new(focus_context, FALSE);
 			g_main_context_unref(focus_context);
 			g_focus_thread = g_thread_new("focus-callback-thread", _focus_thread_func, NULL);
 			if (g_focus_thread == NULL) {
-				debug_error ("could not create thread..");
+				debug_error("could not create thread..");
 				g_main_loop_unref(g_focus_loop);
 				ret = MM_ERROR_SOUND_INTERNAL;
 				goto cleanup;
 			}
 		}
 	} else {
-		debug_error("[Client] Error occurred : 0x%x",ret);
+		debug_error("[Client] Error occurred : 0x%x", ret);
 		goto cleanup;
 	}
 
 	_focus_init_callback(index, true);
 
-cleanup:
+ cleanup:
 
 	if (ret) {
 		g_focus_sound_handle[index].is_used = false;
@@ -1688,13 +1754,16 @@ int mm_sound_client_unset_focus_watch_callback(int id)
 
 	g_mutex_lock(&g_focus_sound_handle[index].focus_lock);
 
-	ret = mm_sound_client_dbus_unset_focus_watch_callback(g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle, g_focus_sound_handle[index].is_for_session);
+	ret =
+		mm_sound_client_dbus_unset_focus_watch_callback(g_focus_sound_handle
+														[index].focus_tid,
+														g_focus_sound_handle
+														[index].handle, g_focus_sound_handle[index].is_for_session);
 
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to unwatch focus\n");
 	else
-		debug_error("[Client] Error occurred : 0x%x \n",ret);
-
+		debug_error("[Client] Error occurred : 0x%x \n", ret);
 
 	g_mutex_unlock(&g_focus_sound_handle[index].focus_lock);
 
@@ -1709,8 +1778,7 @@ int mm_sound_client_unset_focus_watch_callback(int id)
 }
 #endif
 
-
-int mm_sound_client_add_test_callback(mm_sound_test_cb func, void* user_data, unsigned int *subs_id)
+int mm_sound_client_add_test_callback(mm_sound_test_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -1733,8 +1801,7 @@ int mm_sound_client_remove_test_callback(unsigned int subs_id)
 	return ret;
 }
 
-
-int mm_sound_client_test(int a, int b, int* getv)
+int mm_sound_client_test(int a, int b, int *getv)
 {
 	int ret = MM_ERROR_NONE;
 

@@ -38,18 +38,16 @@
 #include "../include/mm_sound.h"
 
 #ifdef __cplusplus
-	extern "C" {
+extern "C" {
 #endif
 
-int mm_sound_util_volume_get_value_by_type(volume_type_t type, unsigned int *value);
-int mm_sound_util_volume_set_value_by_type(volume_type_t type, unsigned int value);
+	int mm_sound_util_volume_get_value_by_type(volume_type_t type, unsigned int *value);
+	int mm_sound_util_volume_set_value_by_type(volume_type_t type, unsigned int value);
 
-bool mm_sound_util_is_recording (void);
-bool mm_sound_util_is_process_alive(pid_t pid);
+	bool mm_sound_util_is_recording(void);
+	bool mm_sound_util_is_process_alive(pid_t pid);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __MM_SOUND_UTILS_H__ */
-
+#endif							/* __MM_SOUND_UTILS_H__ */

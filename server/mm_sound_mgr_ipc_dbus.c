@@ -20,7 +20,6 @@
 #include "include/mm_sound_mgr_ipc_dbus.h"
 #include "include/mm_sound_mgr_ipc.h"
 
-
 #define BUS_NAME_SOUND_SERVER "org.tizen.SoundServer"
 #define OBJECT_SOUND_SERVER "/org/tizen/SoundServer1"
 #define INTERFACE_SOUND_SERVER "org.tizen.SoundServer1"
@@ -31,102 +30,99 @@
 #define PROC_DBUS_METHOD 	"ProcExclude"
 
 /* Introspection data for the service we are exporting */
-  static const gchar introspection_xml[] =
-  "<node>"
-  "  <interface name='org.tizen.SoundServer1'>"
-  "    <method name='MethodTest1'>"
-  "      <arg type='i' name='num1' direction='in'/>"
-  "      <arg type='i' name='num2' direction='in'/>"
-  "      <arg type='i' name='multiple' direction='out'/>"
-  "    </method>"
-  "    <method name='GetBTA2DPStatus'>"
-  "      <arg type='b' name='is_bt_on' direction='out'/>"
-  "      <arg type='s' name='bt_name' direction='out'/>"
-  "    </method>"
-  "    <method name='PlayFileStart'>"
-  "      <arg type='s' name='filename' direction='in'/>"
-  "      <arg type='i' name='tone' direction='in'/>"
-  "      <arg type='i' name='repeat' direction='in'/>"
-  "      <arg type='i' name='volume' direction='in'/>"
-  "      <arg type='i' name='vol_config' direction='in'/>"
-  "      <arg type='i' name='priority' direction='in'/>"
-  "      <arg type='i' name='session_type' direction='in'/>"
-  "      <arg type='i' name='session_option' direction='in'/>"
-  "      <arg type='i' name='client_pid' direction='in'/>"
-  "      <arg type='i' name='handle_route' direction='in'/>"
-  "      <arg type='b' name='enable_session' direction='in'/>"
-  "      <arg type='s' name='stream_type' direction='in'/>"
-  "      <arg type='i' name='stream_index' direction='in'/>"
-  "      <arg type='i' name='handle' direction='out'/>"
-  "    </method>"
-  "	   <method name='PlayFileStartWithStreamInfo'>"
-  "	     <arg type='s' name='filename' direction='in'/>"
-  "	     <arg type='i' name='repeat' direction='in'/>"
-  "	     <arg type='i' name='volume' direction='in'/>"
-  "	     <arg type='i' name='priority' direction='in'/>"
-  "	     <arg type='i' name='client_pid' direction='in'/>"
-  "	     <arg type='i' name='handle_route' direction='in'/>"
-  "	     <arg type='s' name='stream_type' direction='in'/>"
-  "	     <arg type='i' name='stream_index' direction='in'/>"
-  "	     <arg type='i' name='handle' direction='out'/>"
-  "	   </method>"
-  "    <method name='PlayFileStop'>"
-  "      <arg type='i' name='handle' direction='in'/>"
-  "    </method>"
-  "    <method name='ClearFocus'>"
-  "      <arg type='i' name='pid' direction='in'/>"
-  "    </method>"
-  "    <method name='PlayDTMF'>"
-  "      <arg type='i' name='tone' direction='in'/>"
-  "      <arg type='i' name='repeat' direction='in'/>"
-  "      <arg type='i' name='volume' direction='in'/>"
-  "      <arg type='i' name='vol_config' direction='in'/>"
-  "      <arg type='i' name='session_type' direction='in'/>"
-  "      <arg type='i' name='session_option' direction='in'/>"
-  "      <arg type='i' name='client_pid' direction='in'/>"
-  "      <arg type='b' name='enable_session' direction='in'/>"
-  "	     <arg type='s' name='stream_type' direction='in'/>"
-  "	     <arg type='i' name='stream_index' direction='in'/>"
-  "      <arg type='i' name='handle' direction='out'/>"
-  "    </method>"
-  "	   <method name='PlayDTMFWithStreamInfo'>"
-  "	     <arg type='i' name='tone' direction='in'/>"
-  "	     <arg type='i' name='repeat' direction='in'/>"
-  "	     <arg type='i' name='volume' direction='in'/>"
-  "	     <arg type='i' name='client_pid' direction='in'/>"
-  "	     <arg type='s' name='stream_type' direction='in'/>"
-  "	     <arg type='i' name='stream_index' direction='in'/>"
-  "	     <arg type='i' name='handle' direction='out'/>"
-  "	   </method>"
-  "    <method name='GetConnectedDeviceList'>"
-  "      <arg type='i' name='device_mask' direction='in'/>"
-  "      <arg type='a(iiiis)' name='device_list' direction='out'/>"
-  "    </method>"
-  "  </interface>"
-  "</node>";
-GDBusConnection* conn_g;
+static const gchar introspection_xml[] =
+	"<node>"
+	"  <interface name='org.tizen.SoundServer1'>"
+	"    <method name='MethodTest1'>"
+	"      <arg type='i' name='num1' direction='in'/>"
+	"      <arg type='i' name='num2' direction='in'/>"
+	"      <arg type='i' name='multiple' direction='out'/>"
+	"    </method>"
+	"    <method name='GetBTA2DPStatus'>"
+	"      <arg type='b' name='is_bt_on' direction='out'/>"
+	"      <arg type='s' name='bt_name' direction='out'/>"
+	"    </method>"
+	"    <method name='PlayFileStart'>"
+	"      <arg type='s' name='filename' direction='in'/>"
+	"      <arg type='i' name='tone' direction='in'/>"
+	"      <arg type='i' name='repeat' direction='in'/>"
+	"      <arg type='i' name='volume' direction='in'/>"
+	"      <arg type='i' name='vol_config' direction='in'/>"
+	"      <arg type='i' name='priority' direction='in'/>"
+	"      <arg type='i' name='session_type' direction='in'/>"
+	"      <arg type='i' name='session_option' direction='in'/>"
+	"      <arg type='i' name='client_pid' direction='in'/>"
+	"      <arg type='i' name='handle_route' direction='in'/>"
+	"      <arg type='b' name='enable_session' direction='in'/>"
+	"      <arg type='s' name='stream_type' direction='in'/>"
+	"      <arg type='i' name='stream_index' direction='in'/>"
+	"      <arg type='i' name='handle' direction='out'/>"
+	"    </method>"
+	"	   <method name='PlayFileStartWithStreamInfo'>"
+	"	     <arg type='s' name='filename' direction='in'/>"
+	"	     <arg type='i' name='repeat' direction='in'/>"
+	"	     <arg type='i' name='volume' direction='in'/>"
+	"	     <arg type='i' name='priority' direction='in'/>"
+	"	     <arg type='i' name='client_pid' direction='in'/>"
+	"	     <arg type='i' name='handle_route' direction='in'/>"
+	"	     <arg type='s' name='stream_type' direction='in'/>"
+	"	     <arg type='i' name='stream_index' direction='in'/>"
+	"	     <arg type='i' name='handle' direction='out'/>"
+	"	   </method>"
+	"    <method name='PlayFileStop'>"
+	"      <arg type='i' name='handle' direction='in'/>"
+	"    </method>"
+	"    <method name='ClearFocus'>"
+	"      <arg type='i' name='pid' direction='in'/>"
+	"    </method>"
+	"    <method name='PlayDTMF'>"
+	"      <arg type='i' name='tone' direction='in'/>"
+	"      <arg type='i' name='repeat' direction='in'/>"
+	"      <arg type='i' name='volume' direction='in'/>"
+	"      <arg type='i' name='vol_config' direction='in'/>"
+	"      <arg type='i' name='session_type' direction='in'/>"
+	"      <arg type='i' name='session_option' direction='in'/>"
+	"      <arg type='i' name='client_pid' direction='in'/>"
+	"      <arg type='b' name='enable_session' direction='in'/>"
+	"	     <arg type='s' name='stream_type' direction='in'/>"
+	"	     <arg type='i' name='stream_index' direction='in'/>"
+	"      <arg type='i' name='handle' direction='out'/>"
+	"    </method>"
+	"	   <method name='PlayDTMFWithStreamInfo'>"
+	"	     <arg type='i' name='tone' direction='in'/>"
+	"	     <arg type='i' name='repeat' direction='in'/>"
+	"	     <arg type='i' name='volume' direction='in'/>"
+	"	     <arg type='i' name='client_pid' direction='in'/>"
+	"	     <arg type='s' name='stream_type' direction='in'/>"
+	"	     <arg type='i' name='stream_index' direction='in'/>"
+	"	     <arg type='i' name='handle' direction='out'/>"
+	"	   </method>"
+	"    <method name='GetConnectedDeviceList'>"
+	"      <arg type='i' name='device_mask' direction='in'/>"
+	"      <arg type='a(iiiis)' name='device_list' direction='out'/>" "    </method>" "  </interface>" "</node>";
+GDBusConnection *conn_g;
 
-typedef void (*dbus_method_handler)(GDBusMethodInvocation *invocation);
-typedef int (*dbus_signal_sender)(GDBusConnection *conn, GVariant *parameter);
+typedef void (*dbus_method_handler) (GDBusMethodInvocation * invocation);
+typedef int (*dbus_signal_sender) (GDBusConnection * conn, GVariant * parameter);
 
-struct mm_sound_dbus_method{
+struct mm_sound_dbus_method {
 	struct mm_sound_dbus_method_info info;
-        dbus_method_handler handler;
+	dbus_method_handler handler;
 };
 
-struct mm_sound_dbus_signal{
+struct mm_sound_dbus_signal {
 	struct mm_sound_dbus_signal_info info;
 	dbus_signal_sender sender;
 };
 
-static void handle_method_play_file_start(GDBusMethodInvocation* invocation);
-static void handle_method_play_file_start_with_stream_info(GDBusMethodInvocation* invocation);
-static void handle_method_play_file_stop(GDBusMethodInvocation* invocation);
-static void handle_method_play_dtmf(GDBusMethodInvocation* invocation);
-static void handle_method_play_dtmf_with_stream_info(GDBusMethodInvocation* invocation);
-static void handle_method_clear_focus(GDBusMethodInvocation* invocation);
-static void handle_method_test(GDBusMethodInvocation* invocation);
-static void handle_method_get_connected_device_list(GDBusMethodInvocation* invocation);
+static void handle_method_play_file_start(GDBusMethodInvocation * invocation);
+static void handle_method_play_file_start_with_stream_info(GDBusMethodInvocation * invocation);
+static void handle_method_play_file_stop(GDBusMethodInvocation * invocation);
+static void handle_method_play_dtmf(GDBusMethodInvocation * invocation);
+static void handle_method_play_dtmf_with_stream_info(GDBusMethodInvocation * invocation);
+static void handle_method_clear_focus(GDBusMethodInvocation * invocation);
+static void handle_method_test(GDBusMethodInvocation * invocation);
+static void handle_method_get_connected_device_list(GDBusMethodInvocation * invocation);
 
 /* Currently , Just using method's name and handler */
 /* TODO : generate introspection xml automatically, with these value include argument and reply */
@@ -134,95 +130,84 @@ static void handle_method_get_connected_device_list(GDBusMethodInvocation* invoc
 /* TODO : divide object and interface with features (ex. play, path, device) */
 struct mm_sound_dbus_method methods[METHOD_CALL_MAX] = {
 	[METHOD_CALL_TEST] = {
-		.info = {
-			.name = "MethodTest1",
-		},
-		.handler = handle_method_test
-	},
+						  .info = {
+								   .name = "MethodTest1",
+								   },
+						  .handler = handle_method_test},
 	[METHOD_CALL_PLAY_FILE_START] = {
-		.info = {
-			.name = "PlayFileStart",
-		},
-		.handler = handle_method_play_file_start
-	},
+									 .info = {
+											  .name = "PlayFileStart",
+											  },
+									 .handler = handle_method_play_file_start},
 	[METHOD_CALL_PLAY_FILE_START_WITH_STREAM_INFO] = {
-		.info = {
-			.name = "PlayFileStartWithStreamInfo",
-		},
-		.handler = handle_method_play_file_start_with_stream_info
-	},
+													  .info = {
+															   .name = "PlayFileStartWithStreamInfo",
+															   },
+													  .handler = handle_method_play_file_start_with_stream_info},
 	[METHOD_CALL_PLAY_FILE_STOP] = {
-		.info = {
-			.name = "PlayFileStop",
-		},
-		.handler = handle_method_play_file_stop
-	},
+									.info = {
+											 .name = "PlayFileStop",
+											 },
+									.handler = handle_method_play_file_stop},
 	[METHOD_CALL_CLEAR_FOCUS] = {
-		.info = {
-			.name = "ClearFocus",
-		},
-		.handler = handle_method_clear_focus
-	},
+								 .info = {
+										  .name = "ClearFocus",
+										  },
+								 .handler = handle_method_clear_focus},
 	[METHOD_CALL_PLAY_DTMF] = {
-		.info = {
-			.name = "PlayDTMF",
-		},
-		.handler = handle_method_play_dtmf
-	},
+							   .info = {
+										.name = "PlayDTMF",
+										},
+							   .handler = handle_method_play_dtmf},
 	[METHOD_CALL_PLAY_DTMF_WITH_STREAM_INFO] = {
-		.info = {
-			.name = "PlayDTMFWithStreamInfo",
-		},
-		.handler = handle_method_play_dtmf_with_stream_info
-	},
+												.info = {
+														 .name = "PlayDTMFWithStreamInfo",
+														 },
+												.handler = handle_method_play_dtmf_with_stream_info},
 	[METHOD_CALL_GET_CONNECTED_DEVICE_LIST] = {
-		.info = {
-			.name = "GetConnectedDeviceList",
-		},
-		.handler = handle_method_get_connected_device_list
-	},
+											   .info = {
+														.name = "GetConnectedDeviceList",
+														},
+											   .handler = handle_method_get_connected_device_list},
 };
 
 struct mm_sound_dbus_signal signals[SIGNAL_MAX] = {
 	[SIGNAL_TEST] = {
-		.info = {
-			.name = "SignalTest1",
-		},
-	},
+					 .info = {
+							  .name = "SignalTest1",
+							  },
+					 },
 	[SIGNAL_PLAY_FILE_END] = {
-		.info = {
-			.name = "PlayFileEnd",
-		},
-	},
+							  .info = {
+									   .name = "PlayFileEnd",
+									   },
+							  },
 	[SIGNAL_VOLUME_CHANGED] = {
-		.info = {
-			.name = "VolumeChanged",
-		},
-	},
+							   .info = {
+										.name = "VolumeChanged",
+										},
+							   },
 	[SIGNAL_DEVICE_CONNECTED] = {
-		.info = {
-			.name = "DeviceConnected",
-		},
-	},
+								 .info = {
+										  .name = "DeviceConnected",
+										  },
+								 },
 	[SIGNAL_DEVICE_INFO_CHANGED] = {
-		.info = {
-			.name = "DeviceInfoChanged",
-		},
-	},
+									.info = {
+											 .name = "DeviceInfoChanged",
+											 },
+									},
 };
 
-
-
 static GDBusNodeInfo *introspection_data = NULL;
-guint sound_server_owner_id ;
+guint sound_server_owner_id;
 
 /*
         For pass error code with 'g_dbus_method_invocation_return_error'
         We have to use some glib features like GError, GQuark
 */
 /* Only For error types which is currently being used in server-side */
-static const GDBusErrorEntry mm_sound_error_entries[] =
-{
+static const GDBusErrorEntry mm_sound_error_entries[] = {
 	{MM_ERROR_OUT_OF_MEMORY, "org.tizen.multimedia.OutOfMemory"},
 	{MM_ERROR_OUT_OF_STORAGE, "org.tizen.multimedia.OutOfStorage"},
 	{MM_ERROR_INVALID_ARGUMENT, "org.tizen.multimedia.InvalidArgument"},
@@ -236,15 +221,17 @@ static const GDBusErrorEntry mm_sound_error_entries[] =
 	{MM_ERROR_SOUND_INTERNAL, "org.tizen.multimedia.audio.Internal"},
 	{MM_ERROR_SOUND_INVALID_STATE, "org.tizen.multimedia.audio.InvalidState"},
 	{MM_ERROR_SOUND_NO_FREE_SPACE, "org.tizen.multimedia.audio.NoFreeSpace"},
-	{MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE, "org.tizen.multimedia.audio.UnsupportedMediaType"},
-	{MM_ERROR_SOUND_INVALID_POINTER, "org.tizen.multimedia.audio.InvalidPointer"},
+	{MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE,
+	 "org.tizen.multimedia.audio.UnsupportedMediaType"},
+	{MM_ERROR_SOUND_INVALID_POINTER,
+	 "org.tizen.multimedia.audio.InvalidPointer"},
 	{MM_ERROR_SOUND_INVALID_FILE, "org.tizen.multimedia.audio.InvalidFile"},
 	{MM_ERROR_SOUND_FILE_NOT_FOUND, "org.tizen.multimedia.audio.FileNotFound"},
 	{MM_ERROR_SOUND_NO_DATA, "org.tizen.multimedia.audio.NoData"},
 	{MM_ERROR_SOUND_INVALID_PATH, "org.tizen.multimedia.audio.InvalidPath"},
 };
 
-static const char* _convert_error_code(int err_code)
+static const char *_convert_error_code(int err_code)
 {
 	int i = 0;
 
@@ -257,11 +244,11 @@ static const char* _convert_error_code(int err_code)
 	return "org.tizen.multimedia.common.Unknown";
 }
 
-static int mm_sound_mgr_ipc_dbus_send_signal(int signal_type, GVariant *parameter)
+static int mm_sound_mgr_ipc_dbus_send_signal(int signal_type, GVariant * parameter)
 {
 	int ret = MM_ERROR_NONE;
 	GDBusConnection *conn = NULL;
-	GError* err = NULL;
+	GError *err = NULL;
 	gboolean emit_success = FALSE;
 
 	if (signal_type < 0 || signal_type >= SIGNAL_MAX || !parameter) {
@@ -274,8 +261,8 @@ static int mm_sound_mgr_ipc_dbus_send_signal(int signal_type, GVariant *paramete
 	if (!conn_g) {
 		conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 		if (!conn && err) {
-			debug_error ("g_bus_get_sync() error (%s) ", err->message);
-			g_error_free (err);
+			debug_error("g_bus_get_sync() error (%s) ", err->message);
+			g_error_free(err);
 			return MM_ERROR_SOUND_INTERNAL;
 		}
 		conn_g = conn;
@@ -287,8 +274,9 @@ static int mm_sound_mgr_ipc_dbus_send_signal(int signal_type, GVariant *paramete
 	}
 	*/
 
-	emit_success = g_dbus_connection_emit_signal(conn_g, NULL, OBJECT_SOUND_SERVER, INTERFACE_SOUND_SERVER,
-												signals[signal_type].info.name, parameter, &err);
+	emit_success =
+		g_dbus_connection_emit_signal(conn_g, NULL, OBJECT_SOUND_SERVER,
+									  INTERFACE_SOUND_SERVER, signals[signal_type].info.name, parameter, &err);
 	if (!emit_success && err) {
 		debug_error("Emit signal (%s) failed, (%s)", signals[signal_type].info.name, err->message);
 		g_error_free(err);
@@ -298,39 +286,43 @@ static int mm_sound_mgr_ipc_dbus_send_signal(int signal_type, GVariant *paramete
 	return ret;
 }
 
-static int _get_sender_pid(GDBusMethodInvocation* invocation)
+static int _get_sender_pid(GDBusMethodInvocation * invocation)
 {
-	GVariant* value;
+	GVariant *value;
 	guint pid;
-	const gchar* sender;
-	GDBusConnection * connection = NULL;
-	GError* err = NULL;
+	const gchar *sender;
+	GDBusConnection *connection = NULL;
+	GError *err = NULL;
 
 	connection = g_dbus_method_invocation_get_connection(invocation);
 	sender = g_dbus_method_invocation_get_sender(invocation);
 
-	debug_error ("connection = %p, sender = %s", connection, sender);
+	debug_error("connection = %p, sender = %s", connection, sender);
 
-	value = g_dbus_connection_call_sync (connection, "org.freedesktop.DBus", "/org/freedesktop/DBus",
-										"org.freedesktop.DBus", "GetConnectionUnixProcessID",
-										g_variant_new("(s)", sender, NULL), NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &err);
+	value =
+		g_dbus_connection_call_sync(connection, "org.freedesktop.DBus",
+									"/org/freedesktop/DBus",
+									"org.freedesktop.DBus",
+									"GetConnectionUnixProcessID",
+									g_variant_new("(s)", sender, NULL), NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &err);
 	if (value) {
 		g_variant_get(value, "(u)", &pid);
-		debug_error ("Sender PID = [%d]", pid);
+		debug_error("Sender PID = [%d]", pid);
 	} else {
-		debug_error ("err code = %d, err msg = %s", err->code, err->message);
+		debug_error("err code = %d, err msg = %s", err->code, err->message);
 	}
 	return pid;
 }
 
-static void _method_call_return_value(GDBusMethodInvocation *invocation, GVariant *params)
+static void _method_call_return_value(GDBusMethodInvocation * invocation, GVariant * params)
 {
 	const char *method_name;
 	method_name = g_dbus_method_invocation_get_method_name(invocation);
 	debug_error("Method Call '%s' success", method_name);
 	g_dbus_method_invocation_return_value(invocation, params);
 }
-static void _method_call_return_error(GDBusMethodInvocation *invocation, int ret)
+
+static void _method_call_return_error(GDBusMethodInvocation * invocation, int ret)
 {
 	const char *err_name, *method_name;
 	err_name = _convert_error_code(ret);
@@ -339,11 +331,11 @@ static void _method_call_return_error(GDBusMethodInvocation *invocation, int ret
 	g_dbus_method_invocation_return_dbus_error(invocation, err_name, "failed");
 }
 
-static void handle_method_test(GDBusMethodInvocation* invocation)
+static void handle_method_test(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int val = 0, val2 = 0;
-	GVariant* params = NULL;
+	GVariant *params = NULL;
 
 	debug_fenter();
 
@@ -356,30 +348,30 @@ static void handle_method_test(GDBusMethodInvocation* invocation)
 	g_variant_get(params, "(ii)", &val, &val2);
 	debug_log("Got value : %d , %d", val, val2);
 
-	if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_TEST, g_variant_new("(i)", val+val2))) != MM_ERROR_NONE) {
+	if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_TEST, g_variant_new("(i)", val + val2))) != MM_ERROR_NONE) {
 		debug_error("signal send error : %X", ret);
 	} else {
 		debug_error("signal send success");
 	}
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("(i)", val * val2));
 	} else {
 		ret = MM_ERROR_INVALID_ARGUMENT;
-		_method_call_return_error(invocation,  ret);
+		_method_call_return_error(invocation, ret);
 	}
 
 	debug_fleave();
 }
 
-static void handle_method_play_file_start(GDBusMethodInvocation* invocation)
+static void handle_method_play_file_start(GDBusMethodInvocation * invocation)
 {
-	gchar* filename = NULL;
+	gchar *filename = NULL;
 	char *stream_type = NULL;
 	gint32 ret = MM_ERROR_NONE, slotid = 0;
 	gint32 tone = 0, repeat = 0, volume = 0, vol_config = 0, priority = 0;
-	gint32 session_type = 0, session_option = 0, pid = 0, handle_route =0, stream_index = 0;
+	gint32 session_type = 0, session_option = 0, pid = 0, handle_route = 0, stream_index = 0;
 	gboolean enable_session = 0;
 	GVariant *params = NULL;
 
@@ -392,16 +384,19 @@ static void handle_method_play_file_start(GDBusMethodInvocation* invocation)
 	}
 
 	g_variant_get(params, "(siiiiiiiiibsi)", &filename, &tone, &repeat, &volume,
-		      &vol_config, &priority, &session_type, &session_option, &pid, &handle_route, &enable_session, &stream_type, &stream_index);
+				  &vol_config, &priority, &session_type, &session_option, &pid,
+				  &handle_route, &enable_session, &stream_type, &stream_index);
 	if (!filename) {
-	    debug_error("filename null");
-	    ret = MM_ERROR_SOUND_INTERNAL;
-	    goto send_reply;
+		debug_error("filename null");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto send_reply;
 	}
-	ret = _MMSoundMgrIpcPlayFile(filename, tone, repeat, volume, vol_config, priority,
-				session_type, session_option, _get_sender_pid(invocation), handle_route, enable_session, &slotid, stream_type, stream_index);
+	ret =
+		_MMSoundMgrIpcPlayFile(filename, tone, repeat, volume, vol_config,
+							   priority, session_type, session_option,
+							   _get_sender_pid(invocation), handle_route, enable_session, &slotid, stream_type, stream_index);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("(i)", slotid));
 	} else {
@@ -411,12 +406,12 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_play_file_start_with_stream_info(GDBusMethodInvocation* invocation)
+static void handle_method_play_file_start_with_stream_info(GDBusMethodInvocation * invocation)
 {
-	gchar* filename = NULL;
+	gchar *filename = NULL;
 	char *stream_type = NULL;
 	gint32 ret = MM_ERROR_NONE, slotid = 0;
-	gint32 repeat = 0, volume = 0, priority = 0, pid = 0, handle_route =0, stream_index = 0;
+	gint32 repeat = 0, volume = 0, priority = 0, pid = 0, handle_route = 0, stream_index = 0;
 	GVariant *params = NULL;
 
 	debug_fenter();
@@ -427,17 +422,18 @@ static void handle_method_play_file_start_with_stream_info(GDBusMethodInvocation
 		goto send_reply;
 	}
 
-	g_variant_get(params, "(siiiiisi)", &filename, &repeat, &volume,
-		      &priority, &pid, &handle_route, &stream_type, &stream_index);
+	g_variant_get(params, "(siiiiisi)", &filename, &repeat, &volume, &priority,
+				  &pid, &handle_route, &stream_type, &stream_index);
 	if (!filename) {
-	    debug_error("filename null");
-	    ret = MM_ERROR_SOUND_INTERNAL;
-	    goto send_reply;
+		debug_error("filename null");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto send_reply;
 	}
-	ret = _MMSoundMgrIpcPlayFileWithStreamInfo(filename, repeat, volume, priority,
-				_get_sender_pid(invocation), handle_route, &slotid, stream_type, stream_index);
+	ret =
+		_MMSoundMgrIpcPlayFileWithStreamInfo(filename, repeat, volume, priority,
+											 _get_sender_pid(invocation), handle_route, &slotid, stream_type, stream_index);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("(i)", slotid));
 	} else {
@@ -447,11 +443,11 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_play_dtmf(GDBusMethodInvocation* invocation)
+static void handle_method_play_dtmf(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE, slotid = 0;
 	int tone = 0, repeat = 0, volume = 0, vol_config = 0, session_type = 0, session_option = 0, pid = 0, stream_index = 0;
-	char* stream_type = NULL;
+	char *stream_type = NULL;
 	gboolean enable_session = 0;
 	GVariant *params = NULL;
 
@@ -463,28 +459,28 @@ static void handle_method_play_dtmf(GDBusMethodInvocation* invocation)
 		goto send_reply;
 	}
 
-	g_variant_get(params, "(iiiiiiibsi)", &tone, &repeat, &volume,
-		      &vol_config, &session_type, &session_option, &pid, &enable_session, &stream_type, &stream_index);
+	g_variant_get(params, "(iiiiiiibsi)", &tone, &repeat, &volume, &vol_config,
+				  &session_type, &session_option, &pid, &enable_session, &stream_type, &stream_index);
 	debug_error("volume - %d", volume);
-	ret = _MMSoundMgrIpcPlayDTMF(tone, repeat, volume, vol_config,
-				     session_type, session_option, _get_sender_pid(invocation), enable_session, &slotid, stream_type, stream_index);
+	ret =
+		_MMSoundMgrIpcPlayDTMF(tone, repeat, volume, vol_config, session_type,
+							   session_option, _get_sender_pid(invocation), enable_session, &slotid, stream_type, stream_index);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("(i)", slotid));
 	} else {
 		_method_call_return_error(invocation, ret);
 	}
 
-
 	debug_fleave();
 }
 
-static void handle_method_play_dtmf_with_stream_info(GDBusMethodInvocation* invocation)
+static void handle_method_play_dtmf_with_stream_info(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE, slotid = 0;
 	int tone = 0, repeat = 0, volume = 0, pid = 0, stream_index = 0;
-	char* stream_type = NULL;
+	char *stream_type = NULL;
 	GVariant *params = NULL;
 
 	debug_fenter();
@@ -496,9 +492,11 @@ static void handle_method_play_dtmf_with_stream_info(GDBusMethodInvocation* invo
 	}
 
 	g_variant_get(params, "(iiiisi)", &tone, &repeat, &volume, &pid, &stream_type, &stream_index);
-	ret = _MMSoundMgrIpcPlayDTMFWithStreamInfo(tone, repeat, volume, _get_sender_pid(invocation), &slotid, stream_type, stream_index);
+	ret =
+		_MMSoundMgrIpcPlayDTMFWithStreamInfo(tone, repeat, volume,
+											 _get_sender_pid(invocation), &slotid, stream_type, stream_index);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("(i)", slotid));
 	} else {
@@ -508,7 +506,7 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_play_file_stop(GDBusMethodInvocation* invocation)
+static void handle_method_play_file_stop(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
@@ -525,7 +523,7 @@ static void handle_method_play_file_stop(GDBusMethodInvocation* invocation)
 	g_variant_get(params, "(i)", &handle);
 	ret = _MMSoundMgrIpcStop(handle);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
@@ -535,7 +533,7 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_clear_focus(GDBusMethodInvocation* invocation)
+static void handle_method_clear_focus(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int pid = 0;
@@ -552,7 +550,7 @@ static void handle_method_clear_focus(GDBusMethodInvocation* invocation)
 	g_variant_get(params, "(i)", &pid);
 	ret = _MMSoundMgrIpcClearFocus(pid);
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_new("()"));
 	} else {
@@ -562,7 +560,7 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_get_connected_device_list(GDBusMethodInvocation* invocation)
+static void handle_method_get_connected_device_list(GDBusMethodInvocation * invocation)
 {
 	int ret = MM_ERROR_NONE;
 	GVariant *params = NULL;
@@ -579,18 +577,19 @@ static void handle_method_get_connected_device_list(GDBusMethodInvocation* invoc
 
 	g_variant_get(params, "(i)", &mask_flags);
 	debug_log("Get device list with device_flag %X", mask_flags);
-	if ((ret = __mm_sound_mgr_ipc_get_current_connected_device_list(mask_flags, &device_list, &devices_num))==MM_ERROR_NONE) {
+	if ((ret = __mm_sound_mgr_ipc_get_current_connected_device_list(mask_flags, &device_list, &devices_num)) == MM_ERROR_NONE) {
 		g_variant_builder_init(&reply_builder, G_VARIANT_TYPE("(a(iiiis))"));
 		g_variant_builder_open(&reply_builder, G_VARIANT_TYPE("a(iiiis)"));
 		for (device_idx = 0; device_idx < devices_num; device_idx++) {
 			device_entry = &device_list[device_idx];
-//			debug_log("device(%d): id(%d), type(%d), io(%d), state(%d), name(%s) ", device_idx, device_entry->id, device_entry->type, device_entry->io_direction, device_entry->state, device_entry->name);
-			g_variant_builder_add(&reply_builder, "(iiiis)", device_entry->id, device_entry->type, device_entry->io_direction, device_entry->state, device_entry->name);
+//          debug_log("device(%d): id(%d), type(%d), io(%d), state(%d), name(%s) ", device_idx, device_entry->id, device_entry->type, device_entry->io_direction, device_entry->state, device_entry->name);
+			g_variant_builder_add(&reply_builder, "(iiiis)", device_entry->id,
+								  device_entry->type, device_entry->io_direction, device_entry->state, device_entry->name);
 		}
 		g_variant_builder_close(&reply_builder);
 	}
 
-send_reply:
+ send_reply:
 	if (ret == MM_ERROR_NONE) {
 		_method_call_return_value(invocation, g_variant_builder_end(&reply_builder));
 		debug_log("Reply Sent");
@@ -599,14 +598,11 @@ send_reply:
 	}
 }
 
-static void handle_method_call(GDBusConnection *connection,
-							const gchar *sender,
-							const gchar *object_path,
-							const gchar *interface_name,
-							const gchar *method_name,
-							GVariant *parameters,
-							GDBusMethodInvocation *invocation,
-							gpointer userdata)
+static void handle_method_call(GDBusConnection * connection,
+							   const gchar * sender, const gchar * object_path,
+							   const gchar * interface_name,
+							   const gchar * method_name, GVariant * parameters,
+							   GDBusMethodInvocation * invocation, gpointer userdata)
 {
 	int method_idx = 0;
 
@@ -623,77 +619,67 @@ static void handle_method_call(GDBusConnection *connection,
 	}
 }
 
-
-static GVariant* handle_get_property(GDBusConnection *connection,
-									const gchar *sender,
-									const gchar *object_path,
-									const gchar *interface_name,
-									const gchar *property_name,
-									GError **error,
-									gpointer userdata)
+static GVariant *handle_get_property(GDBusConnection * connection,
+									 const gchar * sender,
+									 const gchar * object_path,
+									 const gchar * interface_name,
+									 const gchar * property_name, GError ** error, gpointer userdata)
 {
 	debug_log("Get Property, obj : %s, intf : %s, prop : %s", object_path, interface_name, property_name);
 	return NULL;
 }
 
-static gboolean handle_set_property(GDBusConnection *connection,
-									const gchar *sender,
-									const gchar *object_path,
-									const gchar *interface_name,
-									const gchar *property_name,
-									GVariant *value,
-									GError **error,
-									gpointer userdata)
+static gboolean handle_set_property(GDBusConnection * connection,
+									const gchar * sender,
+									const gchar * object_path,
+									const gchar * interface_name,
+									const gchar * property_name, GVariant * value, GError ** error, gpointer userdata)
 {
 	debug_log("Set Property, obj : %s, intf : %s, prop : %s", object_path, interface_name, property_name);
 	return TRUE;
 }
 
-static const GDBusInterfaceVTable interface_vtable =
-{
+static const GDBusInterfaceVTable interface_vtable = {
 	handle_method_call,
 	handle_get_property,
 	handle_set_property
 };
 
-static void on_bus_acquired(GDBusConnection *connection, const gchar *name, gpointer user_data)
+static void on_bus_acquired(GDBusConnection * connection, const gchar * name, gpointer user_data)
 {
 	guint reg_id;
 	debug_log("Bus Acquired (%s)", name);
 
 	conn_g = connection;
-	reg_id = g_dbus_connection_register_object(connection,
-					  OBJECT_SOUND_SERVER,
-					  introspection_data->interfaces[0],
-					  &interface_vtable,
-					  NULL,
-					  NULL,
-					  NULL);
+	reg_id =
+		g_dbus_connection_register_object(connection, OBJECT_SOUND_SERVER,
+										  introspection_data->interfaces[0], &interface_vtable, NULL, NULL, NULL);
 	if (!reg_id) {
 		debug_error("Register object(%s) failed", OBJECT_SOUND_SERVER);
-		return ;
+		return;
 	}
 
 }
 
-static void on_name_acquired(GDBusConnection *connection, const gchar *name, gpointer user_data)
+static void on_name_acquired(GDBusConnection * connection, const gchar * name, gpointer user_data)
 {
 	debug_log("Name Acquired (%s)", name);
 }
 
-static void on_name_lost(GDBusConnection *connection, const gchar *name, gpointer user_data)
+static void on_name_lost(GDBusConnection * connection, const gchar * name, gpointer user_data)
 {
 	debug_log("Name Lost (%s)", name);
 }
 
-static int _mm_sound_mgr_dbus_own_name(GBusType bus_type, const char* wellknown_name, guint* owner_id)
+static int _mm_sound_mgr_dbus_own_name(GBusType bus_type, const char *wellknown_name, guint * owner_id)
 {
 	guint oid;
 
 	debug_log("Own name (%s) for sound-server", wellknown_name);
 
-	oid = g_bus_own_name(bus_type, wellknown_name , G_BUS_NAME_OWNER_FLAGS_NONE,
-			on_bus_acquired, on_name_acquired, on_name_lost, NULL, NULL);
+	oid =
+		g_bus_own_name(bus_type, wellknown_name, G_BUS_NAME_OWNER_FLAGS_NONE,
+					   on_bus_acquired, on_name_acquired, on_name_lost, NULL, NULL);
 	if (oid <= 0) {
 		debug_error("Dbus own name failed");
 		return MM_ERROR_SOUND_INTERNAL;
@@ -713,55 +699,54 @@ static void _mm_sound_mgr_dbus_unown_name(guint oid)
 }
 
 /* not for mm-sound client */
-int mm_sound_mgr_ipc_dbus_send_signal_freeze (char* command, int pid)
+int mm_sound_mgr_ipc_dbus_send_signal_freeze(char *command, int pid)
 {
 	GError *err = NULL;
 	GDBusConnection *conn = NULL;
 	gboolean ret;
 
 	if (command == NULL || pid <= 0) {
-		debug_error ("invalid arguments [%s][%d]", command, pid);
+		debug_error("invalid arguments [%s][%d]", command, pid);
 		return -1;
 	}
 
 	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 	if (!conn && err) {
-		debug_error ("g_bus_get_sync() error (%s) ", err->message);
-		g_error_free (err);
+		debug_error("g_bus_get_sync() error (%s) ", err->message);
+		g_error_free(err);
 		return -1;
 	}
 
-	ret = g_dbus_connection_emit_signal (conn,
-				NULL, PROC_DBUS_OBJECT, PROC_DBUS_INTERFACE, PROC_DBUS_METHOD,
-				g_variant_new ("(si)", command, pid),
-				&err);
+	ret =
+		g_dbus_connection_emit_signal(conn, NULL, PROC_DBUS_OBJECT,
+									  PROC_DBUS_INTERFACE, PROC_DBUS_METHOD, g_variant_new("(si)", command, pid), &err);
 	if (!ret && err) {
-		debug_error ("g_dbus_connection_emit_signal() error (%s) ", err->message);
+		debug_error("g_dbus_connection_emit_signal() error (%s) ", err->message);
 		goto error;
 	}
 
 	ret = g_dbus_connection_flush_sync(conn, NULL, &err);
 	if (!ret && err) {
-		debug_error ("g_dbus_connection_flush_sync() error (%s) ", err->message);
+		debug_error("g_dbus_connection_flush_sync() error (%s) ", err->message);
 		goto error;
 	}
 
 	g_object_unref(conn);
-	debug_msg ("sending [%s] for pid (%d) success", command, pid);
+	debug_msg("sending [%s] for pid (%d) success", command, pid);
 
 	return 0;
 
-error:
-	g_error_free (err);
+ error:
+	g_error_free(err);
 	g_object_unref(conn);
 	return -1;
 }
 
-int __mm_sound_mgr_ipc_dbus_notify_device_connected (mm_sound_device_t *device, gboolean is_connected)
+int __mm_sound_mgr_ipc_dbus_notify_device_connected(mm_sound_device_t * device, gboolean is_connected)
 {
 	int ret = MM_ERROR_NONE;
 	GVariantBuilder builder;
-	GVariant* param = NULL;
+	GVariant *param = NULL;
 
 	debug_log("Send Signal '%s'", signals[SIGNAL_DEVICE_CONNECTED]);
 
@@ -772,7 +757,7 @@ int __mm_sound_mgr_ipc_dbus_notify_device_connected (mm_sound_device_t *device, 
 	g_variant_builder_add(&builder, "b", is_connected);
 	param = g_variant_builder_end(&builder);
 	if (param) {
-		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_DEVICE_CONNECTED, param))!= MM_ERROR_NONE) {
+		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_DEVICE_CONNECTED, param)) != MM_ERROR_NONE) {
 			debug_error("Send device connected signal failed");
 		}
 	} else {
@@ -782,11 +767,11 @@ int __mm_sound_mgr_ipc_dbus_notify_device_connected (mm_sound_device_t *device, 
 	return ret;
 }
 
-int __mm_sound_mgr_ipc_dbus_notify_device_info_changed (mm_sound_device_t *device, int changed_device_info_type)
+int __mm_sound_mgr_ipc_dbus_notify_device_info_changed(mm_sound_device_t * device, int changed_device_info_type)
 {
 	int ret = MM_ERROR_NONE;
 	GVariantBuilder builder;
-	GVariant* param = NULL;
+	GVariant *param = NULL;
 
 	debug_log("Send Signal '%s'", signals[SIGNAL_DEVICE_INFO_CHANGED]);
 
@@ -810,7 +795,7 @@ int __mm_sound_mgr_ipc_dbus_notify_device_info_changed (mm_sound_device_t *devic
 int __mm_sound_mgr_ipc_dbus_notify_volume_changed(unsigned int vol_type, unsigned int value)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* param = NULL;
+	GVariant *param = NULL;
 
 	debug_log("Send Signal '%s'", signals[SIGNAL_VOLUME_CHANGED]);
 
@@ -829,7 +814,7 @@ int __mm_sound_mgr_ipc_dbus_notify_volume_changed(unsigned int vol_type, unsigne
 int __mm_sound_mgr_ipc_dbus_notify_play_file_end(int handle)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* param = NULL;
+	GVariant *param = NULL;
 
 	debug_log("Send Signal '%s'", signals[SIGNAL_PLAY_FILE_END]);
 
@@ -859,7 +844,7 @@ int __mm_sound_mgr_ipc_dbus_notify_available_device_changed(int device_in, int d
 #define PA_STREAM_MANAGER_OBJECT_PATH                  "/org/pulseaudio/StreamManager"
 #define PA_STREAM_MANAGER_INTERFACE                    "org.pulseaudio.StreamManager"
 #define PA_STREAM_MANAGER_METHOD_NAME_GET_STREAM_LIST  "GetStreamList"
-int __mm_sound_mgr_ipc_dbus_get_stream_list(stream_list_t* stream_list)
+int __mm_sound_mgr_ipc_dbus_get_stream_list(stream_list_t * stream_list)
 {
 	int ret = MM_ERROR_NONE;
 	GVariant *result = NULL;
@@ -871,21 +856,16 @@ int __mm_sound_mgr_ipc_dbus_get_stream_list(stream_list_t* stream_list)
 	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 	if (!conn && err) {
 		LOGE("g_bus_get_sync() error (%s)", err->message);
-		g_error_free (err);
+		g_error_free(err);
 		ret = MM_ERROR_SOUND_INTERNAL;
 		return ret;
 	}
-	result = g_dbus_connection_call_sync (conn,
-							PA_BUS_NAME,
-							PA_STREAM_MANAGER_OBJECT_PATH,
-							PA_STREAM_MANAGER_INTERFACE,
-							PA_STREAM_MANAGER_METHOD_NAME_GET_STREAM_LIST,
-							NULL,
-							G_VARIANT_TYPE("(vv)"),
-							G_DBUS_CALL_FLAGS_NONE,
-							2000,
-							NULL,
-							&err);
+	result =
+		g_dbus_connection_call_sync(conn, PA_BUS_NAME,
+									PA_STREAM_MANAGER_OBJECT_PATH,
+									PA_STREAM_MANAGER_INTERFACE,
+									PA_STREAM_MANAGER_METHOD_NAME_GET_STREAM_LIST,
+									NULL, G_VARIANT_TYPE("(vv)"), G_DBUS_CALL_FLAGS_NONE, 2000, NULL, &err);
 	if (!result && err) {
 		debug_error("g_dbus_connection_call_sync() error (%s)", err->message);
 		ret = MM_ERROR_SOUND_INTERNAL;
@@ -897,26 +877,28 @@ int __mm_sound_mgr_ipc_dbus_get_stream_list(stream_list_t* stream_list)
 		gchar *name;
 		i = 0;
 		g_variant_iter_init(&iter, item);
-		while ((i < AVAIL_STREAMS_MAX) && g_variant_iter_loop(&iter, "&s", &name)) {
-			debug_log ("name : %s", name);
+		while ((i < AVAIL_STREAMS_MAX)
+			   && g_variant_iter_loop(&iter, "&s", &name)) {
+			debug_log("name : %s", name);
 			stream_list->stream_types[i++] = strdup(name);
 		}
-		g_variant_iter_free (&iter);
-		g_variant_unref (item);
-		g_variant_unref (child);
+		g_variant_iter_free(&iter);
+		g_variant_unref(item);
+		g_variant_unref(child);
 
 		child = g_variant_get_child_value(result, 1);
 		item = g_variant_get_variant(child);
 		gint32 priority;
 		i = 0;
 		g_variant_iter_init(&iter, item);
-		while ((i < AVAIL_STREAMS_MAX) && g_variant_iter_loop(&iter, "i", &priority)) {
-			debug_log ("priority : %d", priority);
+		while ((i < AVAIL_STREAMS_MAX)
+			   && g_variant_iter_loop(&iter, "i", &priority)) {
+			debug_log("priority : %d", priority);
 			stream_list->priorities[i++] = priority;
 		}
-		g_variant_iter_free (&iter);
-		g_variant_unref (item);
-		g_variant_unref (child);
+		g_variant_iter_free(&iter);
+		g_variant_unref(item);
+		g_variant_unref(child);
 
 		g_variant_unref(result);
 	}
@@ -929,12 +911,12 @@ int MMSoundMgrDbusInit(void)
 {
 	debug_enter();
 
-	introspection_data = g_dbus_node_info_new_for_xml (introspection_xml, NULL);
+	introspection_data = g_dbus_node_info_new_for_xml(introspection_xml, NULL);
 	if (!introspection_data)
 		return MM_ERROR_SOUND_INTERNAL;
 
 	if (_mm_sound_mgr_dbus_own_name(G_BUS_TYPE_SYSTEM, BUS_NAME_SOUND_SERVER, &sound_server_owner_id) != MM_ERROR_NONE) {
-		debug_error ("dbus own name for sound-server error\n");
+		debug_error("dbus own name for sound-server error\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 
@@ -948,10 +930,7 @@ void MMSoundMgrDbusFini(void)
 	debug_enter("\n");
 
 	_mm_sound_mgr_dbus_unown_name(sound_server_owner_id);
-	g_dbus_node_info_unref (introspection_data);
+	g_dbus_node_info_unref(introspection_data);
 
 	debug_leave("\n");
 }
-
-
-

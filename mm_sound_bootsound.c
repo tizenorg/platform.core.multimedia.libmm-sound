@@ -41,13 +41,13 @@
 #include <mm_sound.h>
 #include <mm_sound_private.h>
 
-#define KEYTONE_PATH        "/tmp/keytone"  /* Keytone pipe path */
-#define FILE_FULL_PATH 1024				/* File path lenth */
+#define KEYTONE_PATH        "/tmp/keytone"	/* Keytone pipe path */
+#define FILE_FULL_PATH 1024	/* File path lenth */
 #define MAX_RETRY 40
 #define RETRY_INTERVAL_USEC 50000
 
-#define ROLE_NAME_LEN 64				/* Role name length */
-#define VOLUME_GAIN_TYPE_LEN 64		/* Volume gain type length */
+#define ROLE_NAME_LEN 64	/* Role name length */
+#define VOLUME_GAIN_TYPE_LEN 64	/* Volume gain type length */
 
 typedef struct {
 	char filename[FILE_FULL_PATH];
@@ -71,15 +71,14 @@ do { \
 	}	\
 } while(0)
 
-EXPORT_API
-int mm_sound_boot_ready(int timeout_sec)
+EXPORT_API int mm_sound_boot_ready(int timeout_sec)
 {
 	struct timespec ts;
-	sem_t* sem = NULL;
+	sem_t *sem = NULL;
 
 	debug_msg("[BOOT] check for sync....");
-	if ((sem = sem_open ("booting-sound", O_CREAT, 0660, 0))== SEM_FAILED) {
-		debug_error ("error creating sem : %d", errno);
+	if ((sem = sem_open("booting-sound", O_CREAT, 0660, 0)) == SEM_FAILED) {
+		debug_error("error creating sem : %d", errno);
 		return -1;
 	}
 
@@ -98,13 +97,12 @@ int mm_sound_boot_ready(int timeout_sec)
 	return 0;
 }
 
-EXPORT_API
-int mm_sound_boot_play_sound(char* path)
+EXPORT_API int mm_sound_boot_play_sound(char *path)
 {
 	int err = 0;
 	int fd = -1;
 	int size = 0;
-	ipc_t data = {{0,},{0,},{0,}};
+	ipc_t data = { {0,}, {0,}, {0,} };
 
 	debug_msg("[BOOT] play boot sound [%s]!!!!", path);
 	if (path == NULL)

@@ -32,8 +32,7 @@
 
 #define VOLUME_TYPE_LEN 64
 
-
-static int _check_for_valid_mask (mm_sound_device_flags_e flags)
+static int _check_for_valid_mask(mm_sound_device_flags_e flags)
 {
 	int ret = MM_ERROR_NONE;
 	bool at_least_cond = false;
@@ -65,7 +64,7 @@ static int _check_for_valid_mask (mm_sound_device_flags_e flags)
 	return ret;
 }
 
-static int __convert_device_type_to_enum (char *device_type, mm_sound_device_type_e *device_type_enum)
+static int __convert_device_type_to_enum(char *device_type, mm_sound_device_type_e * device_type_enum)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -97,8 +96,9 @@ static int __convert_device_type_to_enum (char *device_type, mm_sound_device_typ
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sound_device_connected_cb func, void *user_data, unsigned int *subs_id)
+EXPORT_API int mm_sound_add_device_connected_callback(mm_sound_device_flags_e
+													  flags,
+													  mm_sound_device_connected_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -117,8 +117,7 @@ int mm_sound_add_device_connected_callback(mm_sound_device_flags_e flags, mm_sou
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_remove_device_connected_callback(unsigned int subs_id)
+EXPORT_API int mm_sound_remove_device_connected_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -130,8 +129,9 @@ int mm_sound_remove_device_connected_callback(unsigned int subs_id)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e flags, mm_sound_device_info_changed_cb func, void *user_data, unsigned int *subs_id)
+EXPORT_API int
+mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e flags,
+												 mm_sound_device_info_changed_cb func, void *user_data, unsigned int *subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -150,8 +150,7 @@ int mm_sound_add_device_information_changed_callback(mm_sound_device_flags_e fla
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_remove_device_information_changed_callback(unsigned int subs_id)
+EXPORT_API int mm_sound_remove_device_information_changed_callback(unsigned int subs_id)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -163,8 +162,7 @@ int mm_sound_remove_device_information_changed_callback(unsigned int subs_id)
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_get_current_device_list(mm_sound_device_flags_e flags, MMSoundDeviceList_t *device_list)
+EXPORT_API int mm_sound_get_current_device_list(mm_sound_device_flags_e flags, MMSoundDeviceList_t * device_list)
 {
 	int ret = MM_ERROR_NONE;
 	mm_sound_device_list_t *_device_list;
@@ -196,23 +194,21 @@ int mm_sound_get_current_device_list(mm_sound_device_flags_e flags, MMSoundDevic
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_free_device_list(MMSoundDeviceList_t device_list)
+EXPORT_API int mm_sound_free_device_list(MMSoundDeviceList_t device_list)
 {
 	mm_sound_device_list_t *device_list_t = NULL;
 
 	if (!device_list) {
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	device_list_t = (mm_sound_device_list_t*) device_list;
+	device_list_t = (mm_sound_device_list_t *) device_list;
 	g_list_free_full(device_list_t->list, g_free);
 	g_free(device_list_t);
 
 	return MM_ERROR_NONE;
 }
 
-EXPORT_API
-int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *device)
+EXPORT_API int mm_sound_get_next_device(MMSoundDeviceList_t device_list, MMSoundDevice_t * device)
 {
 	int ret = MM_ERROR_NONE;
 	mm_sound_device_list_t *device_list_t = NULL;
@@ -220,7 +216,7 @@ int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 	if (!device_list || !device) {
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	device_list_t = (mm_sound_device_list_t*) device_list;
+	device_list_t = (mm_sound_device_list_t *) device_list;
 	if (device_list_t->is_new_device_list) {
 		node = g_list_first(device_list_t->list);
 	} else {
@@ -234,14 +230,13 @@ int mm_sound_get_next_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 		} else {
 			device_list_t->list = node;
 		}
-		*device = (mm_sound_device_t*)node->data;
+		*device = (mm_sound_device_t *) node->data;
 		debug_log("next device[0x%x]\n", *device);
 	}
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_get_prev_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *device)
+EXPORT_API int mm_sound_get_prev_device(MMSoundDeviceList_t device_list, MMSoundDevice_t * device)
 {
 	int ret = MM_ERROR_NONE;
 	mm_sound_device_list_t *device_list_t = NULL;
@@ -249,24 +244,23 @@ int mm_sound_get_prev_device (MMSoundDeviceList_t device_list, MMSoundDevice_t *
 	if (!device_list || !device) {
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
-	device_list_t = (mm_sound_device_list_t*) device_list;
+	device_list_t = (mm_sound_device_list_t *) device_list;
 	node = g_list_previous(device_list_t->list);
 	if (!node) {
 		ret = MM_ERROR_SOUND_NO_DATA;
 		debug_error("Could not get previous device, ret = %x\n", ret);
 	} else {
 		device_list_t->list = node;
-		*device = (mm_sound_device_t*)node->data;
+		*device = (mm_sound_device_t *) node->data;
 		debug_log("previous device[0x%x]\n", *device);
 	}
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_get_device_type(MMSoundDevice_t device_h, mm_sound_device_type_e *type)
+EXPORT_API int mm_sound_get_device_type(MMSoundDevice_t device_h, mm_sound_device_type_e * type)
 {
-	mm_sound_device_t *device = (mm_sound_device_t*)device_h;
-	if(!device || !type) {
+	mm_sound_device_t *device = (mm_sound_device_t *) device_h;
+	if (!device || !type) {
 		debug_error("invalid argument\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -276,11 +270,10 @@ int mm_sound_get_device_type(MMSoundDevice_t device_h, mm_sound_device_type_e *t
 	return MM_ERROR_NONE;
 }
 
-EXPORT_API
-int mm_sound_get_device_io_direction(MMSoundDevice_t device_h, mm_sound_device_io_direction_e *io_direction)
+EXPORT_API int mm_sound_get_device_io_direction(MMSoundDevice_t device_h, mm_sound_device_io_direction_e * io_direction)
 {
-	mm_sound_device_t *device = (mm_sound_device_t*)device_h;
-	if(!device) {
+	mm_sound_device_t *device = (mm_sound_device_t *) device_h;
+	if (!device) {
 		debug_error("invalid handle\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -290,11 +283,10 @@ int mm_sound_get_device_io_direction(MMSoundDevice_t device_h, mm_sound_device_i
 	return MM_ERROR_NONE;
 }
 
-EXPORT_API
-int mm_sound_get_device_id(MMSoundDevice_t device_h, int *id)
+EXPORT_API int mm_sound_get_device_id(MMSoundDevice_t device_h, int *id)
 {
-	mm_sound_device_t *device = (mm_sound_device_t*)device_h;
-	if(!device) {
+	mm_sound_device_t *device = (mm_sound_device_t *) device_h;
+	if (!device) {
 		debug_error("invalid handle\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -304,11 +296,10 @@ int mm_sound_get_device_id(MMSoundDevice_t device_h, int *id)
 	return MM_ERROR_NONE;
 }
 
-EXPORT_API
-int mm_sound_get_device_state(MMSoundDevice_t device_h, mm_sound_device_state_e *state)
+EXPORT_API int mm_sound_get_device_state(MMSoundDevice_t device_h, mm_sound_device_state_e * state)
 {
-	mm_sound_device_t *device = (mm_sound_device_t*)device_h;
-	if(!device) {
+	mm_sound_device_t *device = (mm_sound_device_t *) device_h;
+	if (!device) {
 		debug_error("invalid handle\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -318,11 +309,10 @@ int mm_sound_get_device_state(MMSoundDevice_t device_h, mm_sound_device_state_e 
 	return MM_ERROR_NONE;
 }
 
-EXPORT_API
-int mm_sound_get_device_name(MMSoundDevice_t device_h, char **name)
+EXPORT_API int mm_sound_get_device_name(MMSoundDevice_t device_h, char **name)
 {
-	mm_sound_device_t *device = (mm_sound_device_t*)device_h;
-	if(!device) {
+	mm_sound_device_t *device = (mm_sound_device_t *) device_h;
+	if (!device) {
 		debug_error("invalid handle\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -331,4 +321,3 @@ int mm_sound_get_device_name(MMSoundDevice_t device_h, char **name)
 
 	return MM_ERROR_NONE;
 }
-
