@@ -40,8 +40,7 @@ do { \
 
 #define CONTAINER_NAME_MAX 64
 
-typedef struct container_info
-{
+typedef struct container_info {
 	int pid;
 	char name[CONTAINER_NAME_MAX];
 } container_info_t;
@@ -51,36 +50,30 @@ int MMSoundMgrIpcInit(void);
 int MMSoundMgrIpcFini(void);
 
 /* Msg processing */
-int _MMSoundMgrIpcPlayFile(char* filename, int tone, int repeat, int volume, int volume_config,
-			   int priority, int session_type, int session_options, int client_pid, int handle_route,
-			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index);
-int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
-			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index);
+int _MMSoundMgrIpcPlayFile(char *filename, int tone, int repeat, int volume, int volume_config, int priority, int session_type, int session_options, int client_pid, int handle_route, gboolean enable_session, int *codechandle, char *stream_type, int stream_index);
+int _MMSoundMgrIpcPlayFileWithStreamInfo(char *filename, int repeat, int volume, int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index);
 //int _MMSoundMgrIpcStop(mm_ipc_msg_t *msg);
 int _MMSoundMgrIpcStop(int handle);
 int _MMSoundMgrIpcClearFocus(int pid);
 //int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg);
-int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
-			   int session_type, int session_options, int client_pid,
-			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index);
+int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config, int session_type, int session_options, int client_pid, gboolean enable_session, int *codechandle, char *stream_type, int stream_index);
 int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume, int client_pid, int *codechandle, char *stream_type, int stream_index);
 
 //int __mm_sound_mgr_ipc_get_current_connected_device_list(mm_ipc_msg_t *msg, GList **device_list, int *total_num);
-int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_sound_device_t **device_list, int *total_num);
+int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_sound_device_t ** device_list, int *total_num);
 
 /* send signal : mgr_xxx -> mgr_ipc_dbus */
-int _MMIpcCBSndMsg(mm_ipc_msg_t *msg);
-int _MMIpcCBRecvMsg(mm_ipc_msg_t *msg);
-int _MMIpcCBMsgEnQueueAgain(mm_ipc_msg_t *msg);
+int _MMIpcCBSndMsg(mm_ipc_msg_t * msg);
+int _MMIpcCBRecvMsg(mm_ipc_msg_t * msg);
+int _MMIpcCBMsgEnQueueAgain(mm_ipc_msg_t * msg);
 
-int __mm_sound_mgr_ipc_freeze_send (char* command, int pid);
+int __mm_sound_mgr_ipc_freeze_send(char *command, int pid);
 
-int __mm_sound_mgr_ipc_notify_play_file_end (int handle);
-int __mm_sound_mgr_ipc_notify_device_connected (mm_sound_device_t *device, gboolean is_connected);
-int __mm_sound_mgr_ipc_notify_device_info_changed (mm_sound_device_t *device, int changed_device_info_type);
+int __mm_sound_mgr_ipc_notify_play_file_end(int handle);
+int __mm_sound_mgr_ipc_notify_device_connected(mm_sound_device_t * device, gboolean is_connected);
+int __mm_sound_mgr_ipc_notify_device_info_changed(mm_sound_device_t * device, int changed_device_info_type);
 int __mm_sound_mgr_ipc_notify_volume_changed(unsigned int vol_type, unsigned int value);
 int __mm_sound_mgr_ipc_notify_active_device_changed(int device_in, int device_out);
 int __mm_sound_mgr_ipc_notify_available_device_changed(int device_in, int device_out, int available);
 
 #endif /* __MM_SOUND_MGR_H__ */
-

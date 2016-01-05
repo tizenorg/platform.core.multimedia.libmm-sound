@@ -49,16 +49,17 @@
 #define MM_SOUND_DEFAULT_VOLUME_ANDROID			0
 
 static char *g_volume_vconf[VOLUME_TYPE_MAX] = {
-	VCONF_KEY_VOLUME_TYPE_SYSTEM,		/* VOLUME_TYPE_SYSTEM */
+	VCONF_KEY_VOLUME_TYPE_SYSTEM,	/* VOLUME_TYPE_SYSTEM */
 	VCONF_KEY_VOLUME_TYPE_NOTIFICATION,	/* VOLUME_TYPE_NOTIFICATION */
-	VCONF_KEY_VOLUME_TYPE_ALARM,		/* VOLUME_TYPE_ALARM */
-	VCONF_KEY_VOLUME_TYPE_RINGTONE,		/* VOLUME_TYPE_RINGTONE */
-	VCONF_KEY_VOLUME_TYPE_MEDIA,		/* VOLUME_TYPE_MEDIA */
-	VCONF_KEY_VOLUME_TYPE_CALL,			/* VOLUME_TYPE_CALL */
-	VCONF_KEY_VOLUME_TYPE_VOIP,			/* VOLUME_TYPE_VOIP */
-	VCONF_KEY_VOLUME_TYPE_VOICE,		/* VOLUME_TYPE_VOICE */
-	VCONF_KEY_VOLUME_TYPE_ANDROID		/* VOLUME_TYPE_FIXED */
+	VCONF_KEY_VOLUME_TYPE_ALARM,	/* VOLUME_TYPE_ALARM */
+	VCONF_KEY_VOLUME_TYPE_RINGTONE,	/* VOLUME_TYPE_RINGTONE */
+	VCONF_KEY_VOLUME_TYPE_MEDIA,	/* VOLUME_TYPE_MEDIA */
+	VCONF_KEY_VOLUME_TYPE_CALL,	/* VOLUME_TYPE_CALL */
+	VCONF_KEY_VOLUME_TYPE_VOIP,	/* VOLUME_TYPE_VOIP */
+	VCONF_KEY_VOLUME_TYPE_VOICE,	/* VOLUME_TYPE_VOICE */
+	VCONF_KEY_VOLUME_TYPE_ANDROID	/* VOLUME_TYPE_FIXED */
 };
+
 static char *g_volume_str[VOLUME_TYPE_MAX] = {
 	"SYSTEM",
 	"NOTIFICATION",
@@ -71,51 +72,47 @@ static char *g_volume_str[VOLUME_TYPE_MAX] = {
 	"FIXED",
 };
 
-EXPORT_API
-int mm_sound_util_volume_get_value_by_type(volume_type_t type, unsigned int *value)
+EXPORT_API int mm_sound_util_volume_get_value_by_type(volume_type_t type, unsigned int *value)
 {
 	int ret = MM_ERROR_NONE;
 	int vconf_value = 0;
 
 	/* Get volume value from VCONF */
 	if (vconf_get_int(g_volume_vconf[type], &vconf_value)) {
-		debug_error ("vconf_get_int(%s) failed..\n", g_volume_vconf[type]);
+		debug_error("vconf_get_int(%s) failed..\n", g_volume_vconf[type]);
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 
 	*value = vconf_value;
 	if (ret == MM_ERROR_NONE)
-		debug_log("volume_get_value %s %d",  g_volume_str[type], *value);
+		debug_log("volume_get_value %s %d", g_volume_str[type], *value);
 
 	return ret;
 }
 
-EXPORT_API
-int mm_sound_util_volume_set_value_by_type(volume_type_t type, unsigned int value)
+EXPORT_API int mm_sound_util_volume_set_value_by_type(volume_type_t type, unsigned int value)
 {
 	int ret = MM_ERROR_NONE;
 	int vconf_value = 0;
 
 	vconf_value = value;
-	debug_log("volume_set_value %s %d",  g_volume_str[type], value);
+	debug_log("volume_set_value %s %d", g_volume_str[type], value);
 
 	/* Set volume value to VCONF */
 	if ((ret = vconf_set_int(g_volume_vconf[type], vconf_value)) != 0) {
-		debug_error ("vconf_set_int(%s) failed..ret[%d]\n", g_volume_vconf[type], ret);
+		debug_error("vconf_set_int(%s) failed..ret[%d]\n", g_volume_vconf[type], ret);
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 	return ret;
 }
 
-EXPORT_API
-bool mm_sound_util_is_recording (void)
+EXPORT_API bool mm_sound_util_is_recording(void)
 {
 	/* FIXME : is this function needs anymore ??? */
 	return false;
 }
 
-EXPORT_API
-bool mm_sound_util_is_process_alive(pid_t pid)
+EXPORT_API bool mm_sound_util_is_process_alive(pid_t pid)
 {
 	gchar *tmp = NULL;
 	int ret = -1;
@@ -130,10 +127,10 @@ bool mm_sound_util_is_process_alive(pid_t pid)
 
 	if (ret == -1) {
 		if (errno == ENOENT) {
-			debug_warning ("/proc/%d not exist", pid);
+			debug_warning("/proc/%d not exist", pid);
 			return false;
 		} else {
-			debug_error ("/proc/%d access errno[%d]", pid, errno);
+			debug_error("/proc/%d access errno[%d]", pid, errno);
 
 			/* FIXME: error occured but file exists */
 			return true;

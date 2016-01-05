@@ -36,7 +36,7 @@
 #include <mm_sound.h>
 
 #ifdef __cplusplus
-	extern "C" {
+extern "C" {
 #endif
 
 /**
@@ -49,23 +49,23 @@
 #define MM_SOUND_VOLUME_CONFIG_TYPE(vol) (vol & 0x00FF)
 #define MM_SOUND_VOLUME_CONFIG_GAIN(vol) (vol & 0xFF00)
 
-enum mm_sound_handle_route_t {
-	MM_SOUND_HANDLE_ROUTE_USING_CURRENT,
-};
+	enum mm_sound_handle_route_t {
+		MM_SOUND_HANDLE_ROUTE_USING_CURRENT,
+	};
 
-typedef struct {
-	const char			*filename;		/**< filename to play */
-	bool				skip_session;	/**< skip session control */
-	int					volume;			/**< relative volume level */
-	int					loop;			/**< loop count */
-	mm_sound_stop_callback_func	callback;		/**< callback function when playing is terminated */
-	void				*data;			/**< user data to callback */
-	void				*mem_ptr;		/**< memory buffer to play */
-	int					mem_size;		/**< size of memory buffer */
-	int					handle_route;	/**< 1 for speaker, 0 for current */
-	int					volume_config;	/**< volume type & volume gain */
-	int					priority;		/**< 0 or 1 */
-} MMSoundPlayParam;
+	typedef struct {
+		const char *filename;			/**< filename to play */
+		bool skip_session;				/**< skip session control */
+		int volume;						/**< relative volume level */
+		int loop;						/**< loop count */
+		mm_sound_stop_callback_func callback;	/**< callback function when playing is terminated */
+		void *data;						/**< user data to callback */
+		void *mem_ptr;					/**< memory buffer to play */
+		int mem_size;					/**< size of memory buffer */
+		int handle_route;				/**< 1 for speaker, 0 for current */
+		int volume_config;				/**< volume type & volume gain */
+		int priority;					/**< 0 or 1 */
+	} MMSoundPlayParam;
 
 /**
  * This function is to play system sound with specified parameters.
@@ -83,9 +83,9 @@ typedef struct {
  * @since		R1, 1.0
  * @limo
  */
-int mm_sound_play_sound_ex(MMSoundPlayParam *param, int *handle);
+	int mm_sound_play_sound_ex(MMSoundPlayParam * param, int *handle);
 
-int mm_sound_play_sound_with_stream_info(const char *filename, char *stream_type, int stream_id, mm_sound_stop_callback_func _completed_cb, void *data, int *handle);
+	int mm_sound_play_sound_with_stream_info(const char *filename, char *stream_type, int stream_id, mm_sound_stop_callback_func _completed_cb, void *data, int *handle);
 
 /**
  * This function is to play key sound.
@@ -100,11 +100,11 @@ int mm_sound_play_sound_with_stream_info(const char *filename, char *stream_type
  * 			using fixed spec of wave file (44100Hz, mono channel)
  * @see		volume_type_t volume_gain_t mm_sound_volume_set_value
  */
-int mm_sound_play_keysound(const char *filename, int volume_config);
+	int mm_sound_play_keysound(const char *filename, int volume_config);
 
-int mm_sound_boot_ready(int timeout_sec);
+	int mm_sound_boot_ready(int timeout_sec);
 
-int mm_sound_boot_play_sound(char* path);
+	int mm_sound_boot_play_sound(char *path);
 
 /**
 	@}
@@ -113,6 +113,4 @@ int mm_sound_boot_play_sound(char* path);
 #ifdef __cplusplus
 }
 #endif
-
-#endif	/* __MM_SOUND_H__ */
-
+#endif							/* __MM_SOUND_H__ */

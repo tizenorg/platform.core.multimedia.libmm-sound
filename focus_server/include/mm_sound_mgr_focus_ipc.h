@@ -28,8 +28,7 @@
 
 #define CONTAINER_NAME_MAX 64
 
-typedef struct container_info
-{
+typedef struct container_info {
 	int pid;
 	char name[CONTAINER_NAME_MAX];
 } container_info_t;
@@ -37,9 +36,9 @@ typedef struct container_info
 
 //int __mm_sound_mgr_ipc_create_focus_node(mm_ipc_msg_t *msg);
 #ifdef SUPPORT_CONTAINER
-int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type, bool is_for_session, const char* container_name, int container_pid);
+int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char *stream_type, bool is_for_session, const char *container_name, int container_pid);
 #else
-int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char* stream_type, bool is_for_session);
+int __mm_sound_mgr_focus_ipc_register_focus(int client_pid, int handle_id, const char *stream_type, bool is_for_session);
 #endif
 //int __mm_sound_mgr_ipc_destroy_focus_node(mm_ipc_msg_t *msg);
 int __mm_sound_mgr_focus_ipc_unregister_focus(int pid, int handle_id);
@@ -48,12 +47,12 @@ int __mm_sound_mgr_focus_ipc_set_focus_reacquisition(int pid, int handle_id, boo
 
 int __mm_sound_mgr_focus_ipc_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **additional_info);
 
-int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_type, const char* name );
+int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_type, const char *name);
 
-int __mm_sound_mgr_focus_ipc_release_focus(int pid, int handle_id, int focus_type, const char* name);
+int __mm_sound_mgr_focus_ipc_release_focus(int pid, int handle_id, int focus_type, const char *name);
 //int __mm_sound_mgr_ipc_set_focus_watch_cb(mm_ipc_msg_t *msg);
 #ifdef SUPPORT_CONTAINER
-int __mm_sound_mgr_focus_ipc_watch_focus(int pid, int handle_id, int focus_type, bool is_for_session, const char* container_name, int container_pid);
+int __mm_sound_mgr_focus_ipc_watch_focus(int pid, int handle_id, int focus_type, bool is_for_session, const char *container_name, int container_pid);
 #else
 int __mm_sound_mgr_focus_ipc_watch_focus(int pid, int handle_id, int focus_type, bool is_for_session);
 #endif
@@ -63,4 +62,3 @@ int __mm_sound_mgr_focus_ipc_unwatch_focus(int pid, int handle_id);
 int __mm_sound_mgr_focus_ipc_emergent_exit(int pid);
 
 #endif /* __MM_SOUND_MGR_FOCUS_IPC_H__ */
-

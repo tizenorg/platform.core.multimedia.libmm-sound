@@ -19,20 +19,19 @@
  *
  */
 
-
 #ifndef __MM_SOUND_PLUGIN_H__
 #define __MM_SOUND_PLUGIN_H__
 
 enum {
-    MM_SOUND_PLUGIN_TYPE_NONE = 0,
-    MM_SOUND_PLUGIN_TYPE_CODEC,
-    MM_SOUND_PLUGIN_TYPE_RUN,
-    MM_SOUND_PLUGIN_TYPE_LAST,
+	MM_SOUND_PLUGIN_TYPE_NONE = 0,
+	MM_SOUND_PLUGIN_TYPE_CODEC,
+	MM_SOUND_PLUGIN_TYPE_RUN,
+	MM_SOUND_PLUGIN_TYPE_LAST,
 };
 
 typedef struct {
-    int type;
-    void *module;
+	int type;
+	void *module;
 } MMSoundPluginType;
 
 #define MMSOUND_TRUE 1
@@ -42,13 +41,12 @@ typedef struct {
 int MMSoundGetPluginType(void);
 
 /* Utility Interfaces */
-char* MMSoundPluginGetTypeName(int type);
-int MMSoundPluginScan(const char *plugindir, const int type, MMSoundPluginType **pluginlist);
-int MMSoundPluginRelease(MMSoundPluginType *pluginlist);
+char *MMSoundPluginGetTypeName(int type);
+int MMSoundPluginScan(const char *plugindir, const int type, MMSoundPluginType ** pluginlist);
+int MMSoundPluginRelease(MMSoundPluginType * pluginlist);
 
-int MMSoundPluginOpen(char *file, MMSoundPluginType *plugin);
-int MMSoundPluginClose(MMSoundPluginType *plugin);
-int MMSoundPluginGetSymbol(MMSoundPluginType *plugin, const char *symbol, void **func);
+int MMSoundPluginOpen(char *file, MMSoundPluginType * plugin);
+int MMSoundPluginClose(MMSoundPluginType * plugin);
+int MMSoundPluginGetSymbol(MMSoundPluginType * plugin, const char *symbol, void **func);
 
 #endif /* __MM_SOUND_PLUGIN_H__ */
-

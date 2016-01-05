@@ -48,7 +48,7 @@ typedef struct {
 } mmsound_codec_info_t;
 
 typedef struct {
-	int (*stop_cb)(int);
+	int (*stop_cb) (int);
 	int pid;
 	int param;
 	int tone;
@@ -65,21 +65,20 @@ typedef struct {
 } mmsound_codec_param_t;
 
 typedef struct {
-    int* (*GetSupportTypes)(void);
-    int (*SetThreadPool) (int (*)(void*, void (*)(void*)));
-    int (*Parse)(MMSourceType*, mmsound_codec_info_t*);
-    int (*Create)(mmsound_codec_param_t*, mmsound_codec_info_t*, MMHandleType*);
-    int (*Play_wav)(mmsound_codec_param_t *, mmsound_codec_info_t *, MMHandleType );
-    int (*Play)(MMHandleType);
-    int (*Stop)(MMHandleType);
-    int (*Destroy)(MMHandleType);
+	int *(*GetSupportTypes) (void);
+	int (*SetThreadPool) (int (*)(void *, void (*)(void *)));
+	int (*Parse) (MMSourceType *, mmsound_codec_info_t *);
+	int (*Create) (mmsound_codec_param_t *, mmsound_codec_info_t *, MMHandleType *);
+	int (*Play_wav) (mmsound_codec_param_t *, mmsound_codec_info_t *, MMHandleType);
+	int (*Play) (MMHandleType);
+	int (*Stop) (MMHandleType);
+	int (*Destroy) (MMHandleType);
 } mmsound_codec_interface_t;
 
 /* Utility Functions */
 #define CODEC_GET_INTERFACE_FUNC_NAME "MMSoundPlugCodecGetInterface"
 #define MMSoundPlugCodecCastGetInterface(func) ((int (*)(mmsound_codec_interface_t*))(func))
 
-int MMSoundPlugCodecGetInterface(mmsound_codec_interface_t *intf);
+int MMSoundPlugCodecGetInterface(mmsound_codec_interface_t * intf);
 
 #endif /* __MM_SOUND_PLUGIN_CODEC_H__ */
-

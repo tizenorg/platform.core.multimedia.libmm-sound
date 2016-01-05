@@ -29,11 +29,11 @@
 #define KEY_BASE_PATH	"/tmp"
 #define RCV_MSG	0x21	/* rcv key */
 #define SND_MSG 0x24	/* snd key */
-#define CB_MSG   0x64		/* cb key */
+#define CB_MSG   0x64	/* cb key */
 #define RCV_CB_MSG   0x41	/* cb rcv key */
 #define SND_CB_MSG   0x44	/* cb snd key */
 
-#define MEMTYPE_SUPPORT_MAX (1024 * 1024) /* 1MB */
+#define MEMTYPE_SUPPORT_MAX (1024 * 1024)	/* 1MB */
 
 enum {
 	MM_SOUND_MSG_REQ_FILE = 1,
@@ -53,7 +53,7 @@ enum {
 #endif // PULSE_CLIENT
 	MM_SOUND_MSG_REQ_IS_BT_A2DP_ON = 20,
 	MM_SOUND_MSG_RES_IS_BT_A2DP_ON = 21,
-	MM_SOUND_MSG_REQ_DTMF  = 22,
+	MM_SOUND_MSG_REQ_DTMF = 22,
 	MM_SOUND_MSG_RES_DTMF = 23,
 	MM_SOUND_MSG_REQ_IS_ROUTE_AVAILABLE,
 	MM_SOUND_MSG_RES_IS_ROUTE_AVAILABLE,
@@ -115,73 +115,70 @@ enum {
 #endif
 };
 
-
 /* TODO : make this general , can be used in other IPC not only dbus */
 enum {
-        METHOD_CALL_TEST,
-        METHOD_CALL_PLAY_FILE_START,
-        METHOD_CALL_PLAY_FILE_START_WITH_STREAM_INFO,
-        METHOD_CALL_PLAY_FILE_STOP,
-        METHOD_CALL_PLAY_DTMF,
-        METHOD_CALL_PLAY_DTMF_WITH_STREAM_INFO,
-        METHOD_CALL_CLEAR_FOCUS, // Not original focus feature, only for tone/wav player internal focus usage.
-        METHOD_CALL_GET_BT_A2DP_STATUS,
-        METHOD_CALL_SET_PATH_FOR_ACTIVE_DEVICE,
-        METHOD_CALL_GET_CONNECTED_DEVICE_LIST,
-        METHOD_CALL_GET_AUDIO_PATH,
-        METHOD_CALL_SET_VOLUME_LEVEL,
+	METHOD_CALL_TEST,
+	METHOD_CALL_PLAY_FILE_START,
+	METHOD_CALL_PLAY_FILE_START_WITH_STREAM_INFO,
+	METHOD_CALL_PLAY_FILE_STOP,
+	METHOD_CALL_PLAY_DTMF,
+	METHOD_CALL_PLAY_DTMF_WITH_STREAM_INFO,
+	METHOD_CALL_CLEAR_FOCUS,	// Not original focus feature, only for tone/wav player internal focus usage.
+	METHOD_CALL_GET_BT_A2DP_STATUS,
+	METHOD_CALL_SET_PATH_FOR_ACTIVE_DEVICE,
+	METHOD_CALL_GET_CONNECTED_DEVICE_LIST,
+	METHOD_CALL_GET_AUDIO_PATH,
+	METHOD_CALL_SET_VOLUME_LEVEL,
 
-        METHOD_CALL_GET_UNIQUE_ID,
-        METHOD_CALL_REGISTER_FOCUS,
-        METHOD_CALL_UNREGISTER_FOCUS,
-        METHOD_CALL_SET_FOCUS_REACQUISITION,
-        METHOD_CALL_GET_ACQUIRED_FOCUS_STREAM_TYPE,
-        METHOD_CALL_ACQUIRE_FOCUS,
-        METHOD_CALL_RELEASE_FOCUS,
-        METHOD_CALL_WATCH_FOCUS,
-        METHOD_CALL_UNWATCH_FOCUS,
-        METHOD_CALL_EMERGENT_EXIT_FOCUS,
+	METHOD_CALL_GET_UNIQUE_ID,
+	METHOD_CALL_REGISTER_FOCUS,
+	METHOD_CALL_UNREGISTER_FOCUS,
+	METHOD_CALL_SET_FOCUS_REACQUISITION,
+	METHOD_CALL_GET_ACQUIRED_FOCUS_STREAM_TYPE,
+	METHOD_CALL_ACQUIRE_FOCUS,
+	METHOD_CALL_RELEASE_FOCUS,
+	METHOD_CALL_WATCH_FOCUS,
+	METHOD_CALL_UNWATCH_FOCUS,
+	METHOD_CALL_EMERGENT_EXIT_FOCUS,
 
-        METHOD_CALL_MAX,
+	METHOD_CALL_MAX,
 };
 
-
 typedef enum sound_server_signal {
-        SIGNAL_TEST,
-        SIGNAL_PLAY_FILE_END,
-        SIGNAL_VOLUME_CHANGED,
-        SIGNAL_DEVICE_CONNECTED,
-        SIGNAL_DEVICE_INFO_CHANGED,
-        SIGNAL_FOCUS_CHANGED,
-        SIGNAL_FOCUS_WATCH,
-        SIGNAL_MAX
+	SIGNAL_TEST,
+	SIGNAL_PLAY_FILE_END,
+	SIGNAL_VOLUME_CHANGED,
+	SIGNAL_DEVICE_CONNECTED,
+	SIGNAL_DEVICE_INFO_CHANGED,
+	SIGNAL_FOCUS_CHANGED,
+	SIGNAL_FOCUS_WATCH,
+	SIGNAL_MAX
 } sound_server_signal_t;
 
 typedef enum pulseaudio_property {
-        PULSEAUDIO_PROP_AUDIO_BALANCE,
-        PULSEAUDIO_PROP_MONO_AUDIO,
-        PULSEAUDIO_PROP_MUTE_ALL,
-        PULSEAUDIO_PROP_MAX
+	PULSEAUDIO_PROP_AUDIO_BALANCE,
+	PULSEAUDIO_PROP_MONO_AUDIO,
+	PULSEAUDIO_PROP_MUTE_ALL,
+	PULSEAUDIO_PROP_MAX
 } pulseaudio_property_t;
 
-struct mm_sound_dbus_method_info{
-        const char* name;
-        /*
-        const char* argument;
-        const char* reply;
-        */
+struct mm_sound_dbus_method_info {
+	const char *name;
+	/*
+	   const char* argument;
+	   const char* reply;
+	 */
 };
 
-struct mm_sound_dbus_signal_info{
-        const char* name;
-        const char* argument;
+struct mm_sound_dbus_signal_info {
+	const char *name;
+	const char *argument;
 };
 
 struct pulseaudio_dbus_property_info {
-        const char* name;
+	const char *name;
 };
 
 #define DSIZE sizeof(mm_ipc_msg_t)-sizeof(long)	/* data size for rcv & snd */
 
 #endif /* __MM_SOUND_MSG_H__  */
-
