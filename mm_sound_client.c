@@ -396,7 +396,7 @@ void mm_sound_convert_volume_type_to_stream_type(int volume_type, char *stream_t
 		MMSOUND_STRNCPY(stream_type, "media", MM_SOUND_STREAM_TYPE_LEN);
 		break;
 	case VOLUME_TYPE_CALL:
-		MMSOUND_STRNCPY(stream_type, "system", MM_SOUND_STREAM_TYPE_LEN);
+		MMSOUND_STRNCPY(stream_type, "call-voice", MM_SOUND_STREAM_TYPE_LEN);
 		break;
 	case VOLUME_TYPE_VOIP:
 		MMSOUND_STRNCPY(stream_type, "voip", MM_SOUND_STREAM_TYPE_LEN);
