@@ -216,7 +216,6 @@ int mm_sound_client_initialize(void)
 
 #endif
 
-
 	debug_fleave();
 	return ret;
 }

@@ -1002,21 +1002,6 @@ int mm_sound_get_device_state(MMSoundDevice_t device_h, mm_sound_device_state_e 
 int mm_sound_get_device_name(MMSoundDevice_t device_h, char **name);
 
 /**
- * This function is to get active playback device and capture device.
- *
- * @param	playback_device			[out]	playback device.
- * @param	capture_device			[out]	capture device.
- *
- * @return 	This function returns MM_ERROR_NONE on success, or negative value
- *			with error code.
- * @remark	None.
- * @pre		None.
- * @post	None.
- * @see		mm_sound_device_in mm_sound_device_out
- */
-int mm_sound_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out);
-
-/**
  * Active device changed callback function type.
  *
  * @param	user_data		[in]	Argument passed when callback has called
@@ -1039,8 +1024,9 @@ typedef enum {
 	MM_SOUND_SIGNAL_MAX,
 } mm_sound_signal_name_t;
 
-typedef void (* mm_sound_signal_callback) (mm_sound_signal_name_t signal, int value, void *user_data);
-int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int* subscribe_id, mm_sound_signal_callback callback, void *user_data);
+typedef void (*mm_sound_signal_callback) (mm_sound_signal_name_t signal, int value, void *user_data);
+int mm_sound_subscribe_signal(mm_sound_signal_name_t signal, unsigned int *subscribe_id, mm_sound_signal_callback callback, void *user_data);
+int mm_sound_subscribe_signal_for_daemon(mm_sound_signal_name_t signal, int client_pid, unsigned int *subscribe_id, mm_sound_signal_callback callback, void *user_data);
 void mm_sound_unsubscribe_signal(unsigned int subscribe_id);
 int mm_sound_send_signal(mm_sound_signal_name_t signal, int value);
 int mm_sound_get_signal_value(mm_sound_signal_name_t signal, int *value);

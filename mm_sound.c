@@ -76,6 +76,7 @@ typedef struct _subscribe_cb {
 	mm_sound_signal_callback callback;
 	void *user_data;
 	unsigned int id;
+	int client_pid;
 } subscribe_cb_t;
 
 static const char* _get_volume_str (volume_type_t type)
@@ -442,13 +443,6 @@ int mm_sound_play_tone (MMSoundTone_t num, int volume_config, const double volum
 ///////////////////////////////////
 
 EXPORT_API
-int mm_sound_get_active_device(mm_sound_device_in *device_in, mm_sound_device_out *device_out)
-{
-	/* FIXME : Will be removed */
-	return MM_ERROR_NOT_SUPPORT_API;
-}
-
-EXPORT_API
 int mm_sound_test(int a, int b, int* getv)
 {
 	int ret = MM_ERROR_NONE;
@@ -517,6 +511,8 @@ static int _convert_signal_name_str_to_enum (const char *name_str, mm_sound_sign
 	return ret;
 }
 
+#define MASK_FOR_PID    0x00FFFFFF
+#define MASK_FOR_VALUE  0x000000FF
 static void _dbus_signal_callback (const char *signal_name, int value, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
@@ -535,9 +531,10 @@ static void _dbus_signal_callback (const char *signal_name, int value, void *use
 	debug_msg ("signal_name[%s], value[%d], user_data[0x%x]\n", signal_name, value, user_data);
 
 	if (subscribe_cb->signal_type == MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS) {
-		/* trigger the signal callback when it comes from the same process */
-		if (getpid() == ((value & 0xFFFF0000) >> 16)) {
-			subscribe_cb->callback(signal, (value & 0x0000FFFF), subscribe_cb->user_data);
+		/* trigger the signal callback when it comes from the same process,
+		* in case of daemon usage, it uses the client_pid of subscribe_cb */
+		if ((subscribe_cb->client_pid ? (subscribe_cb->client_pid & MASK_FOR_PID) : (getpid() & MASK_FOR_PID)) == ((value & (MASK_FOR_PID << 8)) >> 8)) {
+			subscribe_cb->callback(signal, (value & MASK_FOR_VALUE), subscribe_cb->user_data);
 		}
 	} else {
 		subscribe_cb->callback(signal, value, subscribe_cb->user_data);
@@ -648,6 +645,83 @@ error:
 }
 
 EXPORT_API
+int mm_sound_subscribe_signal_for_daemon(mm_sound_signal_name_t signal, int client_pid, unsigned int *subscribe_id, mm_sound_signal_callback callback, void *user_data)
+{
+	int ret = MM_ERROR_NONE;
+	GError *err = NULL;
+
+	subscribe_cb_t *subscribe_cb = NULL;
+
+	debug_fenter();
+
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_subscribe_cb_list_mutex, MM_ERROR_SOUND_INTERNAL);
+
+	if (signal < 0 || signal >= MM_SOUND_SIGNAL_MAX || !client_pid || !subscribe_id) {
+		debug_error ("invalid argument, signal(%d), client_pid(%d), subscribe_id(0x%p)", signal, client_pid, subscribe_id);
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto error;
+	}
+
+	subscribe_cb = malloc(sizeof(subscribe_cb_t));
+	if (!subscribe_cb) {
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error;
+	}
+	memset(subscribe_cb, 0, sizeof(subscribe_cb_t));
+
+	g_dbus_conn_mmsound = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
+	if (!g_dbus_conn_mmsound && err) {
+		debug_error ("g_bus_get_sync() error (%s) ", err->message);
+		g_error_free (err);
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error;
+	}
+
+	subscribe_cb->signal_type = signal;
+	subscribe_cb->callback = callback;
+	subscribe_cb->user_data = user_data;
+	subscribe_cb->client_pid = client_pid;
+
+	*subscribe_id = g_dbus_connection_signal_subscribe(g_dbus_conn_mmsound,
+			NULL, MM_SOUND_DBUS_INTERFACE, dbus_signal_name_str[signal], MM_SOUND_DBUS_OBJECT_PATH, NULL, 0,
+			signal_callback, subscribe_cb, NULL);
+	if (*subscribe_id == 0) {
+		debug_error ("g_dbus_connection_signal_subscribe() error (%d)", *subscribe_id);
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto sig_error;
+	}
+
+	subscribe_cb->id = *subscribe_id;
+
+	g_subscribe_cb_list = g_list_append(g_subscribe_cb_list, subscribe_cb);
+	if (g_subscribe_cb_list) {
+		debug_log("new subscribe_cb(0x%x)[user_callback(0x%x), subscribe_id(%u)] is added\n", subscribe_cb, subscribe_cb->callback, subscribe_cb->id);
+	} else {
+		debug_error("g_list_append failed\n");
+		ret = MM_ERROR_SOUND_INTERNAL;
+		goto error;
+	}
+
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
+
+	debug_fleave();
+
+	return ret;
+
+sig_error:
+	g_dbus_connection_signal_unsubscribe(g_dbus_conn_mmsound, *subscribe_id);
+	g_object_unref(g_dbus_conn_mmsound);
+
+error:
+	if (subscribe_cb)
+		free (subscribe_cb);
+
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_subscribe_cb_list_mutex);
+
+	return ret;
+}
+
+EXPORT_API
 void mm_sound_unsubscribe_signal(unsigned int subscribe_id)
 {
 	GList *list = NULL;
@@ -703,7 +777,7 @@ int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
 	g_dbus_signal_values[signal] = value;
 	if (signal == MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS) {
 		/* trigger the signal callback when it comes from the same process */
-		value |= ((int)getpid() << 16);
+		value |= ((int)getpid() << 8);
 	}
 	dbus_ret = g_dbus_connection_emit_signal (conn,
 				NULL, MM_SOUND_DBUS_OBJECT_PATH, MM_SOUND_DBUS_INTERFACE, dbus_signal_name_str[signal],
