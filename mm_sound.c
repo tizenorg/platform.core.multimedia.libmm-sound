@@ -34,6 +34,7 @@
 #include <mm_types.h>
 #include <mm_error.h>
 #include <mm_message.h>
+#include <mm_session_private.h>
 #include <mm_debug.h>
 #include "include/mm_sound_private.h"
 #include "include/mm_sound.h"
@@ -511,8 +512,6 @@ static int _convert_signal_name_str_to_enum (const char *name_str, mm_sound_sign
 	return ret;
 }
 
-#define MASK_FOR_PID    0x00FFFFFF
-#define MASK_FOR_VALUE  0x000000FF
 static void _dbus_signal_callback (const char *signal_name, int value, void *user_data)
 {
 	int ret = MM_ERROR_NONE;
@@ -531,10 +530,13 @@ static void _dbus_signal_callback (const char *signal_name, int value, void *use
 	debug_msg ("signal_name[%s], value[%d], user_data[0x%x]\n", signal_name, value, user_data);
 
 	if (subscribe_cb->signal_type == MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS) {
-		/* trigger the signal callback when it comes from the same process,
-		* in case of daemon usage, it uses the client_pid of subscribe_cb */
-		if ((subscribe_cb->client_pid ? (subscribe_cb->client_pid & MASK_FOR_PID) : (getpid() & MASK_FOR_PID)) == ((value & (MASK_FOR_PID << 8)) >> 8)) {
-			subscribe_cb->callback(signal, (value & MASK_FOR_VALUE), subscribe_cb->user_data);
+		/* Trigger the signal callback when it comes from the same process.
+		* In this case, the second integer argument is consist of
+		* |<-- pid (16bits) -->|<-- value (16bits) -->|,
+		* FYI, #define PID_MAX_DEFAULT (CONFIG_BASE_SMALL ? 0x1000 : 0x8000).
+		* In case of daemon usage, it uses the client_pid of subscribe_cb. */
+		if ((subscribe_cb->client_pid ? subscribe_cb->client_pid : getpid()) == (value >> 16)) {
+			subscribe_cb->callback(signal, (value & 0x0000FFFF), subscribe_cb->user_data);
 		}
 	} else {
 		subscribe_cb->callback(signal, value, subscribe_cb->user_data);
@@ -776,8 +778,12 @@ int mm_sound_send_signal(mm_sound_signal_name_t signal, int value)
 
 	g_dbus_signal_values[signal] = value;
 	if (signal == MM_SOUND_SIGNAL_RELEASE_INTERNAL_FOCUS) {
-		/* trigger the signal callback when it comes from the same process */
-		value |= ((int)getpid() << 8);
+		/* Trigger the signal callback when it comes from the same process.
+		* |<-- pid (16bits) -->|<-- value (16bits) -->|,
+		* FYI, #define PID_MAX_DEFAULT (CONFIG_BASE_SMALL ? 0x1000 : 0x8000). */
+		value |= ((int)getpid() << 16);
+		if ((_mm_session_util_write_information((int)getpid(), MM_SESSION_TYPE_REPLACED_BY_STREAM, 0)))
+			debug_error ("failed to _mm_session_util_write_information for MM_SESSION_TYPE_REPLACED_BY_STREAM");
 	}
 	dbus_ret = g_dbus_connection_emit_signal (conn,
 				NULL, MM_SOUND_DBUS_OBJECT_PATH, MM_SOUND_DBUS_INTERFACE, dbus_signal_name_str[signal],
