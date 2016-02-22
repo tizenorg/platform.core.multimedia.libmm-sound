@@ -19,6 +19,7 @@
 
 #include "include/mm_sound_mgr_focus_dbus.h"
 #include "include/mm_sound_mgr_focus_ipc.h"
+#include "../include/mm_sound_dbus.h"
 
 
 #define BUS_NAME_FOCUS_SERVER "org.tizen.FocusServer"
@@ -127,88 +128,68 @@ static void handle_method_emergent_exit_focus (GDBusMethodInvocation* invocation
 /* TODO : generate introspection xml automatically, with these value include argument and reply */
 /* TODO : argument check with these information */
 /* TODO : divide object and interface with features (ex. play, path, device, focus, asm) */
-struct mm_sound_mgr_focus_dbus_method methods[METHOD_CALL_MAX] = {
-	[METHOD_CALL_GET_UNIQUE_ID] = {
+mm_sound_dbus_method_intf_t methods[AUDIO_METHOD_MAX] = {
+	[AUDIO_METHOD_GET_UNIQUE_ID] = {
 		.info = {
 			.name = "GetUniqueId",
 		},
 		.handler = handle_method_get_unique_id
 	},
-	[METHOD_CALL_REGISTER_FOCUS] = {
+	[AUDIO_METHOD_REGISTER_FOCUS] = {
 		.info = {
 			.name = "RegisterFocus",
 		},
 		.handler = handle_method_register_focus
 	},
-	[METHOD_CALL_UNREGISTER_FOCUS] = {
+	[AUDIO_METHOD_UNREGISTER_FOCUS] = {
 		.info = {
 			.name = "UnregisterFocus",
 		},
 		.handler = handle_method_unregister_focus
 	},
-	[METHOD_CALL_SET_FOCUS_REACQUISITION] = {
+	[AUDIO_METHOD_SET_FOCUS_REACQUISITION] = {
 		.info = {
 			.name = "SetFocusReacquisition",
 		},
 		.handler = handle_method_set_focus_reacquisition
 	},
-	[METHOD_CALL_GET_ACQUIRED_FOCUS_STREAM_TYPE] = {
+	[AUDIO_METHOD_GET_ACQUIRED_FOCUS_STREAM_TYPE] = {
 		.info = {
 			.name = "GetAcquiredFocusStreamType",
 		},
 		.handler = handle_method_get_acquired_focus_stream_type
 	},
-	[METHOD_CALL_ACQUIRE_FOCUS] = {
+	[AUDIO_METHOD_ACQUIRE_FOCUS] = {
 		.info = {
 			.name = "AcquireFocus",
 		},
 		.handler = handle_method_acquire_focus
 	},
-	[METHOD_CALL_RELEASE_FOCUS] = {
+	[AUDIO_METHOD_RELEASE_FOCUS] = {
 		.info = {
 			.name = "ReleaseFocus",
 		},
 		.handler = handle_method_release_focus
 	},
-	[METHOD_CALL_WATCH_FOCUS] = {
+	[AUDIO_METHOD_WATCH_FOCUS] = {
 		.info = {
 			.name = "WatchFocus",
 		},
 		.handler = handle_method_watch_focus
 	},
-	[METHOD_CALL_UNWATCH_FOCUS] = {
+	[AUDIO_METHOD_UNWATCH_FOCUS] = {
 		.info = {
 			.name = "UnwatchFocus",
 		},
 		.handler = handle_method_unwatch_focus
 	},
-	[METHOD_CALL_EMERGENT_EXIT_FOCUS] = {
+	[AUDIO_METHOD_EMERGENT_EXIT_FOCUS] = {
 		.info = {
 			.name = "EmergentExitFocus",
 		},
 		.handler = handle_method_emergent_exit_focus
 	},
 };
-
-
-struct mm_sound_mgr_focus_dbus_signal signals[SIGNAL_MAX] = {
-	[SIGNAL_TEST] = {
-		.info = {
-			.name = "SignalTest1",
-		},
-	},
-	[SIGNAL_FOCUS_CHANGED] = {
-		.info = {
-			.name = "FocusChanged",
-		},
-	},
-	[SIGNAL_FOCUS_WATCH] = {
-		.info = {
-			.name = "FocusWatch",
-		},
-	}
-};
-
 
 static GDBusNodeInfo *introspection_data = NULL;
 guint focus_server_owner_id ;
@@ -632,7 +613,7 @@ static void handle_method_call(GDBusConnection *connection,
 	}
 	debug_log("Method Call, obj : %s, intf : %s, method : %s", object_path, interface_name, method_name);
 
-	for (method_idx = METHOD_CALL_GET_UNIQUE_ID; method_idx < METHOD_CALL_MAX; method_idx++) {
+	for (method_idx = AUDIO_METHOD_GET_UNIQUE_ID; method_idx < AUDIO_METHOD_MAX; method_idx++) {
 		if (!g_strcmp0(method_name, methods[method_idx].info.name)) {
 			methods[method_idx].handler(invocation);
 		}
