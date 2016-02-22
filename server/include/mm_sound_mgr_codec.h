@@ -24,6 +24,7 @@
 #define __MM_SOUND_MGR_CODEC_H__
 
 #include <mm_source.h>
+#include <mm_sound_stream.h>
 
 typedef struct {
 	int tone;

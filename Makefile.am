@@ -16,7 +16,7 @@ includelibmmfsound_HEADERS = include/mm_sound.h \
 
 libmmfsound_la_SOURCES = mm_sound.c \
 			mm_sound_client.c \
-			mm_sound_client_dbus.c \
+			mm_sound_proxy.c \
 			mm_sound_device.c \
 			mm_sound_pa_client.c
 if USE_FOCUS

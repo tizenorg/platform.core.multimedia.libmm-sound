@@ -31,6 +31,7 @@
 #define	__MM_SOUND_DEVICE_H__
 
 #include <glib.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 	extern "C" {
