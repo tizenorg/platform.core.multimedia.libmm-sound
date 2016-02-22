@@ -34,7 +34,6 @@
 #include "include/mm_sound_mgr_focus_dbus.h"
 
 #include "../include/mm_sound_common.h"
-#include "../include/mm_sound_msg.h"
 #include "include/mm_sound_mgr_focus.h"
 #include <mm_error.h>
 #include <mm_debug.h>
