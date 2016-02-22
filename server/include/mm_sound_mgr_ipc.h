@@ -22,19 +22,10 @@
 #ifndef __MM_SOUND_MGR_IPC_H__
 #define __MM_SOUND_MGR_IPC_H__
 
-#include "../../include/mm_sound_msg.h"
-
-#define SOUND_MSG_SET(sound_msg, x_msgtype, x_handle, x_code, x_msgid) \
-do { \
-	sound_msg.msgtype = x_msgtype; \
-	sound_msg.handle = x_handle; \
-	sound_msg.code = x_code; \
-	sound_msg.msgid = x_msgid; \
-} while(0)
-
-#define FREEZE_COMMAND_EXCLUDE	"exclude"
-#define FREEZE_COMMAND_INCLUDE	"include"
-#define FREEZE_COMMAND_WAKEUP	"wakeup"
+#include <glib.h>
+#include <stdbool.h>
+#include "../../include/mm_sound_device.h"
+#include "../../include/mm_sound.h"
 
 #ifdef SUPPORT_CONTAINER
 
@@ -56,24 +47,14 @@ int _MMSoundMgrIpcPlayFile(char* filename, int tone, int repeat, int volume, int
 			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index);
 int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index);
-//int _MMSoundMgrIpcStop(mm_ipc_msg_t *msg);
 int _MMSoundMgrIpcStop(int handle);
 int _MMSoundMgrIpcClearFocus(int pid);
-//int _MMSoundMgrIpcPlayDTMF(int *codechandle, mm_ipc_msg_t *msg);
 int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 			   int session_type, int session_options, int client_pid,
 			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index);
 int _MMSoundMgrIpcPlayDTMFWithStreamInfo(int tone, int repeat, int volume, int client_pid, int *codechandle, char *stream_type, int stream_index);
 
-//int __mm_sound_mgr_ipc_get_current_connected_device_list(mm_ipc_msg_t *msg, GList **device_list, int *total_num);
 int __mm_sound_mgr_ipc_get_current_connected_device_list(int device_flags, mm_sound_device_t **device_list, int *total_num);
-
-/* send signal : mgr_xxx -> mgr_ipc_dbus */
-int _MMIpcCBSndMsg(mm_ipc_msg_t *msg);
-int _MMIpcCBRecvMsg(mm_ipc_msg_t *msg);
-int _MMIpcCBMsgEnQueueAgain(mm_ipc_msg_t *msg);
-
-int __mm_sound_mgr_ipc_freeze_send (char* command, int pid);
 
 int __mm_sound_mgr_ipc_notify_play_file_end (int handle);
 int __mm_sound_mgr_ipc_notify_device_connected (mm_sound_device_t *device, gboolean is_connected);

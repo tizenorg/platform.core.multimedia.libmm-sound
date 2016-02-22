@@ -22,7 +22,7 @@
 #ifndef __MM_SOUND_MGR_FOCUS_IPC_H__
 #define __MM_SOUND_MGR_FOCUS_IPC_H__
 
-#include "../../include/mm_sound_msg.h"
+#include <stdbool.h>
 
 #ifdef SUPPORT_CONTAINER
 
