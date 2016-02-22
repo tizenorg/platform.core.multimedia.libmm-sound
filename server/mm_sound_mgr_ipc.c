@@ -36,7 +36,6 @@
 #include "include/mm_sound_mgr_ipc_dbus.h"
 
 #include "../include/mm_sound_common.h"
-#include "../include/mm_sound_msg.h"
 //#include "include/mm_sound_thread_pool.h"
 #include "include/mm_sound_mgr_codec.h"
 #include <mm_error.h>
@@ -313,28 +312,6 @@ int __mm_sound_mgr_ipc_notify_available_device_changed(int device_in, int device
 {
 	/* Not Implemented */
 	return __mm_sound_mgr_ipc_dbus_notify_available_device_changed(device_in, device_out, available);
-}
-
-int __mm_sound_mgr_ipc_freeze_send (char* command, int pid)
-{
-	return mm_sound_mgr_ipc_dbus_send_signal_freeze ( command, pid);
-}
-
-/* should be converted to general type */
-int _MMIpcCBSndMsg(mm_ipc_msg_t *msg)
-{
-//	return _MMIpcMsgqCBSndMsg(msg);
-	return MM_ERROR_NONE;
-}
-int _MMIpcCBRecvMsg(mm_ipc_msg_t *msg)
-{
-//	return _MMIpcMsgqCBRecvMsg(msg);
-	return MM_ERROR_NONE;
-}
-int _MMIpcCBMsgEnQueueAgain(mm_ipc_msg_t *msg)
-{
-//	return _MMIpcMsgqCBMsgEnQueueAgain(msg);
-	return MM_ERROR_NONE;
 }
 
 int MMSoundMgrIpcInit(void)

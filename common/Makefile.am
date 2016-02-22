@@ -2,15 +2,20 @@ lib_LTLIBRARIES = libmmfsoundcommon.la
 
 libmmfsoundcommon_la_SOURCES = mm_ipc.c \
 							mm_sound_utils.c \
+							mm_sound_dbus.c \
 							mm_source.c
 
 #libmmfsoundcommon_la_DEPENDENCIES = $(libdir)/libmmfcommon.la
 
 libmmfsoundcommon_la_CFLAGS = -I$(srcdir)/../include \
 			$(MMCOMMON_CFLAGS) \
+			$(GLIB2_CFLAGS) \
+			$(GIO_CFLAGS) \
 			$(VCONF_CFLAGS)
 
 libmmfsoundcommon_la_LIBADD = $(MMCOMMON_LIBS) \
+								$(GLIB2_LIBS) \
+								$(GIO_LIBS) \
 								$(VCONF_LIBS)
 #libmmfsound_la_LDFLAGS = -version-info 1:0:1
 
