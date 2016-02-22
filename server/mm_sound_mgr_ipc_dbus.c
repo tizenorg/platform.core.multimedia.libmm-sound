@@ -19,6 +19,7 @@
 
 #include "include/mm_sound_mgr_ipc_dbus.h"
 #include "include/mm_sound_mgr_ipc.h"
+#include "../include/mm_sound_dbus.h"
 
 
 #define BUS_NAME_SOUND_SERVER "org.tizen.SoundServer"
@@ -106,19 +107,6 @@
   "</node>";
 GDBusConnection* conn_g;
 
-typedef void (*dbus_method_handler)(GDBusMethodInvocation *invocation);
-typedef int (*dbus_signal_sender)(GDBusConnection *conn, GVariant *parameter);
-
-struct mm_sound_dbus_method{
-	struct mm_sound_dbus_method_info info;
-        dbus_method_handler handler;
-};
-
-struct mm_sound_dbus_signal{
-	struct mm_sound_dbus_signal_info info;
-	dbus_signal_sender sender;
-};
-
 static void handle_method_play_file_start(GDBusMethodInvocation* invocation);
 static void handle_method_play_file_start_with_stream_info(GDBusMethodInvocation* invocation);
 static void handle_method_play_file_stop(GDBusMethodInvocation* invocation);
@@ -132,86 +120,56 @@ static void handle_method_get_connected_device_list(GDBusMethodInvocation* invoc
 /* TODO : generate introspection xml automatically, with these value include argument and reply */
 /* TODO : argument check with these information */
 /* TODO : divide object and interface with features (ex. play, path, device) */
-struct mm_sound_dbus_method methods[METHOD_CALL_MAX] = {
-	[METHOD_CALL_TEST] = {
+mm_sound_dbus_method_intf_t methods[AUDIO_METHOD_MAX] = {
+	[AUDIO_METHOD_TEST] = {
 		.info = {
 			.name = "MethodTest1",
 		},
 		.handler = handle_method_test
 	},
-	[METHOD_CALL_PLAY_FILE_START] = {
+	[AUDIO_METHOD_PLAY_FILE_START] = {
 		.info = {
 			.name = "PlayFileStart",
 		},
 		.handler = handle_method_play_file_start
 	},
-	[METHOD_CALL_PLAY_FILE_START_WITH_STREAM_INFO] = {
+	[AUDIO_METHOD_PLAY_FILE_START_WITH_STREAM_INFO] = {
 		.info = {
 			.name = "PlayFileStartWithStreamInfo",
 		},
 		.handler = handle_method_play_file_start_with_stream_info
 	},
-	[METHOD_CALL_PLAY_FILE_STOP] = {
+	[AUDIO_METHOD_PLAY_FILE_STOP] = {
 		.info = {
 			.name = "PlayFileStop",
 		},
 		.handler = handle_method_play_file_stop
 	},
-	[METHOD_CALL_CLEAR_FOCUS] = {
+	[AUDIO_METHOD_CLEAR_FOCUS] = {
 		.info = {
 			.name = "ClearFocus",
 		},
 		.handler = handle_method_clear_focus
 	},
-	[METHOD_CALL_PLAY_DTMF] = {
+	[AUDIO_METHOD_PLAY_DTMF] = {
 		.info = {
 			.name = "PlayDTMF",
 		},
 		.handler = handle_method_play_dtmf
 	},
-	[METHOD_CALL_PLAY_DTMF_WITH_STREAM_INFO] = {
+	[AUDIO_METHOD_PLAY_DTMF_WITH_STREAM_INFO] = {
 		.info = {
 			.name = "PlayDTMFWithStreamInfo",
 		},
 		.handler = handle_method_play_dtmf_with_stream_info
 	},
-	[METHOD_CALL_GET_CONNECTED_DEVICE_LIST] = {
+	[AUDIO_METHOD_GET_CONNECTED_DEVICE_LIST] = {
 		.info = {
 			.name = "GetConnectedDeviceList",
 		},
 		.handler = handle_method_get_connected_device_list
 	},
 };
-
-struct mm_sound_dbus_signal signals[SIGNAL_MAX] = {
-	[SIGNAL_TEST] = {
-		.info = {
-			.name = "SignalTest1",
-		},
-	},
-	[SIGNAL_PLAY_FILE_END] = {
-		.info = {
-			.name = "PlayFileEnd",
-		},
-	},
-	[SIGNAL_VOLUME_CHANGED] = {
-		.info = {
-			.name = "VolumeChanged",
-		},
-	},
-	[SIGNAL_DEVICE_CONNECTED] = {
-		.info = {
-			.name = "DeviceConnected",
-		},
-	},
-	[SIGNAL_DEVICE_INFO_CHANGED] = {
-		.info = {
-			.name = "DeviceInfoChanged",
-		},
-	},
-};
-
-
 
 static GDBusNodeInfo *introspection_data = NULL;
 guint sound_server_owner_id ;
@@ -257,45 +215,13 @@ static const char* _convert_error_code(int err_code)
 	return "org.tizen.multimedia.common.Unknown";
 }
 
-static int mm_sound_mgr_ipc_dbus_send_signal(int signal_type, GVariant *parameter)
+static int mm_sound_mgr_ipc_dbus_send_signal(audio_event_t event, GVariant *parameter)
 {
-	int ret = MM_ERROR_NONE;
-	GDBusConnection *conn = NULL;
-	GError* err = NULL;
-	gboolean emit_success = FALSE;
-
-	if (signal_type < 0 || signal_type >= SIGNAL_MAX || !parameter) {
-		debug_error("Invalid Argument");
+	if(mm_sound_dbus_emit_signal(AUDIO_PROVIDER_SOUND_SERVER, event, parameter) != MM_ERROR_NONE) {
+		debug_error("Sound Server Emit signal failed");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
-
-	debug_log("Signal Emit : %s", signals[signal_type].info.name);
-
-	if (!conn_g) {
-		conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
-		if (!conn && err) {
-			debug_error ("g_bus_get_sync() error (%s) ", err->message);
-			g_error_free (err);
-			return MM_ERROR_SOUND_INTERNAL;
-		}
-		conn_g = conn;
-	}
-/*
-	if (!g_variant_is_of_type(parameter, G_VARIANT_TYPE(signals[signal_type].info.argument))) {
-		debug_error("Invalid Signal Parameter");
-		return MM_ERROR_INVALID_ARGUMENT;
-	}
-	*/
-
-	emit_success = g_dbus_connection_emit_signal(conn_g, NULL, OBJECT_SOUND_SERVER, INTERFACE_SOUND_SERVER,
-												signals[signal_type].info.name, parameter, &err);
-	if (!emit_success && err) {
-		debug_error("Emit signal (%s) failed, (%s)", signals[signal_type].info.name, err->message);
-		g_error_free(err);
-		return MM_ERROR_SOUND_INTERNAL;
-	}
-
-	return ret;
+	return MM_ERROR_NONE;
 }
 
 static int _get_sender_pid(GDBusMethodInvocation* invocation)
@@ -356,7 +282,7 @@ static void handle_method_test(GDBusMethodInvocation* invocation)
 	g_variant_get(params, "(ii)", &val, &val2);
 	debug_log("Got value : %d , %d", val, val2);
 
-	if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_TEST, g_variant_new("(i)", val+val2))) != MM_ERROR_NONE) {
+	if ((ret = mm_sound_mgr_ipc_dbus_send_signal(AUDIO_EVENT_TEST, g_variant_new("(i)", val+val2))) != MM_ERROR_NONE) {
 		debug_error("signal send error : %X", ret);
 	} else {
 		debug_error("signal send success");
@@ -616,7 +542,7 @@ static void handle_method_call(GDBusConnection *connection,
 	}
 	debug_log("Method Call, obj : %s, intf : %s, method : %s", object_path, interface_name, method_name);
 
-	for (method_idx = 0; method_idx < METHOD_CALL_MAX; method_idx++) {
+	for (method_idx = 0; method_idx < AUDIO_METHOD_MAX; method_idx++) {
 		if (!g_strcmp0(method_name, methods[method_idx].info.name)) {
 			methods[method_idx].handler(invocation);
 		}
@@ -712,58 +638,13 @@ static void _mm_sound_mgr_dbus_unown_name(guint oid)
 	}
 }
 
-/* not for mm-sound client */
-int mm_sound_mgr_ipc_dbus_send_signal_freeze (char* command, int pid)
-{
-	GError *err = NULL;
-	GDBusConnection *conn = NULL;
-	gboolean ret;
-
-	if (command == NULL || pid <= 0) {
-		debug_error ("invalid arguments [%s][%d]", command, pid);
-		return -1;
-	}
-
-	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
-	if (!conn && err) {
-		debug_error ("g_bus_get_sync() error (%s) ", err->message);
-		g_error_free (err);
-		return -1;
-	}
-
-	ret = g_dbus_connection_emit_signal (conn,
-				NULL, PROC_DBUS_OBJECT, PROC_DBUS_INTERFACE, PROC_DBUS_METHOD,
-				g_variant_new ("(si)", command, pid),
-				&err);
-	if (!ret && err) {
-		debug_error ("g_dbus_connection_emit_signal() error (%s) ", err->message);
-		goto error;
-	}
-
-	ret = g_dbus_connection_flush_sync(conn, NULL, &err);
-	if (!ret && err) {
-		debug_error ("g_dbus_connection_flush_sync() error (%s) ", err->message);
-		goto error;
-	}
-
-	g_object_unref(conn);
-	debug_msg ("sending [%s] for pid (%d) success", command, pid);
-
-	return 0;
-
-error:
-	g_error_free (err);
-	g_object_unref(conn);
-	return -1;
-}
-
 int __mm_sound_mgr_ipc_dbus_notify_device_connected (mm_sound_device_t *device, gboolean is_connected)
 {
 	int ret = MM_ERROR_NONE;
 	GVariantBuilder builder;
 	GVariant* param = NULL;
 
-	debug_log("Send Signal '%s'", signals[SIGNAL_DEVICE_CONNECTED]);
+	debug_log("Send device connected signal");
 
 	g_variant_builder_init(&builder, G_VARIANT_TYPE("((iiiis)b)"));
 	g_variant_builder_open(&builder, G_VARIANT_TYPE_TUPLE);
@@ -772,7 +653,7 @@ int __mm_sound_mgr_ipc_dbus_notify_device_connected (mm_sound_device_t *device, 
 	g_variant_builder_add(&builder, "b", is_connected);
 	param = g_variant_builder_end(&builder);
 	if (param) {
-		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_DEVICE_CONNECTED, param))!= MM_ERROR_NONE) {
+		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(AUDIO_EVENT_DEVICE_CONNECTED, param))!= MM_ERROR_NONE) {
 			debug_error("Send device connected signal failed");
 		}
 	} else {
@@ -788,7 +669,7 @@ int __mm_sound_mgr_ipc_dbus_notify_device_info_changed (mm_sound_device_t *devic
 	GVariantBuilder builder;
 	GVariant* param = NULL;
 
-	debug_log("Send Signal '%s'", signals[SIGNAL_DEVICE_INFO_CHANGED]);
+	debug_log("Send device info changed signal");
 
 	g_variant_builder_init(&builder, G_VARIANT_TYPE("((iiiis)i)"));
 	g_variant_builder_open(&builder, G_VARIANT_TYPE_TUPLE);
@@ -797,7 +678,7 @@ int __mm_sound_mgr_ipc_dbus_notify_device_info_changed (mm_sound_device_t *devic
 	g_variant_builder_add(&builder, "i", changed_device_info_type);
 	param = g_variant_builder_end(&builder);
 	if (param) {
-		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_DEVICE_INFO_CHANGED, param)) != MM_ERROR_NONE) {
+		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(AUDIO_EVENT_DEVICE_INFO_CHANGED, param)) != MM_ERROR_NONE) {
 			debug_error("Send device info changed signal failed");
 		}
 	} else {
@@ -812,11 +693,11 @@ int __mm_sound_mgr_ipc_dbus_notify_volume_changed(unsigned int vol_type, unsigne
 	int ret = MM_ERROR_NONE;
 	GVariant* param = NULL;
 
-	debug_log("Send Signal '%s'", signals[SIGNAL_VOLUME_CHANGED]);
+	debug_log("Send Signal volume changed signal");
 
 	param = g_variant_new("(uu)", vol_type, value);
 	if (param) {
-		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_VOLUME_CHANGED, param)) != MM_ERROR_NONE) {
+		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(AUDIO_EVENT_VOLUME_CHANGED, param)) != MM_ERROR_NONE) {
 			debug_error("Send device connected signal failed");
 		}
 	} else {
@@ -831,11 +712,11 @@ int __mm_sound_mgr_ipc_dbus_notify_play_file_end(int handle)
 	int ret = MM_ERROR_NONE;
 	GVariant* param = NULL;
 
-	debug_log("Send Signal '%s'", signals[SIGNAL_PLAY_FILE_END]);
+	debug_log("Send play file ended signal");
 
 	param = g_variant_new("(i)", handle);
 	if (param) {
-		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(SIGNAL_PLAY_FILE_END, param)) != MM_ERROR_NONE) {
+		if ((ret = mm_sound_mgr_ipc_dbus_send_signal(AUDIO_EVENT_PLAY_FILE_END, param)) != MM_ERROR_NONE) {
 			debug_error("Send play file end for '%d' failed", handle);
 		}
 	} else {
