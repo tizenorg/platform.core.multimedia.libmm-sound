@@ -69,12 +69,12 @@
 
 #define VOLUME_TYPE_LEN 64
 
-struct sigaction FOCUS_int_old_action;
-struct sigaction FOCUS_abrt_old_action;
-struct sigaction FOCUS_segv_old_action;
-struct sigaction FOCUS_term_old_action;
-struct sigaction FOCUS_sys_old_action;
-struct sigaction FOCUS_xcpu_old_action;
+struct sigaction system_int_old_action;
+struct sigaction system_abrt_old_action;
+struct sigaction system_segv_old_action;
+struct sigaction system_term_old_action;
+struct sigaction system_sys_old_action;
+struct sigaction system_xcpu_old_action;
 
 struct callback_data {
 	void *user_cb;
@@ -142,10 +142,9 @@ static pthread_mutex_t g_id_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 guint g_focus_signal_handle = 0;
 
-void _focus_signal_handler(int signo)
+void _system_signal_handler(int signo)
 {
 	int ret = MM_ERROR_NONE;
-	int exit_pid = 0;
 	int index = 0;
 	sigset_t old_mask, all_mask;
 
@@ -156,20 +155,9 @@ void _focus_signal_handler(int signo)
 	sigfillset(&all_mask);
 	sigprocmask(SIG_BLOCK, &all_mask, &old_mask);
 
-	exit_pid = getpid();
-
-	/* need implementation */
-	//send exit pid to focus server and focus server will clear focus or watch if necessary.
-
-	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
-		if (g_focus_sound_handle[index].is_used == true && g_focus_sound_handle[index].focus_tid == exit_pid) {
-			ret = mm_sound_proxy_emergent_exit_focus(exit_pid);
-			break;
-		}
-	}
-
+	ret = mm_sound_proxy_emergent_exit(getpid());
 	if (ret == MM_ERROR_NONE)
-		debug_msg("[Client] Success to emergnet_exit_focus\n");
+		debug_msg("[Client] Success to emergnet_exit\n");
 	else
 		debug_error("[Client] Error occurred : 0x%x \n",ret);
 
@@ -178,27 +166,27 @@ void _focus_signal_handler(int signo)
 
 	switch (signo) {
 	case SIGINT:
-		sigaction(SIGINT, &FOCUS_int_old_action, NULL);
+		sigaction(SIGINT, &system_int_old_action, NULL);
 		raise( signo);
 		break;
 	case SIGABRT:
-		sigaction(SIGABRT, &FOCUS_abrt_old_action, NULL);
+		sigaction(SIGABRT, &system_abrt_old_action, NULL);
 		raise( signo);
 		break;
 	case SIGSEGV:
-		sigaction(SIGSEGV, &FOCUS_segv_old_action, NULL);
+		sigaction(SIGSEGV, &system_segv_old_action, NULL);
 		raise( signo);
 		break;
 	case SIGTERM:
-		sigaction(SIGTERM, &FOCUS_term_old_action, NULL);
+		sigaction(SIGTERM, &system_term_old_action, NULL);
 		raise( signo);
 		break;
 	case SIGSYS:
-		sigaction(SIGSYS, &FOCUS_sys_old_action, NULL);
+		sigaction(SIGSYS, &system_sys_old_action, NULL);
 		raise( signo);
 		break;
 	case SIGXCPU:
-		sigaction(SIGXCPU, &FOCUS_xcpu_old_action, NULL);
+		sigaction(SIGXCPU, &system_xcpu_old_action, NULL);
 		raise( signo);
 		break;
 	default:
@@ -215,22 +203,19 @@ int mm_sound_client_initialize(void)
 
 	mm_sound_proxy_initialize();
 
-#ifdef USE_FOCUS
 
-	struct sigaction FOCUS_action;
-	FOCUS_action.sa_handler = _focus_signal_handler;
-	FOCUS_action.sa_flags = SA_NOCLDSTOP;
+	struct sigaction system_action;
+	system_action.sa_handler = _system_signal_handler;
+	system_action.sa_flags = SA_NOCLDSTOP;
 
-	sigemptyset(&FOCUS_action.sa_mask);
+	sigemptyset(&system_action.sa_mask);
 
-	sigaction(SIGINT, &FOCUS_action, &FOCUS_int_old_action);
-	sigaction(SIGABRT, &FOCUS_action, &FOCUS_abrt_old_action);
-	sigaction(SIGSEGV, &FOCUS_action, &FOCUS_segv_old_action);
-	sigaction(SIGTERM, &FOCUS_action, &FOCUS_term_old_action);
-	sigaction(SIGSYS, &FOCUS_action, &FOCUS_sys_old_action);
-	sigaction(SIGXCPU, &FOCUS_action, &FOCUS_xcpu_old_action);
-
-#endif
+	sigaction(SIGINT, &system_action, &system_int_old_action);
+	sigaction(SIGABRT, &system_action, &system_abrt_old_action);
+	sigaction(SIGSEGV, &system_action, &system_segv_old_action);
+	sigaction(SIGTERM, &system_action, &system_term_old_action);
+	sigaction(SIGSYS, &system_action, &system_sys_old_action);
+	sigaction(SIGXCPU, &system_action, &system_xcpu_old_action);
 
 	debug_fleave();
 	return ret;
@@ -242,20 +227,25 @@ int mm_sound_client_finalize(void)
 
 	debug_fenter();
 
+	ret = mm_sound_proxy_emergent_exit(getpid());
+	if (ret == MM_ERROR_NONE)
+		debug_msg("[Client] Success to emergnet_exit\n");
+	else
+		debug_error("[Client] Error occurred : 0x%x \n",ret);
+
+	sigaction(SIGINT, &system_int_old_action, NULL);
+	sigaction(SIGABRT, &system_abrt_old_action, NULL);
+	sigaction(SIGSEGV, &system_segv_old_action, NULL);
+	sigaction(SIGTERM, &system_term_old_action, NULL);
+	sigaction(SIGSYS, &system_sys_old_action, NULL);
+	sigaction(SIGXCPU, &system_xcpu_old_action, NULL);
+
 	ret = mm_sound_proxy_finalize();
 
 
 #ifdef USE_FOCUS
 
 	int index = 0;
-	int exit_pid = 0;
-
-	exit_pid = getpid();
-	for (index = 0; index < FOCUS_HANDLE_MAX; index++) {
-		if (g_focus_sound_handle[index].is_used == true && g_focus_sound_handle[index].focus_tid == exit_pid) {
-			mm_sound_proxy_emergent_exit_focus(exit_pid);
-		}
-	}
 
 	if (g_focus_thread) {
 		g_main_loop_quit(g_focus_loop);
@@ -264,14 +254,6 @@ int mm_sound_client_finalize(void)
 		g_main_loop_unref(g_focus_loop);
 		g_focus_thread = NULL;
 	}
-
-	/* is it necessary? */
-	sigaction(SIGINT, &FOCUS_int_old_action, NULL);
-	sigaction(SIGABRT, &FOCUS_abrt_old_action, NULL);
-	sigaction(SIGSEGV, &FOCUS_segv_old_action, NULL);
-	sigaction(SIGTERM, &FOCUS_term_old_action, NULL);
-	sigaction(SIGSYS, &FOCUS_sys_old_action, NULL);
-	sigaction(SIGXCPU, &FOCUS_xcpu_old_action, NULL);
 
 #endif
 

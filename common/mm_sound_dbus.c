@@ -110,9 +110,6 @@ const mm_sound_dbus_method_info_t g_methods[AUDIO_METHOD_MAX] = {
 	[AUDIO_METHOD_UNWATCH_FOCUS] = {
 		.name = "UnwatchFocus",
 	},
-	[AUDIO_METHOD_EMERGENT_EXIT_FOCUS] = {
-		.name = "EmergentExitFocus",
-	},
 };
 
 const mm_sound_dbus_signal_info_t g_events[AUDIO_EVENT_MAX] = {
@@ -136,6 +133,9 @@ const mm_sound_dbus_signal_info_t g_events[AUDIO_EVENT_MAX] = {
 	},
 	[AUDIO_EVENT_FOCUS_WATCH] = {
 		.name = "FocusWatch",
+	},
+	[AUDIO_EVENT_EMERGENT_EXIT] = {
+		.name = "EmergentExit",
 	}
 };
 
@@ -413,26 +413,29 @@ static void _dbus_signal_callback(GDBusConnection  *connection,
 	debug_log("Signal(%s.%s) Received , Let's call Wrapper-Callback", interface_name, signal_name);
 
 	if (!strcmp(signal_name, g_events[AUDIO_EVENT_VOLUME_CHANGED].name)) {
-	    (cb_data->user_cb)(AUDIO_EVENT_VOLUME_CHANGED, params, cb_data->user_data);
+		(cb_data->user_cb)(AUDIO_EVENT_VOLUME_CHANGED, params, cb_data->user_data);
 	} else if (!strcmp(signal_name, g_events[AUDIO_EVENT_DEVICE_CONNECTED].name)) {
-	      (cb_data->user_cb)(AUDIO_EVENT_DEVICE_CONNECTED, params, cb_data->user_data);
+		(cb_data->user_cb)(AUDIO_EVENT_DEVICE_CONNECTED, params, cb_data->user_data);
 	} else if (!strcmp(signal_name, g_events[AUDIO_EVENT_DEVICE_INFO_CHANGED].name)) {
-	      (cb_data->user_cb)(AUDIO_EVENT_DEVICE_INFO_CHANGED, params, cb_data->user_data);
+		(cb_data->user_cb)(AUDIO_EVENT_DEVICE_INFO_CHANGED, params, cb_data->user_data);
 	} else if (!strcmp(signal_name, g_events[AUDIO_EVENT_FOCUS_CHANGED].name)) {
-	      (cb_data->user_cb)(AUDIO_EVENT_FOCUS_CHANGED, params, cb_data->user_data);
+		(cb_data->user_cb)(AUDIO_EVENT_FOCUS_CHANGED, params, cb_data->user_data);
 	} else if (!strcmp(signal_name, g_events[AUDIO_EVENT_FOCUS_WATCH].name)) {
-	      (cb_data->user_cb)(AUDIO_EVENT_FOCUS_WATCH, params, cb_data->user_data);
+		(cb_data->user_cb)(AUDIO_EVENT_FOCUS_WATCH, params, cb_data->user_data);
 	} else if (!strcmp(signal_name, g_events[AUDIO_EVENT_PLAY_FILE_END].name)) {
-	      (cb_data->user_cb)(AUDIO_EVENT_PLAY_FILE_END, params, cb_data->user_data);
+		(cb_data->user_cb)(AUDIO_EVENT_PLAY_FILE_END, params, cb_data->user_data);
+	} else if (!strcmp(signal_name, g_events[AUDIO_EVENT_EMERGENT_EXIT].name)) {
+		(cb_data->user_cb)(AUDIO_EVENT_EMERGENT_EXIT, params, cb_data->user_data);
 	}
 }
 
 static void callback_data_free_func(gpointer data)
 {
-    struct callback_data *cb_data = (struct callback_data *) data;
+	struct callback_data *cb_data = (struct callback_data *) data;
 
-    cb_data->free_func(cb_data->user_data);
-    g_free(cb_data);
+	if (cb_data->free_func)
+		cb_data->free_func(cb_data->user_data);
+	g_free(cb_data);
 }
 
 EXPORT_API
@@ -519,7 +522,7 @@ int mm_sound_dbus_emit_signal(audio_provider_t provider, audio_event_t event, GV
 	}
 
 	dbus_ret = g_dbus_connection_emit_signal (conn,
-						  g_paths[provider].bus_name, g_paths[provider].object,
+						  NULL, g_paths[provider].object,
 						  g_paths[provider].interface, g_events[event].name,
 						  param, &err);
 	if (!dbus_ret) {
