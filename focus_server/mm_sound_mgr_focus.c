@@ -63,6 +63,7 @@ typedef struct {
 	debug_warning ("list = %p, node = %p, pid=[%d]", x, node, (node)? node->pid : -1); \
 	if (x && node && (mm_sound_util_is_process_alive(node->pid) == FALSE)) { \
 		debug_warning("PID:%d does not exist now! remove from device cb list\n", node->pid); \
+		__clear_focus_pipe(node); \
 		x = g_list_remove (x, node); \
 		g_free (node); \
 	} \
@@ -162,11 +163,6 @@ static char* __get_focus_pipe_path(int instance_id, int handle, const char* post
 	return path;
 }
 
-static void _clear_focus_node_list_func (focus_node_t *node, gpointer user_data)
-{
-	CLEAR_DEAD_NODE_LIST(g_focus_node_list);
-}
-
 static void __clear_focus_pipe(focus_node_t *node)
 {
 	char *filename = NULL;
@@ -193,6 +189,11 @@ static void __clear_focus_pipe(focus_node_t *node)
 	}
 
 	debug_fleave();
+}
+
+static void _clear_focus_node_list_func (focus_node_t *node, gpointer user_data)
+{
+	CLEAR_DEAD_NODE_LIST(g_focus_node_list);
 }
 
 static int _mm_sound_mgr_focus_get_priority_from_stream_type(int *priority, const char *stream_type)

@@ -576,6 +576,29 @@ int mm_sound_proxy_remove_play_sound_end_callback(unsigned subs_id)
 	return ret;
 }
 
+int mm_sound_proxy_emergent_exit(int exit_pid)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant* params = NULL;
+
+	debug_fenter();
+
+	params = g_variant_new("(i)", exit_pid);
+	if (params) {
+	    if ((ret = mm_sound_dbus_emit_signal(AUDIO_PROVIDER_AUDIO_CLIENT, AUDIO_EVENT_EMERGENT_EXIT, params)) != MM_ERROR_NONE) {
+			debug_error("dbus emergent exit failed");
+			goto cleanup;
+		}
+	} else {
+		debug_error("Construct Param for emergent exit signal failed");
+	}
+
+cleanup:
+
+	debug_fleave();
+	return ret;
+}
+
 /*------------------------------------------ FOCUS --------------------------------------------------*/
 #ifdef USE_FOCUS
 
@@ -880,33 +903,6 @@ int mm_sound_proxy_unset_focus_watch_callback(int focus_tid, int handle, bool is
 
 	debug_fleave();
 
-	return ret;
-}
-
-int mm_sound_proxy_emergent_exit_focus(int exit_pid)
-{
-	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
-
-	debug_fenter();
-
-	params = g_variant_new("(i)", exit_pid);
-	if (params) {
-		if ((ret = mm_sound_dbus_method_call_to(AUDIO_PROVIDER_FOCUS_SERVER, AUDIO_METHOD_EMERGENT_EXIT_FOCUS, params, &result)) != MM_ERROR_NONE) {
-			debug_error("dbus emergent exit focus failed");
-			goto cleanup;
-		}
-	} else {
-		debug_error("Construct Param for method call failed");
-	}
-
-cleanup:
-	if (ret != MM_ERROR_NONE)
-		g_variant_get(result, "(i)",  &ret);
-	if (result)
-		g_variant_unref(result);
-
-	debug_fleave();
 	return ret;
 }
 
