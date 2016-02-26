@@ -122,7 +122,6 @@ static void handle_method_acquire_focus(GDBusMethodInvocation* invocation);
 static void handle_method_release_focus(GDBusMethodInvocation* invocation);
 static void handle_method_watch_focus(GDBusMethodInvocation* invocation);
 static void handle_method_unwatch_focus(GDBusMethodInvocation* invocation);
-static void handle_method_emergent_exit_focus (GDBusMethodInvocation* invocation);
 
 /* Currently , Just using method's name and handler */
 /* TODO : generate introspection xml automatically, with these value include argument and reply */
@@ -182,17 +181,12 @@ mm_sound_dbus_method_intf_t methods[AUDIO_METHOD_MAX] = {
 			.name = "UnwatchFocus",
 		},
 		.handler = handle_method_unwatch_focus
-	},
-	[AUDIO_METHOD_EMERGENT_EXIT_FOCUS] = {
-		.info = {
-			.name = "EmergentExitFocus",
-		},
-		.handler = handle_method_emergent_exit_focus
-	},
+	}
 };
 
 static GDBusNodeInfo *introspection_data = NULL;
 guint focus_server_owner_id ;
+unsigned emergent_exit_subs_id;
 
 /*
         For pass error code with 'g_dbus_method_invocation_return_error'
@@ -567,34 +561,6 @@ send_reply:
 	debug_fleave();
 }
 
-static void handle_method_emergent_exit_focus (GDBusMethodInvocation* invocation)
-{
-	int ret = MM_ERROR_NONE;
-	int pid = 0;
-	GVariant *params = NULL;
-
-	debug_fenter();
-
-	if (!(params = g_dbus_method_invocation_get_parameters(invocation))) {
-		debug_error("Parameter for Method is NULL");
-		goto send_reply;
-	}
-
-	g_variant_get(params, "(i)", &pid);
-	ret = __mm_sound_mgr_focus_ipc_emergent_exit(_get_sender_pid(invocation));
-	if(ret)
-		debug_error("__mm_sound_mgr_focus_ipc_emergent_exit faild : 0x%x", ret);
-
-send_reply:
-	if (ret == MM_ERROR_NONE) {
-		_method_call_return_value(invocation, g_variant_new("()"));
-	} else {
-		_method_call_return_error(invocation, ret);
-	}
-
-	debug_fleave();
-}
-
 /**********************************************************************************/
 static void handle_method_call(GDBusConnection *connection,
 							const gchar *sender,
@@ -644,6 +610,25 @@ static gboolean handle_set_property(GDBusConnection *connection,
 {
 	debug_log("Set Property, obj : %s, intf : %s, prop : %s", object_path, interface_name, property_name);
 	return TRUE;
+}
+
+void emergent_exit_signal_handler(audio_event_t event, GVariant *param, void *userdata)
+{
+	int ret = MM_ERROR_NONE;
+	int pid = 0;
+
+	if (event != AUDIO_EVENT_EMERGENT_EXIT)
+		return;
+
+	debug_fenter();
+
+	g_variant_get(param, "(i)", &pid);
+	debug_log("emergent exit : pid %d", pid);
+	ret = __mm_sound_mgr_focus_ipc_emergent_exit(pid);
+	if (ret)
+		debug_error("__mm_sound_mgr_focus_ipc_emergent_exit faild : 0x%x", ret);
+
+	debug_fleave();
 }
 
 static const GDBusInterfaceVTable interface_vtable =
@@ -778,7 +763,6 @@ int __mm_sound_mgr_focus_dbus_get_stream_list(stream_list_t* stream_list)
 	return ret;
 }
 
-
 int MMSoundMgrFocusDbusInit(void)
 {
 	debug_enter();
@@ -791,6 +775,10 @@ int MMSoundMgrFocusDbusInit(void)
 		debug_error ("dbus own name for focus-server error\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
+	if (mm_sound_dbus_signal_subscribe_to(AUDIO_PROVIDER_AUDIO_CLIENT, AUDIO_EVENT_EMERGENT_EXIT, emergent_exit_signal_handler, NULL, NULL, &emergent_exit_subs_id) != MM_ERROR_NONE) {
+		debug_error ("dbus signal subscribe for emergent exit error\n");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
 
 	debug_leave();
 
@@ -799,12 +787,14 @@ int MMSoundMgrFocusDbusInit(void)
 
 void MMSoundMgrFocusDbusFini(void)
 {
-	debug_enter("\n");
+	debug_enter();
 
+	if (emergent_exit_subs_id != 0)
+		mm_sound_dbus_signal_unsubscribe(emergent_exit_subs_id);
 	_mm_sound_mgr_focus_dbus_unown_name(focus_server_owner_id);
 	g_dbus_node_info_unref (introspection_data);
 
-	debug_leave("\n");
+	debug_leave();
 }
 
 

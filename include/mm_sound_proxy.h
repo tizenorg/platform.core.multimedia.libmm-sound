@@ -72,7 +72,7 @@ int mm_sound_proxy_acquire_focus(int instance, int id, mm_sound_focus_type_e typ
 int mm_sound_proxy_release_focus(int instance, int id, mm_sound_focus_type_e type, const char *option, bool is_for_session);
 int mm_sound_proxy_set_focus_watch_callback(int instance, int handle, mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, bool is_for_session, void *user_data);
 int mm_sound_proxy_unset_focus_watch_callback(int focus_tid, int handle, bool is_for_session);
-int mm_sound_proxy_emergent_exit_focus(int exit_pid);
+int mm_sound_proxy_emergent_exit(int exit_pid);
 #endif
 
 int mm_sound_proxy_add_test_callback(mm_sound_test_cb func, void *userdata, mm_sound_proxy_userdata_free freefunc, unsigned *subs_id);
