@@ -79,6 +79,8 @@ typedef enum audio_event {
 	AUDIO_EVENT_FOCUS_CHANGED,
 	AUDIO_EVENT_FOCUS_WATCH,
 	AUDIO_EVENT_EMERGENT_EXIT,
+	AUDIO_EVENT_CLIENT_SUBSCRIBED, // Clients send this signal when they subscribed some signal.
+	AUDIO_EVENT_CLIENT_HANDLED, // Clients send this siganl when they handled some signal.
 	AUDIO_EVENT_MAX
 } audio_event_t;
 

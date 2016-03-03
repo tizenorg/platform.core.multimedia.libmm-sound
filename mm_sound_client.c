@@ -402,9 +402,14 @@ static void _mm_sound_stop_callback_wrapper_func(int ended_handle, void *userdat
 static void play_end_callback_data_free_func(void *data)
 {
 	struct callback_data *cb_data = (struct callback_data*) data;
-	play_sound_end_callback_data_t *end_cb_data = (play_sound_end_callback_data_t*) cb_data->extra_data;
+	play_sound_end_callback_data_t *end_cb_data;
 
-	g_free(end_cb_data);
+	if (cb_data) {
+		end_cb_data = (play_sound_end_callback_data_t*) cb_data->extra_data;
+		if (end_cb_data)
+			g_free(end_cb_data);
+		g_free(cb_data);
+	}
 }
 
 int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
