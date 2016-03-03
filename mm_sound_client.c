@@ -602,12 +602,15 @@ static bool is_device_match_flags(const char *device_type, int io_direction, int
 	case DEVICE_IO_DIRECTION_IN_FLAG:
 		if (io_direction != DEVICE_IO_DIRECTION_IN)
 			return FALSE;
+		break;
 	case DEVICE_IO_DIRECTION_OUT_FLAG:
 		if (io_direction != DEVICE_IO_DIRECTION_OUT)
 			return FALSE;
+		break;
 	case DEVICE_IO_DIRECTION_BOTH_FLAG:
 		if (io_direction != DEVICE_IO_DIRECTION_BOTH)
 			return FALSE;
+		break;
 	default:
 		break;
 	}
@@ -616,9 +619,11 @@ static bool is_device_match_flags(const char *device_type, int io_direction, int
 	case DEVICE_STATE_DEACTIVATED_FLAG:
 		if (state != DEVICE_STATE_DEACTIVATED)
 			return FALSE;
+		break;
 	case DEVICE_STATE_ACTIVATED_FLAG:
 		if (state != DEVICE_STATE_ACTIVATED)
 			return FALSE;
+		break;
 	default:
 		break;
 	}
@@ -627,9 +632,11 @@ static bool is_device_match_flags(const char *device_type, int io_direction, int
 	case DEVICE_TYPE_INTERNAL_FLAG:
 		if (strncmp(device_type, builtin_prefix, strlen(builtin_prefix)) != 0)
 			return FALSE;
+		break;
 	case DEVICE_TYPE_EXTERNAL_FLAG:
 		if (strncmp(device_type, builtin_prefix, strlen(builtin_prefix)) == 0)
 			return FALSE;
+		break;
 	default:
 		break;
 	}

@@ -510,9 +510,8 @@ int mm_sound_dbus_emit_signal(audio_provider_t provider, audio_event_t event, GV
 	int ret = MM_ERROR_NONE;
 
 	if (event < 0 || event >= AUDIO_EVENT_MAX) {
-		debug_error ("invalid argument, event_type(%d)", event);
-		ret = MM_ERROR_INVALID_ARGUMENT;
-		goto end;
+		debug_error ("emit signal failed, invalid argument, event_type(%d)", event);
+		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
 	if (!(conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
