@@ -134,6 +134,12 @@ const mm_sound_dbus_signal_info_t g_events[AUDIO_EVENT_MAX] = {
 	},
 	[AUDIO_EVENT_EMERGENT_EXIT] = {
 		.name = "EmergentExit",
+	},
+	[AUDIO_EVENT_CLIENT_SUBSCRIBED] = {
+		.name = "ClientSubscribed",
+	},
+	[AUDIO_EVENT_CLIENT_HANDLED] = {
+		.name = "ClientSignalHandled",
 	}
 };
 
@@ -512,7 +518,6 @@ int mm_sound_dbus_emit_signal(audio_provider_t provider, audio_event_t event, GV
 	GDBusConnection *conn;
 	GError *err = NULL;
 	gboolean dbus_ret;
-	int ret = MM_ERROR_NONE;
 
 	if (event < 0 || event >= AUDIO_EVENT_MAX) {
 		debug_error ("emit signal failed, invalid argument, event_type(%d)", event);
@@ -521,8 +526,7 @@ int mm_sound_dbus_emit_signal(audio_provider_t provider, audio_event_t event, GV
 
 	if (!(conn = _dbus_get_connection(G_BUS_TYPE_SYSTEM))) {
 		debug_error("Get Dbus Connection Error");
-		ret = MM_ERROR_SOUND_INTERNAL;
-		goto end;
+		return MM_ERROR_SOUND_INTERNAL;
 	}
 
 	dbus_ret = g_dbus_connection_emit_signal (conn,
@@ -531,11 +535,42 @@ int mm_sound_dbus_emit_signal(audio_provider_t provider, audio_event_t event, GV
 						  param, &err);
 	if (!dbus_ret) {
 		debug_error ("g_dbus_connection_emit_signal() error (%s)", err->message);
-		ret = MM_ERROR_SOUND_INTERNAL;
+		return MM_ERROR_SOUND_INTERNAL;
 	}
+	g_dbus_connection_flush_sync(conn, NULL, NULL);
 
-end:
-	debug_msg ("emit signal for [%s]  %s", g_events[event].name, (ret == MM_ERROR_NONE ? "success" : "failed") );
-	return ret;
+	debug_msg ("emit signal for [%s]  success", g_events[event].name);
+	return MM_ERROR_NONE;
 }
 
+EXPORT_API
+int mm_sound_dbus_get_event_name(audio_event_t event, const char **event_name)
+{
+	if (!event_name) {
+		debug_error("Invalid Parameter, event_name NULL");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+	if (event < 0 || event >= AUDIO_EVENT_MAX) {
+		debug_error("invalid event : %d", event);
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	*event_name = g_events[event].name;
+	return MM_ERROR_NONE;
+}
+
+EXPORT_API
+int mm_sound_dbus_get_method_name(audio_method_t method, const char **method_name)
+{
+	if (!method_name) {
+		debug_error("Invalid Parameter, method_name NULL");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+	if (method < 0 || method >= AUDIO_METHOD_MAX) {
+		debug_error("invalid method : %d", method);
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	*method_name = g_methods[method].name;
+	return MM_ERROR_NONE;
+}
