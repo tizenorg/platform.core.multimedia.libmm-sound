@@ -134,6 +134,12 @@ const mm_sound_dbus_signal_info_t g_events[AUDIO_EVENT_MAX] = {
 	},
 	[AUDIO_EVENT_EMERGENT_EXIT] = {
 		.name = "EmergentExit",
+	},
+	[AUDIO_EVENT_CLIENT_SUBSCRIBED] = {
+		.name = "ClientSubscribed",
+	},
+	[AUDIO_EVENT_CLIENT_HANDLED] = {
+		.name = "ClientSignalHandled",
 	}
 };
 
@@ -539,3 +545,34 @@ end:
 	return ret;
 }
 
+EXPORT_API
+int mm_sound_dbus_get_event_name(audio_event_t event, const char **event_name)
+{
+	if (!event_name) {
+		debug_error("Invalid Parameter, event_name NULL");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+	if (event < 0 || event >= AUDIO_EVENT_MAX) {
+		debug_error("invalid event : %d", event);
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	*event_name = g_events[event].name;
+	return MM_ERROR_NONE;
+}
+
+EXPORT_API
+int mm_sound_dbus_get_method_name(audio_method_t method, const char **method_name)
+{
+	if (!method_name) {
+		debug_error("Invalid Parameter, method_name NULL");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+	if (method < 0 || method >= AUDIO_METHOD_MAX) {
+		debug_error("invalid method : %d", method);
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	*method_name = g_methods[method].name;
+	return MM_ERROR_NONE;
+}
