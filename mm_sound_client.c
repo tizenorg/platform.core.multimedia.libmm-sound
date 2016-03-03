@@ -402,9 +402,12 @@ static void _mm_sound_stop_callback_wrapper_func(int ended_handle, void *userdat
 static void play_end_callback_data_free_func(void *data)
 {
 	struct callback_data *cb_data = (struct callback_data*) data;
-	play_sound_end_callback_data_t *end_cb_data = (play_sound_end_callback_data_t*) cb_data->extra_data;
 
-	g_free(end_cb_data);
+	if (cb_data) {
+		if (cb_data->extra_data)
+			g_free(cb_data->extra_data);
+		g_free(cb_data);
+	}
 }
 
 int mm_sound_client_play_sound(MMSoundPlayParam *param, int tone, int *handle)
@@ -670,7 +673,7 @@ int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_dev
 	GET_CB_DATA(cb_data, func, userdata, (void*) device_flags);
 
 	ret = mm_sound_proxy_add_device_connected_callback(device_flags, _mm_sound_device_connected_callback_wrapper_func, cb_data, g_free, subs_id);
-	if (ret != MM_ERROR_NONE)
+	if (ret == MM_ERROR_NONE)
 		g_need_emergent_exit = TRUE;
 
 	debug_fleave();
