@@ -19,17 +19,72 @@ struct callback_data {
 	void *user_data;
 	void *extra_data;
 	mm_sound_proxy_userdata_free free_func;
+	void *extra_data_free_func;
 };
 
-#define GET_CB_DATA(_cb_data, _func, _userdata, _freefunc, _extradata) \
+#define GET_CB_DATA(_cb_data, _func, _userdata, _freefunc, _extradata, _extradatafreefunc) \
 	do { \
 		_cb_data = (struct callback_data*) g_malloc0(sizeof(struct callback_data)); \
 		_cb_data->user_cb = _func; \
 		_cb_data->user_data = _userdata; \
 		_cb_data->free_func = _freefunc; \
 		_cb_data->extra_data = _extradata; \
+		_cb_data->extra_data_free_func = _extradatafreefunc; \
 	} while (0)
 
+/* subscribe is true when add callback,
+ * false when remove callback */
+static int _notify_subscription(audio_event_t event, unsigned subs_id, gboolean subscribe)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant* params = NULL;
+	const char *event_name = NULL;
+
+	debug_fenter();
+
+	if((ret = mm_sound_dbus_get_event_name(event, &event_name) != MM_ERROR_NONE)) {
+		debug_error("Failed to get event name");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	if(!(params = g_variant_new("(sub)", event_name, subs_id, subscribe))) {
+		debug_error("Construct Param failed");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	if ((ret = mm_sound_dbus_emit_signal(AUDIO_PROVIDER_AUDIO_CLIENT, AUDIO_EVENT_CLIENT_SUBSCRIBED, params))) {
+		debug_error("dbus send signal for client subscribed failed");
+	}
+
+	debug_fleave();
+	return ret;
+}
+
+static int _notify_signal_handled(audio_event_t event, unsigned event_id, unsigned subs_id, GVariant *signal_params)
+{
+	int ret = MM_ERROR_NONE;
+	GVariant* params = NULL;
+	const char *event_name = NULL;
+
+	debug_fenter();
+
+	if((ret = mm_sound_dbus_get_event_name(event, &event_name) != MM_ERROR_NONE)) {
+		debug_error("Failed to get event name");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	if(!(params = g_variant_new("(usuv)", event_id, event_name, subs_id, signal_params))) {
+		debug_error("Construct Param failed");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
+	if ((ret = mm_sound_dbus_emit_signal(AUDIO_PROVIDER_AUDIO_CLIENT, AUDIO_EVENT_CLIENT_HANDLED, params))) {
+		debug_error("dbus send signal for client handled failed");
+	}
+
+	debug_fleave();
+	return ret;
+}
 
 /* This callback unmarshall general-formed paramters to subject specific parameters,
  * and call proper callback */
@@ -37,7 +92,7 @@ static void dbus_callback(audio_event_t event, GVariant *params, void *userdata)
 {
 	struct callback_data *cb_data  = (struct callback_data*) userdata;
 
-    	if (event == AUDIO_EVENT_VOLUME_CHANGED) {
+	if (event == AUDIO_EVENT_VOLUME_CHANGED) {
 		char *volume_type_str = NULL, *direction = NULL;
 		unsigned volume_level;
 
@@ -47,10 +102,13 @@ static void dbus_callback(audio_event_t event, GVariant *params, void *userdata)
 		const char *name = NULL, *device_type = NULL;
 		gboolean is_connected = FALSE;
 		int device_id, io_direction, state;
+		unsigned event_id, *subs_id;
 
-		g_variant_get(params, "((i&sii&s)b)", &device_id, &device_type, &io_direction,
+		g_variant_get(params, "((ui&sii&s)b)", &event_id, &device_id, &device_type, &io_direction,
 					&state, &name, &is_connected);
 		((mm_sound_device_connected_wrapper_cb)(cb_data->user_cb))(device_id, device_type, io_direction, state, name, is_connected, cb_data->user_data);
+		subs_id = (unsigned*) cb_data->extra_data;
+		_notify_signal_handled(event, event_id, *subs_id, g_variant_new("(ib)", device_id, is_connected));
 	} else if (event == AUDIO_EVENT_DEVICE_INFO_CHANGED) {
 		const char *name = NULL, *device_type = NULL;
 		int changed_device_info_type = 0;
@@ -74,12 +132,12 @@ static void dbus_callback(audio_event_t event, GVariant *params, void *userdata)
 
 static void simple_callback_data_free_func(void *data)
 {
-    struct callback_data *cb_data = (struct callback_data*) data;
+	struct callback_data *cb_data = (struct callback_data*) data;
 
-    if (cb_data->free_func)
-	cb_data->free_func(cb_data->user_data);
+	if (cb_data->free_func)
+		cb_data->free_func(cb_data->user_data);
 
-    g_free(cb_data);
+	g_free(cb_data);
 }
 
 int mm_sound_proxy_add_test_callback(mm_sound_test_cb func, void *userdata, mm_sound_proxy_userdata_free freefunc, unsigned *subs_id)
@@ -89,7 +147,7 @@ int mm_sound_proxy_add_test_callback(mm_sound_test_cb func, void *userdata, mm_s
 
 	debug_fenter();
 
-	GET_CB_DATA(cb_data, func, userdata, freefunc, NULL);
+	GET_CB_DATA(cb_data, func, userdata, freefunc, NULL, NULL);
 
 	if ((ret = mm_sound_dbus_signal_subscribe_to(AUDIO_PROVIDER_SOUND_SERVER, AUDIO_EVENT_TEST, dbus_callback, cb_data, simple_callback_data_free_func, subs_id)) != MM_ERROR_NONE) {
 		debug_error("add test callback failed");
@@ -204,15 +262,26 @@ int mm_sound_proxy_add_device_connected_callback(int device_flags, mm_sound_devi
 {
 	int ret = MM_ERROR_NONE;
 	struct callback_data *cb_data;
+	int *_subs_id;
 
 	debug_fenter();
 
-	GET_CB_DATA(cb_data, func, userdata, freefunc, NULL);
+	_subs_id = (int*) g_malloc0(sizeof(int));
+	GET_CB_DATA(cb_data, func, userdata, freefunc, (void*) _subs_id, g_free);
 
-	if ((ret = mm_sound_dbus_signal_subscribe_to(AUDIO_PROVIDER_DEVICE_MANAGER, AUDIO_EVENT_DEVICE_CONNECTED, dbus_callback, cb_data, simple_callback_data_free_func, subs_id)) != MM_ERROR_NONE) {
+	if ((ret = mm_sound_dbus_signal_subscribe_to(AUDIO_PROVIDER_DEVICE_MANAGER, AUDIO_EVENT_DEVICE_CONNECTED, dbus_callback, cb_data, simple_callback_data_free_func, _subs_id)) != MM_ERROR_NONE) {
 		debug_error("add device connected callback failed");
+		goto finish;
 	}
 
+	if ((ret = _notify_subscription(AUDIO_EVENT_DEVICE_CONNECTED, *_subs_id, TRUE)) != MM_ERROR_NONE) {
+		debug_error("failed to notify subscription of device connected event");
+		goto finish;
+	}
+
+	*subs_id = *_subs_id;
+
+finish:
 	debug_fleave();
 	return ret;
 }
@@ -224,8 +293,13 @@ int mm_sound_proxy_remove_device_connected_callback(unsigned subs_id)
 
 	if ((ret = mm_sound_dbus_signal_unsubscribe(subs_id)) != MM_ERROR_NONE) {
 		debug_error("remove device connected callback failed");
+		goto finish;
 	}
 
+	if ((ret = _notify_subscription(AUDIO_EVENT_DEVICE_CONNECTED, subs_id, FALSE)) != MM_ERROR_NONE)
+		debug_error("failed to notify unsubscription of device connected event");
+
+finish:
 	debug_fleave();
 	return ret;
 }
@@ -237,7 +311,7 @@ int mm_sound_proxy_add_device_info_changed_callback(int device_flags, mm_sound_d
 
 	debug_fenter();
 
-	GET_CB_DATA(cb_data, func, userdata, freefunc, NULL);
+	GET_CB_DATA(cb_data, func, userdata, freefunc, NULL, NULL);
 
 	if ((ret = mm_sound_dbus_signal_subscribe_to(AUDIO_PROVIDER_DEVICE_MANAGER, AUDIO_EVENT_DEVICE_INFO_CHANGED, dbus_callback, cb_data, simple_callback_data_free_func, subs_id)) != MM_ERROR_NONE) {
 		debug_error("Add device info changed callback failed");
@@ -303,7 +377,7 @@ int mm_sound_proxy_add_volume_changed_callback(mm_sound_volume_changed_wrapper_c
 
 	debug_fenter();
 
-	GET_CB_DATA(cb_data, func, userdata, freefunc, NULL);
+	GET_CB_DATA(cb_data, func, userdata, freefunc, NULL, NULL);
 
 	if ((ret = mm_sound_dbus_signal_subscribe_to(AUDIO_PROVIDER_STREAM_MANAGER, AUDIO_EVENT_VOLUME_CHANGED, dbus_callback, cb_data, simple_callback_data_free_func, subs_id)) != MM_ERROR_NONE) {
 		debug_error("Add Volume changed callback failed");
@@ -545,7 +619,7 @@ int mm_sound_proxy_add_play_sound_end_callback(mm_sound_stop_callback_wrapper_fu
 
 	debug_fenter();
 
-	GET_CB_DATA(cb_data, func, userdata, freefunc, NULL);
+	GET_CB_DATA(cb_data, func, userdata, freefunc, NULL, NULL);
 
 	if ((ret = mm_sound_dbus_signal_subscribe_to(AUDIO_PROVIDER_SOUND_SERVER, AUDIO_EVENT_PLAY_FILE_END, dbus_callback, cb_data, simple_callback_data_free_func, subs_id)) != MM_ERROR_NONE) {
 		debug_error("add play sound end callback failed");
