@@ -43,6 +43,9 @@ int mm_sound_dbus_signal_subscribe_to(audio_provider_t provider, audio_event_t e
 int mm_sound_dbus_signal_unsubscribe(unsigned subs_id);
 int mm_sound_dbus_emit_signal(audio_provider_t provider, audio_event_t event, GVariant *param);
 
+int mm_sound_dbus_get_event_name(audio_event_t event, const char **event_name);
+int mm_sound_dbus_get_method_name(audio_method_t method, const char **method_name);
+
 typedef void (*dbus_method_handler)(GDBusMethodInvocation *invocation);
 typedef int (*dbus_signal_sender)(GDBusConnection *conn, GVariant *parameter);
 
