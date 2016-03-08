@@ -141,6 +141,7 @@ focus_session_interrupt_info_t g_focus_session_interrupt_info = {NULL, NULL};
 static pthread_mutex_t g_id_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 guint g_focus_signal_handle = 0;
+gboolean g_need_emergent_exit = FALSE;
 
 void _system_signal_handler(int signo)
 {
@@ -155,11 +156,13 @@ void _system_signal_handler(int signo)
 	sigfillset(&all_mask);
 	sigprocmask(SIG_BLOCK, &all_mask, &old_mask);
 
-	ret = mm_sound_proxy_emergent_exit(getpid());
-	if (ret == MM_ERROR_NONE)
-		debug_msg("[Client] Success to emergnet_exit\n");
-	else
-		debug_error("[Client] Error occurred : 0x%x \n",ret);
+	if (g_need_emergent_exit) {
+		ret = mm_sound_proxy_emergent_exit(getpid());
+		if (ret == MM_ERROR_NONE)
+			debug_msg("[Client] Success to emergnet_exit\n");
+		else
+			debug_error("[Client] Error occurred : 0x%x \n",ret);
+	}
 
 	sigprocmask(SIG_SETMASK, &old_mask, NULL);
 	/* signal unblock */
@@ -227,11 +230,13 @@ int mm_sound_client_finalize(void)
 
 	debug_fenter();
 
-	ret = mm_sound_proxy_emergent_exit(getpid());
-	if (ret == MM_ERROR_NONE)
-		debug_msg("[Client] Success to emergnet_exit\n");
-	else
-		debug_error("[Client] Error occurred : 0x%x \n",ret);
+	if (g_need_emergent_exit) {
+		ret = mm_sound_proxy_emergent_exit(getpid());
+		if (ret == MM_ERROR_NONE)
+			debug_msg("[Client] Success to emergnet_exit\n");
+		else
+			debug_error("[Client] Error occurred : 0x%x \n",ret);
+	}
 
 	sigaction(SIGINT, &system_int_old_action, NULL);
 	sigaction(SIGABRT, &system_abrt_old_action, NULL);
@@ -679,6 +684,8 @@ int mm_sound_client_add_device_connected_callback(int device_flags, mm_sound_dev
 	GET_CB_DATA(cb_data, func, userdata, (void*) device_flags);
 
 	ret = mm_sound_proxy_add_device_connected_callback(device_flags, _mm_sound_device_connected_callback_wrapper_func, cb_data, g_free, subs_id);
+	if (ret != MM_ERROR_NONE)
+		g_need_emergent_exit = TRUE;
 
 	debug_fleave();
 	return ret;
@@ -1472,6 +1479,7 @@ int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_
 
 	if (ret == MM_ERROR_NONE) {
 		debug_msg("[Client] Success to register focus\n");
+		g_need_emergent_exit = TRUE;
 		if (!g_focus_thread) {
 			GMainContext* focus_context = g_main_context_new ();
 			g_focus_loop = g_main_loop_new (focus_context, FALSE);
@@ -1707,6 +1715,7 @@ int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e focu
 
 	if (ret == MM_ERROR_NONE) {
 		debug_msg("[Client] Success to watch focus");
+		g_need_emergent_exit = TRUE;
 		if (!g_focus_thread) {
 			GMainContext* focus_context = g_main_context_new ();
 			g_focus_loop = g_main_loop_new (focus_context, FALSE);
