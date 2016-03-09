@@ -389,14 +389,9 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
         s = pa_simple_new_proplist(NULL, "MM_SOUND_PA_CLIENT", PA_STREAM_RECORD, NULL, "VoIP CAPTURE", ss, channel_map, &attr, proplist, &err);
 #endif
         break;
-    case HANDLE_MODE_CALL_OUT:
-    case HANDLE_MODE_CALL_IN:
-        debug_error("Does not support call device handling\n");
-        assert(0);
-        break;
     default:
-        return MM_ERROR_SOUND_INTERNAL;
-        assert(0);
+        err = MM_ERROR_SOUND_INTERNAL;
+        goto fail;
         break;
     }
 
