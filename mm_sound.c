@@ -53,8 +53,6 @@
 #define MASTER_VOLUME_MAX 100
 #define MASTER_VOLUME_MIN 0
 
-static pthread_mutex_t g_volume_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 #include <gio/gio.h>
 
 static GList *g_subscribe_cb_list = NULL;

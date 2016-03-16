@@ -79,10 +79,6 @@ gboolean timeout_menu_display(void *data);
 gboolean timeout_quit_program(void *data);
 gboolean input (GIOChannel *channel);
 
-static char* __get_playback_device_str (mm_sound_device_out out);
-static char* __get_capture_device_str (mm_sound_device_in in);
-static char* __get_route_str (mm_sound_route route);
-
 void mycallback(void *data, int id)
 {
 	char *str = (char*)data;
@@ -346,56 +342,6 @@ static void input_dirname(char *dirname)
 {
 	MMSOUND_STRNCPY(g_dir_name, dirname, MAX_PATH_LEN);
 	g_print("\nThe input directory is '%s' \n\n",g_dir_name);
-}
-
-static char* __get_playback_device_str (mm_sound_device_out out)
-{
-	switch (out) {
-	case MM_SOUND_DEVICE_OUT_SPEAKER: return "SPEAKER";
-	case MM_SOUND_DEVICE_OUT_RECEIVER: return "RECEIVER";
-	case MM_SOUND_DEVICE_OUT_WIRED_ACCESSORY: return "HEADSET";
-	case MM_SOUND_DEVICE_OUT_BT_SCO: return "BTSCO";
-	case MM_SOUND_DEVICE_OUT_BT_A2DP: return "BTA2DP";
-	case MM_SOUND_DEVICE_OUT_DOCK: return "DOCK";
-	case MM_SOUND_DEVICE_OUT_HDMI: return "HDMI";
-	case MM_SOUND_DEVICE_OUT_MIRRORING: return "MIRRORING";
-	case MM_SOUND_DEVICE_OUT_USB_AUDIO: return "USB";
-	case MM_SOUND_DEVICE_OUT_MULTIMEDIA_DOCK: return "MULTIMEDIA_DOCK";
-	default: return NULL;
-	}
-}
-
-static char* __get_capture_device_str (mm_sound_device_in in)
-{
-	switch (in) {
-	case MM_SOUND_DEVICE_IN_MIC: return "MAINMIC";
-	case MM_SOUND_DEVICE_IN_WIRED_ACCESSORY: return "HEADSET";
-	case MM_SOUND_DEVICE_IN_BT_SCO: return "BTMIC";
-	default: return NULL;
-	}
-}
-
-static char* __get_route_str (mm_sound_route route)
-{
-	switch (route) {
-	case MM_SOUND_ROUTE_OUT_SPEAKER: return "OUT_SPEAKER";
-	case MM_SOUND_ROUTE_OUT_RECEIVER: return "OUT_RECEIVER";
-	case MM_SOUND_ROUTE_OUT_WIRED_ACCESSORY: return "OUT_WIRED_ACCESSORY";
-	case MM_SOUND_ROUTE_OUT_BLUETOOTH_A2DP: return "OUT_BLUETOOTH_A2DP";
-	case MM_SOUND_ROUTE_OUT_DOCK: return "OUT_DOCK";
-	case MM_SOUND_ROUTE_OUT_HDMI: return "OUT_HDMI";
-	case MM_SOUND_ROUTE_OUT_MIRRORING: return "OUT_MIRRORING";
-	case MM_SOUND_ROUTE_OUT_USB_AUDIO: return "OUT_USB";
-	case MM_SOUND_ROUTE_OUT_MULTIMEDIA_DOCK: return "OUT_MULTIMEDIA_DOCK";
-	case MM_SOUND_ROUTE_IN_MIC: return "IN_MIC";
-	case MM_SOUND_ROUTE_IN_WIRED_ACCESSORY: return "IN_WIRED_ACCESSORY";
-	case MM_SOUND_ROUTE_IN_MIC_OUT_RECEIVER: return "IN_MIC_OUT_RECEIVER";
-	case MM_SOUND_ROUTE_IN_MIC_OUT_SPEAKER: return "IN_MIC_OUT_SPEAKER";
-	case MM_SOUND_ROUTE_IN_MIC_OUT_HEADPHONE: return "IN_MIC_OUT_HEADPHONE";
-	case MM_SOUND_ROUTE_INOUT_HEADSET: return "INOUT_HEADSET";
-	case MM_SOUND_ROUTE_INOUT_BLUETOOTH: return "INOUT_BLUETOOTH";
-	default: return NULL;
-	}
 }
 
 static void __mm_sound_signal_cb1 (mm_sound_signal_name_t signal, int value, void *user_data)
@@ -1461,7 +1407,7 @@ static void interpret (char *cmd)
 			if (ret) {
 				g_print("failed to mm_sound_add_device_connected_callback(), ret[0x%x]\n", ret);
 			} else {
-				g_print("device_flags[0x%x], callback fun[0x%x], subs_id[%u]\n", device_flag_1|device_flag_2|device_flag_3, device_connected_cb, g_subs_id_device_conn);
+				g_print("device_flags[0x%x], callback fun[0x%p], subs_id[%u]\n", device_flag_1|device_flag_2|device_flag_3, device_connected_cb, g_subs_id_device_conn);
 			}
 		}
 
@@ -1528,7 +1474,7 @@ static void interpret (char *cmd)
 			if (ret) {
 				g_print("failed to mm_sound_add_device_information_changed_callback(), ret[0x%x]\n", ret);
 			} else {
-				g_print("device_flags[0x%x], callback fun[0x%x], subs_id[%u]\n", device_flag_1|device_flag_2|device_flag_3, device_info_changed_cb, g_subs_id_device_info);
+				g_print("device_flags[0x%x], callback fun[0x%p], subs_id[%u]\n", device_flag_1|device_flag_2|device_flag_3, device_info_changed_cb, g_subs_id_device_info);
 			}
 		}
 

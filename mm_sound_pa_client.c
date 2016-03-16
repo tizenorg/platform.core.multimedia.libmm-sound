@@ -176,7 +176,7 @@ gint __mm_sound_handle_comparefunc(gconstpointer a, gconstpointer b)
 {
     mm_sound_handle_t* phandle = (mm_sound_handle_t*)a;
     int* handle = (int*)b;
-
+ 
     if(phandle == NULL)
         return -1;
 
@@ -193,8 +193,7 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
     pa_channel_map maps;
     pa_buffer_attr attr;
 
-    int vol_conf_type;
-    int prop_vol_type, prop_gain_type;
+    int prop_vol_type, prop_gain_type = VOLUME_GAIN_DEFAULT;
 
     int err = MM_ERROR_SOUND_INTERNAL;
     int period_time = PA_SIMPLE_PERIOD_TIME_FOR_MID_LATENCY_MSEC;
@@ -424,7 +423,7 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
         err = MM_ERROR_SOUND_INTERNAL;
         goto fail;
     }
-    g_list_append(mm_sound_handle_mgr.handles, handle);
+    mm_sound_handle_mgr.handles = g_list_append(mm_sound_handle_mgr.handles, handle);
 
     if(handle->handle == 0) {
         debug_msg("out of range. handle(%d)\n", handle->handle);
@@ -552,7 +551,7 @@ int mm_sound_pa_close(const int handle)
 
     debug_msg("leave: handle[%d] stream_index[%d]\n", handle, phandle->stream_idx);
 
-    g_list_remove(mm_sound_handle_mgr.handles, phandle);
+    mm_sound_handle_mgr.handles = g_list_remove(mm_sound_handle_mgr.handles, phandle);
     if(phandle != NULL) {
         free(phandle);
         phandle = NULL;
@@ -729,18 +728,6 @@ typedef struct _get_volume_max_userdata_t
     pa_threaded_mainloop* mainloop;
     int value;
 } get_volume_max_userdata_t;
-
-static void __mm_sound_pa_get_cb(pa_context *c, uint32_t value, void *userdata)
-{
-    get_volume_max_userdata_t* u = (get_volume_max_userdata_t*)userdata;
-
-    assert(c);
-    assert(u);
-
-    u->value = value;
-
-    pa_threaded_mainloop_signal(u->mainloop, 0);
-}
 
 EXPORT_API
 int mm_sound_pa_corkall(int cork)
