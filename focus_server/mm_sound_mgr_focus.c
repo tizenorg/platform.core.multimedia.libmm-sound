@@ -882,7 +882,7 @@ int mm_sound_mgr_focus_get_stream_type_of_acquired_focus(focus_type_e focus_type
 			debug_msg("found a node : request_focus_type(%d), stream_type(%s)/additional info(%s) of acquired focus\n", focus_type, node->stream_type, node->option);
 			*stream_type = node->stream_type;
 			if (additional_info)
-				*additional_info = node->option;
+				*additional_info = node->option[focus_type-1];
 			ret = MM_ERROR_NONE;
 			break;
 		}

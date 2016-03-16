@@ -101,8 +101,6 @@ typedef struct
 
 static int (*g_thread_pool_func)(void*, void (*)(void*)) = NULL;
 
-static int _MMSoundKeytoneInit(void);
-static int _MMSoundKeytoneFini(void);
 static int stop_flag = 0;
 
 #ifdef SUPPORT_DBUS_KEYTONE
@@ -292,8 +290,6 @@ static void _deinit_dbus_keytone ()
 
 static int MMSoundPlugRunKeytoneControlRun(void)
 {
-	int ret = MM_ERROR_NONE;
-
 	debug_enter("\n");
 	/* While loop is always on */
 	stop_flag = MMSOUND_TRUE;

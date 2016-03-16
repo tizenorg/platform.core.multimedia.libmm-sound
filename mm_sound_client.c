@@ -19,6 +19,7 @@
  *
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <poll.h>
@@ -146,7 +147,6 @@ gboolean g_need_emergent_exit = FALSE;
 void _system_signal_handler(int signo)
 {
 	int ret = MM_ERROR_NONE;
-	int index = 0;
 	sigset_t old_mask, all_mask;
 
 	debug_error("Got signal : signo(%d)", signo);
@@ -249,8 +249,6 @@ int mm_sound_client_finalize(void)
 
 
 #ifdef USE_FOCUS
-
-	int index = 0;
 
 	if (g_focus_thread) {
 		g_main_loop_quit(g_focus_loop);
@@ -1226,7 +1224,6 @@ void _focus_close_callback(int index, bool is_for_watching)
 
 #ifdef CONFIG_ENABLE_RETCB
 	char *filename2;
-	int written;
 
 	if (is_for_watching) {
 		filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", g_focus_sound_handle[index].focus_tid);
@@ -1237,16 +1234,21 @@ void _focus_close_callback(int index, bool is_for_watching)
 	/* Defensive code - wait until callback timeout although callback is removed */
 	int buf = MM_ERROR_NONE; //no need to specify cb result to server, just notice if the client got the callback properly or not
 	int tmpfd = -1;
+	char str_error[256];
 
 	tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
 	if (tmpfd < 0) {
-		char str_error[256];
 		strerror_r(errno, str_error, sizeof(str_error));
 		debug_warning("could not open file(%s) (may server close it first), tid(%d) fd(%d) %s errno=%d(%s)",
 			filename2, g_focus_sound_handle[index].focus_tid, tmpfd, filename2, errno, str_error);
 	} else {
+		ssize_t written;
 		debug_msg("write MM_ERROR_NONE(tid:%d) for waiting server", g_focus_sound_handle[index].focus_tid);
 		written = write(tmpfd, &buf, sizeof(buf));
+		if (written == -1) {
+		    strerror_r(errno, str_error, sizeof(str_error));
+		    debug_warning("write failed, %s", str_error);
+		}
 		close(tmpfd);
 	}
 
