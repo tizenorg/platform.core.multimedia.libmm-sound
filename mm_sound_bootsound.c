@@ -113,7 +113,9 @@ int mm_sound_boot_play_sound(char* path)
 	/* Check whether file exists */
 	fd = open(path, O_RDONLY);
 	if (fd == -1) {
-		debug_error("file open failed with [%s][%d]\n", strerror(errno), errno);
+		char str_error[256];
+		strerror_r(errno, str_error, sizeof(str_error));
+		debug_error("file open failed with [%s][%d]\n", str_error, errno);
 		switch (errno) {
 		case ENOENT:
 			return MM_ERROR_SOUND_FILE_NOT_FOUND;
@@ -141,7 +143,9 @@ int mm_sound_boot_play_sound(char* path)
 	/* Write to PIPE */
 	err = write(fd, &data, size);
 	if (err < 0) {
-		debug_error("Fail to write data: [%s][%d]\n", strerror(errno), errno);
+		char str_error[256];
+		strerror_r(errno, str_error, sizeof(str_error));
+		debug_error("Fail to write data: [%s][%d]\n", str_error, errno);
 		close(fd);
 		return MM_ERROR_SOUND_INTERNAL;
 	}

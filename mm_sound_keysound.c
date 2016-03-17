@@ -148,7 +148,9 @@ static int _mm_sound_play_keysound(const char *filename, int volume_config, ipc_
 		/* Check whether file exists */
 		fd = open(filename, O_RDONLY);
 		if (fd == -1) {
-			debug_error("file open failed with [%s][%d]\n", strerror(errno), errno);
+			char str_error[256];
+			strerror_r(errno, str_error, sizeof(str_error));
+			debug_error("file open failed with [%s][%d]\n", str_error, errno);
 			switch (errno) {
 			case ENOENT:
 				return MM_ERROR_SOUND_FILE_NOT_FOUND;
@@ -182,7 +184,9 @@ static int _mm_sound_play_keysound(const char *filename, int volume_config, ipc_
 		/* Write to PIPE */
 		res = write(fd, &data, size);
 		if (res < 0) {
-			debug_error("Fail to write data: [%s][%d]\n", strerror(errno), errno);
+			char str_error[256];
+			strerror_r(errno, str_error, sizeof(str_error));
+			debug_error("Fail to write data: [%s][%d]\n", str_error, errno);
 			ret = MM_ERROR_SOUND_INTERNAL;
 		}
 		/* Close PIPE */

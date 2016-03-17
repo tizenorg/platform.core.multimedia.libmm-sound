@@ -197,7 +197,9 @@ static int _play_keytone(const char *filename, int volume_config)
 
 		/* Write to PIPE */
 		if ((err = write(fd, &data, sizeof(ipc_t))) < 0) {
-			debug_error("Fail to write data: %s\n", strerror(errno));
+			char str_error[256];
+			strerror_r(errno, str_error, sizeof(str_error));
+			debug_error("Fail to write data: %s\n", str_error);
 			ret = MM_ERROR_SOUND_INTERNAL;
 		}
 		/* Close PIPE */

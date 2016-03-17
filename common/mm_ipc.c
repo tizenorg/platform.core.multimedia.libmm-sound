@@ -60,7 +60,9 @@ int __mm_sound_lock()
     sem = sem_open(AUDIO_ROUTE_POLICY_LOCK, O_CREAT, 0666, 1);
     if (sem == SEM_FAILED)
     {
-        debug_error("Semaphore open Fail! (name:%s, %s)\n", AUDIO_ROUTE_POLICY_LOCK, strerror(errno));
+        char str_error[256];
+        strerror_r(errno, str_error, sizeof(str_error));
+        debug_error("Semaphore open Fail! (name:%s, %s)\n", AUDIO_ROUTE_POLICY_LOCK, str_error);
         return MM_ERROR_SOUND_INTERNAL;
     }
 retry_lock:
