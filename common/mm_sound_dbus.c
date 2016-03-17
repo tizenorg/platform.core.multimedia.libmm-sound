@@ -331,13 +331,17 @@ static GDBusConnection* _dbus_get_connection(GBusType bustype)
 {
 	static GDBusConnection *conn_system = NULL;
 	static GDBusConnection *conn_session = NULL;
+	GError *err = NULL;
 
 	if (bustype == G_BUS_TYPE_SYSTEM) {
 		if (conn_system) {
 			debug_log("Already connected to system bus");
 		} else {
 			debug_log("Get new connection on system bus");
-			conn_system = g_bus_get_sync(bustype, NULL, NULL);
+			if(!(conn_system = g_bus_get_sync(bustype, NULL, &err))) {
+				debug_error ("g_dbus_get_sync() error (%s)", err->message);
+				g_error_free(err);
+			}
 		}
 		return conn_system;
 	} else if (bustype == G_BUS_TYPE_SESSION) {
@@ -345,7 +349,10 @@ static GDBusConnection* _dbus_get_connection(GBusType bustype)
 			debug_log("Already connected to session bus");
 		} else {
 			debug_log("Get new connection on session bus");
-			conn_session = g_bus_get_sync(bustype, NULL, NULL);
+			if(!(conn_session = g_bus_get_sync(bustype, NULL, &err))) {
+				debug_error ("g_dbus_get_sync() error (%s)", err->message);
+				g_error_free(err);
+			}
 		}
 		return conn_session;
 	} else {
