@@ -76,7 +76,9 @@ int mm_source_open_file(const char *filename, MMSourceType *source, int drmsuppo
 
 	fd = open(filename, O_RDONLY);
 	if (fd == -1) {
-		debug_error("file [%s] open fail\n", filename);
+		char str_error[256];
+		strerror_r(errno, str_error, sizeof(str_error));
+		debug_error("file [%s] open fail [%s]\n", filename, str_error);
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 	if (fstat(fd, &finfo) == -1) {
