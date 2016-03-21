@@ -214,7 +214,7 @@ static int _mm_sound_mgr_focus_get_priority_from_stream_type(int *priority, cons
 			}
 		}
 		if (i == AVAIL_STREAMS_MAX) {
-			ret = MM_ERROR_INVALID_ARGUMENT;
+			ret = MM_ERROR_NOT_SUPPORT_API;
 			debug_error("not supported stream_type[%s], ret[0x%x]\n", stream_type, ret);
 		} else {
 			debug_log("[%s] has priority of [%d]\n", stream_type, *priority);
