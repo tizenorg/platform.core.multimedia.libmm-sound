@@ -546,27 +546,6 @@ int mm_sound_pa_close(const int handle)
 }
 
 EXPORT_API
-int mm_sound_pa_cork(const int handle, const int cork)
-{
-    mm_sound_handle_t* phandle = NULL;
-    int err = MM_ERROR_NONE;
-
-	CHECK_HANDLE_RANGE(handle);
-    GET_HANDLE_DATA(phandle, mm_sound_handle_mgr.handles, &handle, __mm_sound_handle_comparefunc);
-    if(phandle == NULL) {
-        debug_msg("phandle is null");
-        return MM_ERROR_SOUND_INTERNAL;
-    }
-
-    if (0 > pa_simple_cork(phandle->s, cork, &err)) {
-        debug_error("pa_simple_cork() failed with %s\n", pa_strerror(err));
-        err = MM_ERROR_SOUND_INTERNAL;
-    }
-
-	return err;
-}
-
-EXPORT_API
 int mm_sound_pa_drain(const int handle)
 {
     mm_sound_handle_t* phandle = NULL;
@@ -600,30 +579,6 @@ int mm_sound_pa_flush(const int handle)
         debug_error("pa_simple_flush() failed with %s\n", pa_strerror(err));
         err = MM_ERROR_SOUND_INTERNAL;
     }
-
-    return err;
-}
-
-EXPORT_API
-int mm_sound_pa_get_latency(const int handle, int* latency)
-{
-    mm_sound_handle_t* phandle = NULL;
-    int err = MM_ERROR_NONE;
-    pa_usec_t latency_time = 0;
-
-	CHECK_HANDLE_RANGE(handle);
-    GET_HANDLE_DATA(phandle, mm_sound_handle_mgr.handles, &handle, __mm_sound_handle_comparefunc);
-    if(phandle == NULL) {
-        debug_msg("phandle is null");
-        return MM_ERROR_SOUND_INTERNAL;
-    }
-
-    latency_time = pa_simple_get_final_latency(phandle->s, &err);
-    if (err > 0 && latency_time == 0) {
-        debug_error("pa_simple_get_latency() failed with %s\n", pa_strerror(err));
-        err = MM_ERROR_SOUND_INTERNAL;
-    }
-    *latency = latency_time / 1000; // usec to msec
 
     return err;
 }
@@ -712,24 +667,3 @@ typedef struct _get_volume_max_userdata_t
     pa_threaded_mainloop* mainloop;
     int value;
 } get_volume_max_userdata_t;
-
-EXPORT_API
-int mm_sound_pa_corkall(int cork)
-{
-    pa_operation *o = NULL;
-
-    CHECK_CONNECT_TO_PULSEAUDIO();
-
-    pa_threaded_mainloop_lock(mm_sound_handle_mgr.mainloop);
-
-    o = pa_context_set_cork_all(mm_sound_handle_mgr.context, cork, __mm_sound_pa_success_cb, (void *)mm_sound_handle_mgr.mainloop);
-    WAIT_PULSEAUDIO_OPERATION(mm_sound_handle_mgr, o);
-
-    if(o)
-        pa_operation_unref(o);
-
-    pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-
-    return MM_ERROR_NONE;
-}
-

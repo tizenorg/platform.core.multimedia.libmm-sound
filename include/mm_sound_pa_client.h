@@ -67,10 +67,7 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
 int mm_sound_pa_read(const int handle, void* buf, const int size);
 int mm_sound_pa_write(const int handle, void* buf, const int size);
 int mm_sound_pa_close(const int handle);
-int mm_sound_pa_cork(const int handle, const int cork);
 int mm_sound_pa_drain(const int handle);
 int mm_sound_pa_flush(const int handle);
-int mm_sound_pa_get_latency(const int handle, int* latency);
-int mm_sound_pa_corkall(int cork);
 
 #endif
