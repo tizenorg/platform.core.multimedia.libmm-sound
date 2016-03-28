@@ -785,7 +785,7 @@ int mm_sound_proxy_get_acquired_focus_stream_type(int focus_type, char **stream_
 
 	if (ret == MM_ERROR_NONE && result)
 		g_variant_get(result, "(ss)", stream_type, additional_info);
-	else
+	if (result)
 		g_variant_unref(result);
 
 	debug_fleave();
