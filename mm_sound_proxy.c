@@ -774,19 +774,19 @@ int mm_sound_proxy_get_acquired_focus_stream_type(int focus_type, char **stream_
 
 	debug_fenter();
 
-	params = g_variant_new("(i)", focus_type);
-	if (params) {
-		if ((ret = mm_sound_dbus_method_call_to(AUDIO_PROVIDER_FOCUS_SERVER, AUDIO_METHOD_GET_ACQUIRED_FOCUS_STREAM_TYPE, params, &result)) != MM_ERROR_NONE) {
-			debug_error("dbus get stream type of acquired focus failed");
-		}
-	} else {
+	if (!(params = g_variant_new("(i)", focus_type))) {
 		debug_error("Construct Param for method call failed");
+		return MM_ERROR_SOUND_INTERNAL;
 	}
 
-	if (ret == MM_ERROR_NONE && result)
-		g_variant_get(result, "(ss)", stream_type, additional_info);
-	else
-		g_variant_unref(result);
+	if ((ret = mm_sound_dbus_method_call_to(AUDIO_PROVIDER_FOCUS_SERVER, AUDIO_METHOD_GET_ACQUIRED_FOCUS_STREAM_TYPE, params, &result)) == MM_ERROR_NONE) {
+		if (result) {
+			g_variant_get(result, "(ss)", stream_type, additional_info);
+			g_variant_unref(result);
+		}
+	} else {
+		debug_error("dbus get stream type of acquired focus failed");
+	}
 
 	debug_fleave();
 	return ret;
