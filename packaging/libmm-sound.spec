@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.10.21
+Version:    0.10.22
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -12,7 +12,6 @@ Source4:    focus-server.service
 Source5:    focus-server.path
 Source6:    focus-server.conf
 Requires(post): /sbin/ldconfig
-Requires(post): /usr/bin/vconftool
 Requires(postun): /sbin/ldconfig
 BuildRequires: pkgconfig(mm-common)
 BuildRequires: pkgconfig(mm-log)
@@ -101,8 +100,6 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/license
 cp LICENSE.APLv2 %{buildroot}/usr/share/license/%{name}
 cp LICENSE.APLv2 %{buildroot}/usr/share/license/libmm-sound-tool
-mkdir -p %{buildroot}/opt/etc/dump.d/module.d/
-cp dump_audio.sh %{buildroot}/opt/etc/dump.d/module.d/dump_audio.sh
 mkdir -p %{buildroot}/etc/dbus-1/system.d/
 cp %{SOURCE3} %{buildroot}/etc/dbus-1/system.d/sound-server.conf
 cp %{SOURCE6} %{buildroot}/etc/dbus-1/system.d/focus-server.conf
@@ -154,7 +151,6 @@ ln -sf ../focus-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/focu
 %{_datadir}/license/%{name}
 %{_datadir}/license/libmm-sound-tool
 /usr/share/sounds/sound-server/*
-/opt/etc/dump.d/module.d/dump_audio.sh
 /etc/dbus-1/system.d/sound-server.conf
 /etc/dbus-1/system.d/focus-server.conf
 
