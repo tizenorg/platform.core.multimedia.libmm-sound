@@ -21,15 +21,11 @@
 
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <vconf.h>
 
 #include <mm_debug.h>
 
 #include "include/mm_sound.h"
 #include "include/mm_sound_client.h"
-#include "include/mm_sound_focus.h"
-#include "focus_server/include/mm_sound_mgr_focus.h"
 
 #define RETURN_ERROR_IF_FOCUS_CB_THREAD(x_thread) \
 { \

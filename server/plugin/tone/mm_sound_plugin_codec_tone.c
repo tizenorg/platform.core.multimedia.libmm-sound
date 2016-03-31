@@ -24,20 +24,13 @@
 #include <string.h>
 
 #include <semaphore.h>
-#include <unistd.h>
-#include <pthread.h>
 
-#include "../../include/mm_sound_thread_pool.h"
 #include "../../include/mm_sound_plugin_codec.h"
 #include <mm_error.h>
 #include <mm_debug.h>
 #include <mm_sound.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-
 /* For Beep */
-#include <fcntl.h>
 #include <math.h>
 #include <glib.h>
 

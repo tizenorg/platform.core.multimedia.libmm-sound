@@ -23,8 +23,11 @@
 #ifndef __MM_SOUND_MGR_CODEC_H__
 #define __MM_SOUND_MGR_CODEC_H__
 
+#include <stdbool.h>
+
 #include <mm_source.h>
 #include <mm_sound_stream.h>
+#include "../../include/mm_sound.h"
 
 typedef struct {
 	int tone;

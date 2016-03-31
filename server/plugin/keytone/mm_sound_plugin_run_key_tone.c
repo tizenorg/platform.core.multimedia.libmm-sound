@@ -22,30 +22,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
-#include <time.h>
 #include <semaphore.h>
-#include <unistd.h>
-#include <sys/syscall.h>
 #include <mm_error.h>
 #include <mm_debug.h>
 #include <mm_source.h>
 #include <mm_sound.h>
 
-#include <pthread.h>
 #include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <errno.h>
-#include <semaphore.h>
-
-#include <pulse/sample.h>
 
 #include "../../include/mm_sound_plugin_run.h"
 #include "../../include/mm_sound_plugin_codec.h"
 #include "../../../include/mm_sound_utils.h"
 #include "../../../include/mm_sound_common.h"
-#include "../../../include/mm_sound_pa_client.h"
 
 #define DEFAULT_TIMEOUT_MSEC_IN_USEC (600*1000)
 #define ENV_KEYTONE_TIMEOUT "KEYTONE_TIMEOUT"

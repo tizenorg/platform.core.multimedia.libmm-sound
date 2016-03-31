@@ -37,10 +37,9 @@
 #include "include/mm_sound_mgr_ipc.h"
 #include "include/mm_sound_plugin_codec.h"
 #include "include/mm_sound_thread_pool.h"
-#include "include/mm_sound_pa_client.h"
+
 #include "../include/mm_sound_common.h"
 #include "../include/mm_sound_focus.h"
-#include "../include/mm_sound_device.h"
 
 #define _ENABLE_KEYTONE	/* Temporal test code */
 

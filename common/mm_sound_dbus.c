@@ -1,12 +1,10 @@
 
 #include <gio/gio.h>
-#include <glib.h>
 #include <stdlib.h>
 
 #include <mm_error.h>
 #include <mm_debug.h>
 
-#include "../include/mm_sound_common.h"
 #include "../include/mm_sound_dbus.h"
 #include "../include/mm_sound_intf.h"
 

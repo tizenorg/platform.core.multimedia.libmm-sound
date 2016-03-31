@@ -24,19 +24,14 @@
 
 #include "include/mm_sound_mgr_focus.h"
 #include "../include/mm_sound_common.h"
-#include "../include/mm_sound_stream.h"
 
-#include <mm_error.h>
 #include <mm_debug.h>
-#include <glib.h>
 #include <poll.h>
 #include <fcntl.h>
 
-#include "include/mm_sound_mgr_focus_ipc.h"
 #include "include/mm_sound_mgr_focus_dbus.h"
 #include "../include/mm_sound_utils.h"
 #include <sys/time.h>
-#include <sys/stat.h>
 
 static GList *g_focus_node_list = NULL;
 static pthread_mutex_t g_focus_node_list_mutex = PTHREAD_MUTEX_INITIALIZER;

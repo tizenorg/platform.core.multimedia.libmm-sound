@@ -24,20 +24,14 @@
 #include <string.h>
 
 #include <semaphore.h>
-#include <unistd.h>
 #include <pthread.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 
 #include <mm_error.h>
 #include <mm_debug.h>
 #include <tremolo_vorbisdec_api.h>
 
 #include "../../include/mm_sound.h"
-#include "../../include/mm_ipc.h"
-#include "../../include/mm_sound_thread_pool.h"
 #include "../../include/mm_sound_plugin_codec.h"
-#include "../../../include/mm_sound_private.h"
 #include "../../../include/mm_sound_pa_client.h"
 
 #define OGG_DEC_BUF_SIZE 4096

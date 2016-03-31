@@ -23,25 +23,18 @@
 #include <memory.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <fcntl.h>
 
-#include <sys/stat.h>
 #include <errno.h>
 
 #include <vconf.h>
 #include <mm_types.h>
 #include <mm_error.h>
-#include <mm_message.h>
 #include <mm_session_private.h>
 #include <mm_debug.h>
 #include "include/mm_sound_private.h"
-#include "include/mm_sound.h"
 #include "include/mm_sound_utils.h"
 #include "include/mm_sound_client.h"
 #include "include/mm_sound_pa_client.h"
-#include "include/mm_ipc.h"
 #include "include/mm_sound_common.h"
 
 

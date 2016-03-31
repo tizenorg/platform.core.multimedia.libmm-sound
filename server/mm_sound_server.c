@@ -22,12 +22,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <error.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <signal.h>
-#include <pthread.h>
 #include <getopt.h>
 
 #include <vconf.h>
@@ -35,21 +31,13 @@
 #include <mm_debug.h>
 
 #include <fcntl.h>
-#include <sys/stat.h>
 #include <semaphore.h>
-#include <time.h>
-#include <errno.h>
-
 
 #include "../include/mm_sound_common.h"
-#include "../include/mm_sound_utils.h"
 #include "include/mm_sound_thread_pool.h"
 #include "include/mm_sound_mgr_run.h"
 #include "include/mm_sound_mgr_codec.h"
-#include "include/mm_sound_mgr_ipc.h"
 #include "include/mm_sound_mgr_ipc_dbus.h"
-
-#include <glib.h>
 
 #include "../config.h" /* for PLUGIN_DIR */
 

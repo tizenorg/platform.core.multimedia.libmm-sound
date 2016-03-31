@@ -1,16 +1,11 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
-#include <mm_types.h>
 #include <mm_error.h>
 #include <mm_debug.h>
 
 #include <gio/gio.h>
-#include <glib.h>
 
 #ifdef USE_SECURITY
 #include <security-server.h>

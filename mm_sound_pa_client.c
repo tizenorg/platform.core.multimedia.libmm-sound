@@ -19,32 +19,16 @@
  *
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/shm.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/msg.h>
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
 
 #include <mm_error.h>
 #include <mm_debug.h>
 
-#include <mm_session.h>
-#include <mm_session_private.h>
 #include <mm_sound_pa_client.h>
 
 #include <glib.h>
-#include <pulse/simple.h>
-#include <pulse/proplist.h>
-
-#include "include/mm_sound.h"
-#include "include/mm_sound_private.h"
-#include "include/mm_sound_utils.h"
-#include "include/mm_sound_common.h"
 
 #define MM_SOUND_CHANNEL_MIN                1
 #define MM_SOUND_CHANNEL_MAX                6

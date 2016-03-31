@@ -22,13 +22,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <dlfcn.h>
 
-#include "../include/mm_sound_common.h"
 #include "include/mm_sound_plugin.h"
 #include <mm_error.h>
 #include <mm_debug.h>

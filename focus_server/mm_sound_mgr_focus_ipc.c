@@ -22,23 +22,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <pthread.h>
-#include <sys/shm.h>
-#include <sys/msg.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-#include <errno.h>
 #include "include/mm_sound_mgr_focus_ipc.h"
 #include "include/mm_sound_mgr_focus_dbus.h"
 
 #include "../include/mm_sound_common.h"
 #include "include/mm_sound_mgr_focus.h"
-#include <mm_error.h>
 #include <mm_debug.h>
-
-#include <gio/gio.h>
 
 #ifdef USE_FOCUS
 

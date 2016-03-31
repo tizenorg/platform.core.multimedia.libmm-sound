@@ -23,14 +23,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <poll.h>
-#include <sys/types.h>
-#include <sys/shm.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/msg.h>
-#include <assert.h>
 #include <errno.h>
 #include <signal.h>
 
@@ -39,7 +34,6 @@
 
 #include <mm_error.h>
 #include <mm_debug.h>
-//#include <glib.h>
 
 #include "include/mm_sound.h"
 #include "include/mm_sound_client.h"
@@ -47,15 +41,9 @@
 #include "include/mm_sound_common.h"
 #include "include/mm_sound_device.h"
 #include "include/mm_sound_stream.h"
-#ifdef USE_FOCUS
-#include "include/mm_sound_focus.h"
-#endif
 
 #include <mm_session.h>
 #include <mm_session_private.h>
-
-#define __DIRECT_CALLBACK__
-//#define __GIDLE_CALLBACK__
 
 #include <glib.h>
 #if defined(__GSOURCE_CALLBACK__)

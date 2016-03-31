@@ -30,18 +30,13 @@
 #include <fcntl.h>
 
 #include <errno.h>
-//#include <pthread.h>
 #include "include/mm_sound_mgr_common.h"
 #include "include/mm_sound_mgr_ipc.h"
 #include "include/mm_sound_mgr_ipc_dbus.h"
 
 #include "../include/mm_sound_common.h"
-//#include "include/mm_sound_thread_pool.h"
 #include "include/mm_sound_mgr_codec.h"
-#include <mm_error.h>
 #include <mm_debug.h>
-
-#include <gio/gio.h>
 
 #define SHM_OPEN
 

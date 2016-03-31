@@ -23,23 +23,13 @@
 #include <memory.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <stdio.h>
-#include <sys/types.h>
 #include <fcntl.h>
 #include <vconf.h>
 
-#include <sys/stat.h>
-#include <errno.h>
-
 #include <semaphore.h>
-#include <errno.h>
 
-#include <mm_types.h>
 #include <mm_error.h>
-#include <mm_message.h>
 #include <mm_debug.h>
-#include <mm_sound.h>
-#include <mm_sound_private.h>
 
 #define KEYTONE_PATH        "/tmp/keytone"  /* Keytone pipe path */
 #define FILE_FULL_PATH 1024				/* File path lenth */
