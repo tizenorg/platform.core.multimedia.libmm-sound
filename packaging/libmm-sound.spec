@@ -11,6 +11,10 @@ Source3:    sound-server.conf
 Source4:    focus-server.service
 Source5:    focus-server.path
 Source6:    focus-server.conf
+%if "%{?tizen_profile_name}" == "tv"
+Source7:    sound-server-tv.service
+Source8:    focus-server-tv.service
+%endif
 Requires(post): /sbin/ldconfig
 Requires(post): /usr/bin/vconftool
 Requires(postun): /sbin/ldconfig
@@ -106,16 +110,28 @@ cp dump_audio.sh %{buildroot}/opt/etc/dump.d/module.d/dump_audio.sh
 mkdir -p %{buildroot}/etc/dbus-1/system.d/
 cp %{SOURCE3} %{buildroot}/etc/dbus-1/system.d/sound-server.conf
 cp %{SOURCE6} %{buildroot}/etc/dbus-1/system.d/focus-server.conf
+%if "%{?tizen_profile_name}" == "tv"
+cp %{SOURCE7} %{SOURCE1}
+cp %{SOURCE8} %{SOURCE4}
+%endif
 
 %make_install
+%if "%{?tizen_profile_name}" == "tv"
+install -d %{buildroot}%{_unitdir}/sysinit.target.wants
+%else
 install -d %{buildroot}%{_unitdir}/multi-user.target.wants
+%endif
 install -m0644 %{SOURCE1} %{buildroot}%{_unitdir}/
 install -m0644 %{SOURCE2} %{buildroot}%{_unitdir}/
 install -m0644 %{SOURCE4} %{buildroot}%{_unitdir}/
 install -m0644 %{SOURCE5} %{buildroot}%{_unitdir}/
+%if "%{?tizen_profile_name}" == "tv"
+ln -sf ../sound-server.path %{buildroot}%{_unitdir}/sysinit.target.wants/sound-server.path
+ln -sf ../focus-server.path %{buildroot}%{_unitdir}/sysinit.target.wants/focus-server.path
+%else
 ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/sound-server.path
 ln -sf ../focus-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/focus-server.path
-
+%endif
 %post
 /sbin/ldconfig
 
@@ -144,8 +160,13 @@ ln -sf ../focus-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/focu
 %if 0%{?tizen_audio_feature_ogg_enable}
 %{_libdir}/soundplugins/libsoundplugintremoloogg.so
 %endif
+%if "%{?tizen_profile_name}" == "tv"
+%{_unitdir}/sysinit.target.wants/sound-server.path
+%{_unitdir}/sysinit.target.wants/focus-server.path
+%else
 %{_unitdir}/multi-user.target.wants/sound-server.path
 %{_unitdir}/multi-user.target.wants/focus-server.path
+%endif
 %{_unitdir}/sound-server.service
 %{_unitdir}/sound-server.path
 %{_unitdir}/focus-server.service
