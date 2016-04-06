@@ -108,13 +108,13 @@ cp %{SOURCE3} %{buildroot}/etc/dbus-1/system.d/sound-server.conf
 cp %{SOURCE6} %{buildroot}/etc/dbus-1/system.d/focus-server.conf
 
 %make_install
-install -d %{buildroot}%{_unitdir}/multi-user.target.wants
+install -d %{buildroot}%{_unitdir}/sysinit.target.wants
 install -m0644 %{SOURCE1} %{buildroot}%{_unitdir}/
 install -m0644 %{SOURCE2} %{buildroot}%{_unitdir}/
 install -m0644 %{SOURCE4} %{buildroot}%{_unitdir}/
 install -m0644 %{SOURCE5} %{buildroot}%{_unitdir}/
-ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/sound-server.path
-ln -sf ../focus-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/focus-server.path
+ln -sf ../sound-server.path %{buildroot}%{_unitdir}/sysinit.target.wants/sound-server.path
+ln -sf ../focus-server.path %{buildroot}%{_unitdir}/sysinit.target.wants/focus-server.path
 
 %post
 /sbin/ldconfig
@@ -144,8 +144,8 @@ ln -sf ../focus-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/focu
 %if 0%{?tizen_audio_feature_ogg_enable}
 %{_libdir}/soundplugins/libsoundplugintremoloogg.so
 %endif
-%{_unitdir}/multi-user.target.wants/sound-server.path
-%{_unitdir}/multi-user.target.wants/focus-server.path
+%{_unitdir}/sysinit.target.wants/sound-server.path
+%{_unitdir}/sysinit.target.wants/focus-server.path
 %{_unitdir}/sound-server.service
 %{_unitdir}/sound-server.path
 %{_unitdir}/focus-server.service

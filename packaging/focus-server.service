@@ -1,11 +1,10 @@
 [Unit]
 Description=Start the focus profile service
+DefaultDependencies=false
+After=factory-init.service pulseaudio.service
 
 [Service]
 ExecStart=/usr/bin/focus_server -S
 Restart=always
 RestartSec=0
 MemoryLimit=50M
-
-[Install]
-WantedBy=tizen-system.target
