@@ -168,7 +168,14 @@ int main(int argc, char **argv)
 				debug_msg ("Ready to play booting sound!!!!");
 			}
 		}
-
+#ifdef TIZEN_TV
+		/* broadcast if we're ready */
+		if (creat(SOUND_SERVER_READY, 0644) != -1) {
+			debug_warning("SOUND_SERVER_READY(%s) file was created", SOUND_SERVER_READY);
+		} else {
+			debug_error("cannot create SOUND_SERVER_READY(/tmp/.sound_server_ready)");
+		}
+#endif
 		/* Start MainLoop */
 		_mainloop_run();
 	}
