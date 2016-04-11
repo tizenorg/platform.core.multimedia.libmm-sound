@@ -29,6 +29,7 @@
 #include <mm_error.h>
 #include <mm_debug.h>
 #include <mm_sound.h>
+#include <unistd.h>
 
 /* For Beep */
 #include <math.h>
