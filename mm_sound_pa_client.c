@@ -98,8 +98,6 @@ static struct {
     } while(0);
 
 
-#define CHECK_CONNECT_TO_PULSEAUDIO()   __mm_sound_pa_connect_to_pa()
-
 // should be call after pa_ext function.
 #define WAIT_PULSEAUDIO_OPERATION(x, y) \
     do { \
@@ -581,85 +579,6 @@ int mm_sound_pa_flush(const int handle)
     }
 
     return err;
-}
-
-static void __mm_sound_pa_state_cb(pa_context *c, void *userdata)
-{
-    pa_threaded_mainloop *mainloop = userdata;
-
-    switch (pa_context_get_state(c)) {
-    case PA_CONTEXT_READY:
-        pa_threaded_mainloop_signal(mainloop, 0);
-        break;
-    case PA_CONTEXT_TERMINATED:
-    case PA_CONTEXT_FAILED:
-        pa_threaded_mainloop_signal(mainloop, 0);
-        break;
-
-    case PA_CONTEXT_UNCONNECTED:
-    case PA_CONTEXT_CONNECTING:
-    case PA_CONTEXT_AUTHORIZING:
-    case PA_CONTEXT_SETTING_NAME:
-        break;
-    }
-}
-
-static void __mm_sound_pa_connect_to_pa()
-{
-    if(mm_sound_handle_mgr.state)
-        return;
-
-    if (!(mm_sound_handle_mgr.mainloop = pa_threaded_mainloop_new())) {
-        debug_error("mainloop create failed");
-    }
-
-    if (!(mm_sound_handle_mgr.context = pa_context_new(pa_threaded_mainloop_get_api(mm_sound_handle_mgr.mainloop), NULL))) {
-        debug_error("context create failed");
-    }
-
-    pa_threaded_mainloop_lock(mm_sound_handle_mgr.mainloop);
-    pa_context_set_state_callback(mm_sound_handle_mgr.context, __mm_sound_pa_state_cb, (void *)mm_sound_handle_mgr.mainloop);
-
-    if(pa_threaded_mainloop_start(mm_sound_handle_mgr.mainloop) < 0) {
-        debug_error("mainloop start failed");
-    }
-
-    if (pa_context_connect(mm_sound_handle_mgr.context, NULL, 0, NULL) < 0) {
-        debug_error("context connect failed");
-    }
-
-    while (TRUE) {
-        pa_context_state_t state = pa_context_get_state(mm_sound_handle_mgr.context);
-
-        if (!PA_CONTEXT_IS_GOOD (state)) {
-            break;
-        }
-
-        if (state == PA_CONTEXT_READY) {
-            break;
-        }
-
-        debug_msg("waiting..................");
-        pa_threaded_mainloop_wait(mm_sound_handle_mgr.mainloop);
-        debug_msg("waiting DONE. check again...");
-    }
-
-    mm_sound_handle_mgr.state = TRUE;
-
-    pa_threaded_mainloop_unlock(mm_sound_handle_mgr.mainloop);
-
-}
-
-static void __mm_sound_pa_success_cb(pa_context *c, int success, void *userdata)
-{
-	pa_threaded_mainloop *mainloop = (pa_threaded_mainloop *)userdata;
-
-	if (!success) {
-		debug_error("pa control failed: %s\n", pa_strerror(pa_context_errno(c)));
-	} else {
-		debug_msg("pa control success\n");
-	}
-	pa_threaded_mainloop_signal(mainloop, 0);
 }
 
 typedef struct _get_volume_max_userdata_t
