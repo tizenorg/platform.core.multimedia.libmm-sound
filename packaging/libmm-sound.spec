@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.10.24
+Version:    0.10.25
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -11,6 +11,7 @@ Source3:    sound-server.conf
 Source4:    focus-server.service
 Source5:    focus-server.path
 Source6:    focus-server.conf
+Requires: security-config
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 BuildRequires: pkgconfig(mm-common)

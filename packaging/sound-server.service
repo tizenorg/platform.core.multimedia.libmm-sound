@@ -6,6 +6,8 @@ ExecStart=/usr/bin/sound_server -S
 Restart=always
 RestartSec=0
 MemoryLimit=50M
+User=multimedia_fw
+Group=multimedia_fw
 
 [Install]
 WantedBy=tizen-system.target
