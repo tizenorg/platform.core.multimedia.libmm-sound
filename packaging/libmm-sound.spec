@@ -11,6 +11,7 @@ Source3:    sound-server.conf
 Source4:    focus-server.service
 Source5:    focus-server.path
 Source6:    focus-server.conf
+Requires: security-config
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 BuildRequires: pkgconfig(mm-common)
