@@ -492,8 +492,7 @@ int mm_sound_dbus_signal_subscribe_to(audio_provider_t provider, audio_event_t e
 	return MM_ERROR_NONE;
 
 fail:
-	if (cb_data)
-		free(cb_data);
+	free(cb_data);
 	return MM_ERROR_SOUND_INTERNAL;
 }
 
