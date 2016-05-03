@@ -546,7 +546,7 @@ void _stop_callback(void* data)
 
 int play_file()
 {
-	char filename[] ="/opt/media/Sound/testfile.wav";
+	char filename[] ="testfile.wav";
 	volume_type_t volume = VOLUME_TYPE_SYSTEM;
 	int ret = 0;
 	int handle = -1;
@@ -598,7 +598,7 @@ void _stop_callback(void* data)
 
 int play_file()
 {
-	char filename[] ="/opt/media/Sound/testfile.wav";
+	char filename[] ="testfile.wav";
 	volume_type_t volume = VOLUME_TYPE_SYSTEM;
 	int ret = 0;
 	int handle = -1;
@@ -647,7 +647,7 @@ void _stop_callback(void* data)
 
 int play_file_one_second()
 {
-	char filename[] ="/opt/media/Sound/testfile.wav";
+	char filename[] ="testfile.wav";
 	volume_type_t volume = VOLUME_TYPE_SYSTEM;
 	int ret = 0;
 	int handle = -1;

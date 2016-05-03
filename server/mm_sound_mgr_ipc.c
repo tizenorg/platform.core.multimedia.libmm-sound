@@ -40,10 +40,6 @@
 
 #define SHM_OPEN
 
-/* workaround for AF volume gain tuning */
-#define MM_SOUND_AF_FILE_PREFIX "/opt/ug/res/sounds/ug-camera-efl/sounds/af_"
-
-
 /******************************************************************************************
 	Functions For handling request from client
 ******************************************************************************************/
@@ -85,12 +81,6 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 	param.enable_session = enable_session;
 	param.stream_index = stream_index;
 	MMSOUND_STRNCPY(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
-
-	/* workaround for AF volume gain tuning */
-	if (strncmp(filename, MM_SOUND_AF_FILE_PREFIX, strlen(MM_SOUND_AF_FILE_PREFIX)) == 0) {
-		param.volume_config |= VOLUME_GAIN_AF;
-		debug_msg("Volume Gain AF\n");
-	}
 
 /*
 	debug_msg("File[%s] DTMF[%d] Loop[%d] Volume[%f] Priority[%d] VolCfg[0x%x] callback[%p] param[%d] src_type[%d] src_ptr[%p] keytone[%d] route[%d] enable_session[%d]",
@@ -173,12 +163,6 @@ int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 	param.handle_route = handle_route;
 	param.stream_index = stream_index;
 	MMSOUND_STRNCPY(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
-
-	/* workaround for AF volume gain tuning */
-	if (strncmp(filename, MM_SOUND_AF_FILE_PREFIX, strlen(MM_SOUND_AF_FILE_PREFIX)) == 0) {
-		param.volume_config |= VOLUME_GAIN_AF;
-		debug_msg("Volume Gain AF\n");
-	}
 
 	ret = MMSoundMgrCodecPlayWithStreamInfo(codechandle, &param);
 	if (ret != MM_ERROR_NONE) {
