@@ -476,7 +476,11 @@ int mm_sound_dbus_signal_subscribe_to(audio_provider_t provider, audio_event_t e
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 
-	cb_data = (struct callback_data*) g_malloc0(sizeof(struct callback_data));
+	if (!(cb_data = (struct callback_data*) g_malloc0(sizeof(struct callback_data)))) {
+		debug_error("Allocate for callback data failed");
+		return MM_ERROR_SOUND_INTERNAL;
+	}
+
 	cb_data->user_cb = callback;
 	cb_data->user_data = userdata;
 	cb_data->free_func = freefunc;
@@ -492,8 +496,7 @@ int mm_sound_dbus_signal_subscribe_to(audio_provider_t provider, audio_event_t e
 	return MM_ERROR_NONE;
 
 fail:
-	if (cb_data)
-		free(cb_data);
+	free(cb_data);
 	return MM_ERROR_SOUND_INTERNAL;
 }
 
