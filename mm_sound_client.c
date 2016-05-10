@@ -380,7 +380,7 @@ int mm_sound_client_play_tone_with_stream_info(int tone, char *stream_type, int 
 
 static void _mm_sound_stop_callback_wrapper_func(int ended_handle, void *userdata)
 {
-	struct callback_data *cb_data = (struct callback_data*) userdata;
+	struct callback_data *cb_data;
 	play_sound_end_callback_data_t *end_cb_data;
 
 	debug_log("[Wrapper CB][Play Stop] ended_handle : %d", ended_handle);
@@ -390,6 +390,7 @@ static void _mm_sound_stop_callback_wrapper_func(int ended_handle, void *userdat
 		return;
 	}
 
+	cb_data = (struct callback_data*) userdata;
 	end_cb_data = (play_sound_end_callback_data_t*) cb_data->extra_data;
 
 	if (ended_handle == end_cb_data->watching_handle) {
@@ -644,7 +645,7 @@ static bool is_device_match_flags(const char *device_type, int io_direction, int
 static void _mm_sound_device_connected_callback_wrapper_func(int device_id, const char *device_type, int io_direction, int state, const char *name, gboolean is_connected, void *userdata)
 {
 	mm_sound_device_t device_h;
-	struct callback_data *cb_data = (struct callback_data*) userdata;
+	struct callback_data *cb_data;
 	int device_flags;
 
 	debug_log("[Wrapper CB][Device Connnected] device_id : %d, device_type : %s, direction : %d, state : %d, name : %s, is_connected : %d",
@@ -655,6 +656,7 @@ static void _mm_sound_device_connected_callback_wrapper_func(int device_id, cons
 		return;
 	}
 
+	cb_data = (struct callback_data*) userdata;
 	device_flags = (int) cb_data->extra_data;
 
 	if (!is_device_match_flags(device_type, io_direction, state, device_flags))
@@ -700,7 +702,7 @@ int mm_sound_client_remove_device_connected_callback(unsigned int subs_id)
 static void _mm_sound_device_info_changed_callback_wrapper_func(int device_id, const char *device_type, int io_direction, int state, const char *name, int changed_device_info_type, void *userdata)
 {
 	mm_sound_device_t device_h;
-	struct callback_data *cb_data = (struct callback_data*) userdata;
+	struct callback_data *cb_data;
 	int device_flags;
 
 	debug_log("[Wrapper CB][Device Info Changed] device_id : %d, device_type : %s, direction : %d, state : %d, name : %s, changed_info_type : %d",
@@ -711,6 +713,7 @@ static void _mm_sound_device_info_changed_callback_wrapper_func(int device_id, c
 		return;
 	}
 
+	cb_data = (struct callback_data*) userdata;
 	device_flags = (int) cb_data->extra_data;
 
 	if (!is_device_match_flags(device_type, io_direction, state, device_flags))
