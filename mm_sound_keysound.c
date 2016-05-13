@@ -84,7 +84,7 @@ static const char* convert_volume_gain_type_to_string(int volume_gain_type)
 	debug_warning ("volume_gain_type(0x%x)", volume_gain_type);
 	switch(volume_gain_type) {
 	case VOLUME_GAIN_DEFAULT:
-		return NULL;
+		return "";
 	case VOLUME_GAIN_DIALER:
 		return "dialer";
 	case VOLUME_GAIN_TOUCH:
@@ -106,7 +106,7 @@ static const char* convert_volume_gain_type_to_string(int volume_gain_type)
 	case VOLUME_GAIN_TTS:
 		return "tts";
 	default:
-		return NULL;
+		return "";
 	}
 }
 

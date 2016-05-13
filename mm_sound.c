@@ -347,14 +347,14 @@ int mm_sound_stop_sound(int handle)
 {
 	int err;
 
-	debug_warning ("enter : handle=[%p]\n", handle);
+	debug_warning ("enter : handle=[%d]\n", handle);
 	/* Stop sound */
 	err = mm_sound_client_stop_sound(handle);
 	if (err < 0) {
 		debug_error("Fail to stop sound\n");
 		return err;
 	}
-	debug_warning ("success : handle=[%p]\n", handle);
+	debug_warning ("success : handle=[%d]\n", handle);
 
 	return MM_ERROR_NONE;
 }
