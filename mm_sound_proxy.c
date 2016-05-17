@@ -868,7 +868,7 @@ int mm_sound_proxy_acquire_focus(int instance, int id, mm_sound_focus_type_e typ
 
 	debug_fenter();
 
-	params = g_variant_new("(iiisb)", instance, id, type, option, is_for_session);
+	params = g_variant_new("(iiisb)", instance, id, type, option ? option : "", is_for_session);
 	if (params) {
 		if ((ret = mm_sound_dbus_method_call_to(AUDIO_PROVIDER_FOCUS_SERVER, AUDIO_METHOD_ACQUIRE_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus acquire focus failed");
@@ -893,7 +893,7 @@ int mm_sound_proxy_release_focus(int instance, int id, mm_sound_focus_type_e typ
 
 	debug_fenter();
 
-	params = g_variant_new("(iiisb)", instance, id, type, option, is_for_session);
+	params = g_variant_new("(iiisb)", instance, id, type, option ? option : "", is_for_session);
 	if (params) {
 		if ((ret = mm_sound_dbus_method_call_to(AUDIO_PROVIDER_FOCUS_SERVER, AUDIO_METHOD_RELEASE_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus release focus failed");
