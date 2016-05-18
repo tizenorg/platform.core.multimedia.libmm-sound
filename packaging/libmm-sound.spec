@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.10.31
+Version:    0.10.32
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -91,6 +91,9 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 %if 0%{?tizen_audio_feature_ogg_enable}
        --enable-ogg \
        --with-plugindir=%{_libdir}/soundplugins/ \
+%endif
+%if %{with TIZEN_PRODUCT_TV}
+       --enable-prelink \
 %endif
 %ifarch %{arm}
 	--prefix=/usr --enable-pulse --enable-focus --disable-security

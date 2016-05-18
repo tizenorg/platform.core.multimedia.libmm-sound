@@ -116,6 +116,16 @@ AC_ARG_ENABLE(focus, AC_HELP_STRING([--enable-focus], [enable focus feature]),
  ],[USE_FOCUS=no])
 AM_CONDITIONAL([USE_FOCUS], [test "x$USE_FOCUS" = "xyes"])
 
+AC_ARG_ENABLE(prelink, AC_HELP_STRING([--enable-prelink], [enable pre-link feature]),
+[
+ case "${enableval}" in
+     yes) USE_PRELINK=yes ;;
+     no)  USE_PRELINK=no ;;
+     *)   AC_MSG_ERROR(bad value ${enableval} for --enable-prelink) ;;
+ esac
+ ],[USE_PRELINK=no])
+AM_CONDITIONAL([USE_PRELINK], [test "x$USE_PRELINK" = "xyes"])
+
 AC_ARG_WITH(plugindir, AS_HELP_STRING([--with-plugindir=<path>],[sound-server plugin dir]))
 if test -z "$with_plugindir" ; then
 PLUGIN_DIR=/usr/lib/soundplugins/
