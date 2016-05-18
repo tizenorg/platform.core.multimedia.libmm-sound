@@ -44,6 +44,8 @@ sound_server_LDADD += $(SECURITY_LIBS)
 endif
 
 sound_server_DEPENDENCIES = $(srcdir)/../common/libmmfsoundcommon.la
+if !USE_PRELINK
 sound_server_CFLAGS += -fPIC -pie
+endif
 installsounddir = $(prefix)/share/sounds/sound-server
 installsound_DATA = sounds/dock.ogg sounds/undock.ogg sounds/Tizen_HW_Touch.ogg

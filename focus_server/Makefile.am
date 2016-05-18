@@ -30,4 +30,6 @@ focus_server_LDADD += $(SECURITY_LIBS)
 endif
 
 focus_server_DEPENDENCIES = $(srcdir)/../common/libmmfsoundcommon.la
+if !USE_PRELINK
 focus_server_CFLAGS += -fPIC -pie
+endif
