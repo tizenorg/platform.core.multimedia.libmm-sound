@@ -46,6 +46,10 @@
 
 #define PA_READY "/tmp/.pa_ready"
 
+#ifdef TIZEN_TV
+#define SOUND_SERVER_READY "/tmp/.sound_server_ready"
+#endif
+
 #define MMSOUND_ENTER_CRITICAL_SECTION(x_mutex) \
 switch ( pthread_mutex_lock( x_mutex ) ) \
 { \
