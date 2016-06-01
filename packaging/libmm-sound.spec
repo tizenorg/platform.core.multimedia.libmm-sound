@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.10.29
+Version:    0.10.30
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -148,13 +148,11 @@ ln -sf ../focus-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/focu
 %{_libdir}/libmmfbootsound.so.*
 %{_libdir}/libsoundplugintone.so*
 %{_libdir}/libsoundpluginwave.so*
-%{_libdir}/libsoundpluginkeytone.so*
 %if 0%{?tizen_audio_feature_ogg_enable}
 %{_libdir}/libsoundplugintremoloogg.so*
 %endif
 %{_libdir}/soundplugins/libsoundplugintone.so
 %{_libdir}/soundplugins/libsoundpluginwave.so
-%{_libdir}/soundplugins/libsoundpluginkeytone.so
 %if 0%{?tizen_audio_feature_ogg_enable}
 %{_libdir}/soundplugins/libsoundplugintremoloogg.so
 %endif

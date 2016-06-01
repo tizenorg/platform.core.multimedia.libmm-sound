@@ -149,7 +149,6 @@ server/Makefile
 server/plugin/Makefile
 server/plugin/wav/Makefile
 server/plugin/ogg/Makefile
-server/plugin/keytone/Makefile
 server/plugin/tone/Makefile
 focus_server/Makefile
 pkgconfig/Makefile
