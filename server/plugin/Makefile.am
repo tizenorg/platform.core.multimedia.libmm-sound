@@ -1,6 +1,6 @@
 if OGG_SUPPORT
-SUBDIRS = wav keytone tone ogg
+SUBDIRS = wav tone ogg
 else
-SUBDIRS = wav keytone tone
+SUBDIRS = wav tone
 endif
 
