@@ -125,9 +125,7 @@ GThread *g_focus_thread;
 GMainLoop *g_focus_loop;
 focus_sound_info_t g_focus_sound_handle[FOCUS_HANDLE_MAX];
 focus_session_interrupt_info_t g_focus_session_interrupt_info = {NULL, NULL};
-
-/* global variables for device list */
-static pthread_mutex_t g_id_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_index_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 guint g_focus_signal_handle = 0;
 gboolean g_need_emergent_exit = FALSE;
@@ -975,7 +973,6 @@ static gboolean _focus_fd_dispatch(GSource *source,	GSourceFunc callback, gpoint
 	return TRUE;
 }
 
-
 static int _focus_find_index_by_handle(int handle)
 {
 	int i = 0;
@@ -1424,7 +1421,6 @@ int mm_sound_client_get_unique_id(int *id)
 {
 	int ret = MM_ERROR_NONE;
 
-	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_id_mutex, MM_ERROR_SOUND_INTERNAL);
 	debug_fenter();
 
 	if (!id)
@@ -1433,7 +1429,6 @@ int mm_sound_client_get_unique_id(int *id)
 		ret = mm_sound_proxy_get_unique_id(id);
 
 	debug_fleave();
-	MMSOUND_LEAVE_CRITICAL_SECTION(&g_id_mutex);
 
 	return ret;
 }
@@ -1459,7 +1454,9 @@ int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_
 	int ret = MM_ERROR_NONE;
 	int instance;
 	int index = 0;
+
 	debug_fenter();
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_index_mutex, MM_ERROR_SOUND_INTERNAL);
 
 	instance = pid;
 
@@ -1504,8 +1501,9 @@ int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_
 	_focus_init_callback(index, false);
 
 cleanup:
-
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_index_mutex);
 	debug_fleave();
+
 	return ret;
 }
 
@@ -1514,12 +1512,15 @@ int mm_sound_client_unregister_focus(int id)
 	int ret = MM_ERROR_NONE;
 	int instance;
 	int index = -1;
+
 	debug_fenter();
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_index_mutex, MM_ERROR_SOUND_INTERNAL);
 
 	index = _focus_find_index_by_handle(id);
 	if (index == -1) {
 		debug_error("Could not find index");
-		return MM_ERROR_INVALID_ARGUMENT;
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto cleanup;
 	}
 	instance = g_focus_sound_handle[index].focus_tid;
 
@@ -1545,7 +1546,8 @@ int mm_sound_client_unregister_focus(int id)
 	g_focus_sound_handle[index].focus_tid = 0;
 	g_focus_sound_handle[index].handle = 0;
 	g_focus_sound_handle[index].is_used = false;
-
+cleanup:
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_index_mutex);
 	debug_fleave();
 	return ret;
 }
@@ -1558,11 +1560,13 @@ int mm_sound_client_set_focus_reacquisition(int id, bool reacquisition)
 	bool result;
 
 	debug_fenter();
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_index_mutex, MM_ERROR_SOUND_INTERNAL);
 
 	index = _focus_find_index_by_handle(id);
 	if (index == -1) {
 		debug_error("Could not find index");
-		return MM_ERROR_INVALID_ARGUMENT;
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto cleanup;
 	}
 	instance = g_focus_sound_handle[index].focus_tid;
 
@@ -1585,7 +1589,7 @@ int mm_sound_client_set_focus_reacquisition(int id, bool reacquisition)
 	g_focus_sound_handle[index].auto_reacquire = reacquisition;
 
 cleanup:
-
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_index_mutex);
 	debug_fleave();
 	return ret;
 }
@@ -1602,14 +1606,19 @@ int mm_sound_client_get_focus_reacquisition(int id, bool *reacquisition)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_index_mutex, MM_ERROR_SOUND_INTERNAL);
+
 	index = _focus_find_index_by_handle(id);
 	if (index == -1) {
 		debug_error("Could not find index");
-		return MM_ERROR_INVALID_ARGUMENT;
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto cleanup;
 	}
 
 	*reacquisition = g_focus_sound_handle[index].auto_reacquire;
 
+cleanup:
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_index_mutex);
 	debug_fleave();
 	return ret;
 }
@@ -1637,11 +1646,13 @@ int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char
 	int index = -1;
 
 	debug_fenter();
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_index_mutex, MM_ERROR_SOUND_INTERNAL);
 
 	index = _focus_find_index_by_handle(id);
 	if (index == -1) {
 		debug_error("Could not find index");
-		return MM_ERROR_INVALID_ARGUMENT;
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto cleanup;
 	}
 	instance = g_focus_sound_handle[index].focus_tid;
 
@@ -1652,6 +1663,8 @@ int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char
 	else
 		debug_error("[Client] Error occurred : 0x%x \n",ret);
 
+cleanup:
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_index_mutex);
 	debug_fleave();
 	return ret;
 }
@@ -1661,12 +1674,15 @@ int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char
 	int ret = MM_ERROR_NONE;
 	int instance;
 	int index = -1;
+
 	debug_fenter();
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_index_mutex, MM_ERROR_SOUND_INTERNAL);
 
 	index = _focus_find_index_by_handle(id);
 	if (index == -1) {
 		debug_error("Could not find index");
-		return MM_ERROR_INVALID_ARGUMENT;
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto cleanup;
 	}
 	instance = g_focus_sound_handle[index].focus_tid;
 
@@ -1677,7 +1693,8 @@ int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char
 	else
 		debug_error("[Client] Error occurred : 0x%x \n",ret);
 
-
+cleanup:
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_index_mutex);
 	debug_fleave();
 	return ret;
 }
@@ -1687,6 +1704,7 @@ int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e focu
 	int ret = MM_ERROR_NONE;
 	int instance;
 	int index = 0;
+
 	debug_fenter();
 
 	if (!id)
@@ -1699,6 +1717,8 @@ int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e focu
 	ret = mm_sound_proxy_get_unique_id(id);
 	if (ret)
 		return ret;
+
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_index_mutex, MM_ERROR_SOUND_INTERNAL);
 
 	for (index = 0; index < FOCUS_HANDLE_MAX - 1; index++) {
 		if (g_focus_sound_handle[index].is_used == false) {
@@ -1743,6 +1763,7 @@ cleanup:
 		g_focus_sound_handle[index].is_used = false;
 	}
 
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_index_mutex);
 	debug_fleave();
 	return ret;
 }
@@ -1752,11 +1773,13 @@ int mm_sound_client_unset_focus_watch_callback(int id)
 	int ret = MM_ERROR_NONE;
 	int index = -1;
 	debug_fenter();
+	MMSOUND_ENTER_CRITICAL_SECTION_WITH_RETURN(&g_index_mutex, MM_ERROR_SOUND_INTERNAL);
 
 	index = _focus_find_index_by_handle(id);
 	if (index == -1) {
 		debug_error("Could not find index");
-		return MM_ERROR_INVALID_ARGUMENT;
+		ret = MM_ERROR_INVALID_ARGUMENT;
+		goto cleanup;
 	}
 
 	g_mutex_lock(&g_focus_sound_handle[index].focus_lock);
@@ -1776,7 +1799,8 @@ int mm_sound_client_unset_focus_watch_callback(int id)
 	g_focus_sound_handle[index].focus_tid = 0;
 	g_focus_sound_handle[index].handle = 0;
 	g_focus_sound_handle[index].is_used = false;
-
+cleanup:
+	MMSOUND_LEAVE_CRITICAL_SECTION(&g_index_mutex);
 	debug_fleave();
 	return ret;
 }
