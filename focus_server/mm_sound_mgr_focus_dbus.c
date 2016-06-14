@@ -227,7 +227,7 @@ static const char* _convert_error_code(int err_code)
 static int _get_sender_pid(GDBusMethodInvocation* invocation)
 {
 	GVariant* value;
-	guint pid;
+	guint pid = 0;
 	const gchar* sender;
 	GDBusConnection * connection = NULL;
 	GError* err = NULL;

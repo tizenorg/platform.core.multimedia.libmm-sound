@@ -175,7 +175,8 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
     pa_channel_map maps;
     pa_buffer_attr attr;
 
-    int prop_vol_type, prop_gain_type = VOLUME_GAIN_DEFAULT;
+    int prop_vol_type = 0;
+    int prop_gain_type = VOLUME_GAIN_DEFAULT;
 
     int err = MM_ERROR_SOUND_INTERNAL;
     int period_time = PA_SIMPLE_PERIOD_TIME_FOR_MID_LATENCY_MSEC;
@@ -387,7 +388,7 @@ int mm_sound_pa_open(MMSoundHandleMode mode, mm_sound_handle_route_info *route_i
     }
 
     handle = (mm_sound_handle_t*)malloc(sizeof(mm_sound_handle_t));
-
+    memset(handle, 0, sizeof(mm_sound_handle_t));
     handle->mode = mode;
     handle->policy = policy;
     handle->volume_type = prop_vol_type;

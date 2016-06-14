@@ -310,6 +310,7 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 
 				pfd.fd = fd_FOCUS_R;
 				pfd.events = POLLIN;
+				pfd.revents = 0;
 
 				/*********************************************
 				 *
@@ -485,6 +486,7 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 
 	pfd.fd = fd_FOCUS_R;
 	pfd.events = POLLIN;
+	pfd.revents = 0;
 
 	/*********************************************
 	 *

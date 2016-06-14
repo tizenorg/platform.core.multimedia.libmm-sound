@@ -221,7 +221,7 @@ static int mm_sound_mgr_ipc_dbus_send_signal(audio_event_t event, GVariant *para
 static int _get_sender_pid(GDBusMethodInvocation* invocation)
 {
 	GVariant* value;
-	guint pid;
+	guint pid = 0;
 	const gchar* sender;
 	GDBusConnection * connection = NULL;
 	GError* err = NULL;
