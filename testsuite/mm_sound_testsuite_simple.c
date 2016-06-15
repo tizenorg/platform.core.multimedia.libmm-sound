@@ -841,7 +841,7 @@ static void interpret (char *cmd)
 			else if(strncmp(cmd, "as", 2) == 0)
 			{
 				debug_log("stream %s type, %d\n", "media", g_volume_value);
-				ret = mm_sound_play_sound_with_stream_info(g_file_name, "media", -1, mycallback ,"USERDATA", &handle);
+				ret = mm_sound_play_sound_with_stream_info(g_file_name, "media", -1, 1, mycallback ,"USERDATA", &handle);
 				if(ret < 0)
 					debug_log("mm_sound_play_sound() failed with 0x%x\n", ret);
 			}
