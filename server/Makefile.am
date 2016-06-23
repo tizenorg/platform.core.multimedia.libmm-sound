@@ -5,6 +5,9 @@ sound_server_SOURCES = mm_sound_mgr_codec.c \
 						mm_sound_mgr_ipc.c \
 						mm_sound_mgr_ipc_dbus.c \
 						mm_sound_mgr_run.c \
+						mm_sound_mgr_focus.c \
+						mm_sound_mgr_focus_dbus.c \
+						mm_sound_mgr_focus_ipc.c \
 						mm_sound_plugin.c \
 						mm_sound_server.c \
 						mm_sound_thread_pool.c
