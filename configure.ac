@@ -161,7 +161,6 @@ server/plugin/wav/Makefile
 server/plugin/ogg/Makefile
 server/plugin/keytone/Makefile
 server/plugin/tone/Makefile
-focus_server/Makefile
 pkgconfig/Makefile
 pkgconfig/mm-sound.pc
 pkgconfig/mm-keysound.pc

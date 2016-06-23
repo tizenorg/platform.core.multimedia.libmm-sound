@@ -22,7 +22,7 @@
 #define INTERFACE_FOCUS_SERVER "org.tizen.FocusServer1"
 
 /* Introspection data for the service we are exporting */
-  static const gchar introspection_xml[] =
+static const gchar introspection_xml[] =
   "<node>"
   "  <interface name='org.tizen.FocusServer1'>"
   "    <method name='GetUniqueId'>"
@@ -93,7 +93,7 @@
   "    </method>"
   "  </interface>"
   "</node>";
-GDBusConnection* conn_g;
+static GDBusConnection* conn_g;
 
 typedef void (*dbus_method_handler)(GDBusMethodInvocation *invocation);
 typedef int (*dbus_signal_sender)(GDBusConnection *conn, GVariant *parameter);
@@ -122,7 +122,7 @@ static void handle_method_unwatch_focus(GDBusMethodInvocation* invocation);
 /* TODO : generate introspection xml automatically, with these value include argument and reply */
 /* TODO : argument check with these information */
 /* TODO : divide object and interface with features (ex. play, path, device, focus, asm) */
-mm_sound_dbus_method_intf_t methods[AUDIO_METHOD_MAX] = {
+static mm_sound_dbus_method_intf_t methods[AUDIO_METHOD_MAX] = {
 	[AUDIO_METHOD_GET_UNIQUE_ID] = {
 		.info = {
 			.name = "GetUniqueId",

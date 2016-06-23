@@ -26,7 +26,7 @@
 #define PROC_DBUS_METHOD 	"ProcExclude"
 
 /* Introspection data for the service we are exporting */
-  static const gchar introspection_xml[] =
+static const gchar introspection_xml[] =
   "<node>"
   "  <interface name='org.tizen.SoundServer1'>"
   "    <method name='MethodTest1'>"
@@ -99,7 +99,7 @@
   "    </method>"
   "  </interface>"
   "</node>";
-GDBusConnection* conn_g;
+static GDBusConnection* conn_g;
 
 static void handle_method_play_file_start(GDBusMethodInvocation* invocation);
 static void handle_method_play_file_start_with_stream_info(GDBusMethodInvocation* invocation);
@@ -114,7 +114,7 @@ static void handle_method_get_connected_device_list(GDBusMethodInvocation* invoc
 /* TODO : generate introspection xml automatically, with these value include argument and reply */
 /* TODO : argument check with these information */
 /* TODO : divide object and interface with features (ex. play, path, device) */
-mm_sound_dbus_method_intf_t methods[AUDIO_METHOD_MAX] = {
+static mm_sound_dbus_method_intf_t methods[AUDIO_METHOD_MAX] = {
 	[AUDIO_METHOD_TEST] = {
 		.info = {
 			.name = "MethodTest1",
