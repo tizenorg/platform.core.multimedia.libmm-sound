@@ -38,6 +38,8 @@
 #include "include/mm_sound_mgr_run.h"
 #include "include/mm_sound_mgr_codec.h"
 #include "include/mm_sound_mgr_ipc_dbus.h"
+#include "include/mm_sound_mgr_focus.h"
+#include "include/mm_sound_mgr_focus_dbus.h"
 
 #include "../config.h" /* for PLUGIN_DIR */
 
@@ -151,6 +153,8 @@ int main(int argc, char **argv)
 		MMSoundMgrRunInit(serveropt.plugdir);
 		MMSoundMgrCodecInit(serveropt.plugdir);
 		MMSoundMgrDbusInit();
+		MMSoundMgrFocusDbusInit();
+		MMSoundMgrFocusInit();
 	}
 
 	debug_warning("sound_server [%d] initialization complete...now, start running!!\n", getpid());

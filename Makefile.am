@@ -2,8 +2,7 @@ SUBDIRS = common \
 		pkgconfig \
 		. \
 		server \
-		testsuite \
-		focus_server
+		testsuite
 
 lib_LTLIBRARIES = libmmfsound.la
 
