@@ -48,7 +48,9 @@ int _MMSoundMgrIpcPlayFile(char* filename, int tone, int repeat, int volume, int
 int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index);
 int _MMSoundMgrIpcStop(int handle);
+#ifdef FOCUS_INTEGRATION
 int _MMSoundMgrIpcClearFocus(int pid);
+#endif
 int _MMSoundMgrIpcPlayDTMF(int tone, int repeat, int volume, int volume_config,
 			   int session_type, int session_options, int client_pid,
 			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index);

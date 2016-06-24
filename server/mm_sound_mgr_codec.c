@@ -43,6 +43,8 @@
 
 #define _ENABLE_KEYTONE	/* Temporal test code */
 
+/* #define FOCUS_INTEGRATION */
+
 typedef struct {
 	int (*callback)(int, void *, void *, int);	/* msg_type(pid) client callback & client data info */
 	void *param;
@@ -55,10 +57,12 @@ typedef struct {
 	int status;
 	int session_type;
 	int session_options;
+#ifdef FOCUS_INTEGRATION
 	int focus_handle;
 	int focus_wcb_id;
 	unsigned int subs_id;
 	mm_sound_focus_type_e current_focus_type;
+#endif
 
 	bool enable_session;
  } __mmsound_mgr_codec_handle_t;
@@ -76,6 +80,8 @@ static int _MMSoundMgrCodecRegisterInterface(MMSoundPluginType *plugin);
 #define STATUS_SOUND 3
 
 #define SOUND_SLOT_START 0
+
+#ifdef FOCUS_INTEGRATION
 
 void sound_codec_focus_callback(int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e focus_state, const char *reason_for_change, const char *additional_info, void *user_data)
 {
@@ -123,6 +129,7 @@ void sound_codec_focus_watch_callback(int id, mm_sound_focus_type_e focus_type, 
 	return;
 }
 
+
 void sound_codec_device_connected_callback(MMSoundDevice_t device, bool is_connected, void *user_data)
 {
 	int slotid = (int)user_data;
@@ -157,6 +164,7 @@ void sound_codec_device_connected_callback(MMSoundDevice_t device, bool is_conne
 		}
 	}
 }
+#endif
 
 int MMSoundMgrCodecInit(const char *targetdir)
 {
@@ -218,7 +226,9 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 	mmsound_codec_info_t info;
 	mmsound_codec_param_t codec_param;
 	int err = MM_ERROR_NONE;
+#ifdef FOCUS_INTEGRATION
 	int need_focus_unregister = 0;
+#endif
 
 #ifdef DEBUG_DETAIL
 	debug_enter("\n");
@@ -267,6 +277,7 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 	debug_msg("After Slot_mutex LOCK\n");
 #endif
 
+#ifdef FOCUS_INTEGRATION
 	/*
 	 * Register FOCUS here
 	 */
@@ -318,14 +329,17 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 		}
 	}
 	//
+#endif
 
 	/* Codec id WAV or MP3 */
 	g_slots[*slotid].pluginid = count;
 	g_slots[*slotid].param    = param->param;		/* This arg is used callback data */
 	g_slots[*slotid].session_type = param->session_type;
 	g_slots[*slotid].session_options = param->session_options;
+#ifdef FOCUS_INTEGRATION
 	g_slots[*slotid].focus_handle = param->focus_handle;
 	g_slots[*slotid].focus_wcb_id = param->focus_wcb_id;
+#endif
 	g_slots[*slotid].enable_session = true;
 	g_slots[*slotid].pid = (int)param->param;
 
@@ -339,9 +353,11 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 		g_slots[*slotid].status = STATUS_IDLE;
 		pthread_mutex_unlock(&g_slot_mutex);
 		debug_warning("After Slot_mutex UNLOCK\n");
+#ifdef FOCUS_INTEGRATION
 		if (param->focus_handle) {
 			need_focus_unregister = 1;
 		}
+#endif
 		goto cleanup;
 	}
 
@@ -349,9 +365,11 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 	if (err != MM_ERROR_NONE) {
 		debug_error("Fail to play : 0x%08X\n", err);
 		g_plugins[g_slots[*slotid].pluginid].Destroy(g_slots[*slotid].plughandle);
+#ifdef FOCUS_INTEGRATION
 		if (param->focus_handle) {
 			need_focus_unregister = 1;
 		}
+#endif
 	}
 
 	pthread_mutex_unlock(&g_slot_mutex);
@@ -360,6 +378,7 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 #endif
 
 cleanup:
+#ifdef FOCUS_INTEGRATION
 	if(param->session_type != MM_SESSION_TYPE_CALL &&
 		param->session_type != MM_SESSION_TYPE_VIDEOCALL &&
 		param->session_type != MM_SESSION_TYPE_VOIP &&
@@ -381,6 +400,7 @@ cleanup:
 			}
 		}
 	}
+#endif
 
 #ifdef DEBUG_DETAIL
 	debug_leave("\n");
@@ -483,7 +503,9 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 	mmsound_codec_info_t info;
 	mmsound_codec_param_t codec_param;
 	int err = MM_ERROR_NONE;
+#ifdef FOCUS_INTEGRATION
 	int need_focus_unregister = 0;
+#endif
 
 #ifdef DEBUG_DETAIL
 	debug_enter("\n");
@@ -533,6 +555,7 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 	debug_msg("After Slot_mutex LOCK\n");
 #endif
 
+#ifdef FOCUS_INTEGRATION
 	//
 	/*
 	 * Register FOCUS here
@@ -584,13 +607,16 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 			}
 		}
 	}
+#endif
 
 	g_slots[*slotid].pluginid = count;
 	g_slots[*slotid].param    = param->param;		/* This arg is used callback data */
 	g_slots[*slotid].session_type = param->session_type;
 	g_slots[*slotid].session_options = param->session_options;
+#ifdef FOCUS_INTEGRATION
 	g_slots[*slotid].focus_handle= param->focus_handle;
 	g_slots[*slotid].focus_wcb_id= param->focus_wcb_id;
+#endif
 	g_slots[*slotid].enable_session = param->enable_session;
 	g_slots[*slotid].pid = (int)param->param;
 
@@ -605,7 +631,9 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 		g_slots[*slotid].status = STATUS_IDLE;
 		pthread_mutex_unlock(&g_slot_mutex);
 		debug_warning("After Slot_mutex UNLOCK\n");
+#ifdef FOCUS_INTEGRATION
 		need_focus_unregister = 1;
+#endif
 		goto cleanup;
 	}
 
@@ -613,7 +641,9 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 	if (err != MM_ERROR_NONE) {
 		debug_error("Fail to play : 0x%08X\n", err);
 		g_plugins[g_slots[*slotid].pluginid].Destroy(g_slots[*slotid].plughandle);
+#ifdef FOCUS_INTEGRATION
 		need_focus_unregister = 1;
+#endif
 	}
 
 	pthread_mutex_unlock(&g_slot_mutex);
@@ -624,6 +654,7 @@ int MMSoundMgrCodecPlayDtmf(int *slotid, const mmsound_mgr_codec_param_t *param)
 #endif
 
 cleanup:
+#ifdef FOCUS_INTEGRATION
 	if (param->session_type != MM_SESSION_TYPE_CALL &&
 		param->session_type != MM_SESSION_TYPE_VIDEOCALL &&
 		param->session_type != MM_SESSION_TYPE_VOIP &&
@@ -645,6 +676,7 @@ cleanup:
 			}
 		}
 	}
+#endif
 
 #ifdef DEBUG_DETAIL
 	debug_leave("\n");
@@ -785,7 +817,7 @@ cleanup:
 
 	return err;
 }
-
+#ifdef FOCUS_INTEGRATION
 int MMSoundMgrCodecClearFocus(int pid)
 {
 	int err = MM_ERROR_NONE;
@@ -837,7 +869,7 @@ cleanup:
 
 	return err;
 }
-
+#endif
 
 static int _MMSoundMgrCodecStopCallback(int param)
 {
@@ -853,6 +885,7 @@ static int _MMSoundMgrCodecStopCallback(int param)
 	pthread_mutex_lock(&g_slot_mutex);
 	debug_msg("[CODEC MGR] Slot_mutex lock done\n");
 
+#ifdef FOCUS_INTEGRATION
 	/*
 	 * Unregister FOCUS here
 	 */
@@ -888,6 +921,7 @@ static int _MMSoundMgrCodecStopCallback(int param)
 		if(mm_sound_remove_device_connected_callback(g_slots[param].subs_id) != MM_ERROR_NONE)
 			debug_error("mm_sound_remove_device_connected_callback() failed");
 	}
+#endif
 
 	__mm_sound_mgr_ipc_notify_play_file_end(param);
 
