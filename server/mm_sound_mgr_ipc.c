@@ -117,6 +117,7 @@ int _MMSoundMgrIpcStop(int handle)
 	return MM_ERROR_NONE;
 }
 
+#ifdef FOCUS_INTEGRATION
 int _MMSoundMgrIpcClearFocus(int pid)
 {
 	int ret = MM_ERROR_NONE;
@@ -130,6 +131,7 @@ int _MMSoundMgrIpcClearFocus(int pid)
 
 	return MM_ERROR_NONE;
 }
+#endif
 
 int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index)

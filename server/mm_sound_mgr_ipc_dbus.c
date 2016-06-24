@@ -68,9 +68,11 @@ static const gchar introspection_xml[] =
   "    <method name='PlayFileStop'>"
   "      <arg type='i' name='handle' direction='in'/>"
   "    </method>"
+#ifdef FOCUS_INTEGRATION
   "    <method name='ClearFocus'>"
   "      <arg type='i' name='pid' direction='in'/>"
   "    </method>"
+#endif
   "    <method name='PlayDTMF'>"
   "      <arg type='i' name='tone' direction='in'/>"
   "      <arg type='i' name='repeat' direction='in'/>"
@@ -106,7 +108,9 @@ static void handle_method_play_file_start_with_stream_info(GDBusMethodInvocation
 static void handle_method_play_file_stop(GDBusMethodInvocation* invocation);
 static void handle_method_play_dtmf(GDBusMethodInvocation* invocation);
 static void handle_method_play_dtmf_with_stream_info(GDBusMethodInvocation* invocation);
+#ifdef FOCUS_INTEGRATION
 static void handle_method_clear_focus(GDBusMethodInvocation* invocation);
+#endif
 static void handle_method_test(GDBusMethodInvocation* invocation);
 static void handle_method_get_connected_device_list(GDBusMethodInvocation* invocation);
 
@@ -139,12 +143,14 @@ static mm_sound_dbus_method_intf_t methods[AUDIO_METHOD_MAX] = {
 		},
 		.handler = handle_method_play_file_stop
 	},
+#ifdef FOCUS_INTEGRATION
 	[AUDIO_METHOD_CLEAR_FOCUS] = {
 		.info = {
 			.name = "ClearFocus",
 		},
 		.handler = handle_method_clear_focus
 	},
+#endif
 	[AUDIO_METHOD_PLAY_DTMF] = {
 		.info = {
 			.name = "PlayDTMF",
@@ -455,6 +461,7 @@ send_reply:
 	debug_fleave();
 }
 
+#ifdef FOCUS_INTEGRATION
 static void handle_method_clear_focus(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
@@ -481,6 +488,7 @@ send_reply:
 
 	debug_fleave();
 }
+#endif
 
 static void handle_method_get_connected_device_list(GDBusMethodInvocation* invocation)
 {
