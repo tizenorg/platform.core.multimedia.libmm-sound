@@ -784,7 +784,6 @@ int __mm_sound_mgr_ipc_dbus_get_stream_list(stream_list_t* stream_list)
 			debug_log ("name : %s", name);
 			stream_list->stream_types[i++] = strdup(name);
 		}
-		g_variant_iter_free (&iter);
 		g_variant_unref (item);
 		g_variant_unref (child);
 
@@ -797,7 +796,6 @@ int __mm_sound_mgr_ipc_dbus_get_stream_list(stream_list_t* stream_list)
 			debug_log ("priority : %d", priority);
 			stream_list->priorities[i++] = priority;
 		}
-		g_variant_iter_free (&iter);
 		g_variant_unref (item);
 		g_variant_unref (child);
 
