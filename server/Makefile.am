@@ -1,7 +1,7 @@
 SUBDIRS = plugin
 
-bin_PROGRAMS = sound_server
-sound_server_SOURCES = mm_sound_mgr_codec.c \
+bin_PROGRAMS = focus_server
+focus_server_SOURCES = mm_sound_mgr_codec.c \
 						mm_sound_mgr_ipc.c \
 						mm_sound_mgr_ipc_dbus.c \
 						mm_sound_mgr_run.c \
@@ -12,7 +12,7 @@ sound_server_SOURCES = mm_sound_mgr_codec.c \
 						mm_sound_server.c \
 						mm_sound_thread_pool.c
 
-sound_server_CFLAGS = -I$(srcdir)/../include \
+focus_server_CFLAGS = -I$(srcdir)/../include \
 					  -I$(srcdir)/include \
 					  $(MMCOMMON_CFLAGS) \
 					  $(MMLOGSVR_CFLAGS) \
@@ -25,7 +25,7 @@ sound_server_CFLAGS = -I$(srcdir)/../include \
 			  		  $(GLIB2_CFLAGS) \
 			  		  $(GIO_CFLAGS)
 
-sound_server_LDADD = $(MMLOGSVR_LIBS) \
+focus_server_LDADD = $(MMLOGSVR_LIBS) \
 		     -ldl -lrt \
 		     $(MMCOMMON_LIBS) \
 		     $(MMSESSION_LIBS) \
@@ -37,18 +37,18 @@ sound_server_LDADD = $(MMLOGSVR_LIBS) \
 		     $(srcdir)/../common/libmmfsoundcommon.la
 
 if USE_PULSE
-sound_server_CFLAGS += -DPULSE_CLIENT $(PA_CFLAGS) $(PASIMPLE_CFLAGS)
-sound_server_LDADD += $(PA_LIBS) $(PASIMPLE_CFLAGS)
+focus_server_CFLAGS += -DPULSE_CLIENT $(PA_CFLAGS) $(PASIMPLE_CFLAGS)
+focus_server_LDADD += $(PA_LIBS) $(PASIMPLE_CFLAGS)
 endif
 
 if USE_SECURITY
-sound_server_CFLAGS += $(SECURITY_CFLAGS) -DUSE_SECURITY
-sound_server_LDADD += $(SECURITY_LIBS)
+focus_server_CFLAGS += $(SECURITY_CFLAGS) -DUSE_SECURITY
+focus_server_LDADD += $(SECURITY_LIBS)
 endif
 
-sound_server_DEPENDENCIES = $(srcdir)/../common/libmmfsoundcommon.la
+focus_server_DEPENDENCIES = $(srcdir)/../common/libmmfsoundcommon.la
 if !USE_PRELINK
-sound_server_CFLAGS += -fPIC -pie
+focus_server_CFLAGS += -fPIC -pie
 endif
 installsounddir = $(prefix)/share/sounds/sound-server
-installsound_DATA = sounds/dock.ogg sounds/undock.ogg sounds/Tizen_HW_Touch.ogg
+installsound_DATA = sounds/Tizen_HW_Touch.ogg
