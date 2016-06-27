@@ -92,7 +92,7 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
        --enable-ogg \
        --with-plugindir=%{_libdir}/soundplugins/ \
 %endif
-%if %{with TIZEN_PRODUCT_TV}
+%if "%{?TIZEN_PRODUCT_TV}" == "1"
        --enable-prelink \
 %endif
 %ifarch %{arm}
