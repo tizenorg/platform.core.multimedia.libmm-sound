@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.10.36
+Version:    0.10.37
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -8,6 +8,7 @@ Source0:    %{name}-%{version}.tar.gz
 Source1:    sound-server.service
 Source2:    sound-server.path
 Source3:    sound-server.conf
+Source4:    focus-server.conf
 Requires: security-config
 %if "%{?tizen_profile_name}" == "tv"
 Source7:    sound-server-tv.service
@@ -106,6 +107,7 @@ cp LICENSE.APLv2 %{buildroot}/usr/share/license/%{name}
 cp LICENSE.APLv2 %{buildroot}/usr/share/license/libmm-sound-tool
 mkdir -p %{buildroot}/etc/dbus-1/system.d/
 cp %{SOURCE3} %{buildroot}/etc/dbus-1/system.d/sound-server.conf
+cp %{SOURCE4} %{buildroot}/etc/dbus-1/system.d/focus-server.conf
 %if "%{?tizen_profile_name}" == "tv"
 cp %{SOURCE7} %{SOURCE1}
 %endif
@@ -161,6 +163,7 @@ ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/soun
 %{_datadir}/license/libmm-sound-tool
 /usr/share/sounds/sound-server/*
 /etc/dbus-1/system.d/sound-server.conf
+/etc/dbus-1/system.d/focus-server.conf
 
 %files devel
 %defattr(-,root,root,-)

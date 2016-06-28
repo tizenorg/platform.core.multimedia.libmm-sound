@@ -51,4 +51,4 @@ if !USE_PRELINK
 sound_server_CFLAGS += -fPIC -pie
 endif
 installsounddir = $(prefix)/share/sounds/sound-server
-installsound_DATA = sounds/dock.ogg sounds/undock.ogg sounds/Tizen_HW_Touch.ogg
+installsound_DATA = sounds/Tizen_HW_Touch.ogg
