@@ -1,6 +1,6 @@
 Name:       libmm-sound
 Summary:    MMSound Package contains client lib and sound_server binary
-Version:    0.10.37
+Version:    0.10.38
 Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
@@ -134,7 +134,7 @@ ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/soun
 %files
 %manifest libmm-sound.manifest
 %defattr(-,root,root,-)
-%caps(cap_chown,cap_dac_override,cap_fowner,cap_mac_override,cap_lease=eip) %{_bindir}/focus_server
+%caps(cap_chown,cap_dac_override,cap_fowner,cap_lease=eip) %{_bindir}/focus_server
 %{_libdir}/libmmfsound.so.*
 %{_libdir}/libmmfsoundcommon.so.*
 %{_libdir}/libmmfkeysound.so.*
