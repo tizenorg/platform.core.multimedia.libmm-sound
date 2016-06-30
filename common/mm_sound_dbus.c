@@ -538,6 +538,7 @@ int mm_sound_dbus_emit_signal(audio_provider_t provider, audio_event_t event, GV
 						  param, &err);
 	if (!dbus_ret) {
 		debug_error ("g_dbus_connection_emit_signal() error (%s)", err->message);
+		g_error_free(err);
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 	g_dbus_connection_flush_sync(conn, NULL, NULL);

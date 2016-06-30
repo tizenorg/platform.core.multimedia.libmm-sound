@@ -36,7 +36,7 @@ struct callback_data {
 static int _notify_subscription(audio_event_t event, uint32_t subs_id, gboolean subscribe)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL;
+	GVariant *params = NULL;
 	const char *event_name = NULL;
 
 	debug_fenter();
@@ -62,7 +62,7 @@ static int _notify_subscription(audio_event_t event, uint32_t subs_id, gboolean 
 static int _notify_signal_handled(audio_event_t event, uint32_t event_id, uint32_t subs_id, GVariant *signal_params)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL;
+	GVariant *params = NULL;
 	const char *event_name = NULL;
 
 	debug_fenter();
@@ -198,6 +198,8 @@ int mm_sound_proxy_test(int a, int b, int *get)
 	}
 
 cleanup:
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -209,7 +211,7 @@ int mm_sound_proxy_get_current_connected_device_list(int device_flags, GList** d
 {
 	int ret = MM_ERROR_NONE;
 	GVariant *result = NULL, *child = NULL;
-	GVariant *params;
+	GVariant *params = NULL;
 	GVariantIter iter;
 	mm_sound_device_t* device_item;
 	const gchar *device_name_tmp = NULL, *device_type_tmp = NULL;
@@ -251,6 +253,8 @@ int mm_sound_proxy_get_current_connected_device_list(int device_flags, GList** d
 	}
 
 cleanup:
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -362,6 +366,8 @@ int mm_sound_proxy_set_volume_by_type(const char *volume_type, const unsigned vo
 	}
 
 cleanup:
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -408,7 +414,7 @@ int mm_sound_proxy_play_tone(int tone, int repeat, int volume, int volume_config
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 	gboolean _enable_session = enable_session;
 
 	if (!codechandle) {
@@ -438,6 +444,8 @@ int mm_sound_proxy_play_tone(int tone, int repeat, int volume, int volume_config
 	}
 
 cleanup:
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -451,7 +459,7 @@ int mm_sound_proxy_play_tone_with_stream_info(int client_pid, int tone, char *st
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -479,6 +487,8 @@ int mm_sound_proxy_play_tone_with_stream_info(int client_pid, int tone, char *st
 	}
 
 cleanup:
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -494,7 +504,7 @@ int mm_sound_proxy_play_sound(const char* filename, int tone, int repeat, int vo
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 	gboolean _enable_session = enable_session;
 
 	if (!filename || !codechandle) {
@@ -524,6 +534,8 @@ int mm_sound_proxy_play_sound(const char* filename, int tone, int repeat, int vo
 	}
 
 cleanup:
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -536,7 +548,7 @@ int mm_sound_proxy_play_sound_with_stream_info(const char* filename, int repeat,
 {
 	int ret = MM_ERROR_NONE;
 	int handle = 0;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	if (!filename || !codechandle) {
 		debug_error("Param for play is null");
@@ -565,6 +577,8 @@ int mm_sound_proxy_play_sound_with_stream_info(const char* filename, int repeat,
 	}
 
 cleanup:
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -648,7 +662,7 @@ int mm_sound_proxy_remove_play_sound_end_callback(unsigned subs_id)
 int mm_sound_proxy_emergent_exit(int exit_pid)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL;
+	GVariant *params = NULL;
 
 	debug_fenter();
 
@@ -664,6 +678,8 @@ int mm_sound_proxy_emergent_exit(int exit_pid)
 	}
 
 cleanup:
+	if (params)
+		g_variant_unref(params);
 
 	debug_fleave();
 	return ret;
@@ -711,7 +727,7 @@ static GVariant* _get_cookie_variant ()
 	for (i = 0; i < COOKIE_SIZE; i++)
 		g_variant_builder_add(&builder, "y", cookie[i]);
 
-	free (cookie);
+	free(cookie);
 	return g_variant_builder_end(&builder);
 }
 
@@ -745,7 +761,7 @@ int mm_sound_proxy_get_unique_id(int *id)
 int mm_sound_proxy_register_focus(int id, int instance, const char *stream_type, mm_sound_focus_changed_cb callback, bool is_for_session, void* userdata)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 #ifdef SUPPORT_CONTAINER
 	char container[128];
 #endif
@@ -776,6 +792,9 @@ int mm_sound_proxy_register_focus(int id, int instance, const char *stream_type,
 
 	if (ret != MM_ERROR_NONE)
 		g_variant_get(result, "(i)",  &ret);
+
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -788,7 +807,7 @@ int mm_sound_proxy_register_focus(int id, int instance, const char *stream_type,
 int mm_sound_proxy_unregister_focus(int instance, int id, bool is_for_session)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -803,6 +822,9 @@ int mm_sound_proxy_unregister_focus(int instance, int id, bool is_for_session)
 
 	if (ret != MM_ERROR_NONE)
 		g_variant_get(result, "(i)",  &ret);
+
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -814,7 +836,7 @@ int mm_sound_proxy_unregister_focus(int instance, int id, bool is_for_session)
 int mm_sound_proxy_set_foucs_reacquisition(int instance, int id, bool reacquisition)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -829,6 +851,9 @@ int mm_sound_proxy_set_foucs_reacquisition(int instance, int id, bool reacquisit
 
 	if (ret != MM_ERROR_NONE)
 		g_variant_get(result, "(i)",  &ret);
+
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -839,7 +864,7 @@ int mm_sound_proxy_set_foucs_reacquisition(int instance, int id, bool reacquisit
 int mm_sound_proxy_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **additional_info)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -857,6 +882,9 @@ int mm_sound_proxy_get_acquired_focus_stream_type(int focus_type, char **stream_
 		debug_error("dbus get stream type of acquired focus failed");
 	}
 
+	if (params)
+		g_variant_unref(params);
+
 	debug_fleave();
 	return ret;
 }
@@ -864,7 +892,7 @@ int mm_sound_proxy_get_acquired_focus_stream_type(int focus_type, char **stream_
 int mm_sound_proxy_acquire_focus(int instance, int id, mm_sound_focus_type_e type, const char *option, bool is_for_session)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -879,6 +907,9 @@ int mm_sound_proxy_acquire_focus(int instance, int id, mm_sound_focus_type_e typ
 
 	if (ret != MM_ERROR_NONE)
 		g_variant_get(result, "(i)",  &ret);
+
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -889,7 +920,7 @@ int mm_sound_proxy_acquire_focus(int instance, int id, mm_sound_focus_type_e typ
 int mm_sound_proxy_release_focus(int instance, int id, mm_sound_focus_type_e type, const char *option, bool is_for_session)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -904,6 +935,9 @@ int mm_sound_proxy_release_focus(int instance, int id, mm_sound_focus_type_e typ
 
 	if (ret != MM_ERROR_NONE)
 		g_variant_get(result, "(i)",  &ret);
+
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
@@ -914,7 +948,7 @@ int mm_sound_proxy_release_focus(int instance, int id, mm_sound_focus_type_e typ
 int mm_sound_proxy_set_focus_watch_callback(int instance, int handle, mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, bool is_for_session, void* userdata)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 #ifdef SUPPORT_CONTAINER
 	char container[128];
 #endif
@@ -943,6 +977,9 @@ int mm_sound_proxy_set_focus_watch_callback(int instance, int handle, mm_sound_f
 
 	if (ret != MM_ERROR_NONE)
 		g_variant_get(result, "(i)",  &ret);
+
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 	debug_fleave();
@@ -954,7 +991,7 @@ int mm_sound_proxy_set_focus_watch_callback(int instance, int handle, mm_sound_f
 int mm_sound_proxy_unset_focus_watch_callback(int focus_tid, int handle, bool is_for_session)
 {
 	int ret = MM_ERROR_NONE;
-	GVariant* params = NULL, *result = NULL;
+	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
@@ -968,6 +1005,9 @@ int mm_sound_proxy_unset_focus_watch_callback(int focus_tid, int handle, bool is
 	}
 	if (ret != MM_ERROR_NONE)
 		g_variant_get(result, "(i)",  &ret);
+
+	if (params)
+		g_variant_unref(params);
 	if (result)
 		g_variant_unref(result);
 
