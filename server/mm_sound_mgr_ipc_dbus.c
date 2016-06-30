@@ -269,7 +269,7 @@ static void handle_method_test(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
 	int val = 0, val2 = 0;
-	GVariant* params = NULL;
+	GVariant *params = NULL;
 
 	debug_fenter();
 

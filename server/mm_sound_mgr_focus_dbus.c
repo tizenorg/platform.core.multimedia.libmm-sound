@@ -304,19 +304,19 @@ static void handle_method_register_focus(GDBusMethodInvocation* invocation)
 
 #ifdef SUPPORT_CONTAINER
 #ifdef USE_SECURITY
-	g_variant_get(params, "(@ayiisb)", &cookie_data, &container_pid, &handle_id, &stream_type, &is_for_session);
+	g_variant_get(params, "(@ayii&sb)", &cookie_data, &container_pid, &handle_id, &stream_type, &is_for_session);
 	container = _get_container_from_cookie(cookie_data);
 	ret = __mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, is_for_session, container, container_pid);
 
 	if (container)
 		free(container);
 #else /* USE_SECURITY */
-	g_variant_get(params, "(siisb)", &container, &container_pid, &handle_id, &stream_type, &is_for_session);
+	g_variant_get(params, "(&sii&sb)", &container, &container_pid, &handle_id, &stream_type, &is_for_session);
 	ret = __mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, is_for_session, container, container_pid);
 
 #endif /* USE_SECURITY */
 #else /* SUPPORT_CONTAINER */
-	g_variant_get(params, "(iisb)", &pid, &handle_id, &stream_type, &is_for_session);
+	g_variant_get(params, "(ii&sb)", &pid, &handle_id, &stream_type, &is_for_session);
 	ret = __mm_sound_mgr_focus_ipc_register_focus(_get_sender_pid(invocation), handle_id, stream_type, is_for_session);
 
 #endif /* SUPPORT_CONTAINER */
@@ -507,7 +507,7 @@ static void handle_method_watch_focus(GDBusMethodInvocation* invocation)
 	if (container)
 		free(container);
 #else /* USE_SECURITY */
-	g_variant_get(params, "(siiib)", &container, &container_pid, &handle_id, &focus_type, &is_for_session);
+	g_variant_get(params, "(&siiib)", &container, &container_pid, &handle_id, &focus_type, &is_for_session);
 	ret = __mm_sound_mgr_focus_ipc_watch_focus(_get_sender_pid(invocation), handle_id, focus_type, is_for_session, container, container_pid);
 
 #endif /* USE_SECURITY */
@@ -760,7 +760,7 @@ int MMSoundMgrFocusDbusInit(void)
 {
 	debug_enter();
 
-	introspection_data = g_dbus_node_info_new_for_xml (introspection_xml, NULL);
+	introspection_data = g_dbus_node_info_new_for_xml(introspection_xml, NULL);
 	if (!introspection_data)
 		return MM_ERROR_SOUND_INTERNAL;
 
