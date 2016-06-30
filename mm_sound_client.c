@@ -1067,7 +1067,7 @@ static gboolean _focus_callback_handler(gpointer d)
 	return TRUE;
 }
 
-static gboolean _focus_watch_callback_handler( gpointer d)
+static gboolean _focus_watch_callback_handler(gpointer d)
 {
 	GPollFD *data = (GPollFD*)d;
 	int count;
@@ -1118,7 +1118,6 @@ static gboolean _focus_watch_callback_handler( gpointer d)
 		}
 
 #ifdef CONFIG_ENABLE_RETCB
-
 			int rett = 0;
 			int tmpfd = -1;
 			int buf = -1;
