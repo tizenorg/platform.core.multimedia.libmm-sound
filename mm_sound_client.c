@@ -1121,7 +1121,7 @@ static gboolean _focus_watch_callback_handler(gpointer d)
 			int rett = 0;
 			int tmpfd = -1;
 			int buf = -1;
-			char *filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", g_focus_sound_handle[focus_index].focus_tid);
+			char *filename2 = g_strdup_printf("/tmp/FOCUS.%d.%d.wchr", g_focus_sound_handle[focus_index].focus_tid, cb_data.handle);
 			tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
 			if (tmpfd < 0) {
 				char str_error[256];
@@ -1158,7 +1158,7 @@ static void _focus_open_callback(int index, bool is_for_watching)
 	debug_fenter();
 
 	if (is_for_watching) {
-		filename = g_strdup_printf("/tmp/FOCUS.%d.wch", g_focus_sound_handle[index].focus_tid);
+		filename = g_strdup_printf("/tmp/FOCUS.%d.%d.wch", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	} else {
 		filename = g_strdup_printf("/tmp/FOCUS.%d.%d", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	}
@@ -1167,7 +1167,7 @@ static void _focus_open_callback(int index, bool is_for_watching)
 		debug_error("mknod() failure, errno(%d)", errno);
 	}
 	umask(pre_mask);
-	g_focus_sound_handle[index].focus_fd = open( filename, O_RDWR|O_NONBLOCK);
+	g_focus_sound_handle[index].focus_fd = open(filename, O_RDWR|O_NONBLOCK);
 	if (g_focus_sound_handle[index].focus_fd == -1) {
 		debug_error("Open fail : index(%d), file open error(%d)", index, errno);
 	} else {
@@ -1180,7 +1180,7 @@ static void _focus_open_callback(int index, bool is_for_watching)
 	char *filename2;
 
 	if (is_for_watching) {
-		filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", g_focus_sound_handle[index].focus_tid);
+		filename2 = g_strdup_printf("/tmp/FOCUS.%d.%d.wchr", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	} else {
 		filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	}
@@ -1198,61 +1198,43 @@ static void _focus_open_callback(int index, bool is_for_watching)
 
 void _focus_close_callback(int index, bool is_for_watching)
 {
+	char *filename = NULL;
+
 	debug_fenter();
 
 	if (g_focus_sound_handle[index].focus_fd < 0) {
-		debug_error("Close fail : fd error.");
+		debug_error("Close fail : index(%d)", index);
 	} else {
-		char *filename;
-		if (is_for_watching) {
-			filename = g_strdup_printf("/tmp/FOCUS.%d.wch", g_focus_sound_handle[index].focus_tid);
-		} else {
-			filename = g_strdup_printf("/tmp/FOCUS.%d.%d", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
-		}
 		close(g_focus_sound_handle[index].focus_fd);
-		if (remove(filename)) {
-			debug_error("remove() failure, filename(%s), errno(%d)", filename, errno);
-		}
-		debug_log("Close Sucess : index(%d), filename(%s)", index, filename);
-		g_free(filename);
-		filename = NULL;
+		debug_log("Close Sucess : index(%d)", index);
 	}
+
+	if (is_for_watching) {
+		filename = g_strdup_printf("/tmp/FOCUS.%d.%d.wch", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
+	} else {
+		filename = g_strdup_printf("/tmp/FOCUS.%d.%d", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
+	}
+	if (remove(filename)) {
+		debug_warning("remove(%s) failure (focus_server probably removed it in advance), errno(%d)", filename, errno);
+	}
+	g_free(filename);
+	filename = NULL;
 
 #ifdef CONFIG_ENABLE_RETCB
 	char *filename2;
 
 	if (is_for_watching) {
-		filename2 = g_strdup_printf("/tmp/FOCUS.%d.wchr", g_focus_sound_handle[index].focus_tid);
+		filename2 = g_strdup_printf("/tmp/FOCUS.%d.%d.wchr", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	} else {
 		filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", g_focus_sound_handle[index].focus_tid, g_focus_sound_handle[index].handle);
 	}
-
-	/* Defensive code - wait until callback timeout although callback is removed */
-	int buf = MM_ERROR_NONE; //no need to specify cb result to server, just notice if the client got the callback properly or not
-	int tmpfd = -1;
-	char str_error[256];
-
-	tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
-	if (tmpfd < 0) {
-		strerror_r(errno, str_error, sizeof(str_error));
-		debug_warning("could not open file(%s) (may server close it first), tid(%d) fd(%d) %s errno=%d(%s)",
-			filename2, g_focus_sound_handle[index].focus_tid, tmpfd, filename2, errno, str_error);
-	} else {
-		ssize_t written;
-		debug_msg("write MM_ERROR_NONE(tid:%d) for waiting server", g_focus_sound_handle[index].focus_tid);
-		written = write(tmpfd, &buf, sizeof(buf));
-		if (written == -1) {
-		    strerror_r(errno, str_error, sizeof(str_error));
-		    debug_warning("write failed, %s", str_error);
-		}
-		close(tmpfd);
-	}
-
 	if (remove(filename2)) {
-		debug_error("remove() failure, filename(%s), errno(%d)", filename2, errno);
+		debug_warning("remove(%s) failure (focus_server probably removed it in advance), errno(%d)", filename2, errno);
 	}
 	g_free(filename2);
 	filename2 = NULL;
+
+	debug_fleave();
 #endif
 
 }
@@ -1261,7 +1243,7 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 {
 	GSource* g_src = NULL;
 	GSourceFuncs *g_src_funcs = NULL;		/* handler function */
-	guint gsource_handle;
+	guint g_src_id;
 	GPollFD *g_poll_fd = NULL;			/* file descriptor */
 
 	debug_fenter();
@@ -1271,8 +1253,8 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 	/* 1. make GSource Object */
 	g_src_funcs = (GSourceFuncs *)g_malloc(sizeof(GSourceFuncs));
 	if (!g_src_funcs) {
-		debug_error("g_malloc failed on g_src_funcs");
-		return false;
+		debug_error("failed to g_malloc for g_src_funcs");
+		goto ERROR;
 	}
 
 	g_src_funcs->prepare = _focus_fd_prepare;
@@ -1281,8 +1263,8 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 	g_src_funcs->finalize = NULL;
 	g_src = g_source_new(g_src_funcs, sizeof(GSource));
 	if (!g_src) {
-		debug_error("g_malloc failed on m_readfd");
-		return false;
+		debug_error("failed to g_source_new for g_src");
+		goto ERROR;
 	}
 	g_focus_sound_handle[index].focus_src = g_src;
 	g_focus_sound_handle[index].g_src_funcs = g_src_funcs;
@@ -1290,8 +1272,8 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 	/* 2. add file description which used in g_loop() */
 	g_poll_fd = (GPollFD *)g_malloc(sizeof(GPollFD));
 	if (!g_poll_fd) {
-		debug_error("g_malloc failed on g_poll_fd");
-		return false;
+		debug_error("failed to g_malloc for g_poll_fd");
+		goto ERROR;
 	}
 	g_poll_fd->fd = fd;
 	g_poll_fd->events = events;
@@ -1299,23 +1281,31 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 
 	/* 3. combine g_source object and file descriptor */
 	g_source_add_poll(g_src, g_poll_fd);
-	gsource_handle = g_source_attach(g_src, g_main_loop_get_context(g_focus_loop));
-	if (!gsource_handle) {
-		debug_error(" Failed to attach the source to context");
-		return false;
+	g_src_id = g_source_attach(g_src, g_main_loop_get_context(g_focus_loop));
+	if (!g_src_id) {
+		debug_error("failed to attach the source to context");
+		goto ERROR;
 	}
-	//g_source_unref(g_src);
 
 	/* 4. set callback */
 	g_source_set_callback(g_src, p_gloop_poll_handler,(gpointer)g_poll_fd, NULL);
 
-	debug_log(" g_malloc:g_src_funcs(%#X),g_poll_fd(%#X)  g_source_add_poll:g_src_id(%d)  g_source_set_callback:errno(%d)",
-				g_src_funcs, g_poll_fd, gsource_handle, errno);
+	debug_log("g_malloc : g_src_funcs(%x), g_poll_fd(%x)", g_src_funcs, g_poll_fd);
 
 	debug_fleave();
 	return true;
 
+ERROR:
+	if (g_src_funcs)
+		free(g_src_funcs);
+	if (g_poll_fd)
+		free(g_poll_fd);
+	if (g_src_id)
+		g_source_destroy(g_src);
+	if (g_src)
+		g_source_unref(g_src);
 
+	return false;
 }
 
 static bool _focus_remove_sound_callback(int index, gushort events)
@@ -1331,28 +1321,24 @@ static bool _focus_remove_sound_callback(int index, gushort events)
 	if (!g_poll_fd) {
 		debug_error("g_poll_fd is null..");
 		ret = false;
-		goto init_handle;
+		goto RELEASE;
 	}
 	g_poll_fd->fd = g_focus_sound_handle[index].focus_fd;
 	g_poll_fd->events = events;
 
 	if (!g_focus_sound_handle[index].focus_src) {
-		debug_error("FOCUS_sound_handle[%d].focus_src is null..", index);
-		goto init_handle;
+		debug_error("g_focus_sound_handle[%d].focus_src is null..", index);
+		ret = false;
+		goto RELEASE;
 	}
-	debug_log(" g_source_remove_poll : fd(%d), event(%x), errno(%d)", g_poll_fd->fd, g_poll_fd->events, errno);
 	g_source_remove_poll(g_focus_sound_handle[index].focus_src, g_poll_fd);
+	debug_log("g_source_remove_poll : fd(%d), event(%x)", g_poll_fd->fd, g_poll_fd->events);
 
-init_handle:
-
-	if (g_focus_sound_handle[index].focus_src) {
+RELEASE:
+	if (g_focus_sound_handle[index].focus_src)
 		g_source_destroy(g_focus_sound_handle[index].focus_src);
-		if (!g_source_is_destroyed (g_focus_sound_handle[index].focus_src)) {
-			debug_warning(" failed to g_source_destroy(), focus_src(0x%p)", g_focus_sound_handle[index].focus_src);
-		}
-	}
-	debug_log(" g_free : g_src_funcs(%#X), g_poll_fd(%#X)", g_src_funcs, g_poll_fd);
 
+	debug_log("g_free : g_src_funcs(%x), g_poll_fd(%x)", g_src_funcs, g_poll_fd);
 	if (g_src_funcs) {
 		g_free(g_src_funcs);
 		g_src_funcs = NULL;
@@ -1361,6 +1347,8 @@ init_handle:
 		g_free(g_poll_fd);
 		g_poll_fd = NULL;
 	}
+	if (g_focus_sound_handle[index].focus_src)
+		g_source_unref(g_focus_sound_handle[index].focus_src);
 
 	g_focus_sound_handle[index].g_src_funcs = NULL;
 	g_focus_sound_handle[index].g_poll_fd = NULL;
