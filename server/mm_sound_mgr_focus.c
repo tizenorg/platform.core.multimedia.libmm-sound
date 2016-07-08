@@ -436,6 +436,11 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	 *
 	 **************************************/
 	filename = __get_focus_pipe_path(cb_data.pid, cb_data.handle, NULL, false);
+	if (filename == NULL) {
+		debug_error("[CB] failed to get pipe");
+		res = -1;
+		goto RELEASE;
+	}
 	if ((fd_FOCUS = open(filename, O_WRONLY|O_NONBLOCK)) == -1) {
 		char str_error[256];
 		strerror_r(errno, str_error, sizeof(str_error));

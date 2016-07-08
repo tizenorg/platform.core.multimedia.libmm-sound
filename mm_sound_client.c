@@ -1243,7 +1243,7 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 {
 	GSource* g_src = NULL;
 	GSourceFuncs *g_src_funcs = NULL;		/* handler function */
-	guint g_src_id;
+	guint g_src_id = 0;
 	GPollFD *g_poll_fd = NULL;			/* file descriptor */
 
 	debug_fenter();
