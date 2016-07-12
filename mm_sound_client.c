@@ -1300,8 +1300,6 @@ ERROR:
 		g_free(g_src_funcs);
 	if (g_poll_fd)
 		g_free(g_poll_fd);
-	if (g_src_id)
-		g_source_destroy(g_src);
 	if (g_src)
 		g_source_unref(g_src);
 
