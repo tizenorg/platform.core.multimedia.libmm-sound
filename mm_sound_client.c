@@ -1266,8 +1266,6 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 		debug_error("failed to g_source_new for g_src");
 		goto ERROR;
 	}
-	g_focus_sound_handle[index].focus_src = g_src;
-	g_focus_sound_handle[index].g_src_funcs = g_src_funcs;
 
 	/* 2. add file description which used in g_loop() */
 	g_poll_fd = (GPollFD *)g_malloc(sizeof(GPollFD));
@@ -1277,7 +1275,6 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 	}
 	g_poll_fd->fd = fd;
 	g_poll_fd->events = events;
-	g_focus_sound_handle[index].g_poll_fd = g_poll_fd;
 
 	/* 3. combine g_source object and file descriptor */
 	g_source_add_poll(g_src, g_poll_fd);
@@ -1290,7 +1287,12 @@ static bool _focus_add_sound_callback(int index, int fd, gushort events, focus_g
 	/* 4. set callback */
 	g_source_set_callback(g_src, p_gloop_poll_handler,(gpointer)g_poll_fd, NULL);
 
-	debug_log("g_malloc : g_src_funcs(%x), g_poll_fd(%x)", g_src_funcs, g_poll_fd);
+	debug_log("g_malloc : g_src_funcs(%p), g_poll_fd(%p)", g_src_funcs, g_poll_fd);
+
+	/* 5. store to global handle */
+	g_focus_sound_handle[index].focus_src = g_src;
+	g_focus_sound_handle[index].g_src_funcs = g_src_funcs;
+	g_focus_sound_handle[index].g_poll_fd = g_poll_fd;
 
 	debug_fleave();
 	return true;
@@ -1300,8 +1302,6 @@ ERROR:
 		g_free(g_src_funcs);
 	if (g_poll_fd)
 		g_free(g_poll_fd);
-	if (g_src_id)
-		g_source_destroy(g_src);
 	if (g_src)
 		g_source_unref(g_src);
 
