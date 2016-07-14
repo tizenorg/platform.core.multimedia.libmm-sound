@@ -1347,8 +1347,6 @@ RELEASE:
 		g_free(g_poll_fd);
 		g_poll_fd = NULL;
 	}
-	if (g_focus_sound_handle[index].focus_src)
-		g_source_unref(g_focus_sound_handle[index].focus_src);
 
 	g_focus_sound_handle[index].g_src_funcs = NULL;
 	g_focus_sound_handle[index].g_poll_fd = NULL;
