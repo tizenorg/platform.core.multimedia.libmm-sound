@@ -1040,25 +1040,26 @@ static gboolean _focus_callback_handler(gpointer d)
 			}
 		}
 #ifdef CONFIG_ENABLE_RETCB
-
-				int rett = 0;
-				int tmpfd = -1;
-				unsigned int buf = 0;
-				char *filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", g_focus_sound_handle[focus_index].focus_tid, cb_data.handle);
-				tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
-				if (tmpfd < 0) {
-					char str_error[256];
-					strerror_r(errno, str_error, sizeof(str_error));
-					debug_error("[RETCB][Failed(May Server Close First)]tid(%d) fd(%d) %s errno=%d(%s)\n", tid, tmpfd, filename2, errno, str_error);
-					g_free(filename2);
-					g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
-					return FALSE;
-				}
-				buf = (unsigned int)((0x0000ffff & cb_data.handle) |(g_focus_sound_handle[focus_index].auto_reacquire << 16));
-				rett = write(tmpfd, &buf, sizeof(buf));
-				close(tmpfd);
+		{
+			int rett = 0;
+			int tmpfd = -1;
+			unsigned int buf = 0;
+			char *filename2 = g_strdup_printf("/tmp/FOCUS.%d.%dr", g_focus_sound_handle[focus_index].focus_tid, cb_data.handle);
+			tmpfd = open(filename2, O_WRONLY | O_NONBLOCK);
+			if (tmpfd < 0) {
+				char str_error[256];
+				strerror_r(errno, str_error, sizeof(str_error));
+				debug_error("[RETCB][Failed(May Server Close First)]tid(%d) fd(%d) %s errno=%d(%s)\n", tid, tmpfd, filename2, errno, str_error);
 				g_free(filename2);
-				debug_msg("[RETCB] tid(%d) finishing CB (write=%d)\n", tid, rett);
+				g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
+				return FALSE;
+			}
+			buf = (unsigned int)((0x0000ffff & cb_data.handle) | (g_focus_sound_handle[focus_index].auto_reacquire << 16));
+			rett = write(tmpfd, &buf, sizeof(buf));
+			close(tmpfd);
+			g_free(filename2);
+			debug_msg("[RETCB] tid(%d) finishing CB (write=%d)\n", tid, rett);
+		}
 #endif
 	}
 
@@ -1118,6 +1119,7 @@ static gboolean _focus_watch_callback_handler(gpointer d)
 		}
 
 #ifdef CONFIG_ENABLE_RETCB
+		{
 			int rett = 0;
 			int tmpfd = -1;
 			int buf = -1;
@@ -1136,9 +1138,8 @@ static gboolean _focus_watch_callback_handler(gpointer d)
 			close(tmpfd);
 			g_free(filename2);
 			debug_msg("[RETCB] tid(%d) finishing CB (write=%d)\n", tid, rett);
-
+		}
 #endif
-
 	}
 
 	debug_error("unlock focus_lock = %p", &g_focus_sound_handle[focus_index].focus_lock);

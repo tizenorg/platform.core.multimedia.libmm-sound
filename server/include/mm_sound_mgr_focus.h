@@ -78,6 +78,7 @@ typedef struct {
 	char option[NUM_OF_STREAM_IO_TYPE][MM_SOUND_NAME_NUM];
 	focus_status_e status;
 	_focus_taken_by_id_t taken_by_id[NUM_OF_STREAM_IO_TYPE];
+	_focus_taken_by_id_t taken_backup[NUM_OF_STREAM_IO_TYPE];
 	void *callback;
 	void *cbdata;
 	bool reacquisition;
