@@ -8,6 +8,7 @@ RestartSec=0
 MemoryLimit=50M
 User=multimedia_fw
 Group=multimedia_fw
+SmackProcessLabel=System
 
 [Install]
 WantedBy=tizen-system.target
