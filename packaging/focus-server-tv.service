@@ -1,10 +1,10 @@
 [Unit]
-Description=Start the sound profile service
+Description=Start the focus profile service
 DefaultDependencies=false
 After=factory-init.service pulseaudio.service
 
 [Service]
-ExecStart=/usr/bin/sound_server -S
+ExecStart=/usr/bin/focus_server -S
 Restart=always
 RestartSec=0
 MemoryLimit=50M
