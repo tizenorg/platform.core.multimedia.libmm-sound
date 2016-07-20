@@ -235,16 +235,16 @@ static int _get_sender_pid(GDBusMethodInvocation* invocation)
 	connection = g_dbus_method_invocation_get_connection(invocation);
 	sender = g_dbus_method_invocation_get_sender(invocation);
 
-	debug_error ("connection = %p, sender = %s", connection, sender);
+	debug_error("connection = %p, sender = %s", connection, sender);
 
-	value = g_dbus_connection_call_sync (connection, "org.freedesktop.DBus", "/org/freedesktop/DBus",
+	value = g_dbus_connection_call_sync(connection, "org.freedesktop.DBus", "/org/freedesktop/DBus",
 										"org.freedesktop.DBus", "GetConnectionUnixProcessID",
 										g_variant_new("(s)", sender, NULL), NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &err);
 	if (value) {
 		g_variant_get(value, "(u)", &pid);
-		debug_error ("Sender PID = [%d]", pid);
+		debug_error("Sender PID = [%d]", pid);
 	} else {
-		debug_error ("err code = %d, err msg = %s", err->code, err->message);
+		debug_error("err code = %d, err msg = %s", err->code, err->message);
 	}
 	return pid;
 }
@@ -620,7 +620,7 @@ static int _mm_sound_mgr_dbus_own_name(GBusType bus_type, const char* wellknown_
 
 	debug_log("Own name (%s) for sound-server", wellknown_name);
 
-	oid = g_bus_own_name(bus_type, wellknown_name , G_BUS_NAME_OWNER_FLAGS_NONE,
+	oid = g_bus_own_name(bus_type, wellknown_name, G_BUS_NAME_OWNER_FLAGS_NONE,
 			on_bus_acquired, on_name_acquired, on_name_lost, NULL, NULL);
 	if (oid <= 0) {
 		debug_error("Dbus own name failed");
@@ -629,18 +629,20 @@ static int _mm_sound_mgr_dbus_own_name(GBusType bus_type, const char* wellknown_
 		*owner_id = oid;
 	}
 
+	debug_log("OwnerID (%d) for sound-server", *owner_id);
+
 	return MM_ERROR_NONE;
 }
 
 static void _mm_sound_mgr_dbus_unown_name(guint oid)
 {
-	debug_log("Unown name for Sound-Server");
+	debug_log("Unown name for Sound-Server [%d]", oid);
 	if (oid > 0) {
 		g_bus_unown_name(oid);
 	}
 }
 
-int __mm_sound_mgr_ipc_dbus_notify_device_connected (mm_sound_device_t *device, gboolean is_connected)
+int __mm_sound_mgr_ipc_dbus_notify_device_connected(mm_sound_device_t *device, gboolean is_connected)
 {
 	int ret = MM_ERROR_NONE;
 	GVariantBuilder builder;
@@ -665,7 +667,7 @@ int __mm_sound_mgr_ipc_dbus_notify_device_connected (mm_sound_device_t *device, 
 	return ret;
 }
 
-int __mm_sound_mgr_ipc_dbus_notify_device_info_changed (mm_sound_device_t *device, int changed_device_info_type)
+int __mm_sound_mgr_ipc_dbus_notify_device_info_changed(mm_sound_device_t *device, int changed_device_info_type)
 {
 	int ret = MM_ERROR_NONE;
 	GVariantBuilder builder;
@@ -754,11 +756,11 @@ int __mm_sound_mgr_ipc_dbus_get_stream_list(stream_list_t* stream_list)
 	conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 	if (!conn && err) {
 		LOGE("g_bus_get_sync() error (%s)", err->message);
-		g_error_free (err);
+		g_error_free(err);
 		ret = MM_ERROR_SOUND_INTERNAL;
 		return ret;
 	}
-	result = g_dbus_connection_call_sync (conn,
+	result = g_dbus_connection_call_sync(conn,
 							PA_BUS_NAME,
 							PA_STREAM_MANAGER_OBJECT_PATH,
 							PA_STREAM_MANAGER_INTERFACE,
@@ -781,11 +783,11 @@ int __mm_sound_mgr_ipc_dbus_get_stream_list(stream_list_t* stream_list)
 		i = 0;
 		g_variant_iter_init(&iter, item);
 		while ((i < AVAIL_STREAMS_MAX) && g_variant_iter_loop(&iter, "&s", &name)) {
-			debug_log ("name : %s", name);
+			debug_log("name : %s", name);
 			stream_list->stream_types[i++] = strdup(name);
 		}
-		g_variant_unref (item);
-		g_variant_unref (child);
+		g_variant_unref(item);
+		g_variant_unref(child);
 
 		child = g_variant_get_child_value(result, 1);
 		item = g_variant_get_variant(child);
@@ -793,11 +795,11 @@ int __mm_sound_mgr_ipc_dbus_get_stream_list(stream_list_t* stream_list)
 		i = 0;
 		g_variant_iter_init(&iter, item);
 		while ((i < AVAIL_STREAMS_MAX) && g_variant_iter_loop(&iter, "i", &priority)) {
-			debug_log ("priority : %d", priority);
+			debug_log("priority : %d", priority);
 			stream_list->priorities[i++] = priority;
 		}
-		g_variant_unref (item);
-		g_variant_unref (child);
+		g_variant_unref(item);
+		g_variant_unref(child);
 
 		g_variant_unref(result);
 	}
@@ -810,12 +812,14 @@ int MMSoundMgrDbusInit(void)
 {
 	debug_enter();
 
-	introspection_data = g_dbus_node_info_new_for_xml (introspection_xml, NULL);
-	if (!introspection_data)
+	introspection_data = g_dbus_node_info_new_for_xml(introspection_xml, NULL);
+	if (!introspection_data) {
+		debug_error("g_dbus_node_info_new_for_xml() failed...");
 		return MM_ERROR_SOUND_INTERNAL;
+	}
 
 	if (_mm_sound_mgr_dbus_own_name(G_BUS_TYPE_SYSTEM, BUS_NAME_SOUND_SERVER, &sound_server_owner_id) != MM_ERROR_NONE) {
-		debug_error ("dbus own name for sound-server error\n");
+		debug_error("dbus own name for sound-server error\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
 
@@ -829,7 +833,7 @@ void MMSoundMgrDbusFini(void)
 	debug_enter("\n");
 
 	_mm_sound_mgr_dbus_unown_name(sound_server_owner_id);
-	g_dbus_node_info_unref (introspection_data);
+	g_dbus_node_info_unref(introspection_data);
 
 	debug_leave("\n");
 }
