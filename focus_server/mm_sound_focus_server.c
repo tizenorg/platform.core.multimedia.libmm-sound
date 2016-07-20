@@ -26,27 +26,18 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include <vconf.h>
-#include <mm_error.h>
 #include <mm_debug.h>
 
+#include <fcntl.h>
+#include <semaphore.h>
+
 #include "../include/mm_sound_common.h"
-#include "include/mm_sound_thread_pool.h"
-#include "include/mm_sound_mgr_run.h"
-#include "include/mm_sound_mgr_codec.h"
-#include "include/mm_sound_mgr_ipc_dbus.h"
-
-#include "../config.h" /* for PLUGIN_DIR */
-
-#define PLUGIN_ENV "MM_SOUND_PLUGIN_PATH"
-#define PLUGIN_MAX 30
-#define MAX_PLUGIN_DIR_PATH_LEN	256
-#define SHUTDOWN_TIMEOUT_SEC 10
+#include "include/mm_sound_mgr_focus.h"
+#include "include/mm_sound_mgr_focus_dbus.h"
 
 #define USE_SYSTEM_SERVER_PROCESS_MONITORING
 
 typedef struct {
-    char plugdir[MAX_PLUGIN_DIR_PATH_LEN];
     int startserver;
     int printlist;
     int testmode;
@@ -64,32 +55,33 @@ static void _exit_handler(int sig);
 
 GMainLoop *g_mainloop;
 
-static gboolean _shutdown_timer_cb(gpointer user_data)
-{
-	if (!IsMMSoundThreadPoolRunning()) {
-		debug_error("!!!!!!!!!!!!!!! quit mainloop !!!!!!");
-		g_main_loop_quit(g_mainloop);
-		return FALSE;
-	}
+void* pulse_handle;
 
-	debug_error("still running......keep timer...");
-	return TRUE;
-}
-
-static void _mainloop_run()
+void mainloop_run()
 {
 	g_mainloop = g_main_loop_new(NULL, TRUE);
-	if (g_mainloop == NULL) {
+	if(g_mainloop == NULL) {
 		debug_error("g_main_loop_new() failed\n");
 	}
-
-	g_timeout_add_seconds(SHUTDOWN_TIMEOUT_SEC, _shutdown_timer_cb, NULL);
-
 	g_main_loop_run(g_mainloop);
+}
+
+static sem_t* sem_create_n_wait()
+{
+	sem_t* sem = NULL;
+
+	if ((sem = sem_open ("booting-sound", O_CREAT, 0660, 0))== SEM_FAILED) {
+		debug_error ("error creating sem : %d", errno);
+		return NULL;
+	}
+
+	debug_msg ("returning sem [%p]", sem);
+	return sem;
 }
 
 int main(int argc, char **argv)
 {
+	sem_t* sem = NULL;
 	server_arg serveropt;
 	struct sigaction action;
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
@@ -103,8 +95,11 @@ int main(int argc, char **argv)
 	if (_get_option(argc, argv, &serveropt))
 		return 1;
 
-	debug_warning("sound_server [%d] init \n", getpid());
+	debug_warning("focus_server [%d] init \n", getpid());
 
+	if (serveropt.startserver) {
+		sem = sem_create_n_wait();
+	}
 	/* Daemon process create */
 	if (!serveropt.testmode && serveropt.startserver) {
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)
@@ -112,8 +107,8 @@ int main(int argc, char **argv)
 #endif
 	}
 
-	/* Sound Server Starts!!!*/
-	debug_warning("sound_server [%d] start \n", getpid());
+	/* focus Server Starts!!!*/
+	debug_warning("focus_server [%d] start \n", getpid());
 
 	signal(SIGPIPE, SIG_IGN); //ignore SIGPIPE
 
@@ -142,34 +137,47 @@ int main(int argc, char **argv)
 	sigaction(SIGTERM, &action, &sigterm_action);
 	sigaction(SIGSYS, &action, &sigsys_action);
 
-	if (serveropt.startserver || serveropt.printlist) {
-		MMSoundThreadPoolInit();
-		MMSoundMgrRunInit(serveropt.plugdir);
-		MMSoundMgrCodecInit(serveropt.plugdir);
-		MMSoundMgrDbusInit();
+	if (serveropt.startserver) {
+		MMSoundMgrFocusDbusInit();
+		MMSoundMgrFocusInit();
 	}
 
-	debug_warning("sound_server [%d] initialization complete...now, start running!!\n", getpid());
+	debug_warning("focus_server [%d] initialization complete...now, start running!!\n", getpid());
 
 	if (serveropt.startserver) {
-		/* Start Run types */
-		MMSoundMgrRunRunAll();
+		unlink(PA_READY); // remove pa_ready file after focus-server init.
 
-		/* Start MainLoop */
-		_mainloop_run();
+		if (sem) {
+			if (sem_post(sem) == -1) {
+				debug_error ("error sem post : %d", errno);
+			} else {
+				debug_msg ("Ready to play booting sound!!!!");
+			}
+		}
+
+#ifdef TIZEN_TV
+        /* FIXME : This code is moved from sound_server temporally for TV migration
+                   As other modules which has dependancy on this file is cleared,
+                   this code will be removed */
+		/* broadcast if we're ready */
+		if (creat(SOUND_SERVER_READY, 0644) != -1) {
+			debug_warning("SOUND_SERVER_READY(%s) file was created", SOUND_SERVER_READY);
+		} else {
+			debug_error("cannot create SOUND_SERVER_READY(/tmp/.sound_server_ready)");
+		}
+#endif
+
+		mainloop_run();
 	}
 
-	debug_warning("sound_server [%d] terminating \n", getpid());
+	debug_warning("focus_server [%d] terminating \n", getpid());
 
-	if (serveropt.startserver || serveropt.printlist) {
-		MMSoundMgrRunStopAll();
-		MMSoundMgrDbusFini();
-		MMSoundMgrCodecFini();
-		MMSoundMgrRunFini();
-		MMSoundThreadPoolFini();
+	if (serveropt.startserver) {
+		MMSoundMgrFocusDbusFini();
+		MMSoundMgrFocusFini();
 	}
 
-	debug_warning("sound_server [%d] exit ----------------- END \n", getpid());
+	debug_warning("focus_server [%d] exit ----------------- END \n", getpid());
 
 	return 0;
 }
@@ -177,23 +185,13 @@ int main(int argc, char **argv)
 static int _get_option(int argc, char **argv, server_arg *arg)
 {
 	int c;
-	char *plugin_env_dir = NULL;
 	static struct option long_options[] = {
 		{"start", 0, 0, 'S'},
-		{"list", 0, 0, 'L'},
 		{"help", 0, 0, 'H'},
-		{"plugdir", 1, 0, 'P'},
 		{"testmode", 0, 0, 'T'},
 		{0, 0, 0, 0}
 	};
 	memset(arg, 0, sizeof(server_arg));
-
-	plugin_env_dir = getenv(PLUGIN_ENV);
-	if (plugin_env_dir) {
-		MMSOUND_STRNCPY(arg->plugdir, plugin_env_dir, MAX_PLUGIN_DIR_PATH_LEN);
-	} else {
-		MMSOUND_STRNCPY(arg->plugdir, PLUGIN_DIR, MAX_PLUGIN_DIR_PATH_LEN);
-	}
 
 	arg->testmode = 0;
 
@@ -208,12 +206,6 @@ static int _get_option(int argc, char **argv, server_arg *arg)
 		{
 		case 'S': /* Start daemon */
 			arg->startserver = 1;
-			break;
-		case 'L': /* list of plugins */
-			arg->printlist = 1;
-			break;
-		case 'P': /* Custom plugindir */
-			MMSOUND_STRNCPY(arg->plugdir, optarg, MAX_PLUGIN_DIR_PATH_LEN);
 			break;
 		case 'T': /* Test mode */
 			arg->testmode = 1;
@@ -231,15 +223,6 @@ static int _get_option(int argc, char **argv, server_arg *arg)
 //__attribute__ ((destructor))
 static void _exit_handler(int sig)
 {
-	int ret = MM_ERROR_NONE;
-
-	ret = MMSoundMgrRunStopAll();
-	if (ret != MM_ERROR_NONE) {
-		debug_error("Fail to stop run-plugin\n");
-	} else {
-		debug_log("All run-type plugin stopped\n");
-	}
-
 	switch(sig)
 	{
 	case SIGINT:
@@ -271,7 +254,7 @@ static void _exit_handler(int sig)
 static int _usage(int argc, char **argv)
 {
 	fprintf(stderr, "Usage: %s [Options]\n", argv[0]);
-	fprintf(stderr, "\t%-20s: start sound server.\n", "--start,-S");
+	fprintf(stderr, "\t%-20s: start focus server.\n", "--start,-S");
 	fprintf(stderr, "\t%-20s: help message.\n", "--help,-H");
 
 	return 1;
