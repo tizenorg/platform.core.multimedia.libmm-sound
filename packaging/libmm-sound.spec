@@ -5,14 +5,18 @@ Release:    0
 Group:      System/Libraries
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
-Source1:    sound-server.service
-Source2:    sound-server.path
-Source3:    focus-server.conf
-Source4:    sound-server.conf
+#Source1:    sound-server.service
+#Source2:    sound-server.path
+Source3:    sound-server.conf
+Source4:    focus-server.service
+Source5:    focus-server.path
+Source6:    focus-server.conf
 Requires: security-config
 %if "%{?tizen_profile_name}" == "tv"
-Source7:    sound-server-tv.service
+#Source7:    sound-server-tv.service
+Source8:    focus-server-tv.service
 %endif
+Source9:    org.tizen.SoundServer.service
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 BuildRequires: pkgconfig(mm-common)
@@ -106,11 +110,14 @@ mkdir -p %{buildroot}/usr/share/license
 cp LICENSE.APLv2 %{buildroot}/usr/share/license/%{name}
 cp LICENSE.APLv2 %{buildroot}/usr/share/license/libmm-sound-tool
 mkdir -p %{buildroot}/etc/dbus-1/system.d/
-cp %{SOURCE3} %{buildroot}/etc/dbus-1/system.d/focus-server.conf
-cp %{SOURCE4} %{buildroot}/etc/dbus-1/system.d/sound-server.conf
+cp %{SOURCE3} %{buildroot}/etc/dbus-1/system.d/sound-server.conf
+cp %{SOURCE6} %{buildroot}/etc/dbus-1/system.d/focus-server.conf
 %if "%{?tizen_profile_name}" == "tv"
-cp %{SOURCE7} %{SOURCE1}
+#cp %{SOURCE7} %{SOURCE1}
+cp %{SOURCE8} %{SOURCE4}
 %endif
+mkdir -p %{buildroot}/usr/share/dbus-1/system-services/
+cp %{SOURCE9} %{buildroot}/usr/share/dbus-1/system-services/org.tizen.SoundServer.service
 
 %make_install
 %if "%{?tizen_profile_name}" == "tv"
@@ -118,12 +125,16 @@ install -d %{buildroot}%{_unitdir}/sysinit.target.wants
 %else
 install -d %{buildroot}%{_unitdir}/multi-user.target.wants
 %endif
-install -m0644 %{SOURCE1} %{buildroot}%{_unitdir}/
-install -m0644 %{SOURCE2} %{buildroot}%{_unitdir}/
+#install -m0644 %{SOURCE1} %{buildroot}%{_unitdir}/
+#install -m0644 %{SOURCE2} %{buildroot}%{_unitdir}/
+install -m0644 %{SOURCE4} %{buildroot}%{_unitdir}/
+install -m0644 %{SOURCE5} %{buildroot}%{_unitdir}/
 %if "%{?tizen_profile_name}" == "tv"
-ln -sf ../sound-server.path %{buildroot}%{_unitdir}/sysinit.target.wants/sound-server.path
+#ln -sf ../sound-server.path %{buildroot}%{_unitdir}/sysinit.target.wants/sound-server.path
+ln -sf ../focus-server.path %{buildroot}%{_unitdir}/sysinit.target.wants/focus-server.path
 %else
-ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/sound-server.path
+#ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/sound-server.path
+ln -sf ../focus-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/focus-server.path
 %endif
 %post
 /sbin/ldconfig
@@ -135,6 +146,7 @@ ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/soun
 %manifest libmm-sound.manifest
 %defattr(-,root,root,-)
 %caps(cap_chown,cap_dac_override,cap_fowner,cap_lease=eip) %{_bindir}/focus_server
+%caps(cap_chown,cap_dac_override,cap_fowner,cap_lease=eip) %{_bindir}/sound_server
 %{_libdir}/libmmfsound.so.*
 %{_libdir}/libmmfsoundcommon.so.*
 %{_libdir}/libmmfkeysound.so.*
@@ -152,17 +164,22 @@ ln -sf ../sound-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/soun
 %{_libdir}/soundplugins/libsoundplugintremoloogg.so
 %endif
 %if "%{?tizen_profile_name}" == "tv"
-%{_unitdir}/sysinit.target.wants/sound-server.path
+#%{_unitdir}/sysinit.target.wants/sound-server.path
+%{_unitdir}/sysinit.target.wants/focus-server.path
 %else
-%{_unitdir}/multi-user.target.wants/sound-server.path
+#%{_unitdir}/multi-user.target.wants/sound-server.path
+%{_unitdir}/multi-user.target.wants/focus-server.path
 %endif
-%{_unitdir}/sound-server.service
-%{_unitdir}/sound-server.path
+#%{_unitdir}/sound-server.service
+#%{_unitdir}/sound-server.path
+%{_unitdir}/focus-server.service
+%{_unitdir}/focus-server.path
+/usr/share/sounds/sound-server/*
 %{_datadir}/license/%{name}
 %{_datadir}/license/libmm-sound-tool
-/usr/share/sounds/sound-server/*
-/etc/dbus-1/system.d/focus-server.conf
 /etc/dbus-1/system.d/sound-server.conf
+/etc/dbus-1/system.d/focus-server.conf
+%{_datadir}/dbus-1/system-services/org.tizen.SoundServer.service
 
 %files devel
 %defattr(-,root,root,-)

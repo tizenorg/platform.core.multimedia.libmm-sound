@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.tizen.SoundServer
+Exec=/usr/bin/sound_server -S
+User=multimedia_fw

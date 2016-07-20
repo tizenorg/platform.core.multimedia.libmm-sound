@@ -828,7 +828,9 @@ void MMSoundMgrDbusFini(void)
 {
 	debug_enter("\n");
 
+#if 0 /* FIXME : disable this code due to crash.... */
 	_mm_sound_mgr_dbus_unown_name(sound_server_owner_id);
+#endif
 	g_dbus_node_info_unref (introspection_data);
 
 	debug_leave("\n");

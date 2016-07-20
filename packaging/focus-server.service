@@ -1,14 +1,13 @@
 [Unit]
-Description=Start the sound profile service
+Description=Start the focus profile service
 
 [Service]
-ExecStart=/usr/bin/sound_server -S
+ExecStart=/usr/bin/focus_server -S
 Restart=always
 RestartSec=0
 MemoryLimit=50M
 User=multimedia_fw
 Group=multimedia_fw
-SmackProcessLabel=System
 
 [Install]
 WantedBy=tizen-system.target
