@@ -19,12 +19,15 @@
  *
  */
 
-#ifndef __MM_SOUND_THREAd_POOL_H__
-#define __MM_SOUND_THREAd_POOL_H__
+#ifndef __MM_SOUND_THREAD_POOL_H__
+#define __MM_SOUND_THREAD_POOL_H__
+
+#include <glib.h>
 
 int MMSoundThreadPoolDump(int fulldump);
 int MMSoundThreadPoolInit(void);
+gboolean IsMMSoundThreadPoolRunning(void);
 int MMSoundThreadPoolRun(void *param, void (*func)(void*));
 int MMSoundThreadPoolFini(void);
 
-#endif /* __MM_SOUND_THREAd_POOL_H__ */
+#endif /* __MM_SOUND_THREAD_POOL_H__ */

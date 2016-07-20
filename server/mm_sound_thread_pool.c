@@ -34,6 +34,10 @@ GThreadPool* g_pool;
 
 #define MAX_UNUSED_THREADS_IN_THREADPOOL	10
 
+/* FIXME : this is 1 because of keytone plugin which is always on running...
+            if we move keytone pluging to other place, then we can assume 0 */
+#define MIN_RUNNING_THREAD 1
+
 typedef struct __THREAD_INFO
 {
 	void (*func)(gpointer data);
@@ -85,6 +89,12 @@ int MMSoundThreadPoolDump(int fulldump)
 			g_thread_pool_get_num_unused_threads() );
 
 	return MM_ERROR_NONE;
+}
+
+gboolean IsMMSoundThreadPoolRunning(void)
+{
+	MMSoundThreadPoolDump(FALSE);
+	return (g_thread_pool_get_num_threads(g_pool) > MIN_RUNNING_THREAD);
 }
 
 int MMSoundThreadPoolInit()
