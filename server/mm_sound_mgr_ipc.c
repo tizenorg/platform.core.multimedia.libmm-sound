@@ -49,24 +49,7 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 			   gboolean enable_session, int *codechandle, char *stream_type, int stream_index)
 {
 	mmsound_mgr_codec_param_t param = {0,};
-	MMSourceType *source = NULL;
 	int ret = MM_ERROR_NONE;
-
-	/* Set source */
-	source = (MMSourceType*)malloc(sizeof(MMSourceType));
-	if (!source) {
-		debug_error("malloc fail!!\n");
-		return MM_ERROR_OUT_OF_MEMORY;
-	}
-
-	ret = mm_source_open_file(filename, source, MM_SOURCE_CHECK_DRM_CONTENTS);
-	if(ret != MM_ERROR_NONE) {
-		debug_error("Fail to open file\n");
-		if (source) {
-			free(source);
-		}
-		return ret;
-	}
 
 	/* Set sound player parameter */
 	param.tone = tone;
@@ -76,7 +59,7 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 	param.priority = priority;
 	param.session_type = session_type;
 	param.param = (void*)client_pid;
-	param.source = source;
+	param.pfilename = filename;
 	param.handle_route = handle_route;
 	param.enable_session = enable_session;
 	param.stream_index = stream_index;
@@ -92,11 +75,6 @@ int _MMSoundMgrIpcPlayFile(char* filename,int tone, int repeat, int volume, int 
 	ret = MMSoundMgrCodecPlay(codechandle, &param);
 	if (ret != MM_ERROR_NONE) {
 		debug_error("Will be closed a sources, codechandle : 0x%08X\n", *codechandle);
-		mm_source_close(source);
-		if (source) {
-			free(source);
-			source = NULL;
-		}
 		return ret;
 	}
 
@@ -133,35 +111,18 @@ int _MMSoundMgrIpcClearFocus(int pid)
 }
 #endif
 
-int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
+int _MMSoundMgrIpcPlayFileWithStreamInfo(char *filename, int repeat, int volume,
 			   int priority, int client_pid, int handle_route, int *codechandle, char *stream_type, int stream_index)
 {
 	mmsound_mgr_codec_param_t param = {0,};
-	MMSourceType *source = NULL;
 	int ret = MM_ERROR_NONE;
-
-	/* Set source */
-	source = (MMSourceType*)malloc(sizeof(MMSourceType));
-	if (!source) {
-		debug_error("malloc fail!!\n");
-		return MM_ERROR_OUT_OF_MEMORY;
-	}
-
-	ret = mm_source_open_file(filename, source, MM_SOURCE_CHECK_DRM_CONTENTS);
-	if(ret != MM_ERROR_NONE) {
-		debug_error("Fail to open file\n");
-		if (source) {
-			free(source);
-		}
-		return ret;
-	}
 
 	/* Set sound player parameter */
 	param.repeat_count = repeat;
 	param.volume = volume;
 	param.priority = priority;
 	param.param = (void*)client_pid;
-	param.source = source;
+	param.pfilename = filename;
 	param.handle_route = handle_route;
 	param.stream_index = stream_index;
 	MMSOUND_STRNCPY(param.stream_type, stream_type, MM_SOUND_STREAM_TYPE_LEN);
@@ -169,11 +130,6 @@ int _MMSoundMgrIpcPlayFileWithStreamInfo(char* filename, int repeat, int volume,
 	ret = MMSoundMgrCodecPlayWithStreamInfo(codechandle, &param);
 	if (ret != MM_ERROR_NONE) {
 		debug_error("Will be closed a sources, codechandle : 0x%08X\n", *codechandle);
-		mm_source_close(source);
-		if (source) {
-			free(source);
-			source = NULL;
-		}
 		return ret;
 	}
 

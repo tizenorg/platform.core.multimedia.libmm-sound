@@ -65,9 +65,9 @@ static void _mainloop_run()
 	g_main_loop_run(g_mainloop);
 }
 
-static sem_t* _sem_create_n_wait()
+static sem_t * _sem_create_n_wait()
 {
-	sem_t* sem = NULL;
+	sem_t *sem = NULL;
 
 	if ((sem = sem_open("booting-sound", O_CREAT, 0660, 0)) == SEM_FAILED) {
 		debug_error("error creating sem : %d", errno);
@@ -156,7 +156,7 @@ static int _usage(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	sem_t* sem = NULL;
+	sem_t *sem = NULL;
 	server_arg serveropt;
 	struct sigaction action;
 #if !defined(USE_SYSTEM_SERVER_PROCESS_MONITORING)

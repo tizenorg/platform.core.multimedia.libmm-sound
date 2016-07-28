@@ -2,8 +2,7 @@ lib_LTLIBRARIES = libmmfsoundcommon.la
 
 libmmfsoundcommon_la_SOURCES = mm_ipc.c \
 							mm_sound_utils.c \
-							mm_sound_dbus.c \
-							mm_source.c
+							mm_sound_dbus.c
 
 #libmmfsoundcommon_la_DEPENDENCIES = $(libdir)/libmmfcommon.la
 

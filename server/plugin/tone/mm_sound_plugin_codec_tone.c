@@ -745,14 +745,6 @@ int* MMSoundPlugCodecToneGetSupportTypes(void)
     return suported;
 }
 
-int MMSoundPlugCodecToneParse(MMSourceType *source, mmsound_codec_info_t *info)
-{
-	debug_enter("\n");
-	// do nothing
-	debug_leave("\n");
-	return MM_ERROR_NONE;
-}
-
 int MMSoundPlugCodecToneCreate(mmsound_codec_param_t *param, mmsound_codec_info_t *info, MMHandleType *handle)
 {
 	tone_info_t *toneInfo;
@@ -1181,7 +1173,6 @@ int MMSoundPlugCodecGetInterface(mmsound_codec_interface_t *intf)
     debug_enter("\n");
 
     intf->GetSupportTypes   = MMSoundPlugCodecToneGetSupportTypes;
-    intf->Parse             = MMSoundPlugCodecToneParse;
     intf->Create            = MMSoundPlugCodecToneCreate;
     intf->Destroy           = MMSoundPlugCodecToneDestroy;
     intf->Play              = MMSoundPlugCodecTonePlay;

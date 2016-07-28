@@ -25,7 +25,6 @@
 #include <string.h>
 #include <pthread.h>
 
-#include <mm_source.h>
 #include <mm_error.h>
 #include <mm_types.h>
 #include <mm_debug.h>
@@ -43,7 +42,7 @@
 
 #define _ENABLE_KEYTONE	/* Temporal test code */
 
-/* #define FOCUS_INTEGRATION */
+#define FOCUS_INTEGRATION
 
 typedef struct {
 	int (*callback)(int, void *, void *, int);	/* msg_type(pid) client callback & client data info */
@@ -236,7 +235,7 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 
 	for (count = 0; g_plugins[count].GetSupportTypes; count++) {
 		/* Find codec */
-		if (g_plugins[count].Parse(param->source, &info) == MM_ERROR_NONE)
+		if (g_plugins[count].Parse(param->pfilename, &info) == MM_ERROR_NONE)
 			break;
 	}
 
@@ -263,7 +262,7 @@ int MMSoundMgrCodecPlay(int *slotid, const mmsound_mgr_codec_param_t *param)
 	codec_param.volume_config = param->volume_config;
 	codec_param.repeat_count = param->repeat_count;
 	codec_param.volume = param->volume;
-	codec_param.source = param->source;
+	codec_param.pfilename = param->pfilename;
 	codec_param.priority = param->priority;
 	codec_param.stop_cb = _MMSoundMgrCodecStopCallback;
 	codec_param.param = *slotid;
@@ -422,7 +421,7 @@ int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param
 
 	for (count = 0; g_plugins[count].GetSupportTypes; count++) {
 		/* Find codec */
-		if (g_plugins[count].Parse(param->source, &info) == MM_ERROR_NONE)
+		if (g_plugins[count].Parse(param->pfilename, &info) == MM_ERROR_NONE)
 			break;
 	}
 
@@ -444,7 +443,7 @@ int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param
 	codec_param.volume_config = -1; //setting volume config to -1 since using stream info instead of volume type
 	codec_param.repeat_count = param->repeat_count;
 	codec_param.volume = param->volume;
-	codec_param.source = param->source;
+	codec_param.pfilename = param->pfilename;
 	codec_param.priority = param->priority;
 	codec_param.stop_cb = _MMSoundMgrCodecStopCallback;
 	codec_param.param = *slotid;
@@ -465,7 +464,7 @@ int MMSoundMgrCodecPlayWithStreamInfo(int *slotid, const mmsound_mgr_codec_param
 	debug_msg("Using Slotid : [%d] Slot Status : [%d]\n", *slotid, g_slots[*slotid].status);
 
 	err = g_plugins[g_slots[*slotid].pluginid].Create(&codec_param, &info, &(g_slots[*slotid].plughandle));
-	debug_msg("Created audio handle : [%d]\n", g_slots[*slotid].plughandle);
+	debug_msg("Created audio handle : [%p]\n", g_slots[*slotid].plughandle);
 	if (err != MM_ERROR_NONE) {
 		debug_error("Plugin create fail : 0x%08X\n", err);
 		g_slots[*slotid].status = STATUS_IDLE;

@@ -25,7 +25,6 @@
 #include <semaphore.h>
 #include <mm_error.h>
 #include <mm_debug.h>
-#include <mm_source.h>
 #include <mm_sound.h>
 
 #include <fcntl.h>
@@ -81,12 +80,6 @@ typedef struct
 	char filename[FILE_FULL_PATH];
 	int volume_config;
 } ipc_type;
-
-typedef struct
-{
-	mmsound_codec_info_t *info;
-	MMSourceType *source;
-} buf_param_t;
 
 static int (*g_thread_pool_func)(void*, void (*)(void*)) = NULL;
 

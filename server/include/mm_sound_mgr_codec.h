@@ -25,7 +25,6 @@
 
 #include <stdbool.h>
 
-#include <mm_source.h>
 #include <mm_sound_stream.h>
 #include "../../include/mm_sound.h"
 
@@ -43,7 +42,7 @@ typedef struct {
 	void *msgcallback;		/* Client callback function */
 	void *msgdata;			/* Client callback data */
 	void *param;
-	MMSourceType *source; /* Will free plugin */
+	char *pfilename;
 	int samplerate;
 	int channels;
 	int volume_config;

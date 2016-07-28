@@ -35,218 +35,396 @@
 #include "../../../include/mm_sound_common.h"
 #include <unistd.h>
 
-#define SAMPLE_COUNT	128
-#define WAV_FILE_SAMPLE_PLAY_DURATION		350			/*Unit: ms*/
-enum {
-	WAVE_CODE_UNKNOWN				= 0,
-	WAVE_CODE_PCM					= 1,
-	WAVE_CODE_ADPCM				= 2,
-	WAVE_CODE_G711					= 3,
-	WAVE_CODE_IMA_ADPCM				= 17,
-	WAVE_CODE_G723_ADPCM			= 20,
-	WAVE_CODE_GSM					= 49,
-	WAVE_CODE_G721_ADPCM			= 64,
-	WAVE_CODE_MPEG					= 80,
-};
-
-#define MAKE_FOURCC(a, b, c, d)		((a) | (b) << 8) | ((c) << 16 | ((d) << 24))
-#define RIFF_CHUNK_ID				((uint32_t) MAKE_FOURCC('R', 'I', 'F', 'F'))
-#define RIFF_CHUNK_TYPE			((uint32_t) MAKE_FOURCC('W', 'A', 'V', 'E'))
-#define FMT_CHUNK_ID				((uint32_t) MAKE_FOURCC('f', 'm', 't', ' '))
-#define DATA_CHUNK_ID				((uint32_t) MAKE_FOURCC('d', 'a', 't', 'a'))
-
-#define CODEC_WAVE_LOCK(LOCK) do { pthread_mutex_lock(LOCK); } while (0)
-#define CODEC_WAVE_UNLOCK(LOCK) do { pthread_mutex_unlock(LOCK); } while (0)
-
-enum {
-   STATE_NONE = 0,
-   STATE_READY,
-   STATE_BEGIN,
-   STATE_PLAY,
-   STATE_STOP,
-};
+#include <sndfile.h>
+#include <pulse/pulseaudio.h>
 
 typedef struct
 {
-	char *ptr_current;
-	int size;
-	int transper_size;
 	int handle;
-	int period;
-	int tone;
-	int keytone;
 	int repeat_count;
 	int (*stop_cb)(int);
-	int cb_param; // slotid
-	int state;
-	pthread_mutex_t mutex;
-	pthread_mutex_t *codec_wave_mutex;
-	int mode;
-	int volume_config;
-	int channels;
-	int samplerate;
-	int format;
-	int handle_route;
-	int priority;
-	MMSourceType *source;
-	char buffer[48000 / 1000 * SAMPLE_COUNT * 2 *2];//segmentation fault when above 22.05KHz stereo
-	int gain, out, in, option;
+	int cb_param;
+	char filename[256];
 	char stream_type[MM_SOUND_STREAM_TYPE_LEN];
 	int stream_index;
+
+	pa_threaded_mainloop *m;
+	pa_context *c;
+	pa_stream* s;
+	pa_sample_spec spec;
+	SNDFILE* sf;
+	SF_INFO si;
 } wave_info_t;
 
-static void _runing(void *param);
+/* Context Callbacks */
+static void _context_state_callback(pa_context *c, void *userdata) {
+	pa_threaded_mainloop *m = (pa_threaded_mainloop *)userdata;
+	assert(c);
+
+	debug_msg("context state callback : %p, %d", c, pa_context_get_state(c));
+
+	switch (pa_context_get_state(c)) {
+		case PA_CONTEXT_CONNECTING:
+		case PA_CONTEXT_AUTHORIZING:
+		case PA_CONTEXT_SETTING_NAME:
+			break;
+
+		case PA_CONTEXT_READY:
+		case PA_CONTEXT_TERMINATED:
+		case PA_CONTEXT_FAILED:
+			pa_threaded_mainloop_signal(m, 0);
+			break;
+
+		default:
+			break;
+	}
+}
+
+static void _context_drain_complete(pa_context *c, void *userdata)
+{
+	pa_context_disconnect(c);
+}
+
+/* Stream Callbacks */
+static void _stream_state_callback(pa_stream *s, void *userdata)
+{
+	pa_threaded_mainloop *m = (pa_threaded_mainloop *)userdata;
+	assert(s);
+
+	debug_msg("stream state callback : %p, %d", s, pa_stream_get_state(s));
+
+	switch (pa_stream_get_state(s)) {
+		case PA_STREAM_CREATING:
+			break;
+		case PA_STREAM_READY:
+		case PA_STREAM_FAILED:
+		case PA_STREAM_TERMINATED:
+			pa_threaded_mainloop_signal(m, 0);
+			break;
+		default:
+			break;
+	}
+}
+
+static void _stream_drain_complete(pa_stream* s, int success, void *userdata)
+{
+	pa_operation *o;
+	wave_info_t *h = (wave_info_t *)userdata;
+
+	debug_msg("stream drain complete callback : %p, %d", s, success);
+
+	if (!success) {
+		debug_error("drain failed. s(%p), success(%d)", s, success);
+		//pa_threaded_mainloop_signal(h->m, 0);
+	}
+
+	pa_stream_disconnect(h->s);
+	pa_stream_unref(h->s);
+	h->s = NULL;
+
+	if (!(o = pa_context_drain(h->c, _context_drain_complete, h)))
+		pa_context_disconnect(h->c);
+	else
+		pa_operation_unref(o);
+
+	/* send EOS callback */
+	debug_msg("Send EOS to CALLBACK(%p, %p) to client!!", h->stop_cb, h->cb_param);
+	if (h->stop_cb)
+		h->stop_cb(h->cb_param);
+}
+
+static void _stream_moved_callback(pa_stream *s, void *userdata)
+{
+	assert(s);
+	debug_msg("stream moved callback : %p", s);
+}
+
+static void _stream_underflow_callback(pa_stream *s, void *userdata)
+{
+	wave_info_t *h = (wave_info_t *)userdata;
+	assert(s);
+
+	debug_msg("stream underflow callback : %p, file(%s)", s, h->filename);
+}
+
+static void _stream_buffer_attr_callback(pa_stream *s, void *userdata)
+{
+	assert(s);
+	debug_msg("stream underflow callback : %p", s);
+}
+
+static void _stream_write_callback(pa_stream *s, size_t length, void *userdata)
+{
+	sf_count_t bytes = 0;
+	void *data = NULL;
+	size_t frame_size;
+	pa_operation *o = NULL;
+	int ret = 0;
+	wave_info_t *h = (wave_info_t *)userdata;
+
+	if (!s || length <= 0) {
+		debug_error("write error. stream(%p), length(%d)", s, length);
+		return;
+	}
+
+	/* WAVE */
+	data = pa_xmalloc(length);
+
+	frame_size = pa_frame_size(&h->spec);
+
+	if ((bytes = sf_readf_short(h->sf, data, (sf_count_t)(length / frame_size))) > 0)
+		bytes *= (sf_count_t)frame_size;
+
+	debug_msg("=== %lld / %d ===",bytes, length);
+
+	if (bytes > 0)
+		pa_stream_write(s, data, (size_t)bytes, pa_xfree, 0, PA_SEEK_RELATIVE);
+	else
+		pa_xfree(data);
+
+	/* If No more data, drain stream */
+	if (bytes < (sf_count_t)length) {
+		debug_msg("EOS!!!!! %lld/%d", bytes, length);
+
+		/* Handle loop */
+		if (h->repeat_count == -1 || --h->repeat_count) {
+			debug_msg("repeat count = %d", h->repeat_count);
+			ret = sf_seek(h->sf, 0, SEEK_SET);
+			if (ret == -1) {
+				debug_error("SEEK failed .... ret = %d", ret);
+				/* seek failed, can't loop anymore, do drain */
+			} else {
+				return;
+			}
+		}
+
+		/* EOS callback will be notified after drain is completed */
+		pa_stream_set_write_callback(s, NULL, NULL);
+		o = pa_stream_drain(s, _stream_drain_complete, h);
+		if (o)
+			pa_operation_unref(o);
+	}
+}
+
+static int _pa_connect_start_play(wave_info_t *h)
+{
+	pa_threaded_mainloop *m = NULL;
+	pa_context *c = NULL;
+	pa_stream *s = NULL;
+
+	/* Mainloop */
+	if (!(m = pa_threaded_mainloop_new())) {
+		debug_error("mainloop create failed");
+		goto error;
+	}
+
+	/* Context */
+	if (!(c = pa_context_new(pa_threaded_mainloop_get_api(m), NULL))) {
+		debug_msg("context create failed");
+		goto error;
+	}
+
+	pa_context_set_state_callback(c, _context_state_callback, m);
+
+	pa_threaded_mainloop_lock(m);
+
+	if (pa_threaded_mainloop_start(m) < 0) {
+		debug_error("mainloop start failed");
+		goto error;
+	}
+
+	if (pa_context_connect(c, NULL, 0, NULL) < 0) {
+		debug_error("context connect failed");
+		goto error;
+	}
+
+	for (;;) {
+		pa_context_state_t state = pa_context_get_state(c);
+		if (state == PA_CONTEXT_READY)
+			break;
+
+		if (!PA_CONTEXT_IS_GOOD(state)) {
+			debug_error("Context error!!!! %d", pa_context_errno(c));
+			goto error;
+		}
+
+		pa_threaded_mainloop_wait(m);
+	}
+
+	/* Stream */
+	pa_stream_flags_t flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_ADJUST_LATENCY | PA_STREAM_AUTO_TIMING_UPDATE;
+	pa_proplist *proplist = pa_proplist_new();
+
+	if (h->stream_type)
+		pa_proplist_sets(proplist, PA_PROP_MEDIA_ROLE, h->stream_type);
+	if (h->stream_index != -1)
+		pa_proplist_setf(proplist, PA_PROP_MEDIA_PARENT_ID, "%d", h->stream_index);
+
+	s = pa_stream_new_with_proplist(c, "wav-player", &h->spec, NULL, proplist);
+	pa_proplist_free(proplist);
+	if (!s) {
+		debug_msg("pa_stream_new failed. file(%s)", h->filename);
+		goto error;
+	}
+
+	pa_stream_set_state_callback(s, _stream_state_callback, m);
+	pa_stream_set_write_callback(s, _stream_write_callback, h);
+	pa_stream_set_moved_callback(s, _stream_moved_callback, h);
+	pa_stream_set_underflow_callback(s, _stream_underflow_callback, h);
+	pa_stream_set_buffer_attr_callback(s, _stream_buffer_attr_callback, h);
+
+	pa_stream_connect_playback(s, NULL, NULL, flags, NULL, NULL);
+
+	for (;;) {
+		pa_stream_state_t state = pa_stream_get_state(s);
+
+		if (state == PA_STREAM_READY)
+			break;
+
+		if (!PA_STREAM_IS_GOOD(state)) {
+			debug_error("Stream error!!!! %d", pa_context_errno(c));
+			goto error;
+		}
+
+		/* Wait until the stream is ready */
+		pa_threaded_mainloop_wait(m);
+	}
+
+	h->m = m;
+	h->c = c;
+	h->s = s;
+
+	pa_threaded_mainloop_unlock(m);
+
+	return 0;
+
+error:
+	if (s)
+		pa_stream_unref(s);
+
+	if (c)
+		pa_context_unref(c);
+
+	if (m)
+		pa_threaded_mainloop_free(m);
+
+	return -1;
+}
+
+static int _pa_uncork(wave_info_t *h)
+{
+	pa_threaded_mainloop_lock(h->m);
+
+	if (pa_stream_cork(h->s, 0, NULL, NULL) < 0) {
+		debug_msg("pa_stream_cork(0)failed");
+	}
+
+	pa_threaded_mainloop_unlock(h->m);
+
+	return 0;
+}
+
+static int _pa_stop_disconnect(wave_info_t *h)
+{
+	if (h->m) {
+		pa_threaded_mainloop_lock(h->m);
+
+		if (h->s) {
+			pa_stream_disconnect(h->s);
+			pa_stream_unref(h->s);
+			h->s = NULL;
+		}
+
+		if (h->c) {
+			pa_context_unref(h->c);
+			h->c = NULL;
+		}
+
+		pa_threaded_mainloop_unlock(h->m);
+
+		pa_threaded_mainloop_free(h->m);
+		h->m = NULL;
+	}
+	return 0;
+}
+
+static int _prepare_sound(wave_info_t *h)
+{
+	memset(&h->si, 0, sizeof(SF_INFO));
+
+	h->sf = sf_open(h->filename, SFM_READ, &h->si);
+	if (!h->sf) {
+		debug_msg("sf_open error. path(%s)", h->filename);
+		return -1;
+	}
+
+	h->spec.rate = h->si.samplerate;
+	h->spec.channels = h->si.channels;
+	h->spec.format = PA_SAMPLE_S16LE;
+
+	debug_msg("SF_INFO : frames = %lld, samplerate = %d, channels = %d, format = 0x%X, sections = %d, seekable = %d",
+			h->si.frames, h->si.samplerate, h->si.channels, h->si.format, h->si.sections, h->si.seekable);
+
+	return 0;
+}
+
+static void _unprepare_sound(wave_info_t *h)
+{
+	if (h->sf) {
+		sf_close(h->sf);
+		h->sf = NULL;
+	}
+}
 
 static int (*g_thread_pool_func)(void*, void (*)(void*)) = NULL;
 
-int MMSoundPlugCodecWaveSetThreadPool(int (*func)(void*, void (*)(void*)))
+static int MMSoundPlugCodecWaveSetThreadPool(int (*func)(void*, void (*)(void*)))
 {
-    debug_enter("(func : %p)\n", func);
-    g_thread_pool_func = func;
-    debug_leave("\n");
-    return MM_ERROR_NONE;
+	debug_enter("(func : %p)\n", func);
+	g_thread_pool_func = func;
+	debug_leave("\n");
+	return MM_ERROR_NONE;
 }
 
-int* MMSoundPlugCodecWaveGetSupportTypes(void)
+static int* MMSoundPlugCodecWaveGetSupportTypes(void)
 {
-    debug_enter("\n");
-    static int suported[2] = {MM_SOUND_SUPPORTED_CODEC_WAVE, 0};
-    debug_leave("\n");
-    return suported;
-}
-
-int MMSoundPlugCodecWaveParse(MMSourceType *source, mmsound_codec_info_t *info)
-{
-	struct __riff_chunk
-	{
-		uint32_t chunkid;
-		uint32_t chunksize;
-		uint32_t rifftype;
-	};
-
-	struct __wave_chunk
-	{
-		uint32_t chunkid;
-		uint32_t chunksize;
-		uint16_t compression;
-		uint16_t channels;
-		uint32_t samplerate;
-		uint32_t avgbytepersec;
-		uint16_t blockkalign;
-		uint16_t bitspersample;
-	};
-
-	struct __data_chunk
-	{
-		uint32_t chunkid;
-		uint32_t chunkSize;
-	};
-
-	struct __riff_chunk *priff = NULL;
-	struct __wave_chunk *pwav = NULL;
-	struct __data_chunk *pdata = NULL;
-//	struct __fmt_chunk *pfmt = NULL;
-
-	int datalen = -1;
-	char *data = NULL;
-	unsigned int tSize;
-
 	debug_enter("\n");
+	static int suported[2] = {MM_SOUND_SUPPORTED_CODEC_WAVE, 0};
+	debug_leave("\n");
+	return suported;
+}
 
-	data = MMSourceGetPtr(source);
-	debug_msg("[CODEC WAV] source ptr :[%p]\n", data);
+static int MMSoundPlugCodecWaveParse(const char *filename, mmsound_codec_info_t *info)
+{
+	SNDFILE* sf;
+	SF_INFO si;
 
-	datalen = MMSourceGetCurSize(source);
-	debug_msg("[CODEC WAV] source size :[0x%08X]\n", datalen);
-
-	priff = (struct __riff_chunk *) data;
-
-	/* Must be checked, Just for wav or not */
-	if (priff->chunkid != RIFF_CHUNK_ID ||priff->rifftype != RIFF_CHUNK_TYPE)
+	memset(&si, 0, sizeof(SF_INFO));
+	sf = sf_open(filename, SFM_READ, &si);
+	if (!sf) {
+		debug_msg("sf_open [%s] error.....", filename);
 		return MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
-
-	if(priff->chunksize != datalen -8)
-		priff->chunksize = (datalen-8);
-
-	if (priff->chunkid != RIFF_CHUNK_ID ||priff->chunksize != datalen -8 ||priff->rifftype != RIFF_CHUNK_TYPE) {
-		debug_msg("[CODEC WAV] This contents is not RIFF file\n");
-		debug_msg("[CODEC WAV] cunkid : %ld, chunksize : %ld, rifftype : 0x%lx\n", priff->chunkid, priff->chunksize, priff->rifftype);
-		//debug_msg("[CODEC WAV] cunkid : %ld, chunksize : %d, rifftype : 0x%lx\n", RIFF_CHUNK_ID, datalen-8, RIFF_CHUNK_TYPE);
-		return MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
-	}
-
-	debug_msg("[CODEC WAV] cunkid : %ld, chunksize : %ld, rifftype : 0x%lx\n", priff->chunkid, priff->chunksize, priff->rifftype);
-	//debug_msg("[CODEC WAV] cunkid : %ld, chunksize : %d, rifftype : 0x%lx\n", RIFF_CHUNK_ID, datalen-8, RIFF_CHUNK_TYPE);
-
-	tSize = sizeof(struct __riff_chunk);
-	pdata = (struct __data_chunk*)(data+tSize);
-
-	while (pdata->chunkid != FMT_CHUNK_ID && tSize < datalen) {
-		tSize += (pdata->chunkSize+8);
-
-		if (tSize >= datalen) {
-			debug_warning("[CODEC WAV] Parsing finished : unable to find the Wave Format chunk\n");
-			return MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
-		} else {
-			pdata = (struct __data_chunk*)(data+tSize);
-		}
-	}
-	pwav = (struct __wave_chunk*)(data+tSize);
-
-	if (pwav->chunkid != FMT_CHUNK_ID ||
-	    pwav->compression != WAVE_CODE_PCM ||	/* Only supported PCM */
-	    pwav->avgbytepersec != pwav->samplerate * pwav->blockkalign ||
-	    pwav->blockkalign != (pwav->bitspersample >> 3)*pwav->channels) {
-		debug_msg("[CODEC WAV] This contents is not supported wave file\n");
-		debug_msg("[CODEC WAV] chunkid : 0x%lx, comp : 0x%x, av byte/sec : %lu, blockalign : %d\n", pwav->chunkid, pwav->compression, pwav->avgbytepersec, pwav->blockkalign);
-		return MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
-	}
-
-	/* Only One data chunk support */
-
-	tSize += (pwav->chunksize+8);
-	pdata = (struct __data_chunk *)(data+tSize);
-
-	while (pdata->chunkid != DATA_CHUNK_ID && tSize < datalen) {
-		tSize += (pdata->chunkSize+8);
-		if (tSize >= datalen) {
-			debug_warning("[CODEC WAV] Parsing finished : unable to find the data chunk\n");
-			return MM_ERROR_SOUND_UNSUPPORTED_MEDIA_TYPE;
-		} else {
-			pdata = (struct __data_chunk*)(data+tSize);
-		}
 	}
 
 	info->codec = MM_SOUND_SUPPORTED_CODEC_WAVE;
-	info->channels = pwav->channels;
-	info->format = pwav->bitspersample;
-	info->samplerate = pwav->samplerate;
-	info->doffset = (tSize+8);
-	info->size = pdata->chunkSize;
-	info->duration = ((info->size)*1000)/pwav->avgbytepersec;
-	debug_msg("info->size:%d info->duration: %d\n", info->size, info->duration);
+	info->channels = si.channels;
+	info->samplerate = si.samplerate;
+
+	debug_msg("filename = %s, frames[%lld], samplerate[%d], channels[%d], format[%x], sections[%d], seekable[%d]",
+			filename, si.frames, si.samplerate, si.channels, si.format, si.sections, si.seekable);
+	sf_close(sf);
 
 	debug_leave("\n");
 	return MM_ERROR_NONE;
 }
 
-
-
-int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_t *info, MMHandleType *handle)
+static int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_t *info, MMHandleType *handle)
 {
 	wave_info_t* p = NULL;
-	MMSourceType *source;
-	static int keytone_period = 0;
 
 #ifdef DEBUG_DETAIL
 	debug_enter("\n");
 #endif
-
-	debug_msg("period[%d] type[%s] ch[%d] format[%d] rate[%d] doffset[%d] priority[%d] repeat[%d] volume[%f] callback[%p] route[%d]\n",
-			keytone_period, (info->codec == MM_SOUND_SUPPORTED_CODEC_WAVE) ? "Wave" : "Unknown",
-			info->channels, info->format, info->samplerate, info->doffset, param->priority, param->repeat_count,
-			param->volume, param->stop_cb, param->handle_route);
-	source = param->source;
 
 	if (g_thread_pool_func == NULL) {
 		debug_error("[CODEC WAV] Need thread pool!\n");
@@ -262,248 +440,82 @@ int MMSoundPlugCodecWaveCreate(mmsound_codec_param_t *param, mmsound_codec_info_
 
 	memset(p, 0, sizeof(wave_info_t));
 	p->handle = 0;
-
-	p->ptr_current = MMSourceGetPtr(source) + info->doffset;
-
-	p->size = info->size;
-	p->transper_size = info->samplerate / 1000 * SAMPLE_COUNT * (info->format >> 3) * info->channels;
-
-	p->tone = param->tone;
 	p->repeat_count = param ->repeat_count;
 	p->stop_cb = param->stop_cb;
 	p->cb_param = param->param;
-	p->source = source;
-	p->codec_wave_mutex = param->codec_wave_mutex;
+	MMSOUND_STRNCPY(p->filename, param->pfilename, 256);
 	p->stream_index = param->stream_index;
 	MMSOUND_STRNCPY(p->stream_type, param->stream_type, MM_SOUND_STREAM_TYPE_LEN);
-	//	pthread_mutex_init(&p->mutex, NULL);
 
-	debug_msg("[CODEC WAV] transper_size : %d\n", p->transper_size);
-	debug_msg("[CODEC WAV] size : %d\n", p->size);
-
-	if(info->duration < WAV_FILE_SAMPLE_PLAY_DURATION) {
-		p->mode = HANDLE_MODE_OUTPUT_LOW_LATENCY;
-	} else {
-		p->mode = HANDLE_MODE_OUTPUT;
-	}
-
-	p->priority = param->priority;
-	p->volume_config = param->volume_config;
-	p->channels = info->channels;
-	p->samplerate = info->samplerate;
-
-	p->handle_route = param->handle_route;
-
-	switch(info->format)
-	{
-	case 8:
-		p->format =  PA_SAMPLE_U8;
-		break;
-	case 16:
-		p->format =  PA_SAMPLE_S16LE;
-		break;
-	default:
-		p->format =  PA_SAMPLE_S16LE;
-		break;
-	}
-
-	debug_msg("[CODEC WAV] PARAM mode : [%d]\n", p->mode);
-	debug_msg("[CODEC WAV] PARAM channels : [%d]\n", p->channels);
-	debug_msg("[CODEC WAV] PARAM samplerate : [%d]\n", p->samplerate);
-	debug_msg("[CODEC WAV] PARAM format : [%d]\n", p->format);
-	debug_msg("[CODEC WAV] PARAM volume type : [%x]\n", p->volume_config);
-
-	p->state = STATE_READY;
-
-	g_thread_pool_func(p, _runing);
-	debug_msg("[CODEC WAV] Thread pool start\n");
+	_prepare_sound(p);
+	_pa_connect_start_play(p);
 	*handle = (MMHandleType)p;
 
 #ifdef DEBUG_DETAIL
-	debug_leave("\n");
+	debug_leave("%p\n", p);
 #endif
 
 	return MM_ERROR_NONE;
 }
 
 
-int MMSoundPlugCodecWavePlay(MMHandleType handle)
+static int MMSoundPlugCodecWavePlay(MMHandleType handle)
 {
 	wave_info_t *p = (wave_info_t *) handle;
 
 	debug_enter("(handle %x)\n", handle);
 
-	if (p->size <= 0) {
-		debug_error("[CODEC WAV] end of file\n");
-		return MM_ERROR_END_OF_FILE;
-	}
-	debug_msg("[CODEC WAV] send start signal\n");
-	p->state = STATE_BEGIN;
+	_pa_uncork(p);
 
 	debug_leave("\n");
 
 	return MM_ERROR_NONE;
 }
 
-static void _runing(void *param)
+static int MMSoundPlugCodecWaveStop(MMHandleType handle)
 {
-	wave_info_t *p = (wave_info_t*) param;
-	int nread = 0;
-	char *org_cur = NULL;
-	int org_size = 0;
-	char *dummy = NULL;
-	int size;
-
-	pa_sample_spec ss;
-	mm_sound_handle_route_info route_info;
-
-	if (p == NULL) {
-		debug_error("[CODEC WAV] param is null\n");
-		return;
-	}
-
-	debug_enter("[CODEC WAV] (Slot ID %d)\n", p->cb_param);
-	CODEC_WAVE_LOCK(p->codec_wave_mutex);
-
-	route_info.policy = HANDLE_ROUTE_POLICY_OUT_AUTO;
-
-	ss.rate = p->samplerate;
-	ss.channels = p->channels;
-	ss.format = p->format;
-	p->period = pa_sample_size(&ss) * ((ss.rate * 25) / 1000);
-	p->handle = mm_sound_pa_open(p->mode, &route_info, p->priority, p->volume_config, &ss, NULL, &size, p->stream_type, p->stream_index);
-	if(!p->handle) {
-		debug_critical("[CODEC WAV] Can not open audio handle\n");
-		CODEC_WAVE_UNLOCK(p->codec_wave_mutex);
-		return;
-	}
-
-	if (p->handle == 0) {
-		debug_critical("[CODEC WAV] audio_handle is not created !! \n");
-		CODEC_WAVE_UNLOCK(p->codec_wave_mutex);
-		free(p);
-		p = NULL;
-		return;
-	}
-
-	/* Set the thread schedule */
-	org_cur = p->ptr_current;
-	org_size = p->size;
-
-	dummy = malloc(p->period);
-	if(!dummy) {
-		debug_error("[CODEC WAV] not enough memory");
-		CODEC_WAVE_UNLOCK(p->codec_wave_mutex);
-		return;
-	}
-	memset(dummy, 0, p->period);
-	p->transper_size = p->period;
-	/* stop_size = org_size > p->period ? org_size : p->period; */
-
-	debug_msg("[CODEC WAV] Wait start signal\n");
-
-	while(p->state == STATE_READY) {
-		usleep(4);
-	}
-
-	debug_msg("[CODEC WAV] Recv start signal\n");
-	debug_msg("[CODEC WAV] repeat : %d\n", p->repeat_count);
-	debug_msg("[CODEC WAV] transper_size : %d\n", p->transper_size);
-
-	if (p->state != STATE_STOP) {
-		debug_msg("[CODEC WAV] Play start\n");
-		p->state = STATE_PLAY;
-	} else {
-		debug_warning ("[CODEC WAV] state is already STATE_STOP\n");
-	}
-
-	while (((p->repeat_count == -1)?(1):(p->repeat_count--)) && p->state == STATE_PLAY) {
-		while (p->state == STATE_PLAY && p->size > 0) {
-			if (p->size >= p->transper_size) {
-				nread = p->transper_size;
-				memcpy(p->buffer, p->ptr_current, nread);
-				mm_sound_pa_write(p->handle, p->buffer, nread);
-				p->ptr_current += nread;
-				p->size -= nread;
-				debug_msg("[CODEC WAV] Playing, nRead_data : %d Size : %d \n", nread, p->size);
-			} else {
-				/* Write remain size */
-				nread = p->size;
-				memcpy(p->buffer, p->ptr_current, nread);
-				mm_sound_pa_write(p->handle, p->buffer, nread);
-				mm_sound_pa_write(p->handle, dummy, (p->transper_size-nread));
-				p->ptr_current += nread;
-				p->size = 0;
-			}
-		}
-		p->ptr_current = org_cur;
-		p->size = org_size;
-	}
-
-	debug_msg("[CODEC WAV] End playing\n");
-	p->state = STATE_STOP;
-
-	if (p->handle == 0) {
-		usleep(200000);
-		debug_warning("[CODEC WAV] audio already unrealize !!\n");
-	} else {
-		/* usleep(75000); */
-		if(MM_ERROR_NONE != mm_sound_pa_drain(p->handle))
-			debug_error("mm_sound_pa_drain() failed\n");
-
-		if(MM_ERROR_NONE != mm_sound_pa_close(p->handle)) {
-			debug_error("[CODEC WAV] Can not close audio handle\n");
-		} else {
-			p->handle = 0;
-		}
-	}
-	CODEC_WAVE_UNLOCK(p->codec_wave_mutex);
-
-	p->handle = 0;
-
-	p->state = STATE_NONE;
-
-	free(dummy); dummy = NULL;
-	if (p->stop_cb)
-	{
-		debug_msg("[CODEC WAV] Play is finished, Now start callback\n");
-		p->stop_cb(p->cb_param);
-	}
-	debug_leave("\n");
-}
-
-
-int MMSoundPlugCodecWaveStop(MMHandleType handle)
-{
+	int ret = 0;
 	wave_info_t *p = (wave_info_t*) handle;
 
 	if (!p) {
 		debug_error("The handle is null\n");
 		return MM_ERROR_SOUND_INTERNAL;
 	}
-	debug_msg("[CODEC WAV] Current state is state %d\n", p->state);
+
 	debug_msg("[CODEC WAV] Handle 0x%08X stop requested\n", handle);
 
-	p->state = STATE_STOP;
+	ret = _pa_stop_disconnect(p);
 
-    return MM_ERROR_NONE;
+	return MM_ERROR_NONE;
 }
 
-int MMSoundPlugCodecWaveDestroy(MMHandleType handle)
+static int MMSoundPlugCodecWaveDestroy(MMHandleType handle)
 {
-	wave_info_t *p = (wave_info_t*) handle;
+	wave_info_t *p = (wave_info_t *)handle;
 
 	if (!p) {
 		debug_warning("Can not destroy handle :: handle is invalid");
 		return MM_ERROR_SOUND_INVALID_POINTER;
 	}
 
-	if(p->source) {
-		mm_source_close(p->source);
-		free(p->source); p->source = NULL;
-	}
+	_unprepare_sound(p);
 
-	free(p); p = NULL;
+	free(p);
+	p = NULL;
+
+	return MM_ERROR_NONE;
+}
+
+EXPORT_API
+int MMSoundPlugCodecGetInterface(mmsound_codec_interface_t *intf)
+{
+	intf->GetSupportTypes   = MMSoundPlugCodecWaveGetSupportTypes;
+	intf->Parse             = MMSoundPlugCodecWaveParse;
+	intf->Create            = MMSoundPlugCodecWaveCreate;
+	intf->Destroy           = MMSoundPlugCodecWaveDestroy;
+	intf->Play              = MMSoundPlugCodecWavePlay;
+	intf->Stop              = MMSoundPlugCodecWaveStop;
+	intf->SetThreadPool     = MMSoundPlugCodecWaveSetThreadPool;
 
 	return MM_ERROR_NONE;
 }
@@ -511,21 +523,7 @@ int MMSoundPlugCodecWaveDestroy(MMHandleType handle)
 EXPORT_API
 int MMSoundGetPluginType(void)
 {
-    return MM_SOUND_PLUGIN_TYPE_CODEC;
-}
-
-EXPORT_API
-int MMSoundPlugCodecGetInterface(mmsound_codec_interface_t *intf)
-{
-    intf->GetSupportTypes   = MMSoundPlugCodecWaveGetSupportTypes;
-    intf->Parse             = MMSoundPlugCodecWaveParse;
-    intf->Create            = MMSoundPlugCodecWaveCreate;
-    intf->Destroy           = MMSoundPlugCodecWaveDestroy;
-    intf->Play              = MMSoundPlugCodecWavePlay;
-    intf->Stop              = MMSoundPlugCodecWaveStop;
-    intf->SetThreadPool     = MMSoundPlugCodecWaveSetThreadPool;
-
-    return MM_ERROR_NONE;
+	return MM_SOUND_PLUGIN_TYPE_CODEC;
 }
 
 

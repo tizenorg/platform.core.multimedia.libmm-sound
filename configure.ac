@@ -54,6 +54,10 @@ PKG_CHECK_MODULES(VCONF, vconf)
 AC_SUBST(VCONF_CFLAGS)
 AC_SUBST(VCONF_LIBS)
 
+PKG_CHECK_MODULES(VCONF, sndfile)
+AC_SUBST(SNDFILE_CFLAGS)
+AC_SUBST(SNDFILE_LIBS)
+
 AC_ARG_ENABLE(pulse, AC_HELP_STRING([--enable-pulse], [enable pulseaudio client]),
 [
  case "${enableval}" in
@@ -71,21 +75,6 @@ AC_SUBST(PA_CFLAGS)
 AC_SUBST(PA_LIBS)
 fi
 AM_CONDITIONAL([USE_PULSE], [test "x$USE_PULSE" = "xyes"])
-
-AC_ARG_ENABLE(ogg, AC_HELP_STRING([--enable-ogg], [enable ogg client]),
-[
- case "${enableval}" in
-	 yes) OGG_SUPPORT=yes ;;
-	 no)  OGG_SUPPORT=no ;;
-	 *)   AC_MSG_ERROR(bad value ${enableval} for --enable-ogg) ;;
- esac
- ],[OGG_SUPPORT=no])
-if test "x$OGG_SUPPORT" = "xyes"; then
-PKG_CHECK_MODULES(TREMOLO, libtremolo)
-AC_SUBST(TREMOLO_CFLAGS)
-AC_SUBST(TREMOLO_LIBS)
-fi
-AM_CONDITIONAL([OGG_SUPPORT], [test "x$OGG_SUPPORT" = "xyes"])
 
 dnl use security ---------------------------------------------------------------
 AC_ARG_ENABLE(security, AC_HELP_STRING([--enable-security], [using security]),
@@ -158,7 +147,6 @@ Makefile
 server/Makefile
 server/plugin/Makefile
 server/plugin/wav/Makefile
-server/plugin/ogg/Makefile
 server/plugin/keytone/Makefile
 server/plugin/tone/Makefile
 focus_server/Makefile

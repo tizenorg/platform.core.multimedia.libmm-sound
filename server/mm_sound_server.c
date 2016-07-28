@@ -217,9 +217,9 @@ int main(int argc, char **argv)
 		if ((pid = fork()) < 0) {
 			fprintf(stderr, "Sub Fork Error\n");
 			return 2;
-		} else if(pid == 0) {
+		} else if (pid == 0) {
 			break;
-		} else if(pid > 0) {
+		} else if (pid > 0) {
 			wait(&ret);
 			fprintf(stderr, "Killed by signal [%05X]\n", ret);
 			fprintf(stderr, "Daemon is run againg\n");

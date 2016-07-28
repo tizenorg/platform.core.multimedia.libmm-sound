@@ -23,7 +23,6 @@
 #define __MM_SOUND_PLUGIN_CODEC_H__
 
 #include "mm_sound_plugin.h"
-#include <mm_source.h>
 #include <mm_types.h>
 
 #define MM_SOUND_STREAM_TYPE_LEN 64
@@ -57,8 +56,8 @@ typedef struct {
 	int priority;
 	int volume_config;
 	int keytone;
-	MMSourceType *source;
 	int handle_route;
+	char *pfilename;
 	char stream_type[MM_SOUND_STREAM_TYPE_LEN];
 	int stream_index;
 	pthread_mutex_t *codec_wave_mutex;
@@ -67,9 +66,8 @@ typedef struct {
 typedef struct {
     int* (*GetSupportTypes)(void);
     int (*SetThreadPool) (int (*)(void*, void (*)(void*)));
-    int (*Parse)(MMSourceType*, mmsound_codec_info_t*);
+    int (*Parse)(const char*, mmsound_codec_info_t*);
     int (*Create)(mmsound_codec_param_t*, mmsound_codec_info_t*, MMHandleType*);
-    int (*Play_wav)(mmsound_codec_param_t *, mmsound_codec_info_t *, MMHandleType );
     int (*Play)(MMHandleType);
     int (*Stop)(MMHandleType);
     int (*Destroy)(MMHandleType);
