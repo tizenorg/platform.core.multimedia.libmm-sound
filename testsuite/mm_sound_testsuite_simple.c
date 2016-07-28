@@ -161,35 +161,35 @@ void device_info_changed_cb (MMSoundDevice_t device_h, int changed_info_type, vo
 	debug_log("*** --- type[%d], id[%d], io_direction[%d], state[%d], name[%s]\n", device_type, id, io_direction, state, name);
 }
 #ifdef USE_FOCUS
-void focus_cb0 (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
+void focus_cb0(int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, int option, const char *ext_info, void *user_data)
 {
 	char *_state = NULL;
 	if (state == FOCUS_IS_RELEASED)
 		_state = "RELEASED";
 	else
 		_state = "ACQUIRED";
-	debug_log("*** focus_cb0 is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
-			index, type, _state, reason_for_change, additional_info, (char*)user_data);
+	debug_log("*** focus_cb0 is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], option[0x%x], ext_info[%s], user_data[%s]\n",
+			index, type, _state, reason_for_change, option, ext_info, (char*)user_data);
 }
-void focus_cb1 (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
+void focus_cb1(int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, int option, const char *ext_info, void *user_data)
 {
 	char *_state = NULL;
 	if (state == FOCUS_IS_RELEASED)
 		_state = "RELEASED";
 	else
 		_state = "ACQUIRED";
-	debug_log("*** focus_cb1 is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
-			index, type, _state, reason_for_change, additional_info, (char*)user_data);
+	debug_log("*** focus_cb1 is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], option[0x%x], ext_info[%s], user_data[%s]\n",
+			index, type, _state, reason_for_change, ext_info, (char*)user_data);
 }
-void focus_watch_cb (int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data)
+void focus_watch_cb(int index, mm_sound_focus_type_e type, mm_sound_focus_state_e state, const char *reason_for_change, const char *ext_info, void *user_data)
 {
 	char *_state = NULL;
 	if (state == FOCUS_IS_RELEASED)
 		_state = "RELEASED";
 	else
 		_state = "ACQUIRED";
-	debug_log("*** focus_watch_cb is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], additional_info[%s], user_data[%s]\n",
-			index, type, _state, reason_for_change, additional_info, (char*)user_data);
+	debug_log("*** focus_watch_cb is called, index[%d], focus_type[%d], state[%s], reason_for_change[%s], ext_info[%s], user_data[%s]\n",
+			index, type, _state, reason_for_change, ext_info, (char*)user_data);
 }
 #endif
 void quit_program()

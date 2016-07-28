@@ -54,9 +54,9 @@ int mm_sound_client_register_focus(int id, int pid, const char *stream_type, mm_
 int mm_sound_client_unregister_focus(int id);
 int mm_sound_client_set_focus_reacquisition(int id, bool reacquisition);
 int mm_sound_client_get_focus_reacquisition(int id, bool *reacquisition);
-int mm_sound_client_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **additional_info);
-int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option);
-int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char *option);
+int mm_sound_client_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **ext_info);
+int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, int option, const char *ext_info);
+int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, int option, const char *ext_info);
 int mm_sound_client_set_focus_watch_callback(int pid, mm_sound_focus_type_e type, mm_sound_focus_changed_watch_cb callback, bool is_for_session, void* user_data, int *id);
 int mm_sound_client_unset_focus_watch_callback(int id);
 #endif

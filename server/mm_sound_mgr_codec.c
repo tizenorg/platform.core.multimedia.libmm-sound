@@ -83,7 +83,7 @@ static int _MMSoundMgrCodecRegisterInterface(MMSoundPluginType *plugin);
 
 #ifdef FOCUS_INTEGRATION
 
-void sound_codec_focus_callback(int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e focus_state, const char *reason_for_change, const char *additional_info, void *user_data)
+void sound_codec_focus_callback(int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e focus_state, const char *reason_for_change, const char *ext_info, void *user_data)
 {
 
 	int slotid = (int)user_data;
@@ -107,7 +107,7 @@ void sound_codec_focus_callback(int id, mm_sound_focus_type_e focus_type, mm_sou
 	return;
 }
 
-void sound_codec_focus_watch_callback(int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e focus_state, const char *reason_for_change, const char* additional_info, void *user_data)
+void sound_codec_focus_watch_callback(int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e focus_state, const char *reason_for_change, const char* ext_info, void *user_data)
 {
 	int slotid = (int)user_data;
 	int result = MM_ERROR_NONE;

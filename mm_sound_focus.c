@@ -105,7 +105,7 @@ int mm_sound_focus_is_cb_thread(bool *result)
 	ret = mm_sound_client_is_focus_cb_thread(g_thread_self(), result);
 	if (!ret) {
 		if (*result)
-			debug_error("it might be called in the thread of focus callback, it is not allowed\n");
+			debug_msg("it might be called in the thread of focus callback\n");
 	}
 
 	debug_fleave();
@@ -221,7 +221,6 @@ int mm_sound_get_focus_reacquisition(int id, bool *reacquisition)
 	}
 
 	ret = mm_sound_client_get_focus_reacquisition(id, reacquisition);
-
 	if (ret) {
 		debug_error("Could not get focus reacquisition, ret[0x%x]\n", ret);
 	}
@@ -232,7 +231,7 @@ int mm_sound_get_focus_reacquisition(int id, bool *reacquisition)
 }
 
 EXPORT_API
-int mm_sound_get_stream_type_of_acquired_focus(int focus_type, char **stream_type, char **additional_info)
+int mm_sound_get_stream_type_of_acquired_focus(int focus_type, char **stream_type, char **ext_info)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -243,8 +242,7 @@ int mm_sound_get_stream_type_of_acquired_focus(int focus_type, char **stream_typ
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_get_acquired_focus_stream_type(focus_type, stream_type, additional_info);
-
+	ret = mm_sound_client_get_acquired_focus_stream_type(focus_type, stream_type, ext_info);
 	if (ret) {
 		debug_error("Could not get acquired focus stream type, ret[0x%x]\n", ret);
 	}
@@ -255,7 +253,7 @@ int mm_sound_get_stream_type_of_acquired_focus(int focus_type, char **stream_typ
 }
 
 EXPORT_API
-int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info)
+int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char *ext_info)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -272,7 +270,7 @@ int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char 
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_acquire_focus(id, focus_type, additional_info);
+	ret = mm_sound_client_acquire_focus(id, focus_type, 0, ext_info);
 	if (ret) {
 		debug_error("Could not acquire focus, ret[0x%x]\n", ret);
 	}
@@ -283,7 +281,7 @@ int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char 
 }
 
 EXPORT_API
-int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info)
+int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char *ext_info)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -300,7 +298,75 @@ int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char 
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = mm_sound_client_release_focus(id, focus_type, additional_info);
+	ret = mm_sound_client_release_focus(id, focus_type, 0, ext_info);
+	if (ret) {
+		debug_error("Could not release focus, ret[0x%x]\n", ret);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_acquire_focus_with_option(int id, mm_sound_focus_type_e focus_type, int option, const char *ext_info)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
+
+	if (id < 0) {
+		debug_error("id is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (option < 0) {
+		debug_error("option is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (focus_type < FOCUS_FOR_PLAYBACK || focus_type > FOCUS_FOR_BOTH) {
+		debug_error("focus type is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = mm_sound_client_acquire_focus(id, focus_type, option, ext_info);
+	if (ret) {
+		debug_error("Could not acquire focus, ret[0x%x]\n", ret);
+	}
+
+	debug_fleave();
+
+	return ret;
+}
+
+EXPORT_API
+int mm_sound_release_focus_with_option(int id, mm_sound_focus_type_e focus_type, int option, const char *ext_info)
+{
+	int ret = MM_ERROR_NONE;
+
+	debug_fenter();
+
+	RETURN_ERROR_IF_FOCUS_CB_THREAD(g_thread_self());
+
+	if (id < 0) {
+		debug_error("id is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (option < 0) {
+		debug_error("option is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (focus_type < FOCUS_FOR_PLAYBACK || focus_type > FOCUS_FOR_BOTH) {
+		debug_error("focus type is not valid\n");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = mm_sound_client_release_focus(id, focus_type, option, ext_info);
 	if (ret) {
 		debug_error("Could not release focus, ret[0x%x]\n", ret);
 	}

@@ -33,6 +33,8 @@
 #include "../include/mm_sound_utils.h"
 #include <sys/time.h>
 
+#define POLLING_TIMEOUT_FOR_CB 2500
+
 static GList *g_focus_node_list = NULL;
 static pthread_mutex_t g_focus_node_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 stream_list_t g_stream_list;
@@ -50,8 +52,9 @@ typedef struct {
 	int handle;
 	int type;
 	int state;
-	char stream_type [MAX_STREAM_TYPE_LEN];
-	char name [MM_SOUND_NAME_NUM];
+	char stream_type[MAX_STREAM_TYPE_LEN];
+	char ext_info[MM_SOUND_NAME_NUM];
+	int option;
 } focus_cb_data;
 
 #define CLEAR_DEAD_NODE_LIST(x)  do { \
@@ -225,8 +228,7 @@ static int _mm_sound_mgr_focus_get_priority_from_stream_type(int *priority, cons
 	return ret;
 }
 
-static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_command_e command,
-												focus_node_t *my_node, const _mm_sound_mgr_focus_param_t *param)
+static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_command_e command, focus_node_t *my_node, const _mm_sound_mgr_focus_param_t *param)
 {
 	char *filename = NULL;
 	char *filename2 = NULL;
@@ -238,7 +240,6 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 	int ret = -1;
 	struct pollfd pfd;
 	int pret = 0;
-	int pollingTimeout = 2500; /* NOTE : This is temporary code, because of Deadlock issues. If you fix that issue, remove this comment */
 
 	GList *list = NULL;
 	focus_node_t *node = NULL;
@@ -258,7 +259,7 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 				cb_data.type = focus_type & node->status;
 				cb_data.state = (command == FOCUS_COMMAND_ACQUIRE) ? !FOCUS_STATUS_DEACTIVATED : FOCUS_STATUS_DEACTIVATED;
 				MMSOUND_STRNCPY(cb_data.stream_type, my_node->stream_type, MAX_STREAM_TYPE_LEN);
-				MMSOUND_STRNCPY(cb_data.name, param->option, MM_SOUND_NAME_NUM);
+				MMSOUND_STRNCPY(cb_data.ext_info, param->ext_info, MM_SOUND_NAME_NUM);
 
 				/* Set start time */
 				gettimeofday(&time, NULL);
@@ -317,8 +318,8 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 				pfd.fd = fd_FOCUS_R;
 				pfd.events = POLLIN;
 				pfd.revents = 0;
-				debug_error("[RETCB] wait callback(tid=%d, cmd=%d, timeout=%d)\n", cb_data.pid, command, pollingTimeout);
-				pret = poll(&pfd, 1, pollingTimeout); /* timeout 7sec */
+				debug_error("[RETCB] wait callback(tid=%d, cmd=%d, timeout=%d)\n", cb_data.pid, command, POLLING_TIMEOUT_FOR_CB);
+				pret = poll(&pfd, 1, POLLING_TIMEOUT_FOR_CB);
 				debug_error("after poll");
 				if (pret < 0) {
 					debug_error("[RETCB] poll failed (%d)\n", pret);
@@ -337,7 +338,7 @@ static int _mm_sound_mgr_focus_do_watch_callback(focus_type_e focus_type, focus_
 				gettimeofday(&time, NULL);
 				endtime = time.tv_sec * 1000000 + time.tv_usec;
 				debug_error("[RETCB] FOCUS_WATCH_CB_END cbtimelab=%3.3f(second), timeout=%d(milli second) (reciever=%d) Return value = (handle_id=%d)\n",
-							((endtime-starttime)/1000000.), pollingTimeout, cb_data.pid, ret);
+						((endtime-starttime)/1000000.), POLLING_TIMEOUT_FOR_CB, cb_data.pid, ret);
 
 				/**************************************
 				 *
@@ -383,7 +384,6 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	unsigned int ret;
 	struct pollfd pfd;
 	int pret = 0;
-	int pollingTimeout = 2500; /* NOTE : This is temporary code, because of Deadlock issues. If you fix that issue, remove this comment */
 	int i = 0;
 	int flag_for_focus_type = 0;
 	int flag_for_taken_index = 0;
@@ -404,10 +404,12 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 		/* client will lost the acquired focus */
 		cb_data.type= assaulter_param->request_type & victim_node->status;
 		cb_data.state= FOCUS_STATUS_DEACTIVATED;
-		/* remove additional info. */
+		/* remove ext info. */
 		for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
-			if (cb_data.type & (i+1))
-				memset(victim_node->option[i], 0x0, MM_SOUND_NAME_NUM);
+			if (cb_data.type & (i+1)) {
+				memset(victim_node->ext_info[i], 0x0, MM_SOUND_NAME_NUM);
+				victim_node->option[i] = 0;
+			}
 		}
 	} else {
 		/* client will gain the lost focus */
@@ -418,14 +420,17 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 		}
 		cb_data.type = flag_for_focus_type & assaulter_param->request_type;
 		cb_data.state = !FOCUS_STATUS_DEACTIVATED;
-		/* copy additional info. */
+		/* copy ext info. */
 		for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
-			if (cb_data.type & (i+1))
-				MMSOUND_STRNCPY(victim_node->option[i], assaulter_param->option, MM_SOUND_NAME_NUM);
+			if (cb_data.type & (i+1)) {
+				MMSOUND_STRNCPY(victim_node->ext_info[i], assaulter_param->ext_info, MM_SOUND_NAME_NUM);
+				victim_node->option[i] = assaulter_param->option;
+			}
 		}
 	}
 	MMSOUND_STRNCPY(cb_data.stream_type, assaulter_stream_type, MAX_STREAM_TYPE_LEN);
-	MMSOUND_STRNCPY(cb_data.name, assaulter_param->option, MM_SOUND_NAME_NUM);
+	MMSOUND_STRNCPY(cb_data.ext_info, assaulter_param->ext_info, MM_SOUND_NAME_NUM);
+	cb_data.option = assaulter_param->option;
 
 	/* Set start time */
 	gettimeofday(&time, NULL);
@@ -489,8 +494,8 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	pfd.fd = fd_FOCUS_R;
 	pfd.events = POLLIN;
 	pfd.revents = 0;
-	debug_error("[RETCB] wait callback(tid=%d, handle=%d, cmd=%d, timeout=%d)\n",cb_data.pid, cb_data.handle, command, pollingTimeout);
-	pret = poll(&pfd, 1, pollingTimeout);
+	debug_error("[RETCB] wait callback(tid=%d, handle=%d, cmd=%d, timeout=%d)\n",cb_data.pid, cb_data.handle, command, POLLING_TIMEOUT_FOR_CB);
+	pret = poll(&pfd, 1, POLLING_TIMEOUT_FOR_CB);
 	if (pret < 0) {
 		debug_error("[RETCB] poll failed (%d)\n", pret);
 		res = -1;
@@ -517,7 +522,8 @@ int _mm_sound_mgr_focus_do_callback(focus_command_e command, focus_node_t *victi
 	/* Calculate endtime and display*/
 	gettimeofday(&time, NULL);
 	endtime = time.tv_sec * 1000000 + time.tv_usec;
-	debug_error("[RETCB] FOCUS_CB_END cbtimelab=%3.3f(second), timeout=%d(milli second) (reciever=%d) Return value = (handle_id=%d)\n", ((endtime-starttime)/1000000.), pollingTimeout, cb_data.pid, ret);
+	debug_error("[RETCB] FOCUS_CB_END cbtimelab=%3.3f(second), timeout=%d(milli second) (reciever=%d) Return value = (handle_id=%d)\n",
+				((endtime-starttime)/1000000.), POLLING_TIMEOUT_FOR_CB, cb_data.pid, ret);
 
 	/* update victim node */
 	if (command == FOCUS_COMMAND_RELEASE) {
@@ -616,10 +622,10 @@ static int _mm_sound_mgr_focus_list_dump ()
 	for (list = g_focus_node_list; list != NULL; list = list->next) {
 		node = (focus_node_t *)list->data;
 		if (node && !node->is_for_watch) {
-			debug_log("*** pid[%5d]/handle_id[%d]/[%15s]:priority[%2d],status[%s],taken_by[P(%5d/%2d/%2d)C(%5d/%2d/%2d)],for_session[%d],add.info[%s/%s]\n",
+			debug_log("*** pid[%5d]/handle_id[%2d]/[%14s]:priority[%2d],status[%s],taken_by[P(%5d/%2d/%2d)C(%5d/%2d/%2d)],session[%d],option[0x%x/0x%x],ext_info[%s/%s]\n",
 					node->pid, node->handle_id, node->stream_type, node->priority, focus_status_str[node->status],
 					node->taken_by_id[0].pid, node->taken_by_id[0].handle_id, node->taken_by_id[0].by_session, node->taken_by_id[1].pid,
-					node->taken_by_id[1].handle_id, node->taken_by_id[1].by_session, node->is_for_session, node->option[0], node->option[1]);
+					node->taken_by_id[1].handle_id, node->taken_by_id[1].by_session, node->is_for_session, node->option[0], node->option[1], node->ext_info[0], node->ext_info[1]);
 		}
 	}
 	debug_log("================================================ focus node list : end =====================================================\n");
@@ -885,7 +891,7 @@ FINISH:
 	return ret;
 }
 
-int mm_sound_mgr_focus_get_stream_type_of_acquired_focus(focus_type_e focus_type, char **stream_type, char **additional_info)
+int mm_sound_mgr_focus_get_stream_type_of_acquired_focus(focus_type_e focus_type, char **stream_type, char **ext_info)
 {
 	int ret = MM_ERROR_SOUND_NO_DATA;
 	GList *list = NULL;
@@ -907,10 +913,10 @@ int mm_sound_mgr_focus_get_stream_type_of_acquired_focus(focus_type_e focus_type
 	for (list = g_focus_node_list; list != NULL; list = list->next) {
 		node = (focus_node_t *)list->data;
 		if (node && !node->is_for_watch && (node->status & focus_type)) {
-			debug_msg("found a node : request_focus_type(%d), stream_type(%s)/additional info(%s) of acquired focus\n", focus_type, node->stream_type, node->option);
+			debug_msg("found a node : request_focus_type(%d), stream_type(%s)/ext info(%s) of acquired focus\n", focus_type, node->stream_type, node->ext_info);
 			*stream_type = node->stream_type;
-			if (additional_info)
-				*additional_info = node->option[focus_type-1];
+			if (ext_info)
+				*ext_info = node->ext_info[focus_type-1];
 			ret = MM_ERROR_NONE;
 			break;
 		}
@@ -1009,10 +1015,12 @@ int mm_sound_mgr_focus_request_acquire(const _mm_sound_mgr_focus_param_t *param)
 	}
 
 	if (ret != MM_ERROR_POLICY_BLOCKED) {
-		/* copy additional info. */
+		/* copy ext info. */
 		for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
-			if (param->request_type & (i+1))
-				MMSOUND_STRNCPY(my_node->option[i], param->option, MM_SOUND_NAME_NUM);
+			if (param->request_type & (i+1)) {
+				MMSOUND_STRNCPY(my_node->ext_info[i], param->ext_info, MM_SOUND_NAME_NUM);
+				my_node->option[i] = param->option;
+			}
 		}
 		/* update status */
 		my_node->status |= param->request_type;
@@ -1123,10 +1131,12 @@ int mm_sound_mgr_focus_request_release(const _mm_sound_mgr_focus_param_t *param)
 	}
 	/* update status */
 	my_node->status &= ~(param->request_type);
-	/* remove additional info. */
+	/* remove ext info. */
 	for (i = 0; i < NUM_OF_STREAM_IO_TYPE; i++) {
-		if (!(my_node->status & (i+1)))
-			memset(my_node->option[i], 0x0, MM_SOUND_NAME_NUM);
+		if (!(my_node->status & (i+1))) {
+			memset(my_node->ext_info[i], 0x0, MM_SOUND_NAME_NUM);
+			my_node->option[i] = 0;
+		}
 	}
 	/* do watch callback due to the status of mine */
 	if (need_to_trigger_watch_cb)
