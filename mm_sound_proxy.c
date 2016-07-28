@@ -836,7 +836,7 @@ int mm_sound_proxy_set_foucs_reacquisition(int instance, int id, bool reacquisit
 	return ret;
 }
 
-int mm_sound_proxy_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **additional_info)
+int mm_sound_proxy_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **ext_info)
 {
 	int ret = MM_ERROR_NONE;
 	GVariant *params = NULL, *result = NULL;
@@ -850,7 +850,7 @@ int mm_sound_proxy_get_acquired_focus_stream_type(int focus_type, char **stream_
 
 	if ((ret = mm_sound_dbus_method_call_to(AUDIO_PROVIDER_FOCUS_SERVER, AUDIO_METHOD_GET_ACQUIRED_FOCUS_STREAM_TYPE, params, &result)) == MM_ERROR_NONE) {
 		if (result) {
-			g_variant_get(result, "(ss)", stream_type, additional_info);
+			g_variant_get(result, "(ss)", stream_type, ext_info);
 			g_variant_unref(result);
 		}
 	} else {
@@ -861,14 +861,14 @@ int mm_sound_proxy_get_acquired_focus_stream_type(int focus_type, char **stream_
 	return ret;
 }
 
-int mm_sound_proxy_acquire_focus(int instance, int id, mm_sound_focus_type_e type, const char *option, bool is_for_session)
+int mm_sound_proxy_acquire_focus(int instance, int id, mm_sound_focus_type_e type, int option, const char *ext_info, bool is_for_session)
 {
 	int ret = MM_ERROR_NONE;
 	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
-	params = g_variant_new("(iiisb)", instance, id, type, option ? option : "", is_for_session);
+	params = g_variant_new("(iiiisb)", instance, id, type, option, ext_info ? ext_info : "", is_for_session);
 	if (params) {
 		if ((ret = mm_sound_dbus_method_call_to(AUDIO_PROVIDER_FOCUS_SERVER, AUDIO_METHOD_ACQUIRE_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus acquire focus failed");
@@ -886,14 +886,14 @@ int mm_sound_proxy_acquire_focus(int instance, int id, mm_sound_focus_type_e typ
 	return ret;
 }
 
-int mm_sound_proxy_release_focus(int instance, int id, mm_sound_focus_type_e type, const char *option, bool is_for_session)
+int mm_sound_proxy_release_focus(int instance, int id, mm_sound_focus_type_e type, int option, const char *ext_info, bool is_for_session)
 {
 	int ret = MM_ERROR_NONE;
 	GVariant *params = NULL, *result = NULL;
 
 	debug_fenter();
 
-	params = g_variant_new("(iiisb)", instance, id, type, option ? option : "", is_for_session);
+	params = g_variant_new("(iiiisb)", instance, id, type, option, ext_info ? ext_info : "", is_for_session);
 	if (params) {
 		if ((ret = mm_sound_dbus_method_call_to(AUDIO_PROVIDER_FOCUS_SERVER, AUDIO_METHOD_RELEASE_FOCUS, params, &result)) != MM_ERROR_NONE) {
 			debug_error("dbus release focus failed");

@@ -104,7 +104,8 @@ typedef struct {
 	int type;
 	int state;
 	char stream_type[MAX_STREAM_TYPE_LEN];
-	char name[MM_SOUND_NAME_NUM];
+	char ext_info[MM_SOUND_NAME_NUM];
+	int option;
 } focus_cb_data_lib;
 
 typedef struct {
@@ -1026,13 +1027,13 @@ static gboolean _focus_callback_handler(gpointer d)
 
 		if (changed_state != -1) {
 			debug_error("Got and start CB : TID(%d), handle(%d), type(%d), state(%d,(DEACTIVATED(0)/ACTIVATED(1)), trigger(%s)", tid, cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type);
-			if (g_focus_sound_handle[focus_index].focus_callback== NULL) {
+			if (g_focus_sound_handle[focus_index].focus_callback == NULL) {
 					debug_error("callback is null..");
 					g_mutex_unlock(&g_focus_sound_handle[focus_index].focus_lock);
 					return FALSE;
 			}
 			debug_error("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].focus_callback);
-			(g_focus_sound_handle[focus_index].focus_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
+			(g_focus_sound_handle[focus_index].focus_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.option, cb_data.ext_info, g_focus_sound_handle[focus_index].user_data);
 			debug_error("[CALLBACK END]");
 			if (g_focus_session_interrupt_info.user_cb) {
 				debug_error("sending session interrupt callback(%p)", g_focus_session_interrupt_info.user_cb);
@@ -1112,7 +1113,7 @@ static gboolean _focus_watch_callback_handler(gpointer d)
 			debug_msg("callback is null..");
 		} else {
 			debug_msg("[CALLBACK(%p) START]",g_focus_sound_handle[focus_index].watch_callback);
-			(g_focus_sound_handle[focus_index].watch_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.name, g_focus_sound_handle[focus_index].user_data);
+			(g_focus_sound_handle[focus_index].watch_callback)(cb_data.handle, cb_data.type, cb_data.state, cb_data.stream_type, cb_data.ext_info, g_focus_sound_handle[focus_index].user_data);
 			debug_msg("[CALLBACK END]");
 			if (g_focus_session_interrupt_info.user_cb) {
 				debug_error("sending session interrupt callback(%p)", g_focus_session_interrupt_info.user_cb);
@@ -1611,15 +1612,15 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **additional_info)
+int mm_sound_client_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **ext_info)
 {
 	int ret = MM_ERROR_NONE;
 
 	debug_fenter();
 
-	ret = mm_sound_proxy_get_acquired_focus_stream_type(focus_type, stream_type, additional_info);
+	ret = mm_sound_proxy_get_acquired_focus_stream_type(focus_type, stream_type, ext_info);
 	if (ret == MM_ERROR_NONE)
-		debug_msg("[Client] Success to get stream type of acquired focus, stream_type(%s), additional_info(%s)\n", *stream_type, *additional_info);
+		debug_msg("[Client] Success to get stream type of acquired focus, stream_type(%s), ext_info(%s)\n", *stream_type, *ext_info);
 	else
 		debug_error("[Client] Error occurred : 0x%x \n",ret);
 
@@ -1627,7 +1628,7 @@ int mm_sound_client_get_acquired_focus_stream_type(int focus_type, char **stream
 	return ret;
 }
 
-int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char *option)
+int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, int option, const char *ext_info)
 {
 	int ret = MM_ERROR_NONE;
 	int instance;
@@ -1644,8 +1645,7 @@ int mm_sound_client_acquire_focus(int id, mm_sound_focus_type_e type, const char
 	}
 	instance = g_focus_sound_handle[index].focus_tid;
 
-	ret = mm_sound_proxy_acquire_focus(instance, id, type, option, g_focus_sound_handle[index].is_for_session);
-
+	ret = mm_sound_proxy_acquire_focus(instance, id, type, option, ext_info, g_focus_sound_handle[index].is_for_session);
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to acquire focus\n");
 	else
@@ -1657,7 +1657,7 @@ cleanup:
 	return ret;
 }
 
-int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char *option)
+int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, int option, const char *ext_info)
 {
 	int ret = MM_ERROR_NONE;
 	int instance;
@@ -1674,8 +1674,7 @@ int mm_sound_client_release_focus(int id, mm_sound_focus_type_e type, const char
 	}
 	instance = g_focus_sound_handle[index].focus_tid;
 
-	ret = mm_sound_proxy_release_focus(instance, id, type, option, g_focus_sound_handle[index].is_for_session);
-
+	ret = mm_sound_proxy_release_focus(instance, id, type, option, ext_info, g_focus_sound_handle[index].is_for_session);
 	if (ret == MM_ERROR_NONE)
 		debug_msg("[Client] Success to release focus\n");
 	else

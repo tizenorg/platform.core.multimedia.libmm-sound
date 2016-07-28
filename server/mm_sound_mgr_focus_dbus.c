@@ -54,20 +54,22 @@ static const gchar introspection_xml[] =
   "    <method name='GetAcquiredFocusStreamType'>"
   "      <arg name='focus_type' type='i' direction='in'/>"
   "      <arg name='stream_type' type='s' direction='out'/>"
-  "      <arg name='additional_info' type='s' direction='out'/>"
+  "      <arg name='ext_info' type='s' direction='out'/>"
   "    </method>"
   "    <method name='AcquireFocus'>"
   "      <arg name='pid' type='i' direction='in'/>"
   "      <arg name='handle_id' type='i' direction='in'/>"
   "      <arg name='focus_type' type='i' direction='in'/>"
-  "      <arg name='name' type='s' direction='in'/>"
+  "      <arg name='option' type='i' direction='in'/>"
+  "      <arg name='ext_info' type='s' direction='in'/>"
   "      <arg name='is_for_session' type='b' direction='in'/>"
   "    </method>"
   "    <method name='ReleaseFocus'>"
   "      <arg name='pid' type='i' direction='in'/>"
   "      <arg name='handle_id' type='i' direction='in'/>"
   "      <arg name='focus_type' type='i' direction='in'/>"
-  "      <arg name='name' type='s' direction='in'/>"
+  "      <arg name='option' type='i' direction='in'/>"
+  "      <arg name='ext_info' type='s' direction='in'/>"
   "      <arg name='is_for_session' type='b' direction='in'/>"
   "    </method>"
   "    <method name='WatchFocus'>"
@@ -392,7 +394,7 @@ static void handle_method_get_acquired_focus_stream_type(GDBusMethodInvocation* 
 	int ret = MM_ERROR_NONE;
 	int focus_type = 0;
 	char *stream_type = NULL;
-	char *additional_info = NULL;
+	char *ext_info = NULL;
 	GVariant *params = NULL;
 
 	debug_fenter();
@@ -404,11 +406,11 @@ static void handle_method_get_acquired_focus_stream_type(GDBusMethodInvocation* 
 	}
 
 	g_variant_get(params, "(i)", &focus_type);
-	ret = __mm_sound_mgr_focus_ipc_get_acquired_focus_stream_type(focus_type, &stream_type, &additional_info);
+	ret = __mm_sound_mgr_focus_ipc_get_acquired_focus_stream_type(focus_type, &stream_type, &ext_info);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
-		_method_call_return_value(invocation, g_variant_new("(ss)", stream_type, additional_info));
+		_method_call_return_value(invocation, g_variant_new("(ss)", stream_type, ext_info));
 	} else {
 		_method_call_return_error(invocation, ret);
 	}
@@ -419,8 +421,8 @@ send_reply:
 static void handle_method_acquire_focus(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
-	int pid = 0, handle_id = 0, focus_type = 0;
-	const char* name = NULL;
+	int pid = 0, handle_id = 0, focus_type = 0, option = 0;
+	const char* ext_info = NULL;
 	gboolean is_for_session;
 	GVariant *params = NULL;
 
@@ -432,8 +434,8 @@ static void handle_method_acquire_focus(GDBusMethodInvocation* invocation)
 		goto send_reply;
 	}
 
-	g_variant_get(params, "(iiisb)", &pid, &handle_id, &focus_type, &name, &is_for_session);
-	ret = __mm_sound_mgr_focus_ipc_acquire_focus((is_for_session) ? pid : _get_sender_pid(invocation), handle_id, focus_type, name);
+	g_variant_get(params, "(iiiisb)", &pid, &handle_id, &focus_type, &option, &ext_info, &is_for_session);
+	ret = __mm_sound_mgr_focus_ipc_acquire_focus((is_for_session) ? pid : _get_sender_pid(invocation), handle_id, focus_type, option, ext_info);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {
@@ -448,8 +450,8 @@ send_reply:
 static void handle_method_release_focus(GDBusMethodInvocation* invocation)
 {
 	int ret = MM_ERROR_NONE;
-	int pid = 0, handle_id = 0, focus_type = 0;
-	const char* name = NULL;
+	int pid = 0, handle_id = 0, focus_type = 0, option = 0;
+	const char* ext_info = NULL;
 	gboolean is_for_session;
 	GVariant *params = NULL;
 
@@ -461,8 +463,8 @@ static void handle_method_release_focus(GDBusMethodInvocation* invocation)
 		goto send_reply;
 	}
 
-	g_variant_get(params, "(iiisb)", &pid, &handle_id, &focus_type, &name, &is_for_session);
-	ret = __mm_sound_mgr_focus_ipc_release_focus((is_for_session) ? pid : _get_sender_pid(invocation), handle_id, focus_type, name);
+	g_variant_get(params, "(iiiisb)", &pid, &handle_id, &focus_type, &option, &ext_info, &is_for_session);
+	ret = __mm_sound_mgr_focus_ipc_release_focus((is_for_session) ? pid : _get_sender_pid(invocation), handle_id, focus_type, option, ext_info);
 
 send_reply:
 	if (ret == MM_ERROR_NONE) {

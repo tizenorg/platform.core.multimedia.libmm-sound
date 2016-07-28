@@ -104,27 +104,27 @@ int __mm_sound_mgr_focus_ipc_set_focus_reacquisition(int pid, int handle_id, boo
 }
 
 // method
-int __mm_sound_mgr_focus_ipc_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **additional_info)
+int __mm_sound_mgr_focus_ipc_get_acquired_focus_stream_type(int focus_type, char **stream_type, char **ext_info)
 {
 	int ret = MM_ERROR_NONE;
 	char *stream_type_str = NULL;
-	char *additional_info_str = NULL;
+	char *ext_info_str = NULL;
 
 	if (!stream_type)
 		return MM_ERROR_INVALID_ARGUMENT;
 
-	ret = mm_sound_mgr_focus_get_stream_type_of_acquired_focus(focus_type, &stream_type_str, &additional_info_str);
+	ret = mm_sound_mgr_focus_get_stream_type_of_acquired_focus(focus_type, &stream_type_str, &ext_info_str);
 	if (ret == MM_ERROR_NONE) {
 		*stream_type = stream_type_str;
-		if (additional_info)
-			*additional_info = additional_info_str;
+		if (ext_info)
+			*ext_info = ext_info_str;
 	}
 
 	return ret;
 }
 
 // method -> callback
-int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_type, const char* name)
+int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_type, int option, const char *ext_info)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
@@ -133,7 +133,8 @@ int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_typ
 	param.pid = pid;
 	param.handle_id = handle_id;
 	param.request_type = focus_type;
-	MMSOUND_STRNCPY(param.option, name, MM_SOUND_NAME_NUM);
+	param.option = option;
+	MMSOUND_STRNCPY(param.ext_info, ext_info, MM_SOUND_NAME_NUM);
 
 	ret = mm_sound_mgr_focus_request_acquire(&param);
 
@@ -141,7 +142,7 @@ int __mm_sound_mgr_focus_ipc_acquire_focus(int pid, int handle_id, int focus_typ
 }
 
 // method -> callback
-int __mm_sound_mgr_focus_ipc_release_focus(int pid, int handle_id, int focus_type, const char* name)
+int __mm_sound_mgr_focus_ipc_release_focus(int pid, int handle_id, int focus_type, int option, const char *ext_info)
 {
 	_mm_sound_mgr_focus_param_t param;
 	int ret = MM_ERROR_NONE;
@@ -150,7 +151,8 @@ int __mm_sound_mgr_focus_ipc_release_focus(int pid, int handle_id, int focus_typ
 	param.pid = pid;
 	param.handle_id = handle_id;
 	param.request_type = focus_type;
-	MMSOUND_STRNCPY(param.option, name, MM_SOUND_NAME_NUM);
+	param.option = option;
+	MMSOUND_STRNCPY(param.ext_info, ext_info, MM_SOUND_NAME_NUM);
 
 	ret = mm_sound_mgr_focus_request_release(&param);
 

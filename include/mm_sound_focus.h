@@ -49,17 +49,19 @@ typedef enum {
 int mm_sound_focus_get_id(int *id);
 int mm_sound_focus_is_cb_thread(bool *result);
 
-typedef void (*mm_sound_focus_changed_cb) (int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data);
+typedef void (*mm_sound_focus_changed_cb) (int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e state, const char *reason_for_change, int option, const char *ext_info, void *user_data);
 int mm_sound_register_focus(int id, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data);
 int mm_sound_register_focus_for_session(int id, int pid, const char *stream_type, mm_sound_focus_changed_cb callback, void *user_data);
 int mm_sound_unregister_focus(int id);
 int mm_sound_set_focus_reacquisition(int id, bool reacquisition);
 int mm_sound_get_focus_reacquisition(int id, bool *reacquisition);
-int mm_sound_get_stream_type_of_acquired_focus(int focus_type, char **stream_type, char **additional_info);
-int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info);
-int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char *additional_info);
+int mm_sound_get_stream_type_of_acquired_focus(int focus_type, char **stream_type, char **ext_info);
+int mm_sound_acquire_focus(int id, mm_sound_focus_type_e focus_type, const char *ext_info);
+int mm_sound_release_focus(int id, mm_sound_focus_type_e focus_type, const char *ext_info);
+int mm_sound_acquire_focus_with_option(int id, mm_sound_focus_type_e focus_type, int option, const char *ext_info);
+int mm_sound_release_focus_with_option(int id, mm_sound_focus_type_e focus_type, int option, const char *ext_info);
 
-typedef void (*mm_sound_focus_changed_watch_cb) (int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e state, const char *reason_for_change, const char *additional_info, void *user_data);
+typedef void (*mm_sound_focus_changed_watch_cb) (int id, mm_sound_focus_type_e focus_type, mm_sound_focus_state_e state, const char *reason_for_change, const char *ext_info, void *user_data);
 int mm_sound_set_focus_watch_callback(mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data, int *id);
 int mm_sound_set_focus_watch_callback_for_session(int pid, mm_sound_focus_type_e focus_type, mm_sound_focus_changed_watch_cb callback, void *user_data, int *id);
 int mm_sound_unset_focus_watch_callback(int id);
