@@ -27,12 +27,12 @@ BuildRequires: pkgconfig(gio-2.0)
 BuildRequires: pkgconfig(vconf)
 BuildRequires: pkgconfig(libpulse)
 BuildRequires: pkgconfig(iniparser)
+BuildRequires: pkgconfig(sndfile)
 %if "%{?tizen_profile_name}" != "tv"
 BuildRequires: pkgconfig(capi-network-bluetooth)
 %endif
 %ifarch %{arm}
 %endif
-BuildRequires: pkgconfig(libtremolo)
 
 %description
 MMSound Package contains client lib and sound_server binary for sound system
@@ -66,7 +66,6 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 %setup -q
 
 %build
-%define tizen_audio_feature_ogg_enable 1
 
 %if "%{?tizen_profile_name}" == "tv"
 %define tizen_audio_feature_bluetooth_enable 0
@@ -89,10 +88,7 @@ MMSound utility package - contians mm_sound_testsuite, sound_check for sound sys
 
 ./autogen.sh
 %configure \
-%if 0%{?tizen_audio_feature_ogg_enable}
-       --enable-ogg \
        --with-plugindir=%{_libdir}/soundplugins/ \
-%endif
 %if "%{?TIZEN_PRODUCT_TV}" == "1"
        --enable-prelink \
 %endif
@@ -154,15 +150,9 @@ ln -sf ../focus-server.path %{buildroot}%{_unitdir}/multi-user.target.wants/focu
 %{_libdir}/libsoundplugintone.so*
 %{_libdir}/libsoundpluginwave.so*
 %{_libdir}/libsoundpluginkeytone.so*
-%if 0%{?tizen_audio_feature_ogg_enable}
-%{_libdir}/libsoundplugintremoloogg.so*
-%endif
 %{_libdir}/soundplugins/libsoundplugintone.so
 %{_libdir}/soundplugins/libsoundpluginwave.so
 %{_libdir}/soundplugins/libsoundpluginkeytone.so
-%if 0%{?tizen_audio_feature_ogg_enable}
-%{_libdir}/soundplugins/libsoundplugintremoloogg.so
-%endif
 %if "%{?tizen_profile_name}" == "tv"
 #%{_unitdir}/sysinit.target.wants/sound-server.path
 %{_unitdir}/sysinit.target.wants/focus-server.path

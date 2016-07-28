@@ -19,11 +19,6 @@ libsoundpluginkeytone_la_LIBADD  = $(MMCOMMON_LIBS) \
 				$(srcdir)/../../../libmmfsound.la \
 				$(srcdir)/../../../common/libmmfsoundcommon.la
 
-if OGG_SUPPORT
-libsoundpluginkeytone_la_CFLAGS += $(TREMOLO_CFLAGS)
-libsoundpluginkeytone_la_LIBADD += $(TREMOLO_LIBS)
-endif
-
 install-exec-hook:
 	mkdir -p $(DESTDIR)$(libdir)/soundplugins
 	ln -sf ../libsoundpluginkeytone.so $(DESTDIR)$(libdir)/soundplugins/libsoundpluginkeytone.so
